@@ -1,4 +1,4 @@
-# FLORIDA ONLINE SECURITY TRAINING README
+# FLORIDA ONLINE SECURITY TRAINING
 
 ## Overview
 Florida Online Security Training offers comprehensive online security courses and certification aimed at individuals pursuing careers in the security industry within Florida. This platform provides a user-friendly interface for accessing a range of courses designed to secure Florida security licenses and specialize in areas such as unarmed security, armed security, and private investigation.
