@@ -229,6 +229,14 @@
                             </div>
                         </div>
 
+                        <div class="form-group form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="privacy_agree" name="privacy_agree" required>
+                            <label class="form-check-label" for="privacy_agree">
+                                By submitting this form, you agree to our 
+                                <a href="{{ route('pages', 'privacy') }}" target="_blank" class="text-info">Privacy Policy</a>
+                            </label>
+                        </div>
+
                         <div class="d-grid gap-2">
                             <button type="submit" id="paymentSubmitBtn" class="btn btn-lg btn-s2wp btn-s2wp-gray"
                                 disabled>

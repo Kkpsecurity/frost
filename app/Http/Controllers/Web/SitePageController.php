@@ -28,7 +28,11 @@ class SitePageController extends Controller
         $data = $request->validate([
             'name' => 'required',
             'email' => 'required|email',
-            'message' => 'required'
+            'message' => 'required',
+            'privacy_agree' => 'required|accepted'
+        ], [
+            'privacy_agree.required' => 'You must agree to the Privacy Policy to submit this form.',
+            'privacy_agree.accepted' => 'You must agree to the Privacy Policy to submit this form.'
         ]);
 
         try {

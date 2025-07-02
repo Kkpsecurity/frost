@@ -29,6 +29,16 @@ class="contact-form">
         <div class="invalid-feedback">Please enter your message</div>
     </div>
 </div>
+<div class="col-md-12 col-12">
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="privacy_agree" name="privacy_agree" required>
+        <label class="form-check-label text-white" for="privacy_agree">
+            By submitting this form, you agree to our 
+            <a href="{{ route('pages', 'privacy') }}" target="_blank" class="text-info">Privacy Policy</a>
+        </label>
+        <div class="invalid-feedback">You must agree to the Privacy Policy</div>
+    </div>
+</div>
 <div class="col-md-12 col-12 text-center">
     <button type="submit" id="submit" class="btn btn-primary contact-btn">Send
         Message</button>

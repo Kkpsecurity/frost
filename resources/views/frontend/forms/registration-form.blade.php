@@ -51,6 +51,19 @@
         @enderror
     </div>
 
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="privacy_agree" name="privacy_agree" required>
+        <label class="form-check-label text-white" for="privacy_agree">
+            By submitting this form, you agree to our 
+            <a href="{{ route('pages', 'privacy') }}" target="_blank" class="text-info">Privacy Policy</a>
+        </label>
+        @error('privacy_agree')
+            <span class="invalid-feedback d-block" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
+    </div>
+
     <div class="form-group">
         <div class="row">
             <div class="col-lg-8 col-md-12 col-sm-12">

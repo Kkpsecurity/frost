@@ -17,3 +17,11 @@
   <label for="cvv">CVV</label>
   <input type="text" class="form-control" id="cvv" name="cvv" placeholder="Enter CVV" autocomplete="cc-csc">
 </div>
+
+<div class="form-group form-check">
+    <input type="checkbox" class="form-check-input" id="privacy_agree" name="privacy_agree" required>
+    <label class="form-check-label" for="privacy_agree">
+        By submitting this form, you agree to our 
+        <a href="{{ route('pages', 'privacy') }}" target="_blank" class="text-info">Privacy Policy</a>
+    </label>
+</div>
