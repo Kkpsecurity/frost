@@ -1,0 +1,95 @@
+.course-page-area {
+    padding: 100px 40px;
+}
+
+#calendar {
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* Make all cells the same height */
+.fc-daygrid-day-frame {
+    height: 100px !important;
+}
+
+.fc-col-header-cell {
+    background: var(--frost-primary-color);
+}
+
+.fc-scrollgrid-sync-inner {
+    color: white;
+}
+
+.fc-col-header-cell .fc-scrollgrid-sync-inner a {
+    color: white;
+}
+
+/* Make all cells white */
+.fc-daygrid-day {
+    background-color: white !important;
+}
+
+/* Optionally, if you want to style the highlighted "today" differently */
+.fc-day-today {
+    background-color: yellow !important;
+    border-color:  darkgoldenrod;
+    /* This is an example light gray color. Change as needed */
+}
+
+/* Optionally, if you want to style the highlighted "selected" date differently */
+.fc-day-selected {
+    background-color: #e0e0e0 !important;
+    /* This is an example light gray color. Change as needed */
+}
+
+/* Make the borders of each cell dark blue */
+.fc-daygrid-day-top {
+    border-color: darkblue !important;
+}
+
+.fc-header-toolbar {
+background-color: #222222;
+color: #ffffff;
+}
+
+/* Main Calendar Container */
+.fc {
+font-family: Arial, sans-serif;
+}
+
+/* Header Toolbar */
+.fc-header-toolbar {
+background-color: #f4f4f4;
+border-bottom: 1px solid #ddd;
+}
+
+.fc-header-toolbar .fc-button {
+color: #555;
+background-color: #e7e7e7;
+border: 1px solid #ddd;
+}
+
+/* Event Styles */
+.fc-event {
+background-color: #007BFF;
+border-color: #0056b3;
+color: #fff;
+}
+
+/* Today Highlight */
+.fc-day-today {
+background-color: #e9ecef;
+border: 1px solid #ced4da;
+}
+
+/* Cells */
+.fc-daygrid-day {
+border: 1px solid darkblue;
+}
+
+.fc-daygrid-day.fc-day-today {
+border: 2px solid darkblue;
+}

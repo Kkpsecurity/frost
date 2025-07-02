@@ -1,0 +1,145 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+
+use RCache;
+use App\Models\User;
+use App\Presenters\PresentsTimeStamps;
+use KKP\Laravel\ModelTraits\MySQLTimestamps;
+use KKP\Laravel\ModelTraits\NoString;
+use KKP\TextTk;
+
+
+class HTTPClientError extends Model
+{
+
+    use MySQLTimestamps, PresentsTimeStamps;
+    use NoString;
+
+
+    protected static $sanitize_keys = [
+        'password'
+    ];
+
+
+    protected $table        = 'http_client_errors';
+    protected $primaryKey   = 'id';
+    public    $timestamps   = false;
+
+
+    protected $casts        = [
+
+        'id'                => 'integer',
+        'created_at'        => 'timestamp',
+
+        'facility'          => 'string',
+        'action'            => 'string',
+        'user_id'           => 'integer',
+
+        // request
+        'request_method'    => 'string',
+        'url'               => 'string',
+        'form_params'       => 'json',
+
+        // response
+        'http_code'         => 'integer',
+        'response_json'     => 'json',
+        'response_body'     => 'string',
+        'curl_error'        => 'string',
+
+    ];
+
+    protected $guarded      = [ 'id' ];
+
+
+    //
+    // relationships
+    //
+
+
+    public function User()
+    {
+        return $this->belongsTo( User::class, 'user_id' );
+    }
+
+
+
+    //
+    // incoming data filters
+    //
+
+
+    public function setFacilityAttribute( $value )
+    {
+        $this->attributes[ 'facility' ] = TextTk::Sanitize( $value );
+    }
+
+    public function setActionAttribute( $value )
+    {
+        $this->attributes[ 'action' ] = TextTk::Sanitize( $value );
+    }
+
+    public function setRequestMethodAttribute( $value )
+    {
+        $this->attributes[ 'request_method' ] = strtoupper( TextTk::Sanitize( $value ) );
+    }
+
+    public function setUrlAttribute( $value )
+    {
+        $this->attributes[ 'url' ] = TextTk::Sanitize( $value );
+    }
+
+    public function setFormParamsAttribute( $value )
+    {
+        if ( is_string( $value ) )
+        {
+            $value = json_decode( $value, true );
+        }
+        if ( is_array( $value ) )
+        {
+            self::SanitizeFormParams( $value );
+            $this->attributes[ 'form_params' ] = json_encode( $value );
+        }
+    }
+
+    public function setResponseBodyAttribute( $value )
+    {
+        $this->attributes[ 'response_Body' ] = TextTk::Sanitize( $value, TextTk::SANITIZE_NO_STRIPTAGS );
+    }
+
+
+    //
+    // cache queries
+    //
+
+
+    public function GetUser() : ?User
+    {
+        return ( $this->user_id ? RCache::User( $this->user_id ) : null );
+    }
+
+
+    //
+    // Form Param Sanitizer
+    //
+
+
+    public static function SanitizeFormParams( array &$form_params ) : void
+    {
+
+        array_walk_recursive( $form_params, function( &$value, $key ) {
+
+            if ( in_array( strtolower( $key ), self::$sanitize_keys ) )
+            {
+                $value = str_repeat( '*', strlen( $value ) );
+            }
+
+        });
+
+    }
+
+
+}

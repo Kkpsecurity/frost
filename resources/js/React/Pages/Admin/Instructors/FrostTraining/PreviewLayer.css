@@ -1,0 +1,127 @@
+.modal {
+    z-index: 99999;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    border-bottom: none;
+    background: #222222;
+}
+
+.modal-title {
+    font-size: 22px; /* Adjusted font size */
+    color: #ededed; /* Adjusted font color */
+    font-weight: bold;
+}
+
+.modal-body {
+    background-color: #bdbcbc;
+    padding: 20px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1); /* Inner shadow */
+}
+
+/* Modal footer styling */
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px; /* Top padding */
+    border-top: none; /* Remove borders */
+    background: #222222;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0; /* No margin for the last form-group */
+}
+
+/* Switch button styling */
+.p-2 {
+    padding: 2rem;
+    margin-top: 10px; /* Added margin-top */
+}
+
+/* Select and Textarea styling */
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #cdcecd;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s; /* Transition effect */
+    z-index: 10;
+}
+
+textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+select:focus,
+textarea:focus {
+    border-color: #007bff; /* Focus effect */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.button:hover {
+    opacity: 0.8;
+}
+
+.button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.validation-modal {
+    font-family: "Arial", sans-serif;
+}
+
+.validation-container {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.validation-container.validate {
+    background-color: lightgreen;
+}
+
+.validation-container.decline {
+    background-color: #f8d7da; /* A softer shade of red */
+}
+
+.message-textarea {
+    margin-top: 20px;
+}
+
+/* Photo preview styling */
+.preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px; /* Gap between photos */
+}
+
+.preview img {
+    object-fit: cover;
+    margin: auto;
+    border-radius: 5px;
+}
+
+.preview img:hover {
+    opacity: 0.8;
+}

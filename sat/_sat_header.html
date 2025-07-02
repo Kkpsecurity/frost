@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto+Mono" />
+  <link rel="stylesheet" type="text/css" href="/sat/sat.css" />
+
+  <script type="text/javascript" src="/sat/jquery-3.6.4.min.js"></script>
+  <script type="text/javascript" src="/sat/notify.js"></script>
+  <script type="text/javascript" src="/sat/sat.js"></script>
+  <script type="text/javascript" src="/sat/ExitFullscreen.js"></script>
+
+
+<script>
+setTimeout(function() {
+
+    // window.parent.postMessage( 'exitFullscreen', '*' );
+    window.postMessage( 'exitFullscreen', '*' );
+
+}, 3000 );
+</script>
+
+
+</head>
+<body>
+
+
+
+<div style="display: table; margin: 10px auto;">
+  <button type="button" onClick="document.documentElement.requestFullscreen();">
+    Enter Fullscreen
+  </button>
+</div>

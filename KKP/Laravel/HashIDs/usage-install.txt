@@ -1,0 +1,40 @@
+----------------
+-              -
+- Installation -
+-              -
+----------------
+
+
+composer require jenssegers/optimus
+
+
+(strongly suggested) generate new primes:
+
+php vendor/bin/optimus spark
+
+
+
+------------------
+config/optimus.php
+------------------
+
+<?php
+
+return [
+    'prime'     => 1855343419,
+    'inverse'   => 1129600499,
+    'random'    => 1709788508,
+    'bitlength' => 31
+];
+
+
+
+--------------
+config/app.php
+--------------
+
+        KKP\Laravel\HashIDs\HashIDServiceProvider::class,
+
+
+        'HashID' => KKP\Laravel\HashIDs\HashID::class,
+

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto+Mono" />
+  <link rel="stylesheet" type="text/css" href="/sat/sat.css" />
+
+  <script type="text/javascript" src="/sat/jquery-3.6.4.min.js"></script>
+
+<script>
+window.addEventListener( 'load', function() {
+
+    /*
+    $.ajaxSetup({
+        headers: { 'X-CSRF-TOKEN': $( 'meta[name="csrf-token"]' ).attr( 'content' ) }
+    });
+    */
+
+    $( '#cache_select' ).change(function() {
+        if ( $( this ).val() )
+        {
+            location.href = $( this ).val();
+        }
+    });
+
+});
+</script>
+
+</head>
+<body>
+
+
+<select id="cache_select">
+|CACHEOPTS|
+</select>
+
+
+<table border="0" cellspacing="2" cellpadding="3">
+<tr class="header">
+  <td class="header"></td>
+  <td class="header">Key</td>
+  <td class="header">Value</td>
+</tr>

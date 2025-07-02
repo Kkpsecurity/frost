@@ -1,0 +1,18 @@
+-------------------
+Usage: Helper Class
+-------------------
+
+use KKP\Laravel\HashIDs\HashID;
+
+-- also aliased as HashID --
+
+
+
+HashID::encode( $id )
+
+eg: route( 'route.name', HashID::hash_id( $id ) );
+
+
+HashID::decode( $hash_id )
+
+eg: $MODEL = $MODEL::findOrFail( HashID::decode( $hash_id ) );

@@ -1,0 +1,146 @@
+
+
+/*--------------------------------*/
+/* 4. How to work Area
+/*--------------------------------*/
+
+.panel-3-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 50px 0;
+    background-color: var(--frost-primary-color);
+}
+
+.panel-3-card-container + .card {
+    border-radius: 0;
+    box-shadow: none;
+    transition: all 0.3s ease-in-out;
+    padding: 20px;
+    border-bottom: 1px solid var(--frost-light-gray-color);
+}
+
+.panel-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 50px 0;
+    background-color: var(--frost-primary-color);
+}
+
+
+/* Styles for the card title */
+.card-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--frost-white-color);
+    margin-bottom: 20px;
+}
+
+/* Styles for the card text */
+.card-text {
+    font-size: 16px;
+    color: var(--frost-white-color);
+    margin-bottom: 0;
+}
+
+@media screen and (max-width: 768px) {
+    .panel-3-card-container {
+        padding: 0;
+    }
+
+    .card {
+        margin: 0;
+    }
+
+    .panel-card-container {
+        padding: 0;
+    }
+}
+
+
+
+.about-image {
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+    padding-right: 80px;
+}
+
+.about-image img {
+    border-radius: 5px;
+    border: 6px solid #243063;
+}
+
+.ab-second-img {
+    position: absolute;
+    right: 30px;
+    bottom: 40px;
+    width: 50%;
+    height: auto;
+}
+
+.video-inner {
+    background: url(../img/about/vd.jpg);
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    position: relative;
+    border-radius: 6px;
+}
+
+.video-inner::after {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    content: "";
+    background: rgba(10, 27, 40, 0.2) none repeat scroll 0 0;
+}
+
+.video-content {
+    width: 100%;
+    height: 100%;
+    min-height: 380px;
+}
+
+.video-play.vid-zone {
+    background: var(--frost-info-color);
+    border-radius: 100%;
+    display: inline-block;
+    font-size: 30px;
+    height: 80px;
+    line-height: 78px;
+    text-align: center;
+    width: 80px;
+    overflow: hidden;
+    position: absolute;
+    top: 60%;
+    z-index: 2;
+    right: 22%;
+    margin: 0 auto;
+    transition: 0.4s;
+    margin-top: -35px;
+    color: #fff;
+}
+
+.video-play.vid-zone i {
+    color: var(--frost-white-color);
+    margin-left: 5px;
+}
+
+.video-play.vid-zone:hover {
+    background: var(--frost-white-color);
+    color: var(--frost-info-color);
+    transition: 0.4s;
+}
+
+.video-play.vid-zone:hover i {
+    color: var(--frost-info-color);
+}
+
+
+

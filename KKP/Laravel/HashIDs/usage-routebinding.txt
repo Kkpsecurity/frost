@@ -1,0 +1,36 @@
+
+use KKP\Laravel\HashIDs\AutoHashID
+
+    overrides getRouteKey()
+    overrides resolveRouteBinding()
+
+    also imports hash_id()
+
+
+-------------------
+Route Model Binding
+-------------------
+
+
+Define model binding in RouteServiceProvider:
+
+    Route::model( 'user', \App\Models\User::class );
+
+
+Then bind model in route:
+
+    Route::get( '/user/view/{user}', 'UserController@View' )->name( 'user.view' );
+
+    route( 'user.view', $User );
+
+
+
+---------------
+BCache Override
+---------------
+
+define in model:
+
+    protected $modelcache   = '\App\Caches\UserCache';
+
+resolveRouteBinding() will return from model cache

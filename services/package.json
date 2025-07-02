@@ -1,0 +1,20 @@
+{
+    "name": "zoom-node-server",
+    "version": "1.0.0",
+    "description": "A simple Node.js server for Zoom integration",
+    "main": "zoom_server.js",
+    "scripts": {
+        "start": "node zoomplayer/zoom_server.js"
+    },
+    "dependencies": {
+        "express": "^4.17.1",
+        "express-rate-limit": "^5.2.6",
+        "body-parser": "^1.19.0",
+        "dotenv": "^8.2.0",
+        "jsrsasign": "^11.1.0",
+        "jsonwebtoken": "^8.5.1",
+        "helmet": "7.1.0",
+        "axios": "^0.21.1",
+        "cors": "^2.8.5"
+    }
+}

@@ -1,0 +1,41 @@
+
+use KKP\Laravel\HashIDs\BasicHashID
+
+    imports method hash_id()
+
+
+--------------------
+Simple Usage:  Route
+--------------------
+
+Replace '{id}' with '{hash_id}'
+
+Router will automatically convert hash_id to id
+
+
+
+---------------------
+Simple Usage:  Models
+---------------------
+
+use KKP\Laravel\HashIDs\BasicHashID;
+
+    use BasicHashID;
+
+
+-- then --
+
+$Model->hash_id()
+
+eg: route( 'route.name', $Model->hash_id() );
+
+
+
+-- controller --
+
+    public static function MethodName( $id )
+    {
+
+        $Model = Model::findOrFail( $id );
+
+    }

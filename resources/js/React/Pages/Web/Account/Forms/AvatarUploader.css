@@ -1,0 +1,25 @@
+.AvatarUploader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .AvatarUploader-preview {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+  }
+
+  .AvatarUploader-fileInput {
+    margin-bottom: 20px;
+  }
+
+  .AvatarUploader-gravatarLabel {
+    margin-bottom: 20px;
+  }
+
+  .AvatarUploader-submitButton {
+    background-color: #3498db;
+    color: white
