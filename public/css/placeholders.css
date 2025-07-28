@@ -1,0 +1,33 @@
+/* Placeholder styles for missing images */
+.img-placeholder {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 3rem;
+    border-radius: 8px;
+    min-height: 200px;
+}
+
+.img-placeholder.rounded {
+    border-radius: 50% !important;
+}
+
+.img-placeholder.team-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    font-size: 2rem;
+}
+
+.img-placeholder.review-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+.img-placeholder i {
+    opacity: 0.6;
+}

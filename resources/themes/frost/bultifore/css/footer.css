@@ -1,0 +1,113 @@
+
+/*----------------------------------------*/
+/*  12. Footer Area
+/*----------------------------------------*/
+.footer-1 {
+    background-color: var(--frost-primary-color);
+    border-top: 10px solid var(--frost-secondary-color);
+    padding: 20px;
+}
+
+.footer-area {
+    padding: 60px 0;
+}
+
+.footer-head h4 {
+    color: var(--frost-light-color);
+    font-size: 18px;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+}
+
+.footer-logo {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: var(--frost-light-color);
+    font-weight: 700;
+}
+
+.subs-feilds {
+    margin-top: 30px;
+}
+.suscribe-input {
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--frost-light-color);
+    border-radius: 0;
+    overflow: hidden;
+}
+.suscribe-input input[type="email"] {
+    color: var(--frost-info-color);
+    font-size: 15px;
+    line-height: 24px;
+    padding: 6px 15px;
+    height: 46px;
+    width: 100%;
+    border: none;
+}
+.suscribe-input button[type="submit"] {
+    background-color: var(--frost-info-color);
+    border: none;
+    color: var(--frost-light-color);
+    font-size: 15px;
+    padding: 10px 15px;
+    font-weight: 600;
+    height: 46px;
+    transition: background-color 0.3s ease;
+}
+
+.suscribe-input button[type="submit"]:hover {
+    background-color: var(--frost-info-color);
+    cursor: pointer;
+}
+
+.footer-list li a {
+    color: var(--frost-light-color);
+    padding: 5px 0;
+    display: block;
+    position: relative;
+    font-weight: 400;
+}
+
+.footer-list li a::before {
+    position: absolute;
+    content: "\f054";
+    right: auto;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    top: 3px;
+    left: 0;
+    font-size: 14px;
+}
+
+.footer-list li a:hover,
+.footer-list li a:focus {
+    color: var(--frost-info-color);
+}
+
+.footer-area-bottom {
+    background-color: var(--frost-primary-color);
+    padding: 30px 0;
+}
+
+.footer-icons ul li a {
+    color: var(--frost-white-color);
+    font-size: 18px;
+    padding: 8px 10px;
+    transition: background-color 0.3s ease;
+}
+.footer-icons ul li a:hover {
+    background-color: var(--frost-info-color);
+    border-color: var(--frost-info-color);
+}
+
+.footer-icons ul li {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.footer-icons ul li:last-child {
+    margin-right: 0;
+}

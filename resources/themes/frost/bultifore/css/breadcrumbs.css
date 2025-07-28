@@ -1,0 +1,91 @@
+/***********************************
+/** BREADCRUMBS & PAGE TITLE
+/***********************************/
+
+.page-header {
+    display: block;
+    margin-top: 125px;
+    border-bottom: 1px solid var(--frost-dark-color);
+    background: url(../img/background/bread-bg.jpg) no-repeat center center fixed;
+    background-size: cover;
+    z-index: 1000;
+}
+
+.page-header .container {
+    width: 100%;
+    height: 140px;
+}
+
+.page-header .page-title {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    width: 100%;
+    height: 140px;
+}
+
+.page-header .container h3 {
+    display: block;
+    color: var(--frost-white-color);
+    width: auto;
+    text-align: start;
+    text-transform: capitalize;
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.breadcrumbs {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    width: 100%;
+    height: 140px;
+    margin-top: 5px;
+}
+
+.breadcrumb {
+    display: flex;
+    height: 40px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.breadcrumb li.breadcrumb-item {
+    display: inline-block;
+    color: var(--frost-white-color);
+    font-size: 16px;
+    text-transform: capitalize;
+}
+
+.breadcrumb li.breadcrumb-item a {
+    color: var(--frost-white-color);
+    font-size: 16px;
+    text-transform: capitalize;
+}
+
+@media only screen and (max-width: 480px) {
+    .page-header {
+        margin-top: 145px;
+        height: auto;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .page-header h3 {
+        text-align: center;
+        font-size: 24px;
+        line-height: 24px;
+        display: block;
+    }
+
+
+}
+
+@media only screen and (min-width: 768px) {
+    .page-header h3 {
+        display: block;
+        /* Make it a block element */
+    }
+}
