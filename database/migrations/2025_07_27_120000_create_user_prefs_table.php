@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('user_prefs', function (Blueprint $table) {
             // Primary key columns (composite primary key)
-            $table->bigInteger('user_id'); // Foreign key to users table
+            $table->unsignedBigInteger('user_id'); // Foreign key to users table
             $table->string('pref_name', 64); // Preference name - max 64 characters
 
             // Preference value

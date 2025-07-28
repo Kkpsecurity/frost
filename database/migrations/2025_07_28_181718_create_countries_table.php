@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admin_password_resets', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('countries', function (Blueprint $table) {
+            $table->string('country', 64)->primary(); // varchar(64) primary key
+            $table->smallInteger('ordering')->nullable();
+
+            // Indexes for common queries
+            $table->index('ordering');
         });
     }
 
@@ -22,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admin_password_resets');
+        Schema::dropIfExists('countries');
     }
 };

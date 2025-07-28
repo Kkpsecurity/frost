@@ -127,4 +127,46 @@ class User extends Authenticatable
             ['pref_value' => $prefValue]
         );
     }
+
+    /**
+     * Check if the user is an admin.
+     * Admin role_id is 2 in the new structure
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role_id === 2;
+    }
+
+    /**
+     * Check if the user is a system admin.
+     * System admin role_id is 1
+     */
+    public function isSysAdmin(): bool
+    {
+        return $this->role_id === 1;
+    }
+
+    /**
+     * Scope to get only admin users (role_id = 2).
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('role_id', 2);
+    }
+
+    /**
+     * Scope to get only system admin users (role_id = 1).
+     */
+    public function scopeSysAdmins($query)
+    {
+        return $query->where('role_id', 1);
+    }
+
+    /**
+     * Get the user's role.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
 }

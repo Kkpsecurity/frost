@@ -7,181 +7,82 @@
 
     <title>@yield('title', 'Admin Authentication - Frost')</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/fontawesome-free/css/all.min.css') }}">
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/icheck-bootstrap/icheck-bootstrap.min.css') }}">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
 
     <style>
-        :root {
-            --admin-primary: #dc3545;
-            --admin-secondary: #6c757d;
-            --admin-success: #198754;
-            --admin-danger: #dc3545;
-            --admin-warning: #ffc107;
-            --admin-info: #0dcaf0;
-            --admin-dark: #212529;
+        .login-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-
-        body {
-            font-family: 'Figtree', sans-serif;
-            background: linear-gradient(135deg, var(--admin-primary) 0%, #fd7e14 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-
-        .auth-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        .auth-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            padding: 2.5rem;
-        }
-
-        .auth-logo {
+        .card-header {
+            background: transparent;
+            border-bottom: none;
             text-align: center;
-            margin-bottom: 2rem;
+            padding-bottom: 0;
         }
-
-        .auth-logo h1 {
-            color: var(--admin-primary);
-            font-weight: 700;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+        .login-logo a {
+            color: #ffffff;
+            font-size: 2.1rem;
+            font-weight: 300;
+            text-decoration: none;
         }
-
-        .auth-logo .admin-badge {
-            background: var(--admin-primary);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .auth-logo p {
-            color: var(--admin-secondary);
-            margin: 0.5rem 0 0 0;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--admin-dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-            background-color: #f8f9fa;
-        }
-
-        .form-control:focus {
-            border-color: var(--admin-primary);
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-            background-color: white;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--admin-primary) 0%, #fd7e14 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
-        }
-
-        .auth-links {
+        .login-box-msg {
+            margin: 0;
+            padding: 20px;
             text-align: center;
-            margin-top: 1.5rem;
+            color: #666;
         }
+    </style>
+</head>
 
-        .auth-links a {
-            color: var(--admin-primary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
+<body class="hold-transition login-page">
+<div class="login-box">
+    <!-- Logo -->
+    <div class="login-logo">
+        <a href="{{ route('home') }}"><b>Frost</b> Admin</a>
+    </div>
+    <!-- /.login-logo -->
+    <div class="card">
+        <div class="card-body login-card-body">
+            <p class="login-box-msg">@yield('subtitle', 'Sign in to start your admin session')</p>
 
-        .auth-links a:hover {
-            color: #bb2d3b;
-            text-decoration: underline;
-        }
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-        .alert {
-            border-radius: 10px;
-            border: none;
-            margin-bottom: 1.5rem;
-        }
+            @yield('content')
 
-        .invalid-feedback {
-            display: block;
-        }
+        </div>
+        <!-- /.login-card-body -->
+    </div>
+</div>
+<!-- /.login-box -->
 
-        .home-link {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            text-decoration: none;
-            font-weight: 600;
-            opacity: 0.9;
-            transition: opacity 0.3s ease;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.5rem 1rem;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-        }
+        <!-- jQuery -->
+<script src="{{ asset('vendor/adminlte/plugins/jquery/jquery.min.js') }}"></script>
+<!-- Bootstrap 4 -->
+<script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- AdminLTE App -->
+<script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
 
-        .home-link:hover {
-            color: white;
-            opacity: 1;
-        }
-
-        .form-check-input:checked {
-            background-color: var(--admin-primary);
-            border-color: var(--admin-primary);
-        }
-
-        .form-check-label {
-            color: var(--admin-secondary);
-            font-weight: 500;
-        }
-
-        .security-notice {
-            background: #fff3cd;
-            border: 1px solid #ffecb5;
-            color: #664d03;
-            padding: 1rem;
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
-        }
-
-        .security-notice i {
-            margin-right: 0.5rem;
-        }
+</body>
+</html>
     </style>
 </head>
 <body>

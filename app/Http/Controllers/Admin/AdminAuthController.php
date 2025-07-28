@@ -28,8 +28,17 @@ class AdminAuthController extends Controller
         ]);
 
         if (Auth::guard('admin')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            $request->session()->regenerate();
+            $user = Auth::guard('admin')->user();
 
+            // Check if user has admin role (role_id = 2)
+            if (!$user->isAdmin()) {
+                Auth::guard('admin')->logout();
+                throw ValidationException::withMessages([
+                    'email' => __('You do not have admin privileges.'),
+                ]);
+            }
+
+            $request->session()->regenerate();
             return redirect()->intended(route('admin.dashboard'));
         }
 

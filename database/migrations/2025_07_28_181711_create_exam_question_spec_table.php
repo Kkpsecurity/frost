@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admins', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('exam_question_spec', function (Blueprint $table) {
+            $table->smallIncrements('id'); // smallint auto-increment primary key
+            $table->string('name', 16)->nullable(false);
+
+            // Indexes for common queries
+            $table->index('name');
         });
     }
 
@@ -22,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admins');
+        Schema::dropIfExists('exam_question_spec');
     }
 };

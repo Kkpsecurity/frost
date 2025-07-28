@@ -75,6 +75,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('admin.guest:admin')->group(function () {
         Route::get('login', [App\Http\Controllers\Admin\AdminAuthController::class, 'showLoginForm'])->name('login');
         Route::post('login', [App\Http\Controllers\Admin\AdminAuthController::class, 'login']);
+
+        // Password Reset Routes
+        Route::get('password/reset', [App\Http\Controllers\Admin\AdminPasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+        Route::post('password/email', [App\Http\Controllers\Admin\AdminPasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+        Route::get('password/reset/{token}', [App\Http\Controllers\Admin\AdminPasswordResetController::class, 'showResetForm'])->name('password.reset');
+        Route::post('password/reset', [App\Http\Controllers\Admin\AdminPasswordResetController::class, 'reset'])->name('password.update');
     });
 
     Route::post('logout', [App\Http\Controllers\Admin\AdminAuthController::class, 'logout'])
@@ -91,4 +97,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->gro
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('dashboard.alt');
+
+    // Admin Profile/Password Management
+    Route::get('/profile/change-password', [App\Http\Controllers\Admin\AdminProfileController::class, 'showChangePasswordForm'])->name('profile.change-password');
+    Route::post('/profile/update-password', [App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('profile.update-password');
 });
