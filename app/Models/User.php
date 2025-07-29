@@ -2,74 +2,107 @@
 
 namespace App\Models;
 
-/**
- * @file User.php
- * @brief Model for users table.
- * @details This model represents a user in the system, including attributes like name, email, and role.
- */
-
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+#use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 
-use Carbon;
-use Laravel\Sanctum\HasApiTokens;
+use Carbon\Carbon;
+use Laravel\Scout\Searchable;
+use Lab404\Impersonate\Models\Impersonate;
 
-class User extends Authenticatable
+use App\Services\RCache;
+
+use App\Models\Role;
+use App\Models\UserPref;
+use App\Models\InstLicense;
+use App\Models\UserBrowser;
+use App\Models\Traits\User\ExamsTrait;
+use App\Models\Traits\User\RolesTrait;
+use App\Models\Traits\User\UserPrefsTrait;
+use App\Models\Traits\User\CourseAuthsTrait;
+use App\Models\Traits\User\UserBrowserTrait;
+
+use App\Casts\JSONCast;
+use App\Helpers\TextTk;
+// use App\Traits\Observable; // Temporarily disabled - missing observer
+use App\Traits\AvatarTrait;
+use App\Traits\PgTimestamps;
+use App\Presenters\PresentsTimeStamps;
+
+
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+
+    #use HasApiTokens, HasFactory;
+
+    use Notifiable; // Observable temporarily disabled
+    use PgTimestamps, PresentsTimeStamps;
+    use CourseAuthsTrait, ExamsTrait, RolesTrait, UserBrowserTrait, UserPrefsTrait;
+    use AvatarTrait, Searchable, Impersonate;
+
+    const SEARCHABLE_FIELDS = ['id', 'email', 'fname', 'lname'];
 
     protected $table = 'users';
     protected $primaryKey = 'id';
     public $timestamps = true;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    protected $casts = [
+        'id' => 'integer',
+
+        'is_active' => 'boolean',
+        'role_id' => 'integer',
+
+        'lname' => 'string',
+        // 255
+        'fname' => 'string',
+        // 255
+        'email' => 'string',
+        // 255
+
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'email_verified_at' => 'datetime',
+
+        'password' => 'string',
+        // 100
+        'remember_token' => 'string',
+        // 100
+
+        'avatar' => 'string',
+        'use_gravatar' => 'boolean',
+
+        'student_info' => JSONCast::class,
+        #'student_info'      => 'array',
+
+        'email_opt_in' => 'boolean',
+    ];
+
     protected $fillable = [
-        'is_active',
-        'role_id',
         'lname',
         'fname',
         'email',
         'password',
+        'remember_token',
         'avatar',
         'use_gravatar',
         'student_info',
-        'email_opt_in',
-        'email_verified_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    // public $dates = [
+    //     'created_at',
+    //     'updated_at',
+    //     'email_verified_at'
+    // ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array<string, string>
-     */
+
+
     protected $attributes = [
         'is_active' => true,
         'role_id' => 5, // default: student
         'email_opt_in' => false,
     ];
 
-    /**
-     * The attributes that are guarded against mass assignment.
-     *
-     * @var array<int, string>
-     */
     protected $guarded = [
         'id',
         'is_active',
@@ -77,96 +110,134 @@ class User extends Authenticatable
         'zoom_creds_id',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'id' => 'integer',
-        'is_active' => 'boolean',
-        'role_id' => 'integer',
-        'lname' => 'string',
-        'fname' => 'string',
-        'email' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'email_verified_at' => 'datetime',
-        'password' => 'string',
-        'remember_token' => 'string',
-        'avatar' => 'string',
-        'use_gravatar' => 'boolean',
-        'student_info' => 'array', // Cast JSON to array
-        'email_opt_in' => 'boolean',
+    protected $hidden = [
+        'email_verified_at',
+        'password',
+        'remember_token',
     ];
 
-    /**
-     * Get the user's preferences.
-     */
-    public function preferences(): HasMany
+    public function fullname()
+    {
+        return "{$this->fname} {$this->lname}";
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->fullname();
+    }
+
+    public function __toString()
+    {
+        return $this->fullname();
+    }
+
+    //
+    // external package requirements
+    //
+
+    public function canImpersonate()
+    {
+        return $this->role_id == 1;
+    }
+
+
+    public function toSearchableArray()
+    {
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'fname' => $this->fname,
+            'lname' => $this->lname,
+        ];
+    }
+
+    //
+    // relationships
+    //
+
+    public function CourseAuths()
+    {
+        return $this->hasMany(CourseAuth::class, 'user_id');
+    }
+
+    public function InstLicenses()
+    {
+        return $this->hasMany(InstLicense::class, 'user_id');
+    }
+
+    public function Role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function UserBrowser()
+    {
+        return $this->hasOne(UserBrowser::class, 'user_id');
+    }
+
+    public function UserPrefs()
     {
         return $this->hasMany(UserPref::class, 'user_id');
     }
 
-    /**
-     * Get a specific user preference value.
-     */
-    public function getPreference(string $prefName, string $default = null): ?string
+    //
+    // incoming data filters
+    //
+
+    public function setLnameAttribute($value)
     {
-        $pref = $this->preferences()->where('pref_name', $prefName)->first();
-        return $pref ? $pref->pref_value : $default;
+        $this->attributes['lname'] = TextTk::Sanitize($value);
+    }
+
+    public function setFnameAttribute($value)
+    {
+        $this->attributes['fname'] = TextTk::Sanitize($value);
+    }
+
+    public function setEmailAttribute($value)
+    {
+        $this->attributes['email'] = TextTk::Sanitize($value);
+    }
+
+    //
+    // cache queries
+    //
+
+    public function GetRole(): Role
+    {
+        return RCache::Roles($this->role_id);
+    }
+
+    //
+    // email
+    //
+
+    public function hasDLicense(): bool
+    {
+        return false;
+    }
+
+    public function hasGLicense(): bool
+    {
+        return false;
+    }
+
+
+    public function emailTo(): array
+    {
+        return [
+            'email' => $this->email,
+            'name' => $this->fullname()
+        ];
     }
 
     /**
-     * Set a user preference.
+     * Determine if the model should be searchable.
+     *
+     * @return bool
      */
-    public function setPreference(string $prefName, string $prefValue): UserPref
+    public function shouldBeSearchable()
     {
-        return $this->preferences()->updateOrCreate(
-            ['pref_name' => $prefName],
-            ['pref_value' => $prefValue]
-        );
-    }
-
-    /**
-     * Check if the user is an admin.
-     * Admin role_id is 2 in the new structure
-     */
-    public function isAdmin(): bool
-    {
-        return $this->role_id === 2;
-    }
-
-    /**
-     * Check if the user is a system admin.
-     * System admin role_id is 1
-     */
-    public function isSysAdmin(): bool
-    {
-        return $this->role_id === 1;
-    }
-
-    /**
-     * Scope to get only admin users (role_id = 2).
-     */
-    public function scopeAdmins($query)
-    {
-        return $query->where('role_id', 2);
-    }
-
-    /**
-     * Scope to get only system admin users (role_id = 1).
-     */
-    public function scopeSysAdmins($query)
-    {
-        return $query->where('role_id', 1);
-    }
-
-    /**
-     * Get the user's role.
-     */
-    public function role()
-    {
-        return $this->belongsTo(Role::class, 'role_id');
+        return $this->is_active; // Only index active users
     }
 }

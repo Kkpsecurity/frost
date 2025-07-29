@@ -6,17 +6,19 @@ namespace App\Models;
  * @file Admin.php
  * @brief Admin model facade for frontend isolation.
  * @details This model acts as a facade to isolate frontend from backend implementation.
- * Admins are actually stored in the users table with role_id < 4 (1=Super Admin, 2=Admin, 3=Support).
+ * Admins are actually stored in the users table with role_id <= 4 (System Admin, Admin, Instructor, Support).
  */
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Builder;
 use App\Notifications\AdminResetPasswordNotification;
+use App\Traits\AvatarTrait;
+use App\Support\RoleManager;
 
 class Admin extends User
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, AvatarTrait;
 
     /**
      * Override the table to use users table
@@ -30,15 +32,15 @@ class Admin extends User
     {
         parent::boot();
 
-        // Automatically scope all queries to admin users only (role_id < 3: System + Regular admins)
+        // Automatically scope all queries to admin users only
         static::addGlobalScope('admin', function (Builder $builder) {
-            $builder->where('role_id', '<', 3);
+            $builder->whereIn('role_id', RoleManager::getAdminRoleIds());
         });
 
-        // When creating new admin, set role_id to 2 (default admin level)
+        // When creating new admin, set role_id to default admin level
         static::creating(function ($admin) {
             if (!isset($admin->role_id)) {
-                $admin->role_id = 2;
+                $admin->role_id = RoleManager::getDefaultAdminRoleId();
             }
         });
     }
@@ -56,6 +58,7 @@ class Admin extends User
         'use_gravatar',
         'email_opt_in',
         'email_verified_at',
+        'role_id',
     ];
 
     /**
@@ -63,7 +66,7 @@ class Admin extends User
      */
     protected $attributes = [
         'is_active' => true,
-        'role_id' => 2, // Always admin (not sys_admin)
+        'role_id' => RoleManager::ADMIN_ID, // Default admin level
         'email_opt_in' => false,
     ];
 
@@ -84,15 +87,39 @@ class Admin extends User
     }
 
     /**
-     * Admin-specific scopes
+     * Check if admin has specific role
      */
-    public function scopeActive($query)
+    public function hasRole(string $roleName): bool
     {
-        return $query->where('is_active', true);
+        return $this->Role && $this->Role->name === $roleName;
     }
 
     /**
-     * Send the password reset notification with admin-specific URL.
+     * Check if admin has higher or equal privileges than given role
+     */
+    public function hasHigherOrEqualPrivileges(int $roleId): bool
+    {
+        return RoleManager::hasHigherOrEqualPrivileges($this->role_id, $roleId);
+    }
+
+    /**
+     * Get role display name
+     */
+    public function getRoleDisplayNameAttribute(): string
+    {
+        return $this->Role ? RoleManager::getDisplayName($this->Role->name) : 'N/A';
+    }
+
+    /**
+     * Get role badge class for UI
+     */
+    public function getRoleBadgeClassAttribute(): string
+    {
+        return $this->Role ? RoleManager::getRoleBadgeClass($this->Role->name) : 'badge-light';
+    }
+
+    /**
+     * Send the password reset notification.
      */
     public function sendPasswordResetNotification($token)
     {

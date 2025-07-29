@@ -2,10 +2,10 @@
 
 namespace App\Helpers;
 
-use DB;
 use Exception;
 use stdClass;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 
 class PgTk
@@ -18,7 +18,7 @@ class PgTk
      */
     public static function now(): string
     {
-        return DB::selectOne(DB::raw('SELECT current_timestamp'))->current_timestamp;
+        return DB::selectOne('SELECT current_timestamp')->current_timestamp;
     }
 
 
@@ -29,7 +29,7 @@ class PgTk
      */
     public static function UUID_v4(): string
     {
-        return DB::selectOne(DB::raw('SELECT * FROM uuid_generate_v4()'))->uuid_generate_v4;
+        return DB::selectOne('SELECT uuid_generate_v4()')->uuid_generate_v4;
     }
 
 

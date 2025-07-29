@@ -3,6 +3,8 @@
 @section('title', 'Admin Dashboard - Frost')
 
 @section('content_header')
+    @include('admin.partials.impersonation-banner')
+
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="m-0 text-white">Admin Dashboard</h1>
         <div class="text-muted">
@@ -446,7 +448,7 @@
                                 <tbody>
                                     @foreach(\App\Models\User::latest()->take(5)->get() as $user)
                                     <tr>
-                                        <td>{{ $user->name }}</td>
+                                        <td>{{ $user->fullname() }}</td>
                                         <td>{{ $user->email }}</td>
                                         <td>{{ $user->created_at->diffForHumans() }}</td>
                                     </tr>

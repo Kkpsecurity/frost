@@ -320,49 +320,64 @@ return [
             'route' => 'admin.dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
         ],
-        ['header' => 'MAIN NAVIGATION'],
+
+        ['header' => 'ADMINISTRATION'],
         [
-            'text' => 'Users',
-            'icon' => 'fas fa-fw fa-users',
-            'submenu' => [
-                [
-                    'text' => 'All Users',
-                    'url' => 'admin/users',
-                    'icon' => 'fas fa-fw fa-list',
-                ],
-                [
-                    'text' => 'Add User',
-                    'url' => 'admin/users/create',
-                    'icon' => 'fas fa-fw fa-plus',
-                ],
-            ],
-        ],
-        [
-            'text' => 'Content',
-            'icon' => 'fas fa-fw fa-file-alt',
-            'submenu' => [
-                [
-                    'text' => 'Posts',
-                    'url' => 'admin/posts',
-                    'icon' => 'fas fa-fw fa-newspaper',
-                ],
-                [
-                    'text' => 'Pages',
-                    'url' => 'admin/pages',
-                    'icon' => 'far fa-fw fa-file',
-                ],
-            ],
-        ],
-        ['header' => 'ACCOUNT SETTINGS'],
-        [
-            'text' => 'Profile',
-            'url' => 'admin/profile',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'Settings',
-            'url' => 'admin/settings',
+            'text' => 'Admin Center',
             'icon' => 'fas fa-fw fa-cogs',
+            'submenu' => [
+                [
+                    'text' => 'Admin Users',
+                    'url' => 'admin/admin-center/admin-users',
+                    'icon' => 'fas fa-fw fa-user-shield',
+                ],
+                [
+                    'text' => 'Site Settings',
+                    'url' => 'admin/site-settings',
+                    'icon' => 'fas fa-fw fa-wrench',
+                ],
+            ],
+        ],
+
+        ['header' => 'USER MANAGEMENT'],
+        [
+            'text' => 'Instructors',
+            'url' => 'admin/instructors',
+            'icon' => 'fas fa-fw fa-chalkboard-teacher',
+        ],
+        [
+            'text' => 'Students',
+            'url' => 'admin/students',
+            'icon' => 'fas fa-fw fa-user-graduate',
+        ],
+
+        ['header' => 'COURSE MANAGEMENT'],
+        [
+            'text' => 'Courses',
+            'url' => 'admin/courses',
+            'icon' => 'fas fa-fw fa-book',
+        ],
+        [
+            'text' => 'Course Dates',
+            'url' => 'admin/course-dates',
+            'icon' => 'fas fa-fw fa-calendar-alt',
+        ],
+
+        ['header' => 'BUSINESS'],
+        [
+            'text' => 'Orders',
+            'url' => 'admin/orders',
+            'icon' => 'fas fa-fw fa-shopping-cart',
+        ],
+        [
+            'text' => 'Support',
+            'url' => 'admin/support',
+            'icon' => 'fas fa-fw fa-life-ring',
+        ],
+        [
+            'text' => 'Reports',
+            'url' => 'admin/reports',
+            'icon' => 'fas fa-fw fa-chart-bar',
         ],
     ],
 

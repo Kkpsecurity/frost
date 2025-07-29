@@ -236,3 +236,17 @@ if (!function_exists('flashMessage')) {
         session()->flash($type, $message);
     }
 }
+
+/**
+ * Format date using US format patterns
+ *
+ * @param mixed $date Date to format (Carbon instance, string, etc.)
+ * @param string $format Format type from RoleManager date formats
+ * @return string|null Formatted date string or null if date is empty
+ */
+if (!function_exists('formatUsDate')) {
+    function formatUsDate($date, string $format = 'medium_date'): ?string
+    {
+        return \App\Support\RoleManager::formatDate($date, $format);
+    }
+}

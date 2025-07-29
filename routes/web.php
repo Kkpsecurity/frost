@@ -101,4 +101,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->gro
     // Admin Profile/Password Management
     Route::get('/profile/change-password', [App\Http\Controllers\Admin\AdminProfileController::class, 'showChangePasswordForm'])->name('profile.change-password');
     Route::post('/profile/update-password', [App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('profile.update-password');
+
+    // Admin Users Management
+    Route::prefix('admin-center')->name('admin-center.')->group(function () {
+        Route::resource('admin-users', App\Http\Controllers\Admin\AdminUserController::class);
+        Route::get('admin-users-data', [App\Http\Controllers\Admin\AdminUserController::class, 'getData'])->name('admin-users.data');
+        Route::post('admin-users/{id}/password', [App\Http\Controllers\Admin\AdminUserController::class, 'updatePassword'])->name('admin-users.password');
+        Route::post('admin-users/{id}/avatar', [App\Http\Controllers\Admin\AdminUserController::class, 'updateAvatar'])->name('admin-users.avatar');
+        Route::post('admin-users/{id}/deactivate', [App\Http\Controllers\Admin\AdminUserController::class, 'deactivate'])->name('admin-users.deactivate');
+        Route::post('admin-users/{id}/activate', [App\Http\Controllers\Admin\AdminUserController::class, 'activate'])->name('admin-users.activate');
+    });
+
+    // User Impersonation (sys admin only)
+    Route::get('/impersonate/{userId}', [App\Http\Controllers\Admin\AdminUserController::class, 'impersonate'])->name('impersonate');
+    Route::get('/stop-impersonating', [App\Http\Controllers\Admin\AdminUserController::class, 'stopImpersonating'])->name('stop-impersonating');
 });
