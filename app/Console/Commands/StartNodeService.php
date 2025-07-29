@@ -2,6 +2,12 @@
 
 namespace App\Console\Commands;
 
+/**
+ * @file StartNodeService.php
+ * @brief Command to start the Node.js service.
+ * @details This command starts the Node.js service using pm2, with an option to run npm install first.
+ */
+
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 

@@ -2,14 +2,23 @@
 
 namespace App\Models;
 
+/**
+ * @file Challenge.php
+ * @brief Model for challenges table.
+ * @details This model represents challenges in the system, including attributes like student lesson ID,
+ * completion status, and timestamps for creation, update, expiration, and completion.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
+use App\Services\RCache;
+
 use App\Models\StudentLesson;
-use App\Presenters\PresentsTimeStamps;
+
+use App\Traits\NoString;
+use App\Traits\PgTimestamps;
 use App\Traits\ExpirationTrait;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\PgTimestamps;
+use App\Presenters\PresentsTimeStamps;
 
 
 class Challenge extends Model
@@ -40,7 +49,7 @@ class Challenge extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
     protected $attributes   = [
 
@@ -57,7 +66,7 @@ class Challenge extends Model
 
     public function StudentLesson()
     {
-        return $this->belongsTo( StudentLesson::class, 'student_lesson_id' );
+        return $this->belongsTo(StudentLesson::class, 'student_lesson_id');
     }
 
 
@@ -66,7 +75,7 @@ class Challenge extends Model
     //
 
 
-    public function MarkCompleted() : void
+    public function MarkCompleted(): void
     {
 
         //
@@ -77,28 +86,22 @@ class Challenge extends Model
             'completed_at' => $this->freshTimestamp(),
             'failed_at'    => null,
         ]);
-
     }
 
 
-    public function MarkFailed() : void
+    public function MarkFailed(): void
     {
 
-        if ( $this->completed_at )
-        {
-            logger( "ChallengeID {$this->id} already completed_at" );
+        if ($this->completed_at) {
+            logger("ChallengeID {$this->id} already completed_at");
             return;
         }
 
-        if ( $this->failed_at )
-        {
-            logger( "ChallengeID {$this->id} already failed_at" );
+        if ($this->failed_at) {
+            logger("ChallengeID {$this->id} already failed_at");
             return;
         }
 
-        $this->pgtouch( 'failed_at' );
-
+        $this->pgtouch('failed_at');
     }
-
-
 }

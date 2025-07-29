@@ -2,10 +2,17 @@
 
 namespace App\Models;
 
+/**
+ * @file UserBrowser.php
+ * @brief Model for user_browsers table.
+ * @details This model represents a user's browser information, including the user ID and browser string.
+ * It provides a relationship to the User model and overrides the __toString method to return the browser string.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\User;
-use KKP\Laravel\ModelTraits\PgTimestamps;
+use App\Traits\PgTimestamps;
 
 
 class UserBrowser extends Model
@@ -27,9 +34,12 @@ class UserBrowser extends Model
 
     ];
 
-    protected $guarded      = [ ]; // all fillable
+    protected $guarded      = []; // all fillable
 
-    public function __toString() { return $this->browser; }
+    public function __toString()
+    {
+        return $this->browser;
+    }
 
 
     //
@@ -39,8 +49,6 @@ class UserBrowser extends Model
 
     public function User()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
-
-
 }

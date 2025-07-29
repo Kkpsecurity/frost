@@ -2,22 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
+/**
+ * @file Course.php
+ * @brief Model for courses table.
+ * @details This model represents a course, including attributes like title, price, and associated units.
+ * It provides methods for managing courses and retrieving related data.
+ */
 
-use RCache;
-use App\RCache\RCacheModelTrait;
+use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Model;
+
+use App\Services\RCache;
 
 use App\Models\CourseAuth;
 use App\Models\CourseUnit;
 use App\Models\Exam;
 use App\Models\ExamQuestionSpec;
 use App\Models\ZoomCreds;
+
+use App\Casts\JSONCast;
+use App\Helpers\TextTk;
+use App\Traits\Observable;
 use App\Traits\ExpirationTrait;
-use KKP\Laravel\Casts\JSONCast;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\TextTk;
+use App\Traits\RCacheModelTrait;
 
 
 class Course extends Model
@@ -58,24 +66,27 @@ class Course extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
     protected $attributes   = [
         'is_active'         => true,
         'needs_range'       => false,
     ];
 
-    public function __toString() { return $this->title; }
-
-
-    public function ShortTitle() : string
+    public function __toString()
     {
-        return preg_replace( '/\s*\(.*/', '', $this->title );
+        return $this->title;
     }
 
-    public function LongTitle() : string
+
+    public function ShortTitle(): string
     {
-        return preg_replace( '/\s*\(.*/', '', $this->title_long );
+        return preg_replace('/\s*\(.*/', '', $this->title);
+    }
+
+    public function LongTitle(): string
+    {
+        return preg_replace('/\s*\(.*/', '', $this->title_long);
     }
 
 
@@ -86,22 +97,22 @@ class Course extends Model
 
     public function CourseAuths()
     {
-        return $this->hasMany( CourseAuth::class, 'course_id' );
+        return $this->hasMany(CourseAuth::class, 'course_id');
     }
 
     public function CourseUnits()
     {
-        return $this->hasMany( CourseUnit::class, 'course_id' );
+        return $this->hasMany(CourseUnit::class, 'course_id');
     }
 
     public function Exam()
     {
-        return $this->belongsTo( Exam::class, 'exam_id' );
+        return $this->belongsTo(Exam::class, 'exam_id');
     }
 
     public function ExamQuestionSpec()
     {
-        return $this->belongsTo( ExamQuestionSpec::class, 'eq_spec_id' );
+        return $this->belongsTo(ExamQuestionSpec::class, 'eq_spec_id');
     }
 
     public function ZoomCreds()
@@ -110,13 +121,11 @@ class Course extends Model
         //
         // ensure devs use admin Zoom account
         //
-        if ( ! app()->environment( 'production' ) )
-        {
+        if (! app()->environment('production')) {
             $this->zoom_creds_id = 1;
         }
 
-        return $this->belongsTo( ZoomCreds::class, 'zoom_creds_id' );
-
+        return $this->belongsTo(ZoomCreds::class, 'zoom_creds_id');
     }
 
 
@@ -125,14 +134,14 @@ class Course extends Model
     //
 
 
-    public function setTitleAttribute( $value )
+    public function setTitleAttribute($value)
     {
-        $this->attributes[ 'title' ] = TextTk::Sanitize( $value );
+        $this->attributes['title'] = TextTk::Sanitize($value);
     }
 
-    public function setTitleLongAttribute( $value )
+    public function setTitleLongAttribute($value)
     {
-        $this->attributes[ 'title_long' ] = TextTk::Sanitize( $value );
+        $this->attributes['title_long'] = TextTk::Sanitize($value);
     }
 
 
@@ -141,24 +150,24 @@ class Course extends Model
     //
 
 
-    public function GetCourseUnits() : Collection
+    public function GetCourseUnits(): Collection
     {
-        return RCache::Course_CourseUnits( $this->id );
+        return RCache::Course_CourseUnits($this->id);
     }
 
-    public function GetExam() : Exam
+    public function GetExam(): Exam
     {
-        return RCache::Exams( $this->exam_id );
+        return RCache::Exams($this->exam_id);
     }
 
-    public function GetEQSpec() : ExamQuestionSpec
+    public function GetEQSpec(): ExamQuestionSpec
     {
-        return RCache::ExamQuestionSpecs( $this->eq_spec_id );
+        return RCache::ExamQuestionSpecs($this->eq_spec_id);
     }
 
-    public function GetLessons() : Collection
+    public function GetLessons(): Collection
     {
-        return RCache::Course_Lessons( $this->id );
+        return RCache::Course_Lessons($this->id);
     }
 
 
@@ -167,29 +176,25 @@ class Course extends Model
     //
 
 
-    public function GetDocs() : array
+    public function GetDocs(): array
     {
 
-        $rel_path = '/docs/' . Str::slug( $this->ShortTitle() );
-        $abs_path = public_path( $rel_path );
+        $rel_path = '/docs/' . Str::slug($this->ShortTitle());
+        $abs_path = public_path($rel_path);
 
-        if ( ! is_dir( $abs_path ) )
-        {
-            logger( __METHOD__ . " Not found: {$abs_path}" );
+        if (! is_dir($abs_path)) {
+            logger(__METHOD__ . " Not found: {$abs_path}");
             return [];
         }
 
 
         $files = [];
 
-        foreach ( glob( "{$abs_path}/*.pdf" ) as $filename )
-        {
-            $basename = basename( $filename );
-            $files[ $basename ] = url( "{$rel_path}/{$basename}" );
+        foreach (glob("{$abs_path}/*.pdf") as $filename) {
+            $basename = basename($filename);
+            $files[$basename] = url("{$rel_path}/{$basename}");
         }
 
         return $files;
-
     }
-
 }

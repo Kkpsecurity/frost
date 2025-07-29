@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
+/**
+ * @file SiteConfig.php
+ * @brief Model for site_configs table.
+ * @details This model represents site configuration settings, including attributes like config name,
+ * config value, and cast type. It provides methods for sanitizing input and serializing values.
+ */
+
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 use RCache;
-use App\RCache\RCacheModelTrait;
-use KKP\TextTk;
+use App\Helpers\TextTk;
+use App\Support\RCache\RCacheModelTrait;
 
 
 class SiteConfig extends Model
@@ -30,10 +37,13 @@ class SiteConfig extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
 
-    public function __toString() { return $this->config_value; }
+    public function __toString()
+    {
+        return $this->config_value;
+    }
 
 
     //
@@ -41,14 +51,14 @@ class SiteConfig extends Model
     //
 
 
-    public static function SlugConfigName( $str = null ) : ?string
+    public static function SlugConfigName($str = null): ?string
     {
-        return $str ? Str::of( TextTk::Sanitize( $str ) )->slug( '_' ) : null;
+        return $str ? Str::of(TextTk::Sanitize($str))->slug('_') : null;
     }
 
-    public function setConfigNameAttribute( $value )
+    public function setConfigNameAttribute($value)
     {
-        $this->attributes[ 'config_name' ] = self::SlugConfigName( $value );
+        $this->attributes['config_name'] = self::SlugConfigName($value);
     }
 
 
@@ -59,7 +69,7 @@ class SiteConfig extends Model
      */
 
 
-    public static function Casts() : array
+    public static function Casts(): array
     {
         return [
             'bool'      => 'Boolean',
@@ -79,21 +89,19 @@ class SiteConfig extends Model
      */
 
 
-    public function getConfigValueAttribute( $value )
+    public function getConfigValueAttribute($value)
     {
 
-        return self::isSerialized( $value )
-                    ? unserialize( substr( $value, strlen( self::SERIALIZED_PREFIX ) ) )
-                    : $value;
-
+        return self::isSerialized($value)
+            ? unserialize(substr($value, strlen(self::SERIALIZED_PREFIX)))
+            : $value;
     }
 
 
-    public function setConfigValueAttribute( $value ) : bool
+    public function setConfigValueAttribute($value): bool
     {
 
-        if ( self::isSerialized( $value ) )
-        {
+        if (self::isSerialized($value)) {
             return true;
         }
 
@@ -101,35 +109,38 @@ class SiteConfig extends Model
         // cast $value before serializing
         //
 
-        switch( $this->cast_to )
-        {
+        switch ($this->cast_to) {
 
-            case 'bool':  $value =  (bool) $value; break;
-            case 'int':   $value =   (int) $value; break;
-            case 'float': $value = (float) $value; break;
+            case 'bool':
+                $value =  (bool) $value;
+                break;
+            case 'int':
+                $value =   (int) $value;
+                break;
+            case 'float':
+                $value = (float) $value;
+                break;
 
             case 'text':
             case 'longtext':
-                $value = TextTk::Sanitize( $value );
+                $value = TextTk::Sanitize($value);
                 break;
 
             case 'htmltext':
-                $value = TextTk::Sanitize( $value, TextTk::SANITIZE_NO_STRIPTAGS );
+                $value = TextTk::Sanitize($value, TextTk::SANITIZE_NO_STRIPTAGS);
                 break;
 
             default:
-                throw new Exception( __CLASS__ . " Unknown cast_to '{$this->cast_to}'" );
+                throw new Exception(__CLASS__ . " Unknown cast_to '{$this->cast_to}'");
                 return false;
-
         }
 
         //
         // serialize value
         //
 
-        $this->attributes[ 'config_value' ] = self::SERIALIZED_PREFIX . serialize( $value );
+        $this->attributes['config_value'] = self::SERIALIZED_PREFIX . serialize($value);
         return true;
-
     }
 
 
@@ -142,16 +153,13 @@ class SiteConfig extends Model
 
     protected const SERIALIZED_PREFIX = '%%SER%%';
 
-    protected static function isSerialized( &$value ) : bool
+    protected static function isSerialized(&$value): bool
     {
 
-        if ( ! is_string( $value ) )
-        {
+        if (! is_string($value)) {
             return false;
         }
 
-        return self::SERIALIZED_PREFIX == substr( $value, 0, strlen( self::SERIALIZED_PREFIX ) );
-
+        return self::SERIALIZED_PREFIX == substr($value, 0, strlen(self::SERIALIZED_PREFIX));
     }
-
 }

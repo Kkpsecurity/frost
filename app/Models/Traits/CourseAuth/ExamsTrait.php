@@ -1,13 +1,21 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\CourseAuth;
 
+/**
+ * @file ExamsTrait.php
+ * @brief Trait for managing exam-related functionality in course auth.
+ * @details This trait provides methods to handle exam readiness, latest exam authorization,
+ * and classroom exam checks for users enrolled in courses.
+ */
+
 use stdClass;
 use Illuminate\Support\Carbon;
 
-use App\Classes\ExamAuthObj;
 use App\Models\ExamAuth;
+use App\Classes\ExamAuthObj;
 
 
 trait ExamsTrait
@@ -17,32 +25,28 @@ trait ExamsTrait
     public function LatestExamAuth()
     {
 
-        return $this->hasOne( ExamAuth::class, 'course_auth_id' )
-                 ->whereNull( 'hidden_at' )
-                   ->orderBy( 'completed_at', 'DESC' );
-
+        return $this->hasOne(ExamAuth::class, 'course_auth_id')
+            ->whereNull('hidden_at')
+            ->orderBy('completed_at', 'DESC');
     }
 
 
-    public function ActiveExamAuth() : ?ExamAuth
+    public function ActiveExamAuth(): ?ExamAuth
     {
 
-        if ( ! $ExamAuth = $this->LatestExamAuth )
-        {
+        if (! $ExamAuth = $this->LatestExamAuth) {
             return null;
         }
 
         // ValidateCanScore() handles expiration
-        return ( new ExamAuthObj( $ExamAuth ) )->ValidateCanScore( true ) ? $ExamAuth : null;
-
+        return (new ExamAuthObj($ExamAuth))->ValidateCanScore(true) ? $ExamAuth : null;
     }
 
 
-    public function ExamReady() : bool
+    public function ExamReady(): bool
     {
 
-        if ( ! $this->IsActive() )
-        {
+        if (! $this->IsActive()) {
             return false;
         }
 
@@ -51,25 +55,21 @@ trait ExamsTrait
         // check last Exam
         //
 
-        if ( $ExamAuth = $this->LatestExamAuth )
-        {
+        if ($ExamAuth = $this->LatestExamAuth) {
 
-            if ( $ExamAuth->is_passed )
-            {
+            if ($ExamAuth->is_passed) {
                 // shouldn't get here
                 return false;
             }
 
-            return Carbon::now()->gt( Carbon::parse( $ExamAuth->next_attempt_at ) );
-
+            return Carbon::now()->gt(Carbon::parse($ExamAuth->next_attempt_at));
         }
 
         //
         // check Admin override
         //
 
-        if ( $this->exam_admin_id )
-        {
+        if ($this->exam_admin_id) {
             return true;
         }
 
@@ -77,13 +77,11 @@ trait ExamsTrait
         // check all lessons completed
         //
 
-        if ( ! $this->AllLessonsCompleted() )
-        {
+        if (! $this->AllLessonsCompleted()) {
             return false;
         }
 
         return true;
-
     }
 
 
@@ -113,7 +111,7 @@ trait ExamsTrait
     */
 
 
-    public function ClassroomExam( string $fmt = null ) : stdClass
+    public function ClassroomExam(string $fmt = null): stdClass
     {
 
         $res = (object) [
@@ -145,15 +143,14 @@ trait ExamsTrait
             $res->missing_id_file = true;
             return $res;
         }
-        ***/
+         ***/
 
 
         //
         // this handles all initial checks
         //
 
-        if ( $this->ExamReady() )
-        {
+        if ($this->ExamReady()) {
             $res->is_ready = true;
             return $res;
         }
@@ -163,8 +160,7 @@ trait ExamsTrait
         // verify there is a previous exam
         //
 
-        if ( ! $ExamAuth = $this->LatestExamAuth )
-        {
+        if (! $ExamAuth = $this->LatestExamAuth) {
             return $res;
         }
 
@@ -173,15 +169,11 @@ trait ExamsTrait
         // previous exam was passed; don't send next attempt
         //
 
-        if ( ! $ExamAuth->is_passed )
-        {
-            $res->next_attempt_at = $ExamAuth->NextAttemptAt( $fmt );
+        if (! $ExamAuth->is_passed) {
+            $res->next_attempt_at = $ExamAuth->NextAttemptAt($fmt);
         }
 
 
         return $res;
-
     }
-
-
 }

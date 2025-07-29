@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+/**
+ * @file ExamQuestionSpec.php
+ * @brief Model for exam_question_spec table.
+ * @details This model represents specifications for exam questions, including attributes like name.
+ * It provides relationships to courses and exam questions.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Course;
 use App\Models\ExamQuestion;
-use KKP\Laravel\ModelTraits\StaticModel;
+
+use App\Traits\StaticModel;
 
 
 class ExamQuestionSpec extends Model
@@ -26,9 +34,12 @@ class ExamQuestionSpec extends Model
 
     ];
 
-    protected $fillable     = [ ];  // static model
+    protected $fillable     = [];  // static model
 
-    public function __toString() { return $this->name; }
+    public function __toString()
+    {
+        return $this->name;
+    }
 
 
     //
@@ -38,13 +49,11 @@ class ExamQuestionSpec extends Model
 
     public function Courses()
     {
-        return $this->hasMany( Course::class, 'eq_spec_id' );
+        return $this->hasMany(Course::class, 'eq_spec_id');
     }
 
     public function ExamQuestions()
     {
-        return $this->hasMany( ExamQuestion::class, 'eq_spec_id' );
+        return $this->hasMany(ExamQuestion::class, 'eq_spec_id');
     }
-
-
 }

@@ -17,6 +17,17 @@ return [
         'default'   => 'YYYY-MM-DD HH:mm',
     ],
 
+    'date_formats' => [
+        'short_date' => 'm/d/Y',
+        'medium_date' => 'M j, Y',
+        'long_date' => 'F j, Y',
+        'datetime_short' => 'm/d/Y g:i A',
+        'datetime_medium' => 'M j, Y g:i A',
+        'datetime_long' => 'F j, Y g:i A',
+        'time_only' => 'g:i A',
+        'date_only' => 'M j, Y',
+    ],
+
     'timezone' => [
         'default' => 'America/New_York',
     ],
@@ -28,7 +39,7 @@ return [
     ],
 
     'student_info' => [
-        'suffixes' => [ 'Jr.', 'Sr.', 'I', 'II', 'III' ],
+        'suffixes' => ['Jr.', 'Sr.', 'I', 'II', 'III'],
     ],
 
 

@@ -26,6 +26,4 @@ class PayPal extends PaymentModel
         'refunded_by'       => 'integer',
 
     ];
-
-
 }

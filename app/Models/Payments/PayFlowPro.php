@@ -2,14 +2,48 @@
 
 namespace App\Models\Payments;
 
-use Illuminate\Notifications\Notifiable;
+/**
+ * PayFlowPro
+ *
+ * @property int $id
+ * @property int $order_id
+ * @property string $uuid
+ * @property float $total_price
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $completed_at
+ * @property \Carbon\Carbon|null $refunded_at
+ * @property int|null $refunded_by
+ *
+ * @property \Carbon\Carbon|null $cc_last_at
+ * @property int|null $cc_last_code
+ * @property string|null $cc_last_respmsg
+ * @property float|null $cc_amount
+ * @property float|null $cc_fee
+ * @property \Carbon\Carbon|null $cc_transtime
+ *
+ * @property bool $pp_is_sandbox
+ * @property string|null $pp_token_id
+ * @property string|null $pp_token
+ * @property int|null $pp_token_exp
+ * @property int|null $pp_token_count
+ *
+ * @property string|null $pp_pnref
+ * @property string|null $pp_ppref
+ */
+
 use Illuminate\Support\Carbon;
+use Illuminate\Notifications\Notifiable;
+
+
+use App\Services\RCache;
+
+use App\Jobs\PayPalGetSaleDetails;
 use App\Models\Payments\PaymentModel;
 
-use App\RCache;
 use App\Classes\Payments\PayFlowProTrait;
 use App\Classes\Payments\PayPalHelpersTrait;
-use App\Jobs\PayPalGetSaleDetails;
+
 
 
 class PayFlowPro extends PaymentModel
@@ -74,23 +108,23 @@ class PayFlowPro extends PaymentModel
     //
 
 
-    public function PaymentTypeID() : int
+    public function PaymentTypeID(): int
     {
-        return RCache::PaymentTypes( 'PayFlowPro', 'name' )->id;
+        return RCache::PaymentTypes('PayFlowPro', 'name')->id;
     }
 
 
-    public function InvoiceID() : string
+    public function InvoiceID(): string
     {
         return $this->id
-            . ( $this->pp_is_sandbox
-                ? config( 'define.payflowpro.sandbox_ext' )
-                : config( 'define.payflowpro.invoice_ext' )
+            . ($this->pp_is_sandbox
+                ? config('define.payflowpro.sandbox_ext')
+                : config('define.payflowpro.invoice_ext')
             );
     }
 
 
-    public function IsCompleted() : bool
+    public function IsCompleted(): bool
     {
 
         /*
@@ -104,44 +138,37 @@ class PayFlowPro extends PaymentModel
         }
         */
 
-        if ( ! $this->completed_at or ! $this->pp_ppref )
-        {
+        if (! $this->completed_at or ! $this->pp_ppref) {
             return false;
         }
 
         return true;
-
     }
 
 
-    public function CanRefund() : bool
+    public function CanRefund(): bool
     {
 
-        if ( ! $this->IsCompleted() or $this->refunded_at )
-        {
+        if (! $this->IsCompleted() or $this->refunded_at) {
             return false;
         }
 
-        if ( Carbon::now()->gt( Carbon::parse( $this->cc_transtime )->addDays( self::REFUND_LIMIT_DAYS ) ) )
-        {
+        if (Carbon::now()->gt(Carbon::parse($this->cc_transtime)->addDays(self::REFUND_LIMIT_DAYS))) {
             return false;
         }
 
         return true;
-
     }
 
 
-    public function CanGetSaleDetails() : bool
+    public function CanGetSaleDetails(): bool
     {
 
-        if ( ! $this->IsCompleted() or $this->pp_is_sandbox )
-        {
+        if (! $this->IsCompleted() or $this->pp_is_sandbox) {
             return false;
         }
 
         return true;
-
     }
 
 
@@ -150,18 +177,18 @@ class PayFlowPro extends PaymentModel
     //
 
 
-    public function TransTime( string $fmt = null ) : ?string
+    public function TransTime(string $fmt = null): ?string
     {
         // convert PayPal transtime to PST to match their reports
         return $this->cc_transtime
-                        ? Carbon::parse( $this->cc_transtime )
-                                   ->tz( 'America/Los_Angeles' )
-                            ->isoFormat( $fmt ?? config( 'define.carbon_format.default' ) )
-                        : null;
+            ? Carbon::parse($this->cc_transtime)
+            ->tz('America/Los_Angeles')
+            ->isoFormat($fmt ?? config('define.carbon_format.default'))
+            : null;
     }
 
 
-    public function ResetTokenVars() : void
+    public function ResetTokenVars(): void
     {
         $this->pp_token_id    = null;
         $this->pp_token       = null;
@@ -171,18 +198,14 @@ class PayFlowPro extends PaymentModel
     }
 
 
-    public function DispatchGetSaleDetails() : void
+    public function DispatchGetSaleDetails(): void
     {
 
-        if ( $this->pp_is_sandbox )
-        {
-            logger( 'DispatchGetSaleDetails(): skipping sandbox payment' );
+        if ($this->pp_is_sandbox) {
+            logger('DispatchGetSaleDetails(): skipping sandbox payment');
             return;
         }
 
-        PayPalGetSaleDetails::dispatch( $this );
-
+        PayPalGetSaleDetails::dispatch($this);
     }
-
-
 }

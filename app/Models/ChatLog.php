@@ -2,16 +2,26 @@
 
 namespace App\Models;
 
+/**
+ * @file ChatLog.php
+ * @brief Model for chat_logs table.
+ * @details This model represents chat logs, including attributes like course date ID, instructor ID,
+ * student ID, and the chat body. It provides methods for sanitizing input and retrieving associated
+ * users (instructor and student).
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
-use App\Models\CourseDate;
+use App\Services\RCache;
+
 use App\Models\User;
+use App\Models\CourseDate;
+
+use App\helpers\TextTk;
+use App\Traits\NoString;
+use App\Traits\Observable;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\TextTk;
 
 
 class ChatLog extends Model
@@ -41,7 +51,7 @@ class ChatLog extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
 
     //
@@ -51,17 +61,17 @@ class ChatLog extends Model
 
     public function CourseDate()
     {
-        return $this->belongsTo( CourseDate::class, 'course_date_id' );
+        return $this->belongsTo(CourseDate::class, 'course_date_id');
     }
 
     public function Inst()
     {
-        return $this->belongsTo( User::class, 'inst_id' );
+        return $this->belongsTo(User::class, 'inst_id');
     }
 
     public function Student()
     {
-        return $this->belongsTo( User::class, 'student_id' );
+        return $this->belongsTo(User::class, 'student_id');
     }
 
 
@@ -70,9 +80,9 @@ class ChatLog extends Model
     //
 
 
-    public function setBodyAttribute( $value )
+    public function setBodyAttribute($value)
     {
-        $this->attributes[ 'body' ] = TextTk::Sanitize( $value );
+        $this->attributes['body'] = TextTk::Sanitize($value);
     }
 
 
@@ -81,14 +91,14 @@ class ChatLog extends Model
     //
 
 
-    public function GetInst() : ?User
+    public function GetInst(): ?User
     {
-        return ( $this->inst_id ? RCache::User( $this->inst_id ) : null );
+        return ($this->inst_id ? RCache::User($this->inst_id) : null);
     }
 
-    public function GetStudent() : ?User
+    public function GetStudent(): ?User
     {
-        return ( $this->student_id ? RCache::User( $this->student_id ) : null );
+        return ($this->student_id ? RCache::User($this->student_id) : null);
     }
 
 
@@ -97,15 +107,13 @@ class ChatLog extends Model
     //
 
 
-    public function Hide() : void
+    public function Hide(): void
     {
-        $this->pgtouch( 'hidden_at' );
+        $this->pgtouch('hidden_at');
     }
 
-    public function UnHide() : void
+    public function UnHide(): void
     {
-        $this->update([ 'hidden_at' => null ]);
+        $this->update(['hidden_at' => null]);
     }
-
-
 }

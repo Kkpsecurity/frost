@@ -2,7 +2,7 @@
 
 return [
 
-    'disabled'              => env( 'CHALLENGER_DISBLED', false ),
+    'disabled'              => env('CHALLENGER_DISBLED', false),
 
     'challenge_time'        => 300,  // 5 min
     'challenge_expires_at'  => 335,  // 5m 35s; challenge_time + fudge factor

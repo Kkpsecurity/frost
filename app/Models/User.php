@@ -2,32 +2,33 @@
 
 namespace App\Models;
 
-use Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 #use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-#use Laravel\Sanctum\HasApiTokens;
-use Laravel\Scout\Searchable;
 
+use Carbon\Carbon;
+use Laravel\Scout\Searchable;
 use Lab404\Impersonate\Models\Impersonate;
 
-use RCache;
-use App\Models\InstLicense;
+use App\Services\RCache;
+
 use App\Models\Role;
-use App\Models\UserBrowser;
 use App\Models\UserPref;
-use App\Models\Traits\User\CourseAuthsTrait;
+use App\Models\InstLicense;
+use App\Models\UserBrowser;
 use App\Models\Traits\User\ExamsTrait;
 use App\Models\Traits\User\RolesTrait;
-use App\Models\Traits\User\UserBrowserTrait;
 use App\Models\Traits\User\UserPrefsTrait;
-use App\Presenters\PresentsTimeStamps;
+use App\Models\Traits\User\CourseAuthsTrait;
+use App\Models\Traits\User\UserBrowserTrait;
+
+use App\Casts\JSONCast;
+use App\Helpers\TextTk;
+// use App\Traits\Observable; // Temporarily disabled - missing observer
 use App\Traits\AvatarTrait;
-use KKP\Laravel\Casts\JSONCast;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\TextTk;
+use App\Traits\PgTimestamps;
+use App\Presenters\PresentsTimeStamps;
 
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -35,18 +36,18 @@ class User extends Authenticatable implements MustVerifyEmail
 
     #use HasApiTokens, HasFactory;
 
-    use Notifiable, Observable;
+    use Notifiable; // Observable temporarily disabled
     use PgTimestamps, PresentsTimeStamps;
     use CourseAuthsTrait, ExamsTrait, RolesTrait, UserBrowserTrait, UserPrefsTrait;
     use AvatarTrait, Searchable, Impersonate;
 
+    const SEARCHABLE_FIELDS = ['id', 'email', 'fname', 'lname'];
 
     protected $table = 'users';
     protected $primaryKey = 'id';
     public $timestamps = true;
 
     protected $casts = [
-
         'id' => 'integer',
 
         'is_active' => 'boolean',
@@ -59,9 +60,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'email' => 'string',
         // 255
 
-        'created_at' => 'timestamp',
-        'updated_at' => 'timestamp',
-        'email_verified_at' => 'timestamp',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'email_verified_at' => 'datetime',
 
         'password' => 'string',
         // 100
@@ -73,13 +74,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
         'student_info' => JSONCast::class,
         #'student_info'      => 'array',
-		
-		'email_opt_in' => 'boolean',
 
+        'email_opt_in' => 'boolean',
     ];
 
     protected $fillable = [
-
         'lname',
         'fname',
         'email',
@@ -88,9 +87,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'use_gravatar',
         'student_info',
-
     ];
-
 
     // public $dates = [
     //     'created_at',
@@ -99,36 +96,34 @@ class User extends Authenticatable implements MustVerifyEmail
     // ];
 
 
-    protected $attributes = [
 
+    protected $attributes = [
         'is_active' => true,
         'role_id' => 5, // default: student
-		'email_opt_in' => false,
-
+        'email_opt_in' => false,
     ];
 
     protected $guarded = [
-
         'id',
         'is_active',
         'role_id',
         'zoom_creds_id',
-
     ];
 
     protected $hidden = [
-
         'email_verified_at',
         'password',
         'remember_token',
-
     ];
-
-
 
     public function fullname()
     {
         return "{$this->fname} {$this->lname}";
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->fullname();
     }
 
     public function __toString()
@@ -136,11 +131,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->fullname();
     }
 
-
     //
     // external package requirements
     //
-
 
     public function canImpersonate()
     {
@@ -148,18 +141,19 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
 
-    const SEARCHABLE_FIELDS = ['id', 'email', 'fname', 'lname'];
-
     public function toSearchableArray()
     {
-        return $this->only(self::SEARCHABLE_FIELDS);
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'fname' => $this->fname,
+            'lname' => $this->lname,
+        ];
     }
-
 
     //
     // relationships
     //
-
 
     public function CourseAuths()
     {
@@ -186,11 +180,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(UserPref::class, 'user_id');
     }
 
-
     //
     // incoming data filters
     //
-
 
     public function setLnameAttribute($value)
     {
@@ -207,27 +199,24 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->attributes['email'] = TextTk::Sanitize($value);
     }
 
-
     //
     // cache queries
     //
-
 
     public function GetRole(): Role
     {
         return RCache::Roles($this->role_id);
     }
 
-
     //
     // email
     //
-
 
     public function hasDLicense(): bool
     {
         return false;
     }
+
     public function hasGLicense(): bool
     {
         return false;
@@ -242,5 +231,13 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-
+    /**
+     * Determine if the model should be searchable.
+     *
+     * @return bool
+     */
+    public function shouldBeSearchable()
+    {
+        return $this->is_active; // Only index active users
+    }
 }

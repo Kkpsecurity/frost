@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Classes\Redirectors;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
-use App\Classes\Redirectors\RedirectorTrait;
+use App\Traits\RedirectorTrait;
 
 
 class ExamRedirector
@@ -24,11 +25,10 @@ class ExamRedirector
     ];
 
 
-    public static function handle() : void
+    public static function handle(): void
     {
 
-        if ( ! self::ShouldContinue() )
-        {
+        if (! self::ShouldContinue()) {
             return;
         }
 
@@ -36,11 +36,8 @@ class ExamRedirector
         // ActiveExamAuth() handles expiration
         //
 
-        if ( $ExamAuth = Auth::user()->ActiveExamAuth() )
-        {
-            self::Redirect( $ExamAuth );
+        if ($ExamAuth = Auth::user()->ActiveExamAuth()) {
+            self::Redirect($ExamAuth);
         }
-
     }
-
 }

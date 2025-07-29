@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace App\Models\Traits\InstLesson;
 
-use App;
+use App\Services\RCache;
 use Illuminate\Support\Carbon;
-
-use RCache;
 
 
 trait InstCanClose

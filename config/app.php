@@ -185,12 +185,12 @@ return [
         /*
          * Package Service Providers...
          */
-        Laravel\Scout\ScoutServiceProvider::class,
-        TeamTNT\Scout\TNTSearchScoutServiceProvider::class,
-        Cmgmyr\Messenger\MessengerServiceProvider::class,
-        MacsiDigital\Zoom\Providers\ZoomServiceProvider::class,
-        Artesaos\SEOTools\Providers\SEOToolsServiceProvider::class,
-        Lab404\Impersonate\ImpersonateServiceProvider::class,
+        // Laravel\Scout\ScoutServiceProvider::class,
+        // TeamTNT\Scout\TNTSearchScoutServiceProvider::class,
+        // Cmgmyr\Messenger\MessengerServiceProvider::class,
+        // MacsiDigital\Zoom\Providers\ZoomServiceProvider::class,
+        // Artesaos\SEOTools\Providers\SEOToolsServiceProvider::class,
+        // Lab404\Impersonate\ImpersonateServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -198,24 +198,23 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
-        App\Providers\BladeServiceProvider::class,
-        App\Providers\ComposerServiceProvider::class,
+        // App\Providers\BladeServiceProvider::class,
+        // App\Providers\ComposerServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
         /*
          * Application-specific
          */
-        KKP\Laravel\ServiceProviders\CollectionMacroServiceProvider::class,
-        KKP\Laravel\ServiceProviders\JSDataServiceProvider::class,
+        // KKP\Laravel\ServiceProviders\CollectionMacroServiceProvider::class,
+        // KKP\Laravel\ServiceProviders\JSDataServiceProvider::class,
 
-        App\Providers\KeymasterServiceProvider::class,
-        App\Providers\KKPS3ServiceProvider::class,
+        // App\Providers\KeymasterServiceProvider::class,
+        // App\Providers\KKPS3ServiceProvider::class,
 
         // last
-        App\Providers\RCacheServiceProvider::class,
-        App\RCacheWarmer::class,
-
+        // App\Providers\RCacheServiceProvider::class,
+        // App\RCacheWarmer::class,
 
     ],
 
@@ -238,27 +237,26 @@ return [
          * Misc Added Packages
          */
 
-        'Debugbar'      => Barryvdh\Debugbar\Facade::class,
-        'Form'          => Collective\Html\FormFacade::class,
-        'Html'          => Collective\Html\HtmlFacade::class,
+        // 'Debugbar'      => Barryvdh\Debugbar\Facade::class,
+        // 'Form'          => Collective\Html\FormFacade::class,
+        // 'Html'          => Collective\Html\HtmlFacade::class,
 
 
         /*
          * Application-specific
          */
 
-        'SEO'               => Artesaos\SEOTools\Facades\SEOTools::class,
-        'Zoom'              => MacsiDigital\Zoom\Facades\Zoom::class,
+        // 'SEO'               => Artesaos\SEOTools\Facades\SEOTools::class,
+        // 'Zoom'              => MacsiDigital\Zoom\Facades\Zoom::class,
 
-        'RCache'            => App\RCache::class,
-        'Helpers'           => App\Helpers\Helpers::class,
-        'KKPS3'             => App\Classes\KKPS3::class,
+        // 'RCache'            => App\RCache::class,
+        // 'Helpers'           => App\Helpers\Helpers::class,
+        // 'KKPS3'             => App\Classes\KKPS3::class,
 
-        'JSData'            => KKP\Laravel\JSData::class,
-        'PgTk'              => KKP\Laravel\PgTk::class,
-        'TextTk'            => KKP\TextTk::class,
+        // 'JSData'            => KKP\Laravel\JSData::class,
+        // 'PgTk'              => KKP\Laravel\PgTk::class,
+        // 'TextTk'            => KKP\TextTk::class,
 
     ])->toArray(),
-
 
 ];

@@ -2,30 +2,40 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
+/**
+ * @file CourseAuth.php
+ * @brief Model for course_auths table.
+ * @details This model represents course authorizations, including attributes like user ID, course ID, and various timestamps.
+ * It provides methods for managing course authorizations and retrieving related data.
+ */
 
-use RCache;
+use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Model;
+
+use App\Services\RCache;
+
 use App\Models\User;
 use App\Models\Order;
 use KKP\Laravel\PgTk;
 use App\Models\Course;
 use App\Models\ExamAuth;
 use App\Models\RangeDate;
-use App\Models\StudentUnit;
 use App\Models\Validation;
-use App\Traits\ExpirationTrait;
+use App\Models\StudentUnit;
 use App\Models\SelfStudyLesson;
-use App\Models\Traits\CourseAuth\ClassroomButton;
-use App\Models\Traits\CourseAuth\ClassroomCourseDate;
+
 use App\Models\Traits\CourseAuth\ExamsTrait;
-use App\Models\Traits\CourseAuth\LastInstructor;
 use App\Models\Traits\CourseAuth\LessonsTrait;
+use App\Models\Traits\CourseAuth\LastInstructor;
+use App\Models\Traits\CourseAuth\ClassroomButton;
 use App\Models\Traits\CourseAuth\SetStartDateTrait;
-use App\Presenters\CourseAuthPresenter;
+use App\Models\Traits\CourseAuth\ClassroomCourseDate;
+
+use App\Traits\NoString;
+use App\Traits\PgTimestamps;
+use App\Traits\ExpirationTrait;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\Laravel\ModelTraits\NoString;
+use App\Presenters\CourseAuthPresenter;
 
 
 class CourseAuth extends Model
@@ -95,47 +105,47 @@ class CourseAuth extends Model
 
     public function Course()
     {
-        return $this->belongsTo( Course::class, 'course_id' );
+        return $this->belongsTo(Course::class, 'course_id');
     }
 
     public function ExamAuths()
     {
-        return $this->hasMany( ExamAuth::class, 'course_auth_id' );
+        return $this->hasMany(ExamAuth::class, 'course_auth_id');
     }
 
     public function Order()
     {
-        return $this->hasOne( Order::class, 'course_auth_id' );
+        return $this->hasOne(Order::class, 'course_auth_id');
     }
 
     public function RangeDate()
     {
-        return $this->belongsTo( RangeDate::class, 'range_date_id' );
+        return $this->belongsTo(RangeDate::class, 'range_date_id');
     }
 
     public function SelfStudyLessons()
     {
-        return $this->hasMany( SelfStudyLesson::class, 'course_auth_id' );
+        return $this->hasMany(SelfStudyLesson::class, 'course_auth_id');
     }
 
     public function StudentUnits()
     {
-        return $this->hasMany( StudentUnit::class, 'course_auth_id' );
+        return $this->hasMany(StudentUnit::class, 'course_auth_id');
     }
 
     public function SubmittedBy()
     {
-        return $this->belongsTo( User::class, 'submitted_by' );
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 
     public function User()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function Validation()
     {
-        return $this->hasOne( Validation::class, 'course_auth_id' );
+        return $this->hasOne(Validation::class, 'course_auth_id');
     }
 
 
@@ -144,24 +154,24 @@ class CourseAuth extends Model
     //
 
 
-    public function GetCourse() : Course
+    public function GetCourse(): Course
     {
-        return RCache::Courses( $this->course_id );
+        return RCache::Courses($this->course_id);
     }
 
-    public function GetExamAdmin() : ?User
+    public function GetExamAdmin(): ?User
     {
-        return RCache::Admin( $this->exam_admin_id );
+        return RCache::Admin($this->exam_admin_id);
     }
 
-    public function GetSubmittedBy() : ?User
+    public function GetSubmittedBy(): ?User
     {
-        return RCache::Admin( $this->submitted_by );
+        return RCache::Admin($this->submitted_by);
     }
 
-    public function GetUser() : User
+    public function GetUser(): User
     {
-        return RCache::User( $this->user_id );
+        return RCache::User($this->user_id);
     }
 
 
@@ -170,49 +180,43 @@ class CourseAuth extends Model
     //
 
 
-    public function IsActive() : bool
+    public function IsActive(): bool
     {
 
-        if ( ! $this->start_date )
-        {
+        if (! $this->start_date) {
             return true;
         }
 
-        if ( $this->completed_at or $this->disabled_at )
-        {
+        if ($this->completed_at or $this->disabled_at) {
             return false;
         }
 
-        if ( $this->IsExpired() )
-        {
+        if ($this->IsExpired()) {
             return false;
         }
 
         return true;
-
     }
 
 
-    public function IsExpired() : bool
+    public function IsExpired(): bool
     {
 
-        if ( ! $this->expire_date )
-        {
+        if (! $this->expire_date) {
             return false;
         }
 
-        return Carbon::now()->gt( Carbon::parse( $this->expire_date ) );
-
+        return Carbon::now()->gt(Carbon::parse($this->expire_date));
     }
 
 
-    public function IsFailed() : bool
+    public function IsFailed(): bool
     {
-        return ( $this->completed_at && ! $this->is_passed );
+        return ($this->completed_at && ! $this->is_passed);
     }
 
 
-    public function MarkCompleted( bool $is_passed )
+    public function MarkCompleted(bool $is_passed)
     {
 
         $this->forceFill([
@@ -221,7 +225,6 @@ class CourseAuth extends Model
         ])->update();
 
         $this->refresh();
-
     }
 
 
@@ -235,5 +238,4 @@ class CourseAuth extends Model
 
     }
     */
-
 }

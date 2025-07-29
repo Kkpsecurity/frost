@@ -1,9 +1,14 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace App\Models\Traits\User;
 
-use Auth;
+/**
+ * @file UserPrefsTrait.php
+ * @brief Trait for managing user preferences.
+ * @details This trait provides methods to initialize, reload, get, set, and delete user preferences.
+ */
+
+use Illuminate\Support\Facades\Auth;
 
 use App\Models\UserPref;
 
@@ -15,22 +20,19 @@ trait UserPrefsTrait
     public static $user_prefs_session_key = 'user_prefs';
 
 
-    public function InitPrefs() : void
+    public function InitPrefs(): void
     {
 
-        if ( ! session( self::$user_prefs_session_key ) )
-        {
+        if (! session(self::$user_prefs_session_key)) {
             $this->ReloadPrefs();
         }
-
     }
 
 
-    public function ReloadPrefs() : void
+    public function ReloadPrefs(): void
     {
 
-        if ( Auth::id() != $this->id )
-        {
+        if (Auth::id() != $this->id) {
             return;
         }
 
@@ -39,21 +41,18 @@ trait UserPrefsTrait
         //
 
         session([
-            self::$user_prefs_session_key => UserPref::where( 'user_id', $this->id )->get()->pluck( 'pref_value', 'pref_name' )
+            self::$user_prefs_session_key => UserPref::where('user_id', $this->id)->get()->pluck('pref_value', 'pref_name')
         ]);
-
     }
 
 
-    public function GetPref( string $pref_name, $default = null )
+    public function GetPref(string $pref_name, $default = null)
     {
 
-        if ( Auth::id() == $this->id )
-        {
+        if (Auth::id() == $this->id) {
 
-            if ( session( self::$user_prefs_session_key ) )
-            {
-                return session( self::$user_prefs_session_key )->get( $pref_name )
+            if (session(self::$user_prefs_session_key)) {
+                return session(self::$user_prefs_session_key)->get($pref_name)
                     ?: $default;
             }
 
@@ -62,40 +61,38 @@ trait UserPrefsTrait
             //
 
             return $default;
-
         }
 
         //
         // attempt to retrieve from database
         //
 
-        if ( $value = UserPref::where( 'user_id', $this->id )->where( 'pref_name', $pref_name )->first() )
-        {
+        if ($value = UserPref::where('user_id', $this->id)->where('pref_name', $pref_name)->first()) {
             return $value;
         }
 
         return $default;
-
     }
 
 
-    public function SetPref( string $pref_name, $pref_value ) : void
+    public function SetPref(string $pref_name, $pref_value): void
     {
 
-        UserPref::updateOrCreate([
-            'user_id'    => $this->id,
-            'pref_name'  => $pref_name
-        ],
-        [
-            'pref_value' => $pref_value,
-        ]);
+        UserPref::updateOrCreate(
+            [
+                'user_id'    => $this->id,
+                'pref_name'  => $pref_name
+            ],
+            [
+                'pref_value' => $pref_value,
+            ]
+        );
 
         $this->ReloadPrefs();
-
     }
 
 
-    public function DeletePref( string $pref_name ) : void
+    public function DeletePref(string $pref_name): void
     {
 
         //
@@ -110,8 +107,5 @@ trait UserPrefsTrait
         ])->delete();
 
         $this->ReloadPrefs();
-
     }
-
-
 }

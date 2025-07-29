@@ -2,8 +2,14 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+/**
+ * @file CallRoute.php
+ * @brief Command to call a route from the CLI.
+ * @details This command allows you to call a specific route by providing its URI as an argument.
+ */
+
 use Illuminate\Http\Request;
+use Illuminate\Console\Command;
 
 
 class CallRoute extends Command
@@ -19,8 +25,7 @@ class CallRoute extends Command
 
     public function handle()
     {
-        $Request = Request::create( $this->argument( 'uri' ), 'GET' );
-        $this->info( app()['Illuminate\Contracts\Http\Kernel']->handle( $Request ) );
+        $Request = Request::create($this->argument('uri'), 'GET');
+        $this->info(app()['Illuminate\Contracts\Http\Kernel']->handle($Request));
     }
-
 }

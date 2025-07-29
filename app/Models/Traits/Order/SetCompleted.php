@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\Order;
@@ -10,17 +11,15 @@ trait SetCompleted
 {
 
 
-    public function SetCompleted() : void
+    public function SetCompleted(): void
     {
 
-        if ( $this->completed_at )
-        {
-            logger( "OrderID {$this->id} already completed." );
+        if ($this->completed_at) {
+            logger("OrderID {$this->id} already completed.");
             return;
         }
 
-        if ( ! $this->course_auth_id )
-        {
+        if (! $this->course_auth_id) {
 
             $CourseAuth = CourseAuth::create([
 
@@ -30,14 +29,10 @@ trait SetCompleted
             ]);
 
             $this->course_auth_id = $CourseAuth->id;
-
         }
 
         $this->completed_at = $this->freshTimestamp();
         $this->save();
         $this->refresh();
-
     }
-
-
 }

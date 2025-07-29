@@ -2,18 +2,27 @@
 
 namespace App\Models;
 
-use DB;
+/**
+ * @file CourseUnit.php
+ * @brief Model for course_units table.
+ * @details This model represents a course unit, including attributes like title, ordering, and associated lessons.
+ * It provides methods for managing course units and retrieving related data.
+ */
+
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
-use App\RCache\RCacheModelTrait;
+use DB;
+
+use App\Services\RCache;
 
 use App\Models\Course;
-use App\Models\CourseUnitLesson;
 use App\Models\Lesson;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\TextTk;
+use App\Models\CourseUnitLesson;
+
+use App\Helpers\TextTk;
+use App\Traits\Observable;
+use App\Traits\RCacheModelTrait;
 
 
 class CourseUnit extends Model
@@ -39,9 +48,12 @@ class CourseUnit extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
-    public function __toString() { return "{$this->title}"; }
+    public function __toString()
+    {
+        return "{$this->title}";
+    }
 
 
     //
@@ -51,19 +63,19 @@ class CourseUnit extends Model
 
     public function Course()
     {
-        return $this->belongsTo( Course::class, 'course_id' );
+        return $this->belongsTo(Course::class, 'course_id');
     }
 
     public function CourseUnitLessons()
     {
-        return $this->hasMany( CourseUnitLesson::class, 'course_unit_id' );
+        return $this->hasMany(CourseUnitLesson::class, 'course_unit_id');
     }
 
     public function Lessons()
     {
-        return $this->belongsToMany( Lesson::class, 'course_unit_lessons', 'course_unit_id', 'lesson_id' )
-                            ->using( CourseUnitLesson::class )
-                          ->orderBy( 'ordering' );
+        return $this->belongsToMany(Lesson::class, 'course_unit_lessons', 'course_unit_id', 'lesson_id')
+            ->using(CourseUnitLesson::class)
+            ->orderBy('ordering');
     }
 
 
@@ -72,14 +84,14 @@ class CourseUnit extends Model
     //
 
 
-    public function setTitleAttribute( $value )
+    public function setTitleAttribute($value)
     {
-        $this->attributes[ 'title' ] = TextTk::Sanitize( $value );
+        $this->attributes['title'] = TextTk::Sanitize($value);
     }
 
-    public function setAdminTitleAttribute( $value )
+    public function setAdminTitleAttribute($value)
     {
-        $this->attributes[ 'admin_title' ] = TextTk::Sanitize( $value );
+        $this->attributes['admin_title'] = TextTk::Sanitize($value);
     }
 
 
@@ -88,19 +100,19 @@ class CourseUnit extends Model
     //
 
 
-    public function GetCourse() : Course
+    public function GetCourse(): Course
     {
-        return RCache::Courses( $this->course_id );
+        return RCache::Courses($this->course_id);
     }
 
-    public function GetCourseUnitLessons() : Collection
+    public function GetCourseUnitLessons(): Collection
     {
-        return RCache::CourseUnit_CourseUnitLessons( $this );
+        return RCache::CourseUnit_CourseUnitLessons($this);
     }
 
-    public function GetLessons() : Collection
+    public function GetLessons(): Collection
     {
-        return RCache::CourseUnit_Lessons( $this );
+        return RCache::CourseUnit_Lessons($this);
     }
 
 
@@ -109,19 +121,17 @@ class CourseUnit extends Model
     //
 
 
-    public function LongTitle() : string
+    public function LongTitle(): string
     {
-        return preg_replace( '/ \(.*/', '', $this->GetCourse()->title_long )
-               . " - {$this->title}";
+        return preg_replace('/ \(.*/', '', $this->GetCourse()->title_long)
+            . " - {$this->title}";
     }
 
 
-    public function TotalMinutes() : int
+    public function TotalMinutes(): int
     {
-        return DB::table( 'course_unit_lessons' )
-                 ->where( 'course_unit_id', $this->id )
-                   ->sum( 'progress_minutes' );
+        return DB::table('course_unit_lessons')
+            ->where('course_unit_id', $this->id)
+            ->sum('progress_minutes');
     }
-
-
 }

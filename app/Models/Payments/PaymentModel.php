@@ -2,15 +2,34 @@
 
 namespace App\Models\Payments;
 
-use stdClass;
+/**
+ * PaymentModel
+ *
+ * @property int $id
+ * @property int $order_id
+ * @property string $uuid
+ * @property float $total_price
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $completed_at
+ * @property \Carbon\Carbon|null $refunded_at
+ * @property int|null $refunded_by
+ */
+
+
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
-use App\Models\Order;
+use stdClass;
+
+use App\Services\RCache;
+
 use App\Models\User;
+use App\Models\Order;
+
+use App\Traits\NoString;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\PgTimestamps;
+
 
 
 class PaymentModel extends Model
@@ -23,7 +42,7 @@ class PaymentModel extends Model
     protected $primaryKey   = 'id';
     public    $timestamps   = true;
 
-    protected $guarded      = [ 'id', 'uuid' ];
+    protected $guarded      = ['id', 'uuid'];
 
 
     //
@@ -33,12 +52,12 @@ class PaymentModel extends Model
 
     public function Order()
     {
-        return $this->belongsTo( Order::class, 'order_id' );
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     public function RefundedBy()
     {
-        return $this->belongsTo( User::class, 'refunded_by' );
+        return $this->belongsTo(User::class, 'refunded_by');
     }
 
 
@@ -47,17 +66,17 @@ class PaymentModel extends Model
     //
 
 
-    public function GetUser() : User
+    public function GetUser(): User
     {
         //
         // abort_unless( Auth::id() == [Payment]->GetUser()->id, 401 );
         //
-        return RCache::User( $this->Order->user_id );
+        return RCache::User($this->Order->user_id);
     }
 
-    public function GetRefundedBy() : ?User
+    public function GetRefundedBy(): ?User
     {
-        return RCache::Admin( $this->refunded_by );
+        return RCache::Admin($this->refunded_by);
     }
 
 
@@ -96,5 +115,4 @@ class PaymentModel extends Model
 
     }
     */
-
 }

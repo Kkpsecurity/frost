@@ -1,0 +1,85 @@
+/* Auth Button Styles */
+.login-button,
+.register-button {
+  color: #ffffff !important;
+  text-decoration: none;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-normal);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.login-button {
+  background-color: var(--secondary-color);
+  color: var(--primary-color) !important;
+  font-weight: 600;
+}
+
+.login-button:hover {
+  background-color: rgba(255, 215, 0, 0.9);
+  color: var(--primary-color) !important;
+  text-decoration: none;
+}
+
+.register-button:hover {
+  color: var(--header-text-hover) !important;
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+.button-text {
+  margin-left: var(--spacing-xs);
+}
+
+/* User Greeting Styles */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.header-user .user-greeting {
+  font-size: var(--font-size-xs);
+  color: var(--header-text);
+  margin-right: var(--spacing-sm);
+}
+
+.header-user .user-greeting .text-light {
+  font-weight: 500;
+}
+
+.header-user .user-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+}
+
+/* Updated User Actions */
+.header-user .user-actions .user-btn {
+  background: none;
+  border: none;
+  color: var(--header-text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: var(--spacing-xxs);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-normal);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.header-user .user-actions .user-btn:hover {
+  color: var(--header-text-hover);
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}

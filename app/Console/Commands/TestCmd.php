@@ -1,16 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
+/**
+ * @file TestCmd.php
+ * @brief Command for testing purposes.
+ * @details This command is used to perform various test operations.
+ */
 
-use App\RCache;
-#use App\Models\CourseAuth;
-#use App\Models\DiscountCode;
-#use App\Models\SiteConfig;
-#use App\Models\User;
+use Illuminate\Support\Carbon;
+use Illuminate\Console\Command;
+
+use App\Servcies\RCache;
 
 
 
@@ -21,16 +24,14 @@ class TestCmd extends Command
     protected $description = 'TestCmd';
 
 
-    public function handle() : int
+    public function handle(): int
     {
 
 
         //
         // DNR
         //
-        $this->info( 'TestCmd completed successfully' );
+        $this->info('TestCmd completed successfully');
         return 0;
-
     }
-
 }

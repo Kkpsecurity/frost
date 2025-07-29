@@ -1,13 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use DB;
-use Illuminate\Console\Command;
+/**
+ * @file DOLReport.php
+ * @brief Command to generate DOL report for course auths.
+ * @details Lists course auths created within a specific date range and generates PDF records.
+ */
 
-use App\Classes\DOLRecords\DOLRecordPDF;
-use KKP\Laravel\PgTk;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+
+use App\Helpers\PgTk;
+use App\Classes\Frost\DOLRecordPDF;
 
 
 class DOLReport extends Command
@@ -17,12 +24,11 @@ class DOLReport extends Command
     protected $description = 'DOL Report';
 
 
-    public function handle() : int
+    public function handle(): int
     {
 
-        if ( app()->environment( 'production' ) )
-        {
-            $this->error( 'Refusing to run on production server' );
+        if (app()->environment('production')) {
+            $this->error('Refusing to run on production server');
             return 0;
         }
 
@@ -40,16 +46,12 @@ AND    course_auth_id NOT IN (
 SQL;
 
 
-        foreach ( PgTk::toSimple( DB::select( DB::raw( $sql ) ) ) as $course_auth_id )
-        {
-            $res = ( new DOLRecordPDF )->GenPDF( $course_auth_id );
-            $this->line( $res );
+        foreach (PgTk::toSimple(DB::select(DB::raw($sql))) as $course_auth_id) {
+            $res = (new DOLRecordPDF)->GenPDF($course_auth_id);
+            $this->line($res);
         }
 
 
         return 1;
-
     }
-
-
 }

@@ -1,12 +1,18 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+/**
+ * @file UpdateDiscountCodeCount.php
+ * @brief Command for updating the count of a discount code.
+ * @details This command allows the user to update the maximum count of a discount code.
+ */
+
 use Illuminate\Console\Command;
 
-use App\RCache;
-use App\Models\DiscountCode;
+use App\Services\RCache;
 
 
 class UpdateDiscountCodeCount extends Command
@@ -16,20 +22,19 @@ class UpdateDiscountCodeCount extends Command
     protected $description = 'Update Discount Code Count';
 
 
-    public function handle() : int
+    public function handle(): int
     {
 
-        $DiscountCode = RCache::DiscountCodes( $this->argument( 'id' ) );
+        $DiscountCode = RCache::DiscountCodes($this->argument('id'));
 
-        if ( ! $DiscountCode->max_count )
-        {
-            $this->error( "This DiscountCode does not have a max_count" );
+        if (! $DiscountCode->max_count) {
+            $this->error("This DiscountCode does not have a max_count");
             return 1;
         }
 
-        $this->line( "Code:      {$DiscountCode->code}" );
-        $this->line( "Max Count: {$DiscountCode->max_count}" );
-        $this->line( "Client:    {$DiscountCode->client}" );
+        $this->line("Code:      {$DiscountCode->code}");
+        $this->line("Max Count: {$DiscountCode->max_count}");
+        $this->line("Client:    {$DiscountCode->client}");
 
         //
         //
@@ -38,17 +43,15 @@ class UpdateDiscountCodeCount extends Command
         $add_count = '';
 
         // 2024-10 allow negative value
-	while ( ! preg_match( '/^\-?\d+$/', $add_count ) )
-        {
-            $add_count = $this->ask( 'Add how many?' );
+        while (! preg_match('/^\-?\d+$/', $add_count)) {
+            $add_count = $this->ask('Add how many?');
         }
 
         $new_count = $DiscountCode->max_count + (int) $add_count;
 
-        $this->line( "New Max Count: {$new_count}" );
+        $this->line("New Max Count: {$new_count}");
 
-        if ( ! $this->confirm( 'Confirm?' ) )
-        {
+        if (! $this->confirm('Confirm?')) {
             return 1;
         }
 
@@ -58,10 +61,8 @@ class UpdateDiscountCodeCount extends Command
 
         $DiscountCode->max_count = $new_count;
         $DiscountCode->save();
-        $this->line( print_r( $DiscountCode->toArray(), true ) );
+        $this->line(print_r($DiscountCode->toArray(), true));
 
         return 0;
-
     }
-
 }

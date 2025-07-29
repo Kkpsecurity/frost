@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\CourseAuth;
@@ -10,7 +11,7 @@ trait ClassroomButton
 {
 
 
-    public function ClassroomButton() : bool
+    public function ClassroomButton(): bool
     {
 
         $allow_minutes_pre = 60;
@@ -20,8 +21,7 @@ trait ClassroomButton
         // CourseAuth is expired
         //
 
-        if ( $this->IsExpired() )
-        {
+        if ($this->IsExpired()) {
             return false;
         }
 
@@ -29,8 +29,7 @@ trait ClassroomButton
         // CourseAuth is completed or disabled
         //
 
-        if ( $this->completed_at or $this->disabled_at )
-        {
+        if ($this->completed_at or $this->disabled_at) {
             return false;
         }
 
@@ -40,8 +39,7 @@ trait ClassroomButton
         //   or admin has allowed Exam access
         //
 
-        if ( $this->start_date or $this->exam_admin_id )
-        {
+        if ($this->start_date or $this->exam_admin_id) {
             return true;
         }
 
@@ -51,8 +49,7 @@ trait ClassroomButton
         //   there is a live class in progress or about to start
         //
 
-        if ( $CourseDate = $this->ClassroomCourseDate() )
-        {
+        if ($CourseDate = $this->ClassroomCourseDate()) {
 
             /*
             if ( Carbon::now()->gt( Carbon::parse( $CourseDate->starts_at )->subMinutes( $allow_minutes_pre ) ) )
@@ -65,8 +62,7 @@ trait ClassroomButton
             }
             */
 
-            return Carbon::now()->gt( Carbon::parse( $CourseDate->starts_at )->subMinutes( $allow_minutes_pre ) );
-
+            return Carbon::now()->gt(Carbon::parse($CourseDate->starts_at)->subMinutes($allow_minutes_pre));
         }
 
 
@@ -75,8 +71,5 @@ trait ClassroomButton
         //
 
         return false;
-
     }
-
-
 }

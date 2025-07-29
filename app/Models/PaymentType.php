@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+/**
+ * @file PaymentType.php
+ * @brief Model for payment_types table.
+ * @details This model represents a payment type in the system, including attributes like name and relationships to orders.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Order;
-use KKP\Laravel\ModelTraits\StaticModel;
+use App\Traits\StaticModel;
 
 
 class PaymentType extends Model
@@ -34,10 +40,13 @@ class PaymentType extends Model
 
     ];
 
-    protected $fillable     = [ ];  // static model
+    protected $fillable     = [];  // static model
 
 
-    public function __toString() { return $this->name; }
+    public function __toString()
+    {
+        return $this->name;
+    }
 
 
     //
@@ -47,8 +56,6 @@ class PaymentType extends Model
 
     public function Orders()
     {
-        return $this->hasMany( Orders::class, 'payment_type_id' );
+        return $this->hasMany(Orders::class, 'payment_type_id');
     }
-
-
 }

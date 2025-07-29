@@ -2,13 +2,21 @@
 
 namespace App\Models;
 
+/**
+ * @file Validation.php
+ * @brief Model for validations table.
+ * @details This model represents a validation record for course authorizations and student units,
+ * including attributes like UUID, course authorization ID, student unit ID, status, ID type,
+ * and reject reason. It also provides methods for checking validation status and managing file paths.
+ */
+
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Helpers\TextTk;
+use App\Traits\NoString;
 use App\Models\CourseAuth;
 use App\Models\StudentUnit;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\TextTk;
 
 
 class Validation extends Model
@@ -37,9 +45,9 @@ class Validation extends Model
 
     ];
 
-    protected $guarded      = [ 'id', 'uuid' ];
+    protected $guarded      = ['id', 'uuid'];
 
-    protected $attributes   = [ 'status' => 0 ];
+    protected $attributes   = ['status' => 0];
 
 
     //
@@ -49,12 +57,12 @@ class Validation extends Model
 
     public function CourseAuth()
     {
-        return $this->belongsTo( CourseAuth::class, 'course_auth_id' );
+        return $this->belongsTo(CourseAuth::class, 'course_auth_id');
     }
 
     public function StudentUnit()
     {
-        return $this->belongsTo( StudentUnit::class, 'student_unit_id' );
+        return $this->belongsTo(StudentUnit::class, 'student_unit_id');
     }
 
 
@@ -63,14 +71,14 @@ class Validation extends Model
     //
 
 
-    public function setIdTypeAttribute( $value )
+    public function setIdTypeAttribute($value)
     {
-        $this->attributes[ 'id_type' ] = TextTk::Sanitize( $value );
+        $this->attributes['id_type'] = TextTk::Sanitize($value);
     }
 
-    public function setRejectReasonAttribute( $value )
+    public function setRejectReasonAttribute($value)
     {
-        $this->attributes[ 'reject_reason' ] = TextTk::Sanitize( $value );
+        $this->attributes['reject_reason'] = TextTk::Sanitize($value);
     }
 
 
@@ -79,30 +87,29 @@ class Validation extends Model
     //
 
 
-    public function IsChecked() : bool
+    public function IsChecked(): bool
     {
         return $this->status != 0;
     }
 
 
-    public function IsValid() : bool
+    public function IsValid(): bool
     {
         return $this->status > 0;
     }
 
 
-    public function IsRejected() : bool
+    public function IsRejected(): bool
     {
         return $this->status < 0;
     }
 
 
-    public function Accept( string $id_type = null ) : void
+    public function Accept(string $id_type = null): void
     {
 
-        if ( $this->course_auth_id && ! $id_type )
-        {
-            throw new \Exception( 'ID Cards require an id_type' );
+        if ($this->course_auth_id && ! $id_type) {
+            throw new \Exception('ID Cards require an id_type');
         }
 
         $this->update([
@@ -110,11 +117,10 @@ class Validation extends Model
             'id_type'       => $id_type,
             'reject_reason' => null,
         ]);
-
     }
 
 
-    public function Reject( string $reject_reason ) : void
+    public function Reject(string $reject_reason): void
     {
 
         $this->update([
@@ -122,7 +128,6 @@ class Validation extends Model
             'id_type'       => null,
             'reject_reason' => $reject_reason,
         ]);
-
     }
 
 
@@ -131,28 +136,25 @@ class Validation extends Model
     //
 
 
-    public function RelPath() : string
+    public function RelPath(): string
     {
         return self::PATH_PRE
-             . ( $this->course_auth_id ? '/idcards/' : '/headshots/' )
-             . $this->uuid . self::FILE_EXT;
+            . ($this->course_auth_id ? '/idcards/' : '/headshots/')
+            . $this->uuid . self::FILE_EXT;
     }
 
 
-    public function AbsPath() : string
+    public function AbsPath(): string
     {
-        return storage_path( 'app/public/' . $this->RelPath() );
+        return storage_path('app/public/' . $this->RelPath());
     }
 
 
-    public function URL( bool $return_blank_img = false ) : ?string
+    public function URL(bool $return_blank_img = false): ?string
     {
 
-        return file_exists( $this->AbsPath() )
-                ? url( 'storage/' . $this->RelPath() )
-                : ( $return_blank_img ? url( 'storage/' . self::PATH_PRE . '/no-image.jpg' ) : null );
-
+        return file_exists($this->AbsPath())
+            ? url('storage/' . $this->RelPath())
+            : ($return_blank_img ? url('storage/' . self::PATH_PRE . '/no-image.jpg') : null);
     }
-
-
 }

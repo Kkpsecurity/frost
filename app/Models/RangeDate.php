@@ -2,13 +2,21 @@
 
 namespace App\Models;
 
+/**
+ * @file RangeDate.php
+ * @brief Model for range_dates table.
+ * @details This model represents a date range for a specific range, including attributes like start date,
+ * end date, price, and whether the range is active or requires an appointment.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
-use App\Models\CourseAuth;
 use App\Models\Range;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\TogglesBooleans;
-use KKP\TextTk;
+use App\Models\CourseAuth;
+
+use App\Helpers\TextTk;
+use App\Traits\NoString;
+use App\Traits\TogglesBooleans;
 
 
 class RangeDate extends Model
@@ -35,7 +43,7 @@ class RangeDate extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
     protected $attributes   = [
 
@@ -52,12 +60,12 @@ class RangeDate extends Model
 
     public function CourseAuths()
     {
-        return $this->hasMany( CourseAuth::class, 'range_date_id' );
+        return $this->hasMany(CourseAuth::class, 'range_date_id');
     }
 
     public function Range()
     {
-        return $this->belongsTo( Range::class, 'range_id' );
+        return $this->belongsTo(Range::class, 'range_id');
     }
 
 
@@ -66,9 +74,9 @@ class RangeDate extends Model
     //
 
 
-    public function setTimesAttribute( $value )
+    public function setTimesAttribute($value)
     {
-        $this->attributes[ 'times' ] = TextTk::Sanitize( $value );
+        $this->attributes['times'] = TextTk::Sanitize($value);
     }
 
 
@@ -78,28 +86,25 @@ class RangeDate extends Model
     //
 
 
-    public function StartDate( string $fmt = 'YYYY-MM-DD' ) : string
+    public function StartDate(string $fmt = 'YYYY-MM-DD'): string
     {
-        return $this->start_date->isoFormat( $fmt );
+        return $this->start_date->isoFormat($fmt);
     }
 
-    public function EndDate( string $fmt = 'YYYY-MM-DD' ) : string
+    public function EndDate(string $fmt = 'YYYY-MM-DD'): string
     {
-        return $this->end_date ? $this->end_date->isoFormat( $fmt ) : '';
+        return $this->end_date ? $this->end_date->isoFormat($fmt) : '';
     }
 
-    public function DateStr( string $fmt = 'ddd MMM DD YYYY' ) : string
+    public function DateStr(string $fmt = 'ddd MMM DD YYYY'): string
     {
 
-        if ( $this->appt_only )
-        {
+        if ($this->appt_only) {
             return 'By Appointment Only';
         }
 
         return $this->end_date
-                ? "{$this->StartDate( $fmt )} - {$this->EndDate( $fmt )}"
-                : $this->StartDate( $fmt );
+            ? "{$this->StartDate($fmt)} - {$this->EndDate($fmt)}"
+            : $this->StartDate($fmt);
     }
-
-
 }

@@ -1,19 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+/**
+ * @file Today.php
+ * @brief Command for displaying today's updates.
+ * @details This command is used to show updates or tasks scheduled for today.
+ */
 
-use RCache;
-#use App\Models\CourseAuth;
-#use App\Models\CourseDate;
-#use App\Models\User;
-#use App\Models\UserPref;
-use KKP\Laravel\PgTk;
+use Illuminate\Console\Command;
 
 
 class Today extends Command
@@ -23,13 +20,10 @@ class Today extends Command
     protected $description = 'Todays Updates';
 
 
-    public function handle() : int
+    public function handle(): int
     {
 
         // DNR
         return 0;
-
     }
-
-
 }

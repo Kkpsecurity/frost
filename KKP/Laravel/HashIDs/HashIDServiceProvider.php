@@ -14,16 +14,14 @@ class HashIDServiceProvider extends ServiceProvider
     public function register()
     {
 
-        Route::pattern( 'hash_id', '^\d*$' ); // only digits
+        Route::pattern('hash_id', '^\d*$'); // only digits
 
-        Route::bind( 'hash_id', function( $hash_id ) {
-            return HashID::decode( $hash_id );
+        Route::bind('hash_id', function ($hash_id) {
+            return HashID::decode($hash_id);
         });
 
-        $this->app->singleton( 'HashID', function ( $app ) {
+        $this->app->singleton('HashID', function ($app) {
             return new HashID;
         });
-
     }
-
 }

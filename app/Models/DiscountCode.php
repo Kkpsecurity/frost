@@ -2,23 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
+/**
+ * @file DiscountCode.php
+ * @brief Model for discount_codes table.
+ * @details This model represents discount codes, including attributes like code, expiration, and associated courses.
+ * It provides methods for managing discount codes and retrieving related data.
+ */
+
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Model;
 
+use App\Services\RCache;
 
-use RCache;
-use App\RCache\RCacheModelTrait;
-
-use App\Models\Course;
 use App\Models\Order;
-#use App\Presenters\DiscountCodePresenter;
-use App\Presenters\PresentsTimeStamps;
+use App\Models\Course;
+
+use App\Helpers\TextTk;
+use App\Traits\NoString;
+use App\Traits\Observable;
+use App\Traits\PgTimestamps;
 use App\Traits\ExpirationTrait;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\TextTk;
+use App\Traits\RCacheModelTrait;
+use App\Presenters\PresentsTimeStamps;
+#use App\Presenters\DiscountCodePresenter;
 
 
 class DiscountCode extends Model
@@ -52,7 +59,7 @@ class DiscountCode extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
 
     //
@@ -62,12 +69,12 @@ class DiscountCode extends Model
 
     public function Course()
     {
-        return $this->belongsTo( Course::class, 'course_id' );
+        return $this->belongsTo(Course::class, 'course_id');
     }
 
     public function Orders()
     {
-        return $this->hasMany( Order::class, 'discount_code_id' );
+        return $this->hasMany(Order::class, 'discount_code_id');
     }
 
 
@@ -76,22 +83,22 @@ class DiscountCode extends Model
     //
 
 
-    public function setCodeAttribute( $value )
+    public function setCodeAttribute($value)
     {
-        $this->attributes[ 'code' ] = TextTk::Sanitize( $value );
+        $this->attributes['code'] = TextTk::Sanitize($value);
     }
 
-    public function setExpiresAtAttribute( $value )
+    public function setExpiresAtAttribute($value)
     {
         //
         // convert raw date to EST
         //
-        if ( $value ) $this->attributes[ 'expires_at' ] = Carbon::parse( $value, 'America/New_York' )->tz( 'UTC' );
+        if ($value) $this->attributes['expires_at'] = Carbon::parse($value, 'America/New_York')->tz('UTC');
     }
 
-    public function setClientAttribute( $value )
+    public function setClientAttribute($value)
     {
-        $this->attributes[ 'client' ] = TextTk::Sanitize( $value );
+        $this->attributes['client'] = TextTk::Sanitize($value);
     }
 
 
@@ -100,9 +107,9 @@ class DiscountCode extends Model
     //
 
 
-    public function GetCourse() : ?Course
+    public function GetCourse(): ?Course
     {
-        return ( $this->course_id ? RCache::Courses( $this->course_id ) : null );
+        return ($this->course_id ? RCache::Courses($this->course_id) : null);
     }
 
 
@@ -111,18 +118,16 @@ class DiscountCode extends Model
     //
 
 
-    public function AppliesFree() : bool
+    public function AppliesFree(): bool
     {
-        return ( $this->set_price === '0.00' );
+        return ($this->set_price === '0.00');
     }
 
 
-    public function TimesUsed() : int
+    public function TimesUsed(): int
     {
-        return Order::where( 'discount_code_id', $this->id )
-             ->whereNotNull( 'completed_at' )
-                    ->count();
+        return Order::where('discount_code_id', $this->id)
+            ->whereNotNull('completed_at')
+            ->count();
     }
-
-
 }

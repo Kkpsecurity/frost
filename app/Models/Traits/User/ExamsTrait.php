@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\User;
@@ -10,23 +11,17 @@ trait ExamsTrait
 {
 
 
-    public function ActiveExamAuth() : ?ExamAuth
+    public function ActiveExamAuth(): ?ExamAuth
     {
 
-        foreach ( $this->ActiveCourseAuths as $CourseAuth )
-        {
+        foreach ($this->ActiveCourseAuths as $CourseAuth) {
 
             // ActiveExamAuth() handles expiration
-            if ( $ExamAuth = $CourseAuth->ActiveExamAuth() )
-            {
+            if ($ExamAuth = $CourseAuth->ActiveExamAuth()) {
                 return $ExamAuth;
             }
-
         }
 
         return null;
-
     }
-
-
 }

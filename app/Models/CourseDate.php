@@ -2,17 +2,26 @@
 
 namespace App\Models;
 
+/**
+ * @file CourseDate.php
+ * @brief Model for course_dates table.
+ * @details This model represents course dates, including attributes like start and end times, and associated course units.
+ * It provides methods for managing course dates and retrieving related data.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
+use App\Services\RCache;
+
 use App\Models\Course;
-use App\Models\CourseUnit;
 use App\Models\InstUnit;
+use App\Models\CourseUnit;
 use App\Models\StudentUnit;
+
+use App\Traits\NoString;
+use App\Traits\PgTimestamps;
+use App\Traits\ResetsSequence;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\Laravel\ModelTraits\ResetsSequence;
 
 
 class CourseDate extends Model
@@ -36,7 +45,7 @@ class CourseDate extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
 
     //
@@ -46,17 +55,17 @@ class CourseDate extends Model
 
     public function CourseUnit()
     {
-        return $this->belongsTo( CourseUnit::class, 'course_unit_id' );
+        return $this->belongsTo(CourseUnit::class, 'course_unit_id');
     }
 
     public function InstUnit()
     {
-        return $this->hasOne( InstUnit::class, 'course_date_id' );
+        return $this->hasOne(InstUnit::class, 'course_date_id');
     }
 
     public function StudentUnits()
     {
-        return $this->hasMany( StudentUnit::class, 'course_date_id' );
+        return $this->hasMany(StudentUnit::class, 'course_date_id');
     }
 
 
@@ -65,14 +74,14 @@ class CourseDate extends Model
     //
 
 
-    public function GetCourse() : Course
+    public function GetCourse(): Course
     {
-        return RCache::Courses( $this->GetCourseUnit()->course_id );
+        return RCache::Courses($this->GetCourseUnit()->course_id);
     }
 
-    public function GetCourseUnit() : CourseUnit
+    public function GetCourseUnit(): CourseUnit
     {
-        return RCache::CourseUnits( $this->course_unit_id );
+        return RCache::CourseUnits($this->course_unit_id);
     }
 
 
@@ -81,11 +90,10 @@ class CourseDate extends Model
     //
 
 
-    public function CalendarTitle() : string
+    public function CalendarTitle(): string
     {
         return $this->GetCourse()->ShortTitle()
-             . ' '
-             . $this->GetCourseUnit()->title;
+            . ' '
+            . $this->GetCourseUnit()->title;
     }
-
 }

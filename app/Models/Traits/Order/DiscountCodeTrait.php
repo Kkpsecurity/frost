@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\Order;
 
-use RCache;
+use App\Services\RCache;
 use App\Models\DiscountCode;
 
 
@@ -11,16 +12,14 @@ trait DiscountCodeTrait
 {
 
 
-    public function ApplyDiscountCode( string $code ) : ?string
+    public function ApplyDiscountCode(string $code): ?string
     {
 
-        if ( ! $DiscountCode = $this->FindDiscountCode( $code ) )
-        {
+        if (! $DiscountCode = $this->FindDiscountCode($code)) {
             return 'Unknown Discount Code';
         }
 
-        if ( $error = $this->ValidateDiscountCode( $DiscountCode ) )
-        {
+        if ($error = $this->ValidateDiscountCode($DiscountCode)) {
             return $error;
         }
 
@@ -29,7 +28,7 @@ trait DiscountCodeTrait
         // apply Discount Code
         //
 
-        $this->update([ 'discount_code_id' => $DiscountCode->id ]);
+        $this->update(['discount_code_id' => $DiscountCode->id]);
         $this->_CalcPrice();
 
 
@@ -37,9 +36,8 @@ trait DiscountCodeTrait
         // apply discounted price to all payments
         //
 
-        foreach ( $this->AllPayments() as $Payment )
-        {
-            $Payment->update([ 'total_price' => $this->total_price ]);
+        foreach ($this->AllPayments() as $Payment) {
+            $Payment->update(['total_price' => $this->total_price]);
         }
 
 
@@ -48,47 +46,37 @@ trait DiscountCodeTrait
         //
 
         return null;
-
     }
 
 
-    public function FindDiscountCode( string $code ) : ?DiscountCode
+    public function FindDiscountCode(string $code): ?DiscountCode
     {
 
-        foreach ( RCache::DiscountCodes() as $DiscountCode )
-        {
-            if ( strtolower( $code ) === strtolower( $DiscountCode->code ) )
-            {
+        foreach (RCache::DiscountCodes() as $DiscountCode) {
+            if (strtolower($code) === strtolower($DiscountCode->code)) {
                 return $DiscountCode;
             }
         }
 
         return null;
-
     }
 
 
-    public function ValidateDiscountCode( DiscountCode $DiscountCode ) : ?string
+    public function ValidateDiscountCode(DiscountCode $DiscountCode): ?string
     {
 
-        if ( $DiscountCode->course_id && $DiscountCode->course_id != $this->course_id )
-        {
+        if ($DiscountCode->course_id && $DiscountCode->course_id != $this->course_id) {
             return 'Discount Code Does Not Apply';
         }
 
-        if ( $DiscountCode->IsExpired() )
-        {
+        if ($DiscountCode->IsExpired()) {
             return 'Discount Code Expired';
         }
 
-        if ( $DiscountCode->max_count && $DiscountCode->max_count <= $DiscountCode->TimesUsed() )
-        {
+        if ($DiscountCode->max_count && $DiscountCode->max_count <= $DiscountCode->TimesUsed()) {
             return 'Discount Code Usage Limit Exceeded';
         }
 
         return null;
-
     }
-
-
 }

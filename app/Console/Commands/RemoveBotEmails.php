@@ -3,10 +3,19 @@
 
 namespace App\Console\Commands;
 
+/**
+ * @file RemoveBotEmails.php
+ * @brief Command to remove bot emails older than 10 days and save them to a blacklist file.
+ * @details This command identifies bot emails based on a specific pattern, checks their age,
+ *          and removes them from the database while saving them to a blacklist file.
+ */
+
 use Illuminate\Console\Command;
-use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
+
+
+use Carbon\Carbon;
+use App\Models\User;
 
 class RemoveBotEmails extends Command
 {
@@ -27,9 +36,9 @@ class RemoveBotEmails extends Command
 
         // Build the query
         $botUsers = User::where('email', '~', $pattern)
-                        ->where('created_at', '<', $dateThreshold)
-                        ->whereDoesntHave('courseAuths')
-                        ->get();
+            ->where('created_at', '<', $dateThreshold)
+            ->whereDoesntHave('courseAuths')
+            ->get();
 
         // Display the emails for confirmation
         $this->info('Found bot emails:');
@@ -50,5 +59,3 @@ class RemoveBotEmails extends Command
         }
     }
 }
-
-

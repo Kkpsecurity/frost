@@ -1,13 +1,21 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+/**
+ * @file CreateDiscountCode.php
+ * @brief Command to create a discount code.
+ * @details This command allows the creation of a discount code with various parameters such as course, price, and client.
+ */
+
 use Illuminate\Console\Command;
 
-use App\RCache;
+use App\Services\RCache;
+
+use App\Helpers\PgTk;
 use App\Models\DiscountCode;
-use KKP\Laravel\PgTk;
 
 
 class CreateDiscountCode extends Command
@@ -17,25 +25,22 @@ class CreateDiscountCode extends Command
     protected $description = 'Create Discount Code';
 
 
-    public function handle() : int
+    public function handle(): int
     {
 
-        $code = ''; while ( ! $code )
-        {
-            $code = $this->ask( 'Code (required)' );
+        $code = '';
+        while (! $code) {
+            $code = $this->ask('Code (required)');
         }
 
-        if ( $DiscountCode = DiscountCode::firstWhere( 'code', $code ) )
-        {
+        if ($DiscountCode = DiscountCode::firstWhere('code', $code)) {
 
-            if ( ! $this->confirm( 'Delete existing DiscountCode?' ) )
-            {
+            if (! $this->confirm('Delete existing DiscountCode?')) {
                 return 1;
             }
 
             $DiscountCode->delete();
-            $this->info( 'Deleted existing DiscountCode' );
-
+            $this->info('Deleted existing DiscountCode');
         }
 
         //
@@ -44,24 +49,24 @@ class CreateDiscountCode extends Command
 
         $course_title = $this->choice(
             'Course',
-            RCache::Courses()->where( 'is_active', true )->pluck( 'title', 'id' )->toArray()
+            RCache::Courses()->where('is_active', true)->pluck('title', 'id')->toArray()
         );
         // this is dumb
-        $course_id = RCache::Courses()->firstWhere( 'title' , $course_title )->id;
+        $course_id = RCache::Courses()->firstWhere('title', $course_title)->id;
 
         //
         //
         //
 
-        $set_price = $this->ask( 'Price (opt)' );
+        $set_price = $this->ask('Price (opt)');
 
-        $percent   = is_null( $set_price )
-                        ? $this->ask( 'Percent (opt)' )
-                        : null;
+        $percent   = is_null($set_price)
+            ? $this->ask('Percent (opt)')
+            : null;
 
-        $max_count = $this->ask( 'Max Count (opt)' );
+        $max_count = $this->ask('Max Count (opt)');
 
-        $client    = $this->ask( 'Client (opt)'    );
+        $client    = $this->ask('Client (opt)');
 
         //
         //
@@ -78,13 +83,11 @@ class CreateDiscountCode extends Command
         ]);
 
 
-        $this->info( 'Created DiscountCode' );
-        $this->line( print_r( $DiscountCode->toArray(), true ) );
-        $this->line( route( 'discount_codes.usage', $DiscountCode ) );
-        $this->line( '' );
+        $this->info('Created DiscountCode');
+        $this->line(print_r($DiscountCode->toArray(), true));
+        $this->line(route('discount_codes.usage', $DiscountCode));
+        $this->line('');
 
         return 0;
-
     }
-
 }

@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-use App\RCache;
+use App\Services\RCache;
 
 
 class RCacheServiceProvider extends ServiceProvider
@@ -12,7 +12,7 @@ class RCacheServiceProvider extends ServiceProvider
 
     public function register()
     {
-        $this->app->singleton( RCache::class, function( $app ) {
+        $this->app->singleton(RCache::class, function ($app) {
             return new RCache;
         });
     }
@@ -24,7 +24,6 @@ class RCacheServiceProvider extends ServiceProvider
 
     public function provides()
     {
-        return [ RCache::class ];
+        return [RCache::class];
     }
-
 }

@@ -1,36 +1,40 @@
-<div class="top_right_nav">
+<div class="header-user">
     @guest()
-        <a href="{{ url('login') }}" class="btn btn-sm btn-primary m-1 login-button" data-toggle="tooltip" data-placement="top"
-            title="Login">
-            <i class="fas fa-sign-in"></i> <span class="button-text">Login</span>
-        </a>
-        <a href="{{ url('register') }}" class="btn btn-sm btn-secondary m-1 register-button" data-toggle="tooltip"
-            data-placement="top" title="Register">
-            <i class="fas fa-lock"></i> <span class="button-text">Register</span>
-        </a>
+        <div class="user-actions">
+            <a href="{{ url('login') }}" class="nav-link login-button" data-toggle="tooltip" data-placement="top"
+                title="Login">
+                <i class="fas fa-sign-in"></i> <span class="button-text">Login</span>
+            </a>
+            <a href="{{ url('register') }}" class="nav-link register-button" data-toggle="tooltip"
+                data-placement="top" title="Register">
+                <i class="fas fa-lock"></i> <span class="button-text">Register</span>
+            </a>
+        </div>
     @endguest
 
-
     @auth()
-        <span class="user-profile text-white mr-2" style="margin-right: 10px;">Hello, {{ Auth::user()->fname }}!</span>
-        @impersonating($guard = null)
-            <a href="{{ route('impersonate.account.leave') }}">
-                <button class="btn btn-sm btn-danger m-1" data-toggle="tooltip" data-placement="top" title="Leave Impersonation">
-                    <i class="fas fa-user-secret"></i> <span class="button-text">Leave Impersonation</span>
-                </button>
+        <div class="user-greeting">
+            <span class="text-light">Hello, {{ Auth::user()->fname }}!</span>
+        </div>
+        <div class="user-actions">
+            @impersonating($guard = null)
+                <a href="{{ route('impersonate.account.leave') }}" class="user-btn" data-toggle="tooltip"
+                   data-placement="top" title="Leave Impersonation">
+                    <i class="fas fa-user-secret"></i>
+                </a>
+            @endImpersonating
+            <a href="{{ url('account') }}" class="user-btn" data-toggle="tooltip" data-placement="top" title="Account">
+                <i class="fa fa-user"></i>
             </a>
-        @endImpersonating
-        <a href="{{ url('account') }}" class="btn-primary acircle m-1">
-            <i class="fa fa-user"></i>
-        </a>
-        <a href="{{ url('account/settings') }}" class="btn-primary acircle m-1">
-            <i class="fa fa-cog"></i>
-        </a>
-        <form action="{{ url('logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="btn-danger acircle m-1">
-                <i class="fas fa-power-off"></i>
-            </button>
-        </form>
+            <a href="{{ url('account/settings') }}" class="user-btn" data-toggle="tooltip" data-placement="top" title="Settings">
+                <i class="fa fa-cog"></i>
+            </a>
+            <form action="{{ url('logout') }}" method="POST" style="display: inline;">
+                @csrf
+                <button type="submit" class="user-btn" data-toggle="tooltip" data-placement="top" title="Logout">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </form>
+        </div>
     @endauth
 </div>

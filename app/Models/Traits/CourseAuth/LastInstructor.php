@@ -1,23 +1,27 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\CourseAuth;
 
 use DB;
 
-use RCache;
+use App\Services\RCache;
+
 use App\Models\User;
-use KKP\Laravel\PgTk;
+
+use App\Helpers\PgTk;
 
 
 trait LastInstructor
 {
 
-    public function LastInstructor() : User
+    public function LastInstructor(): User
     {
 
         $user_id = PgTk::toValue(
-                    DB::select(<<<SQL
+            DB::select(
+                <<<SQL
 SELECT COALESCE( inst_unit.completed_by, inst_unit.created_by )
 FROM   inst_unit
 WHERE  inst_unit.id = (
@@ -29,12 +33,9 @@ WHERE  inst_unit.id = (
 	LIMIT 1
 )
 SQL
-                    )
-                );
+            )
+        );
 
-        return RCache::Admin( $user_id );
-
+        return RCache::Admin($user_id);
     }
-
-
 }

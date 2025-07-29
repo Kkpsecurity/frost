@@ -6,20 +6,23 @@ use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
-use RCache;
+use App\Services\RCache;
+
+use App\Models\User;
 use App\Models\Course;
 use App\Models\CourseAuth;
-use App\Models\DiscountCode;
 use App\Models\PaymentType;
-use App\Models\User;
+use App\Models\DiscountCode;
 use App\Models\Payments\PaymentModel;
+
 use App\Models\Traits\Order\CalcPrice;
-use App\Models\Traits\Order\DiscountCodeTrait;
 use App\Models\Traits\Order\SetCompleted;
+use App\Models\Traits\Order\DiscountCodeTrait;
+
+use App\Traits\NoString;
+use App\Traits\Observable;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\Laravel\ModelTraits\PgTimestamps;
 
 
 class Order extends Model
@@ -60,7 +63,7 @@ class Order extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
 
     //
@@ -70,32 +73,32 @@ class Order extends Model
 
     public function Course()
     {
-        return $this->belongsTo( Course::class, 'course_id' );
+        return $this->belongsTo(Course::class, 'course_id');
     }
 
     public function CourseAuth()
     {
-        return $this->belongsTo( CourseAuth::class, 'course_auth_id' );
+        return $this->belongsTo(CourseAuth::class, 'course_auth_id');
     }
 
     public function DiscountCode()
     {
-        return $this->belongsTo( DiscountCode::class, 'discount_code_id' );
+        return $this->belongsTo(DiscountCode::class, 'discount_code_id');
     }
 
     public function PaymentType()
     {
-        return $this->belongsTo( PaymentType::class, 'payment_type_id' );
+        return $this->belongsTo(PaymentType::class, 'payment_type_id');
     }
 
     public function RefundedBy()
     {
-        return $this->belongsTo( User::class, 'refunded_by' );
+        return $this->belongsTo(User::class, 'refunded_by');
     }
 
     public function User()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
 
@@ -104,29 +107,29 @@ class Order extends Model
     //
 
 
-    public function GetCourse() : Course
+    public function GetCourse(): Course
     {
-        return RCache::Courses( $this->course_id );
+        return RCache::Courses($this->course_id);
     }
 
-    public function GetDiscountCode() : ?DiscountCode
+    public function GetDiscountCode(): ?DiscountCode
     {
-        return ( $this->discount_code_id ? RCache::DiscountCodes( $this->discount_code_id ) : null );
+        return ($this->discount_code_id ? RCache::DiscountCodes($this->discount_code_id) : null);
     }
 
-    public function GetPaymentType() : PaymentType
+    public function GetPaymentType(): PaymentType
     {
-        return RCache::PaymentTypes( $this->payment_type_id );
+        return RCache::PaymentTypes($this->payment_type_id);
     }
 
-    public function GetRefundedBy() : ?User
+    public function GetRefundedBy(): ?User
     {
-        return RCache::Admin( $this->user_id );
+        return RCache::Admin($this->user_id);
     }
 
-    public function GetUser() : User
+    public function GetUser(): User
     {
-        return RCache::User( $this->user_id );
+        return RCache::User($this->user_id);
     }
 
 
@@ -135,47 +138,40 @@ class Order extends Model
     //
 
 
-    public function GetPayment() : ?PaymentModel
+    public function GetPayment(): ?PaymentModel
     {
         return (
-            RCache::PaymentTypes( $this->payment_type_id )->model_class
-        )::firstWhere( 'order_id', $this->id );
+            RCache::PaymentTypes($this->payment_type_id)->model_class
+        )::firstWhere('order_id', $this->id);
     }
 
 
-    public function AllPayments() : Collection
+    public function AllPayments(): Collection
     {
 
         $Payments = collect([]);
 
-        foreach ( RCache::PaymentTypes() as $PaymentType )
-        {
-            if ( $Payment = ($PaymentType->model_class)::firstWhere( 'order_id', $this->id ) )
-            {
-                $Payments->push( $Payment );
+        foreach (RCache::PaymentTypes() as $PaymentType) {
+            if ($Payment = ($PaymentType->model_class)::firstWhere('order_id', $this->id)) {
+                $Payments->push($Payment);
             }
         }
 
         return $Payments;
-
     }
 
 
-    public function CanRefund() : bool
+    public function CanRefund(): bool
     {
 
         if (
-             ! $this->completed_at
+            ! $this->completed_at
             or $this->refunded_at
             or $this->total_price == '0.00'
-        )
-        {
+        ) {
             return false;
         }
 
         return $this->GetPayment()->CanRefund();
-
     }
-
-
 }

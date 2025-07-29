@@ -2,17 +2,27 @@
 
 namespace App\Models;
 
+/**
+ * @file UserPref.php
+ * @brief Model for user_prefs table.
+ * @details This model represents user preferences, including attributes like user ID, preference name,
+ * and preference value. It provides methods for sanitizing input and retrieving the associated user.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
-use App\Models\InstUnit;
-use App\Models\Lesson;
+use App\Services\RCache;
+
 use App\Models\User;
-use App\Models\Traits\InstLesson\GetCourseUnitLesson;
+use App\Models\Lesson;
+use App\Models\InstUnit;
+
 use App\Models\Traits\InstLesson\InstCanClose;
+use App\Models\Traits\InstLesson\GetCourseUnitLesson;
+
+use App\Traits\NoString;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\PgTimestamps;
 
 
 class InstLesson extends Model
@@ -42,7 +52,7 @@ class InstLesson extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
     protected $attributes = [
 
@@ -58,22 +68,22 @@ class InstLesson extends Model
 
     public function InstUnit()
     {
-        return $this->belongsTo( InstUnit::class, 'inst_unit_id' );
+        return $this->belongsTo(InstUnit::class, 'inst_unit_id');
     }
 
     public function Lesson()
     {
-        return $this->belongsTo( Lesson::class, 'lesson_id' );
+        return $this->belongsTo(Lesson::class, 'lesson_id');
     }
 
     public function CreatedBy()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function CompletedBy()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
 
@@ -82,28 +92,26 @@ class InstLesson extends Model
     //
 
 
-    public function GetLesson() : Lesson
+    public function GetLesson(): Lesson
     {
-        return RCache::Lessons( $this->lesson_id );
+        return RCache::Lessons($this->lesson_id);
     }
 
-    public function GetCreatedBy() : User
+    public function GetCreatedBy(): User
     {
-        return RCache::Admin( $this->created_by );
+        return RCache::Admin($this->created_by);
     }
 
-    public function GetCompletedBy() : ?User
+    public function GetCompletedBy(): ?User
     {
-        return RCache::Admin( $this->completed_by );
+        return RCache::Admin($this->completed_by);
     }
 
 
-    public function GetInstructor() : User
+    public function GetInstructor(): User
     {
         return $this->completed_by
-             ? $this->GetCompletedBy()
-             : $this->GetCreatedBy();
+            ? $this->GetCompletedBy()
+            : $this->GetCreatedBy();
     }
-
-
 }

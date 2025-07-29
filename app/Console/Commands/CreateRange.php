@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
@@ -16,10 +17,11 @@ class CreateRange extends Command
     protected $description = 'Create Range';
 
 
-    public function handle() : int
+    public function handle(): int
     {
 
-        $this->error( 'Stopping' ); exit(1);
+        $this->error('Stopping');
+        exit(1);
 
 
         $range_data = [
@@ -51,18 +53,15 @@ HTML
         //
 
 
-        if ( $Range = Range::firstWhere( 'city', $range_data[ 'city' ] ) )
-        {
+        if ($Range = Range::firstWhere('city', $range_data['city'])) {
 
-            if ( ! $this->confirm( 'Delete existing Range and RangeDates?' ) )
-            {
+            if (! $this->confirm('Delete existing Range and RangeDates?')) {
                 return 1;
             }
 
-            $deleted = RangeDate::where( 'range_id', $Range->id )->delete();
+            $deleted = RangeDate::where('range_id', $Range->id)->delete();
             $Range->delete();
-            $this->info( "Deleted {$deleted} RangeDates and Range" );
-
+            $this->info("Deleted {$deleted} RangeDates and Range");
         }
 
 
@@ -71,12 +70,11 @@ HTML
         //
 
 
-        $Range = Range::create( $range_data );
-        $this->info( 'Created Range' );
+        $Range = Range::create($range_data);
+        $this->info('Created Range');
 
 
-        if ( $range_data[ 'appt_only' ] )
-        {
+        if ($range_data['appt_only']) {
 
             RangeDate::create([
                 'range_id'   => $Range->id,
@@ -87,13 +85,10 @@ HTML
                 'appt_only'  => true
             ]);
 
-            $this->info( 'Created RangeDate (appt_only)' );
-
+            $this->info('Created RangeDate (appt_only)');
         }
 
 
         return 0;
-
     }
-
 }

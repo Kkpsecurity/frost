@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models\Traits\InstLesson;
 
-use DB;
+use Illuminate\Support\Facades\DB;
 
+use App\Helpers\PgTk;
 use App\Models\CourseUnitLesson;
-use KKP\Laravel\PgTk;
 
 
 trait GetCourseUnitLesson
@@ -16,15 +17,15 @@ trait GetCourseUnitLesson
     protected $_CourseUnitLesson;
 
 
-    public function GetCourseUnitLesson() : CourseUnitLesson
+    public function GetCourseUnitLesson(): CourseUnitLesson
     {
 
-        if ( ! $this->_CourseUnitLesson )
-        {
+        if (! $this->_CourseUnitLesson) {
 
             $this->_CourseUnitLesson = PgTk::toModels(
                 CourseUnitLesson::class,
-                DB::select(<<<SQL
+                DB::select(
+                    <<<SQL
 SELECT course_unit_lessons.*
 FROM   course_unit_lessons
 JOIN   course_units ON course_units.id             = course_unit_lessons.course_unit_id
@@ -35,12 +36,8 @@ AND    course_unit_lessons.lesson_id = {$this->lesson_id}
 SQL
                 )
             )->first();
-
         }
 
         return $this->_CourseUnitLesson;
-
     }
-
-
 }

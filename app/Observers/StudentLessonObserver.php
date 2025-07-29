@@ -8,15 +8,13 @@ use App\Models\StudentLesson;
 class StudentLessonObserver
 {
 
-    public function saved( StudentLesson $StudentLesson )
+    public function saved(StudentLesson $StudentLesson)
     {
 
-        kkpdebug( 'Observer', __METHOD__ );
+        kkpdebug('Observer', __METHOD__);
 
-        $StudentLesson->StudentUnit->CourseAuth->PCLCache( true );
+        $StudentLesson->StudentUnit->CourseAuth->PCLCache(true);
 
         $StudentLesson->SetUnitCompleted();
-
     }
-
 }

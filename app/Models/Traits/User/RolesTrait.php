@@ -2,6 +2,12 @@
 
 namespace App\Models\Traits\User;
 
+/**
+ * @file RolesTrait.php
+ * @brief Trait for managing user roles.
+ * @details This trait provides methods to check user roles and return the appropriate dashboard URL.
+ */
+
 
 trait RolesTrait
 {
@@ -18,50 +24,56 @@ trait RolesTrait
      */
 
 
-    public function IsSysAdmin() : bool
+    public function IsSysAdmin(): bool
     {
         return $this->role_id == 1;
     }
 
-    public function IsAdministrator() : bool
+    public function IsAdministrator(): bool
     {
         return $this->role_id <= 2;
     }
 
-    public function IsSupport() : bool
+    public function IsSupport(): bool
     {
         return $this->role_id <= 3;
     }
 
-    public function IsInstructor() : bool
+    public function IsInstructor(): bool
     {
         return $this->role_id <= 4;
     }
 
-    public function IsStudent() : bool
+    public function IsStudent(): bool
     {
         return $this->role_id == 5;
     }
 
-    public function IsAnyAdmin() : bool
+    public function IsAnyAdmin(): bool
     {
         return $this->role_id <= 4;
     }
 
 
-    public function Dashboard() : string
+    public function Dashboard(): string
     {
 
-        switch( $this->role_id )
-        {
-            case '1': return route( 'admin.dashboard'             ); break;
-            case '2': return route( 'admin.dashboard'             ); break;
-            case '3': return route( 'admin.dashboard'             ); break;
-            case '4': return route( 'admin.instructors.dashboard' ); break;
-            default:  return route( 'classroom.dashboard'         ); break;
+        switch ($this->role_id) {
+            case '1':
+                return route('admin.dashboard');
+                break;
+            case '2':
+                return route('admin.dashboard');
+                break;
+            case '3':
+                return route('admin.dashboard');
+                break;
+            case '4':
+                return route('admin.instructors.dashboard');
+                break;
+            default:
+                return route('classroom.dashboard');
+                break;
         }
-
     }
-
-
 }

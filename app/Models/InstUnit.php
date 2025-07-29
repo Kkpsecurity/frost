@@ -2,18 +2,25 @@
 
 namespace App\Models;
 
+/**
+ * @file InstUnit.php
+ * @brief Model for inst_unit table.
+ * @details This model represents an instructional unit in the system, including attributes like course date, assistant, and relationships to lessons and students.
+ */
 
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
+use App\Services\RCache;
+
+use App\Models\User;
 use App\Models\CourseDate;
 use App\Models\CourseUnit;
 use App\Models\InstLesson;
 use App\Models\StudentUnit;
-use App\Models\User;
+
+use App\Traits\NoString;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\PgTimestamps;
 
 
 class InstUnit extends Model
@@ -41,7 +48,7 @@ class InstUnit extends Model
 
     ];
 
-    protected $guarded = [ 'id' ];
+    protected $guarded = ['id'];
 
 
     //
@@ -51,32 +58,32 @@ class InstUnit extends Model
 
     public function CourseDate()
     {
-        return $this->belongsTo( CourseDate::class, 'course_date_id' );
+        return $this->belongsTo(CourseDate::class, 'course_date_id');
     }
 
     public function InstLessons()
     {
-        return $this->hasMany( InstLesson::class, 'inst_unit_id' );
+        return $this->hasMany(InstLesson::class, 'inst_unit_id');
     }
 
     public function StudentUnits()
     {
-        return $this->hasMany( StudentUnit::class, 'inst_unit_id' );
+        return $this->hasMany(StudentUnit::class, 'inst_unit_id');
     }
 
     public function CreatedBy()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function CompletedBy()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function Assistant()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
 
@@ -87,28 +94,26 @@ class InstUnit extends Model
 
     public function GetCourse(): Course
     {
-        return RCache::Courses( $this->GetCourseUnit()->course_id );
+        return RCache::Courses($this->GetCourseUnit()->course_id);
     }
 
     public function GetCourseUnit(): CourseUnit
     {
-        return RCache::CourseUnits( $this->CourseDate->course_unit_id );
+        return RCache::CourseUnits($this->CourseDate->course_unit_id);
     }
 
     public function GetCreatedBy(): User
     {
-        return RCache::Admin( $this->created_by );
+        return RCache::Admin($this->created_by);
     }
 
     public function GetCompletedBy(): ?User
     {
-        return RCache::Admin( $this->completed_by );
+        return RCache::Admin($this->completed_by);
     }
 
     public function GetAssistant(): ?User
     {
-        return RCache::Admin( $this->assistant_id );
+        return RCache::Admin($this->assistant_id);
     }
-
-
 }

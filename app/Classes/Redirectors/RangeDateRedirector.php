@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Classes\Redirectors;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
-use App\Classes\Redirectors\RedirectorTrait;
+use App\Traits\RedirectorTrait;
 
 
 class RangeDateRedirector
@@ -17,30 +18,23 @@ class RangeDateRedirector
     private static $_redirect_route = 'range_date.select';
 
     private static $_ignore_routes = [
-
         // note: these match the _start_ of the route name
         'range_date',
         'classroom.exam',
-
     ];
 
 
-    public static function handle() : void
+    public static function handle(): void
     {
 
-        if ( ! self::ShouldContinue() )
-        {
+        if (! self::ShouldContinue()) {
             return;
         }
 
-        foreach ( Auth::user()->InactiveCourseAuths->whereNull( 'disabled_at' ) as $CourseAuth )
-        {
-            if ( $CourseAuth->GetCourse()->needs_range && ! $CourseAuth->range_date_id )
-            {
-                self::Redirect( $CourseAuth );
+        foreach (Auth::user()->InactiveCourseAuths->whereNull('disabled_at') as $CourseAuth) {
+            if ($CourseAuth->GetCourse()->needs_range && ! $CourseAuth->range_date_id) {
+                self::Redirect($CourseAuth);
             }
         }
-
     }
-
 }

@@ -2,14 +2,22 @@
 
 namespace App\Models;
 
+/**
+ * @file Exam.php
+ * @brief Model for exams table.
+ * @details This model represents exams, including attributes like title, description, and associated courses.
+ * It provides methods for managing exam settings and retrieving related data.
+ */
+
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
-use App\RCache\RCacheModelTrait;
+use App\Services\RCache;
 
 use App\Models\Course;
-use KKP\TextTk;
+
+use App\Helpers\TextTk;
+use App\Traits\RCacheModelTrait;
 
 
 class Exam extends Model
@@ -36,7 +44,7 @@ class Exam extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
     protected $attributes   = [
 
@@ -46,7 +54,10 @@ class Exam extends Model
 
     ];
 
-    public function __toString() { return $this->admin_title; }
+    public function __toString()
+    {
+        return $this->admin_title;
+    }
 
 
     //
@@ -56,7 +67,7 @@ class Exam extends Model
 
     public function Courses()
     {
-        return $this->belongsToMany( Course::class, 'course_id' );
+        return $this->belongsToMany(Course::class, 'course_id');
     }
 
 
@@ -65,9 +76,9 @@ class Exam extends Model
     //
 
 
-    public function setAdminTitleAttribute( $value )
+    public function setAdminTitleAttribute($value)
     {
-        $this->attributes[ 'admin_title' ] = TextTk::Sanitize( $value );
+        $this->attributes['admin_title'] = TextTk::Sanitize($value);
     }
 
 
@@ -76,11 +87,11 @@ class Exam extends Model
     //
 
 
-    public function GetCourses() : Collection
+    public function GetCourses(): Collection
     {
         return RCache::Courses()
-                     ->where( 'exam_id', $this->id )
-                     ->sortBy( 'title' );
+            ->where('exam_id', $this->id)
+            ->sortBy('title');
     }
 
 
@@ -89,23 +100,20 @@ class Exam extends Model
     //
 
 
-    public function ExamTime() : string
+    public function ExamTime(): string
     {
 
-        $hours   = floor( $this->policy_expire_seconds / 3600 );
-        $minutes = ( $this->policy_expire_seconds % 3600 ) / 60;
+        $hours   = floor($this->policy_expire_seconds / 3600);
+        $minutes = ($this->policy_expire_seconds % 3600) / 60;
 
         return $minutes
             ? "$hours hours $minutes minutes"
             : "$hours hours";
-
     }
 
 
-    public function Minutes() : string
+    public function Minutes(): string
     {
         return $this->policy_expire_seconds / 60;
     }
-
-
 }

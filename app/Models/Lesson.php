@@ -5,15 +5,15 @@ namespace App\Models;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 
-
-use RCache;
-use App\RCache\RCacheModelTrait;
+use App\Services\RCache;
+use App\Traits\RCacheModelTrait;
 
 use App\Models\CourseUnit;
-use App\Models\CourseUnitLesson;
 use App\Models\ExamQuestion;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\TextTk;
+use App\Models\CourseUnitLesson;
+
+use App\Helpers\TextTk;
+use App\Traits\Observable;
 
 
 class Lesson extends Model
@@ -34,9 +34,12 @@ class Lesson extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
-    public function __toString() { return $this->title; }
+    public function __toString()
+    {
+        return $this->title;
+    }
 
 
     //
@@ -46,18 +49,18 @@ class Lesson extends Model
 
     public function CourseUnits()
     {
-        return $this->belongsToMany( CourseUnit::class, 'course_unit_lessons', 'lesson_id', 'course_unit_id' )
-                            ->using( CourseUnitLesson::class );
+        return $this->belongsToMany(CourseUnit::class, 'course_unit_lessons', 'lesson_id', 'course_unit_id')
+            ->using(CourseUnitLesson::class);
     }
 
     public function CourseUnitLessons()
     {
-        return $this->hasMany( CourseUnitLesson::class, 'lesson_id' );
+        return $this->hasMany(CourseUnitLesson::class, 'lesson_id');
     }
 
     public function ExamQuestions()
     {
-        return $this->hasMany( ExamQuestion::class, 'lesson_id' );
+        return $this->hasMany(ExamQuestion::class, 'lesson_id');
     }
 
 
@@ -66,9 +69,9 @@ class Lesson extends Model
     //
 
 
-    public function setTitleAttribute( $value )
+    public function setTitleAttribute($value)
     {
-        $this->attributes[ 'title' ] = TextTk::Sanitize( $value );
+        $this->attributes['title'] = TextTk::Sanitize($value);
     }
 
 
@@ -79,17 +82,17 @@ class Lesson extends Model
 
     public function GetCourses()
     {
-        return RCache::Lesson_Courses( $this );
+        return RCache::Lesson_Courses($this);
     }
 
     public function GetCourseUnits()
     {
-        return RCache::Lesson_CourseUnits( $this );
+        return RCache::Lesson_CourseUnits($this);
     }
 
     public function GetCourseUnitLessons()
     {
-        return RCache::Lesson_CourseUnitLessons( $this );
+        return RCache::Lesson_CourseUnitLessons($this);
     }
 
 
@@ -98,16 +101,14 @@ class Lesson extends Model
     //
 
 
-    public function CreditHours() : string
+    public function CreditHours(): string
     {
-        return sprintf( '%0.1f', $this->credit_minutes / 60 );
+        return sprintf('%0.1f', $this->credit_minutes / 60);
     }
 
 
-    public function SelfStudyMinSeconds() : int
+    public function SelfStudyMinSeconds(): int
     {
         return $this->video_seconds - 300;  // 5 minutes
     }
-
-
 }

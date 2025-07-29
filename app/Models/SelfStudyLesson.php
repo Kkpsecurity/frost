@@ -2,15 +2,24 @@
 
 namespace App\Models;
 
+/**
+ * @file SelfStudyLesson.php
+ * @brief Model for self_study_lessons table.
+ * @details This model represents a self-study lesson, including attributes like course authorization ID,
+ * lesson ID, timestamps, and seconds viewed. It provides relationships to related models such as CourseAuth
+ * and Lesson, and methods for retrieving the associated lesson.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
-use App\Models\CourseAuth;
 use App\Models\Lesson;
+use App\Services\RCache;
+use App\Models\CourseAuth;
+
+use App\Traits\NoString;
+use App\Traits\Observable;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\Laravel\ModelTraits\Observable;
 
 
 class SelfStudyLesson extends Model
@@ -39,7 +48,7 @@ class SelfStudyLesson extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
     protected $attributes   = [
 
@@ -55,12 +64,12 @@ class SelfStudyLesson extends Model
 
     public function CourseAuth()
     {
-        return $this->belongsTo( CourseAuth::class, 'course_auth_id' );
+        return $this->belongsTo(CourseAuth::class, 'course_auth_id');
     }
 
     public function Lesson()
     {
-        return $this->belongsTo( Lesson::class, 'lesson_id' );
+        return $this->belongsTo(Lesson::class, 'lesson_id');
     }
 
 
@@ -69,10 +78,8 @@ class SelfStudyLesson extends Model
     //
 
 
-    public function GetLesson() : Lesson
+    public function GetLesson(): Lesson
     {
-        return RCache::Lessons( $this->lesson_id );
+        return RCache::Lessons($this->lesson_id);
     }
-
-
 }

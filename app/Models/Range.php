@@ -2,11 +2,18 @@
 
 namespace App\Models;
 
+/**
+ * @file Range.php
+ * @brief Model for ranges table.
+ * @details This model represents a range, including attributes like name, city, address, institution details,
+ * and various settings. It provides relationships to related models such as RangeDate and methods for sanitizing input.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
+use App\Helpers\TextTk;
 use App\Models\RangeDate;
 use KKP\Laravel\ModelTraits\TogglesBooleans;
-use KKP\TextTk;
 
 
 class Range extends Model
@@ -40,12 +47,15 @@ class Range extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
-    protected $attributes   = [ 'is_active' => true ];
+    protected $attributes   = ['is_active' => true];
 
 
-    public function __toString() { return $this->name; }
+    public function __toString()
+    {
+        return $this->name;
+    }
 
 
     //
@@ -55,7 +65,7 @@ class Range extends Model
 
     public function RangeDates()
     {
-        return $this->hasMany( RangeDate::class, 'range_id' );
+        return $this->hasMany(RangeDate::class, 'range_id');
     }
 
 
@@ -64,39 +74,39 @@ class Range extends Model
     //
 
 
-    public function setNameAttribute( $value )
+    public function setNameAttribute($value)
     {
-        $this->attributes[ 'name' ] = TextTk::Sanitize( $value );
+        $this->attributes['name'] = TextTk::Sanitize($value);
     }
 
-    public function setCityAttribute( $value )
+    public function setCityAttribute($value)
     {
-        $this->attributes[ 'city' ] = TextTk::Sanitize( $value );
+        $this->attributes['city'] = TextTk::Sanitize($value);
     }
 
-    public function setAddressAttribute( $value )
+    public function setAddressAttribute($value)
     {
-        $this->attributes[ 'address' ] = TextTk::Sanitize( $value );
+        $this->attributes['address'] = TextTk::Sanitize($value);
     }
 
-    public function setInstNameAttribute( $value )
+    public function setInstNameAttribute($value)
     {
-        $this->attributes[ 'inst_name' ] = TextTk::Sanitize( $value );
+        $this->attributes['inst_name'] = TextTk::Sanitize($value);
     }
 
-    public function setInstEmailAttribute( $value )
+    public function setInstEmailAttribute($value)
     {
-        $this->attributes[ 'inst_email' ] = TextTk::Sanitize( $value );
+        $this->attributes['inst_email'] = TextTk::Sanitize($value);
     }
 
-    public function setInstPhoneAttribute( $value )
+    public function setInstPhoneAttribute($value)
     {
-        $this->attributes[ 'inst_phone' ] = TextTk::Sanitize( $value );
+        $this->attributes['inst_phone'] = TextTk::Sanitize($value);
     }
 
-    public function setTimesAttribute( $value )
+    public function setTimesAttribute($value)
     {
-        $this->attributes[ 'times' ] = TextTk::Sanitize( $value );
+        $this->attributes['times'] = TextTk::Sanitize($value);
     }
 
     #public function setRangeHtmlAttribute( $value )

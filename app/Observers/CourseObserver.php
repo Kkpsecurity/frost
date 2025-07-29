@@ -10,25 +10,21 @@ use App\Models\Course;
 class CourseObserver
 {
 
-    public function deleting( Course $Course ) : bool
+    public function deleting(Course $Course): bool
     {
 
-		kkpdebug( 'Observer', __METHOD__ );
+        kkpdebug('Observer', __METHOD__);
 
-        if ( $Course->CourseAuths )
-        {
-            throw new Exception( "Course '{$Course}' has CourseAuths and cannot be deleted" );
+        if ($Course->CourseAuths) {
+            throw new Exception("Course '{$Course}' has CourseAuths and cannot be deleted");
             return false;
         }
 
-        if ( $Course->CourseUnits )
-        {
-            throw new Exception( "Course '{$Course}' has CourseUnits and cannot be deleted" );
+        if ($Course->CourseUnits) {
+            throw new Exception("Course '{$Course}' has CourseUnits and cannot be deleted");
             return false;
         }
 
         return true;
-
     }
-
 }

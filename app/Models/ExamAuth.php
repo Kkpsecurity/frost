@@ -2,26 +2,36 @@
 
 namespace App\Models;
 
-use Auth;
-use DB;
-use Exception;
+/**
+ * @file ExamAuth.php
+ * @brief Model for exam_auths table.
+ * @details This model represents exam authorizations, including attributes like course auth ID, UUID,
+ * and relationships to courses and exams. It provides methods for managing exam attempts and scores.
+ */
+
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
+use DB;
+use Auth;
+use Exception;
+
+use App\Services\RCache;
+
+use App\Models\User;
+use App\Models\Exam;
 use App\Models\Course;
 use App\Models\CourseAuth;
-use App\Models\Exam;
 use App\Models\ExamQuestion;
-use App\Models\User;
+
+use App\Helpers\PgTk;
+use App\Helpers\TextTk;
+use App\Casts\JSONCast;
+use App\Traits\NoString;
+use App\Traits\Observable;
+use App\Traits\PgTimestamps;
 use App\Presenters\PresentsTimeStamps;
-use KKP\Laravel\Casts\JSONCast;
-use KKP\Laravel\ModelTraits\PgTimestamps;
-use KKP\Laravel\ModelTraits\NoString;
-use KKP\Laravel\ModelTraits\Observable;
-use KKP\Laravel\PgTk;
-use KKP\TextTk;
 
 
 class ExamAuth extends Model
@@ -84,12 +94,12 @@ class ExamAuth extends Model
 
     public function CourseAuth()
     {
-        return $this->belongsTo( CourseAuth::class, 'course_auth_id' );
+        return $this->belongsTo(CourseAuth::class, 'course_auth_id');
     }
 
     public function HiddenBy()
     {
-        return $this->belongsTo( User::class, 'hidden_by' );
+        return $this->belongsTo(User::class, 'hidden_by');
     }
 
 
@@ -98,17 +108,15 @@ class ExamAuth extends Model
     //
 
 
-    public function setScoreAttribute( $value )
+    public function setScoreAttribute($value)
     {
 
-        if ( ! ( $value == self::EXPIRED_SCORE or preg_match( '|^\d{1,3} / \d{1,3}$|', $value ) ) )
-        {
-            throw new Exception( "Invalid format '{$value}' - Required: 'nnn / nnn'" );
+        if (! ($value == self::EXPIRED_SCORE or preg_match('|^\d{1,3} / \d{1,3}$|', $value))) {
+            throw new Exception("Invalid format '{$value}' - Required: 'nnn / nnn'");
             return false;
         }
 
-        $this->attributes[ 'score' ] = $value;
-
+        $this->attributes['score'] = $value;
     }
 
 
@@ -117,19 +125,19 @@ class ExamAuth extends Model
     //
 
 
-    public function GetCourse() : Course
+    public function GetCourse(): Course
     {
-        return RCache::Courses( $this->CourseAuth->course_id );
+        return RCache::Courses($this->CourseAuth->course_id);
     }
 
-    public function GetExam() : Exam
+    public function GetExam(): Exam
     {
-        return RCache::Exams( $this->CourseAuth->GetCourse()->exam_id );
+        return RCache::Exams($this->CourseAuth->GetCourse()->exam_id);
     }
 
-    public function GetHiddenBy() : ?User
+    public function GetHiddenBy(): ?User
     {
-        return RCache::Admin( $this->hidden_by );
+        return RCache::Admin($this->hidden_by);
     }
 
 
@@ -138,7 +146,7 @@ class ExamAuth extends Model
     //
 
 
-    public function MarkHidden() : void
+    public function MarkHidden(): void
     {
         $this->forceFill([
             'hidden_at' => PgTk::now(),
@@ -147,74 +155,64 @@ class ExamAuth extends Model
     }
 
 
-    public function MakeExpiresAt() : Carbon
+    public function MakeExpiresAt(): Carbon
     {
 
         $Exam = $this->GetExam();
 
-        if ( ! $Exam->policy_expire_seconds )
-        {
+        if (! $Exam->policy_expire_seconds) {
             return null;
         }
 
-        if ( ! $this->created_at )
-        {
-            throw new \Exception( 'ExamAuth has no created_at' );
+        if (! $this->created_at) {
+            throw new \Exception('ExamAuth has no created_at');
         }
 
-        return Carbon::parse( $this->created_at )
-                ->addSeconds( $Exam->policy_expire_seconds );
-
+        return Carbon::parse($this->created_at)
+            ->addSeconds($Exam->policy_expire_seconds);
     }
 
 
-    public function MakeNextAttemptAt() : Carbon
+    public function MakeNextAttemptAt(): Carbon
     {
 
         $Exam = $this->GetExam();
 
-        if ( ! $Exam->policy_wait_seconds )
-        {
+        if (! $Exam->policy_wait_seconds) {
             return null;
         }
 
-        if ( ! $this->created_at )
-        {
-            throw new \Exception( 'ExamAuth has no created_at' );
+        if (! $this->created_at) {
+            throw new \Exception('ExamAuth has no created_at');
         }
 
-        return Carbon::parse( $this->created_at )
-                ->addSeconds( $Exam->policy_wait_seconds )
-                    ->minute( 0 )->second( 0 );
-
+        return Carbon::parse($this->created_at)
+            ->addSeconds($Exam->policy_wait_seconds)
+            ->minute(0)->second(0);
     }
 
 
-    public function IsExpired() : bool
+    public function IsExpired(): bool
     {
 
-        if ( ! $this->expires_at )
-        {
+        if (! $this->expires_at) {
             return false;
         }
 
-        return Carbon::now()->gt( Carbon::parse( $this->expires_at ) );
-
+        return Carbon::now()->gt(Carbon::parse($this->expires_at));
     }
 
 
-    public function ScorePercent() : ?int
+    public function ScorePercent(): ?int
     {
 
-        if ( ! $this->score )
-        {
+        if (! $this->score) {
             return null;
         }
 
-        list( $correct, $total ) = explode( ' / ' , $this->score );
+        list($correct, $total) = explode(' / ', $this->score);
 
-        return floor( $correct / $total * 100 );
-
+        return floor($correct / $total * 100);
     }
 
 
@@ -225,11 +223,12 @@ class ExamAuth extends Model
     //
     // ExamAuthObserver::creating
     //
-    public function RandomQuestionIDs() : array
+    public function RandomQuestionIDs(): array
     {
         return PgTk::toSimple(
-            DB::select( 'SELECT * FROM sp_exam_auth_random_ids( :course_id )',
-                [ ':course_id' => $this->GetCourse()->id ]
+            DB::select(
+                'SELECT * FROM sp_exam_auth_random_ids( :course_id )',
+                [':course_id' => $this->GetCourse()->id]
             )
         );
     }
@@ -238,14 +237,15 @@ class ExamAuth extends Model
     //
     // retrieve ExamQuestions in $this->question_ids order
     //
-    public function ExamQuestions() : Collection
+    public function ExamQuestions(): Collection
     {
         return PgTk::toModels(
             ExamQuestion::class,
-            DB::select( 'SELECT * FROM sp_exam_auth_questions( :exam_auth_id )',
-                [ ':exam_auth_id' => $this->id ]
+            DB::select(
+                'SELECT * FROM sp_exam_auth_questions( :exam_auth_id )',
+                [':exam_auth_id' => $this->id]
             )
-        )->sortByIDArray( $this->question_ids );
+        )->sortByIDArray($this->question_ids);
     }
 
 
@@ -254,43 +254,36 @@ class ExamAuth extends Model
     // Exam Result page
     //
 
-    public function IncorrectByLesson() : ?Collection
+    public function IncorrectByLesson(): ?Collection
     {
 
-        if ( ! $this->incorrect )
-        {
+        if (! $this->incorrect) {
             return null;
         }
 
 
         $MissedLessons = collect([]);
 
-        foreach ( $this->incorrect as $lesson_id => $count )
-        {
+        foreach ($this->incorrect as $lesson_id => $count) {
             $MissedLessons->push(
                 (object) [
                     'missed' => $count,
-                    'title'  => RCache::Lessons( $lesson_id )->title
+                    'title'  => RCache::Lessons($lesson_id)->title
                 ]
             );
         }
 
-        return $MissedLessons->sortBy( 'title' )->sortByDesc( 'missed' );
-
+        return $MissedLessons->sortBy('title')->sortByDesc('missed');
     }
 
 
-    public function NeedsRangeSelect() : bool
+    public function NeedsRangeSelect(): bool
     {
 
-        if ( ! $this->is_passed )
-        {
+        if (! $this->is_passed) {
             return false;
         }
 
-        return ( $this->GetCourse()->needs_range && ! $this->CourseAuth->range_date_id );
-
+        return ($this->GetCourse()->needs_range && ! $this->CourseAuth->range_date_id);
     }
-
-
 }

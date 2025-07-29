@@ -8,9 +8,10 @@ namespace App\Presenters;
 //   'DD MMMM YYYY'     03 March 2022
 //   'YYYY-MM-DD HH:mm:ss'
 
-use Auth;
 use Exception;
+
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 use App\Models\User;
 
@@ -25,9 +26,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function CreatedAt( string $carbon_format = null, User $tz_user = null ) : ?string
+    public function CreatedAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'created_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('created_at', $carbon_format, $tz_user);
     }
 
 
@@ -38,9 +39,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function UpdatedAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function UpdatedAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'updated_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('updated_at', $carbon_format, $tz_user);
     }
 
 
@@ -51,9 +52,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function CompletedAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function CompletedAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'completed_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('completed_at', $carbon_format, $tz_user);
     }
 
 
@@ -64,9 +65,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function ExpiresAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function ExpiresAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'expires_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('expires_at', $carbon_format, $tz_user);
     }
 
 
@@ -77,9 +78,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function DncAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function DncAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'dnc_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('dnc_at', $carbon_format, $tz_user);
     }
 
 
@@ -90,9 +91,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function DeactAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function DeactAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'deact_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('deact_at', $carbon_format, $tz_user);
     }
 
 
@@ -103,9 +104,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function HiddenAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function HiddenAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'hidden_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('hidden_at', $carbon_format, $tz_user);
     }
 
 
@@ -116,9 +117,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function RefundedAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function RefundedAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'refunded_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('refunded_at', $carbon_format, $tz_user);
     }
 
 
@@ -129,9 +130,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function StartsAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function StartsAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'starts_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('starts_at', $carbon_format, $tz_user);
     }
 
 
@@ -142,9 +143,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function EndsAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function EndsAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'ends_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('ends_at', $carbon_format, $tz_user);
     }
 
 
@@ -155,9 +156,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function SubmittedAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function SubmittedAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'submitted_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('submitted_at', $carbon_format, $tz_user);
     }
 
 
@@ -168,9 +169,9 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function NextAttemptAt( string $carbon_format = null, User $tz_user = null  ) : ?string
+    public function NextAttemptAt(?string $carbon_format = null, ?User $tz_user = null): ?string
     {
-        return $this->FormatTimestamp( 'next_attempt_at', $carbon_format, $tz_user );
+        return $this->FormatTimestamp('next_attempt_at', $carbon_format, $tz_user);
     }
 
 
@@ -187,7 +188,7 @@ trait PresentsTimeStamps
      * @param   User|null    $tz_user
      * @return  string|null
      */
-    public function FormatTimestamp( string $field, string $carbon_format = null, User $tz_user = null ) : ?string
+    public function FormatTimestamp(string $field, ?string $carbon_format = null, ?User $tz_user = null): ?string
     {
 
         //
@@ -195,20 +196,17 @@ trait PresentsTimeStamps
         //   using model's $casts
         //
 
-        if ( ! isset( $this->casts[ $field ] ) )
-        {
-            throw new Exception( get_class( $this ) . " has no cast for '{$field}'" );
+        if (! isset($this->casts[$field])) {
+            throw new Exception(get_class($this) . " has no cast for '{$field}'");
         }
 
 
-        if ( ! in_array( $this->casts[ $field ], [ 'date', 'timestamp', 'timestamptz' ] ) )
-        {
-            throw new Exception( get_class( $this ) . " '{$field}' is not a date or timestamp : '{$this->casts[ $field ]}'" );
+        if (! in_array($this->casts[$field], ['date', 'timestamp', 'timestamptz'])) {
+            throw new Exception(get_class($this) . " '{$field}' is not a date or timestamp : '{$this->casts[$field]}'");
         }
 
 
-        if ( ! $timestamp = $this->{$field} )
-        {
+        if (! $timestamp = $this->{$field}) {
             return null;
         }
 
@@ -217,17 +215,16 @@ trait PresentsTimeStamps
         // get User's preferred timezone (if possible)
         //
 
-        $timezone = $this->UserTimezone( $tz_user );
+        $timezone = $this->UserTimezone($tz_user);
 
 
         //
         // convert UTC to selected timezone, then format
         //
 
-        return Carbon::parse( $timestamp, 'UTC' )
-                        ->tz( $timezone )
-                 ->isoFormat( $carbon_format ?? config( 'define.carbon_format.default' ) );
-
+        return Carbon::parse($timestamp, 'UTC')
+            ->tz($timezone)
+            ->isoFormat($carbon_format ?? config('define.carbon_format.default'));
     }
 
 
@@ -237,24 +234,19 @@ trait PresentsTimeStamps
      * @param   User|null  $tz_user
      * @return  string
      */
-    public function UserTimezone( User $tz_user = null ) : string
+    public function UserTimezone(?User $tz_user = null): string
     {
 
-        $timezone = config( 'define.timezone.default' );
+        $timezone = config('define.timezone.default');
 
-        if ( $tz_user )
-        {
-            return $tz_user->GetPref( 'timezone', $timezone );
+        if ($tz_user) {
+            return $tz_user->GetPref('timezone', $timezone);
         }
 
-        if ( Auth::check() )
-        {
-            return Auth::user()->GetPref( 'timezone', $timezone );
+        if (Auth::check()) {
+            return Auth::user()->GetPref('timezone', $timezone);
         }
 
         return $timezone;
-
     }
-
-
 }

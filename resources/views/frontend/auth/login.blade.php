@@ -1,106 +1,56 @@
-@extends('layouts.app')
+@extends('layouts.frontend-auth')
 
-@section('page-title', $content['title'])
-@section('page-keywords', $content['keywords'])
-@section('page-description', $content['description'])
+@section('title', 'Login - Frost')
+@section('subtitle', 'Welcome back! Please sign in to your account.')
 
 @section('content')
-    @include('frontend.partials.breadcrumbs')
-    
-    <div class="login-area">
-        <div class="login-overlay"></div>
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-6 col-md-8 col-12">
-                    <div class="border-1 shadow-lg">
-                        <div class="login-form-container p-5">
-                            <h3 class="login-title mb-4">LOGIN</h3>
-                            <div class="row">
-                                <div id="message-console"></div>
-                                @include('frontend.partials.messages')
-                                @include('frontend.forms.login-form')
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<form method="POST" action="{{ route('login') }}">
+    @csrf
+
+    <!-- Email Address -->
+    <div class="mb-3">
+        <label for="email" class="form-label">Email Address</label>
+        <input id="email" type="email" class="form-control @error('email') is-invalid @enderror"
+               name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
+        @error('email')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
     </div>
-@stop
 
+    <!-- Password -->
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input id="password" type="password" class="form-control @error('password') is-invalid @enderror"
+               name="password" required autocomplete="current-password">
+        @error('password')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
 
+    <!-- Remember Me -->
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="remember" name="remember" {{ old('remember') ? 'checked' : '' }}>
+        <label class="form-check-label" for="remember">
+            Remember me
+        </label>
+    </div>
 
-@section('scripts')
-    <script>
-        $(document).ready(function() {
-            $('#login-form').submit(function(e) {
-                    e.preventDefault(); // prevent the form from being submitted
+    <button type="submit" class="btn btn-primary">
+        Sign In
+    </button>
 
-                    // get the values of the input fields
-                    var email = $('#email').val();
-                    var password = $('#password').val();
+    <div class="auth-links">
+        @if (Route::has('password.request'))
+            <a href="{{ route('password.request') }}">Forgot your password?</a>
+        @endif
+    </div>
 
-                    // check if the remember me checkbox is checked
-                    var remember_me = $('input[name="remember_me"]').is(':checked');
+    <div class="divider">
+        <span>Don't have an account?</span>
+    </div>
 
-                    // get the CSRF token
-                    var csrf_token = $('input[name="_token"]').val(); // get the CSRF token
-
-                    // validate the input fields
-                    if (!email) {
-                        // email is empty
-                        $('#message-console').append(
-                            '<p class="alert alert-danger">Please enter your email address</p>');
-                        setTimeout(function() {
-                            $('#message-console p').fadeOut();
-                        }, 4000);
-                        return;
-                    } else if (!password) {
-                        // password is empty
-                        $('#message-console').append(
-                            '<p class="alert alert-danger">Please enter your password</p>');
-                        setTimeout(function() {
-                            $('#message-console p').fadeOut();
-                        }, 4000);
-                        return;
-                    }
-
-                    // send an AJAX request to the server to verify the credentials
-                    $.ajax({
-                            type: 'POST',
-                            url: '/login',
-                            data: {
-                                _token: csrf_token, // pass the CSRF token to the server
-                                email: email,
-                                password: password,
-                                remember_me: remember_me
-                            }),
-                        success: function(response) {
-                            // handle the response from the server
-                            if (response.success) {
-                                // login was successful
-                                // show a success message and hide it after 4 seconds
-                                $('#message-console').append(
-                                    '<p class="alert alert-success">Login was successful</p>');
-                                setTimeout(function() {
-                                    $('#message-console p').fadeOut();
-                                }, 4000);
-
-                                // redirect the user to the home page
-                                window.location.href = response.redirect_url;
-                            } else {
-                                // login was unsuccessful
-                                // show an error message and hide it after 4 seconds
-                                $('#message-console').append(
-                                    '<p class="alert alert-danger">Login was unsuccessful</p>');
-                                setTimeout(function() {
-                                    $('#message-console p').fadeOut();
-                                }, 4000);
-                            }
-                        }
-                    }
-                );
-            });
-        });
-    </script>
+    <div class="auth-links">
+        <a href="{{ route('register') }}">Sign up for free</a>
+    </div>
+</form>
 @endsection

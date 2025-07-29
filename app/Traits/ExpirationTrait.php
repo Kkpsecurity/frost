@@ -2,51 +2,50 @@
 
 namespace App\Traits;
 
-use Illuminate\Support\Carbon;
-
+/**
+ * @file ExpirationTrait.php
+ * @brief Trait for handling expiration logic in models.
+ * @details Provides common methods for models that have expiration functionality.
+ */
 
 trait ExpirationTrait
 {
-
-
     /**
-     * Calculate expiration for [ Course, Exam ] based on policies
+     * Check if the model has expired
      *
-     * returns  string|null  timestamp (UTC)
+     * @return bool
      */
-    public function CalcExpire( bool $date_only = false ) : ?string
+    public function isExpired()
     {
-
-        $fmt = ( $date_only ? 'YYYY-MM-DD 00:00:00' : 'YYYY-MM-DD HH:mm:ss' );
-
-        if ( $this->policy_expire_minutes )
-        {
-            return Carbon::now( 'UTC' )->addMinutes( $this->policy_expire_minutes )->isoFormat( $fmt );
+        if (!$this->expires_at) {
+            return false;
         }
 
-        if ( $this->policy_expire_days )
-        {
-            return Carbon::now( 'UTC' )->addDays( $this->policy_expire_days )->isoFormat( $fmt );
-        }
-
-        return null;
-
+        return now()->isAfter($this->expires_at);
     }
-
 
     /**
-     * Determine if [ CourseAuth, ExamAuth ] is expired
+     * Get models that are not expired
      *
-     * returns  boolean
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function IsExpired() : bool
+    public function scopeNotExpired($query)
     {
-
-        if ( ! $this->expires_at ) return false;
-
-        return Carbon::now( 'UTC' )->gt( new Carbon( $this->expires_at ) );
-
+        return $query->where(function ($q) {
+            $q->whereNull('expires_at')
+              ->orWhere('expires_at', '>', now());
+        });
     }
 
-
+    /**
+     * Get models that are expired
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeExpired($query)
+    {
+        return $query->where('expires_at', '<=', now());
+    }
 }

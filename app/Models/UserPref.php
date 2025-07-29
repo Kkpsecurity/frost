@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+/**
+ * @file UserPref.php
+ * @brief Model for user_prefs table.
+ * @details This model represents user preferences, including attributes like user ID, preference name,
+ * and preference value. It provides methods for sanitizing input and retrieving the associated user.
+ */
+
 use Illuminate\Database\Eloquent\Model;
 
 use RCache;
 use App\Models\User;
-use KKP\Laravel\ModelTraits\HasCompositePrimaryKey;
-use KKP\TextTk;
+use App\Helpers\TextTk;
+use App\Traits\HasCompositePrimaryKey;
 
 
 class UserPref extends Model

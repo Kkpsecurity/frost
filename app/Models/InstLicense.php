@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+/**
+ * @file InstLicense.php
+ * @brief Model for inst_licenses table.
+ * @details This model represents an institutional license in the system, including attributes like user ID, license key, and expiration date.
+ */
+
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
-use RCache;
+use App\Services\RCache;
+
 use App\Models\User;
+use App\Helpers\TextTk;
 
 
 class InstLicense extends Model
@@ -25,7 +33,7 @@ class InstLicense extends Model
 
     ];
 
-    protected $guarded      = [ 'id' ];
+    protected $guarded      = ['id'];
 
 
     //
@@ -35,7 +43,7 @@ class InstLicense extends Model
 
     public function User()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
 
@@ -44,9 +52,9 @@ class InstLicense extends Model
     //
 
 
-    public function setLicenseAttribute( $value )
+    public function setLicenseAttribute($value)
     {
-        $this->attributes[ 'license' ] = TextTk::Sanitize( strtoupper( str_replace( ' ', '', $value ) ) );
+        $this->attributes['license'] = TextTk::Sanitize(strtoupper(str_replace(' ', '', $value)));
     }
 
 
@@ -55,9 +63,9 @@ class InstLicense extends Model
     //
 
 
-    public function GetUser() : User
+    public function GetUser(): User
     {
-        return RCache::User( $this->user_id );
+        return RCache::User($this->user_id);
     }
 
 
@@ -66,15 +74,13 @@ class InstLicense extends Model
     //
 
 
-    public function ExpiresAt() : string
+    public function ExpiresAt(): string
     {
-        return Carbon::parse( $this->expires_at )->isoFormat( 'MM/DD/YYYY' );
+        return Carbon::parse($this->expires_at)->isoFormat('MM/DD/YYYY');
     }
 
-    public function IsExpired() : bool
+    public function IsExpired(): bool
     {
-        return Carbon::now()->gt( Carbon::parse( $this->expires_at ) );
+        return Carbon::now()->gt(Carbon::parse($this->expires_at));
     }
-
-
 }

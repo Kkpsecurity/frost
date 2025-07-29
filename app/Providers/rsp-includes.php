@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Providers;
+
+use Illuminate\Support\Facades\Route;
+
 //
 // this is include()d in RouteServiceProvider.php
 //
@@ -9,9 +13,9 @@
 // patterns
 //
 
-Route::pattern( 'id',     '^\d*$' ); // only digits
+Route::pattern('id',     '^\d*$'); // only digits
 #Route::pattern( 'base64', config( 'define.regex.base64' ) );
-Route::pattern( 'uuid',   config( 'define.regex.uuidv4' ) );
+Route::pattern('uuid',   config('define.regex.uuidv4'));
 
 
 //
@@ -42,7 +46,8 @@ $rcache_bindings = [
 ];
 
 
-foreach ( $rcache_bindings as $id => $method )
-{
-    Route::bind( $id, function ( $id ) use ( $method ) { return call_user_func( $method, $id ); });
+foreach ($rcache_bindings as $id => $method) {
+    Route::bind($id, function ($id) use ($method) {
+        return call_user_func($method, $id);
+    });
 }
