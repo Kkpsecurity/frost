@@ -64,11 +64,11 @@ return [
     */
 
     'logo' => '<b>Frost</b> Admin',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo_img' => 'images/200851589.jpg',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => 'Frost Admin Logo',
 
     /*
     |--------------------------------------------------------------------------
@@ -84,10 +84,10 @@ return [
     */
 
     'auth_logo' => [
-        'enabled' => false,
+        'enabled' => true,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-            'alt' => 'Auth Logo',
+            'path' => 'images/200851589.jpg',
+            'alt' => 'Frost Logo',
             'class' => '',
             'width' => 50,
             'height' => 50,
@@ -113,8 +113,8 @@ return [
         'enabled' => true,
         'mode' => 'fullscreen',
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-            'alt' => 'AdminLTE Preloader Image',
+            'path' => 'images/200851589.jpg',
+            'alt' => 'Frost Loading...',
             'effect' => 'animation__shake',
             'width' => 60,
             'height' => 60,
@@ -283,8 +283,6 @@ return [
     */
 
     'laravel_asset_bundling' => false,
-    'laravel_css_path' => 'css/app.css',
-    'laravel_js_path' => 'js/app.js',
 
     /*
     |--------------------------------------------------------------------------

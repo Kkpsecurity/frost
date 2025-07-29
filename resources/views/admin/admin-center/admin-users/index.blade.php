@@ -3,147 +3,17 @@
 @section('title', 'Admin Users')
 
 @section('content_header')
-    @include('admin.partials.impersonation-banner')
-
-    <div class="row">
-        <div class="col-sm-6">
-            <h1>Admin Users</h1>
-        </div>
-        <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item">Admin Center</li>
-                <li class="breadcrumb-item active">Admin Users</li>
-            </ol>
-        </div>
-    </div>
+    <x-admin.admin-header />
 @stop
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-dark">
-                    <h3 class="card-title text-white">Admin Users Management</h3>
-                    <div class="card-tools">
-                        <a href="{{ route('admin.admin-center.admin-users.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Add New Admin
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <!-- Role Filter Section -->
-                    <div class="px-3 py-3 border-bottom bg-light">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <x-role-filter />
-                            </div>
-                            <div class="col-md-6 text-right">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle"></i>
-                                    Showing admin-level users (System Admin, Admin, Instructors, Support)
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table id="admin-users-table" class="table table-bordered table-striped table-hover mb-0" style="width: 100%;">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Avatar</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Created Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-admin.admin-datatable />
 @stop
 
 @section('css')
+    @vite('resources/css/admin.css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
-    <style>
-        /* Ensure table takes full width */
-        #admin-users-table {
-            width: 100% !important;
-        }
-
-        /* Dark header styling */
-        .card-header.bg-dark .card-title {
-            color: #fff !important;
-        }
-
-        /* Table styling improvements */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        /* DataTables wrapper styling */
-        .dataTables_wrapper {
-            width: 100%;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            border-radius: 4px;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            border-radius: 4px;
-        }
-
-        /* Avatar column styling */
-        #admin-users-table td:first-child {
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        /* Actions column styling */
-        #admin-users-table td:last-child {
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        /* Badge styling */
-        .badge {
-            font-size: 0.8em;
-        }
-
-        /* Role filter section styling */
-        .border-bottom {
-            border-bottom: 1px solid #dee2e6 !important;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        #role-filter {
-            border: 1px solid #ced4da;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-
-        #role-filter:focus {
-            border-color: #80bdff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-
-        /* Filter section responsive */
-        @media (max-width: 767.98px) {
-            .px-3.py-3.border-bottom .col-md-6.text-right {
-                text-align: left !important;
-                margin-top: 10px;
-            }
-        }
-    </style>
 @stop
 
 @section('js')
@@ -162,27 +32,58 @@
                 autoWidth: false,
                 ajax: {
                     url: '{{ route('admin.admin-center.admin-users.data') }}',
-                    data: function (d) {
+                    data: function(d) {
                         d.role_filter = $('#role-filter').val();
                     }
                 },
-                columns: [
-                    {data: 'avatar_display', name: 'avatar_display', orderable: false, searchable: false, width: '60px'},
-                    {data: 'full_name', name: 'full_name'},
-                    {data: 'email', name: 'email'},
-                    {data: 'role_badge', name: 'Role.name', width: '120px'},
-                    {data: 'status', name: 'is_active', width: '80px'},
-                    {data: 'formatted_created_at', name: 'created_at', width: '150px'},
-                    {data: 'actions', name: 'actions', orderable: false, searchable: false, width: '120px'}
+                columns: [{
+                        data: 'avatar_display',
+                        name: 'avatar_display',
+                        orderable: false,
+                        searchable: false,
+                        width: '50px'
+                    },
+                    {
+                        data: 'full_name',
+                        name: 'full_name'
+                    },
+                    {
+                        data: 'email',
+                        name: 'email'
+                    },
+                    {
+                        data: 'role_badge',
+                        name: 'Role.name',
+                        width: '120px'
+                    },
+                    {
+                        data: 'status',
+                        name: 'is_active',
+                        width: '80px'
+                    },
+                    {
+                        data: 'formatted_created_at',
+                        name: 'created_at',
+                        width: '170px'
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        orderable: false,
+                        searchable: false,
+                        width: '120px'
+                    }
                 ],
-                order: [[5, 'desc']],
+                order: [
+                    [5, 'desc']
+                ],
                 pageLength: 25,
                 language: {
                     processing: '<i class="fas fa-spinner fa-spin"></i> Loading...'
                 },
                 dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                     '<"row"<"col-sm-12"tr>>' +
-                     '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    '<"row"<"col-sm-12"tr>>' +
+                    '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
                 drawCallback: function() {
                     // Ensure table takes full width
                     $('#admin-users-table').css('width', '100%');
@@ -194,6 +95,24 @@
                 table.ajax.reload();
             });
         });
+
+        function toggleFilters() {
+            const filterSection = document.getElementById('filter-section');
+            const filterBtn = document.getElementById('filter-btn-text');
+            const filterIcon = document.querySelector('#toggle-filters-btn i');
+
+            if (filterSection.classList.contains('hidden')) {
+                filterSection.classList.remove('hidden');
+                filterSection.classList.add('visible');
+                filterBtn.textContent = 'Hide Filters';
+                filterIcon.className = 'fas fa-filter mr-1';
+            } else {
+                filterSection.classList.remove('visible');
+                filterSection.classList.add('hidden');
+                filterBtn.textContent = 'Show Filters';
+                filterIcon.className = 'fas fa-filter-slash mr-1';
+            }
+        }
 
         function deleteAdmin(id) {
             Swal.fire({

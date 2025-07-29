@@ -9,12 +9,12 @@ namespace App\Support;
  * This class provides constants, methods, and utilities for handling user roles consistently across the application.
  *
  * Actual Database Structure:
- * 1    SysAdmin (sys_admin)
- * 2    Administrator (admin)
- * 3    Support (support)
- * 4    Instructor (instructor)
- * 5    Student (student)
- * 6    Guest (guest)
+ * 1    SysAdmin
+ * 2    Administrator
+ * 3    Support
+ * 4    Instructor
+ * 5    Student
+ * 6    Guest
  */
 class RoleManager
 {
@@ -27,12 +27,12 @@ class RoleManager
     public const GUEST_ID = 6;
 
     // Role Name Constants (matching database values)
-    public const SYS_ADMIN_NAME = 'sys_admin';
-    public const ADMIN_NAME = 'admin';
-    public const INSTRUCTOR_NAME = 'instructor';
-    public const SUPPORT_NAME = 'support';
-    public const STUDENT_NAME = 'student';
-    public const GUEST_NAME = 'guest';
+    public const SYS_ADMIN_NAME = 'SysAdmin';
+    public const ADMIN_NAME = 'Administrator';
+    public const INSTRUCTOR_NAME = 'Instructor';
+    public const SUPPORT_NAME = 'Support';
+    public const STUDENT_NAME = 'Student';
+    public const GUEST_NAME = 'Guest';
 
     // Role Display Names
     public const SYS_ADMIN_DISPLAY = 'System Admin';

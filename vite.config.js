@@ -6,10 +6,19 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                "resources/js/app.ts",
+                "resources/js/admin.ts",
                 "resources/css/app.css",
-                "resources/js/app.tsx",
+                "resources/css/admin.css",
             ],
+            publicDir: "public",
+            outputDir: "public/build",
+            manifest: true,
             refresh: true,
+            watch: [
+                "resources/views/**/*.blade.php",
+                "resources/**/*.blade.php",
+            ],
         }),
         react(),
     ],
