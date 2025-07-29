@@ -17,15 +17,15 @@ use Illuminate\Support\Collection;
 use RCache;
 use App\Models\Challenge;
 use App\Models\StudentLesson;
-use App\Classes\Challenger\TraitLoader;
+// use App\Classes\Challenger\TraitLoader; // Trait not found - commented out
 use App\Classes\Frost\ChallengerResponse;
-use KKP\Laravel\Traits\AssertConfigTrait;
+use App\Traits\AssertConfigTrait; // Fixed namespace
 
 
 class Challenger
 {
 
-    use TraitLoader;
+    // use TraitLoader; // Trait not found - commented out
     use AssertConfigTrait;
 
 

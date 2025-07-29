@@ -12,6 +12,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Route;
 use App\Notifications\AdminResetPasswordNotification;
 use App\Traits\AvatarTrait;
 use App\Support\RoleManager;
@@ -124,5 +125,30 @@ class Admin extends User
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new AdminResetPasswordNotification($token));
+    }
+
+    /**
+     * Get AdminLTE compatible image URL
+     */
+    public function adminlte_image(): string
+    {
+        return $this->getAvatar('small');
+    }
+
+    /**
+     * Get AdminLTE compatible profile URL
+     */
+    public function adminlte_profile_url(): string
+    {
+        // For now, return dashboard URL since we don't have a profile page yet
+        return '/admin/dashboard';
+    }
+
+    /**
+     * Get AdminLTE compatible description (role)
+     */
+    public function adminlte_desc(): string
+    {
+        return $this->getRoleDisplayNameAttribute();
     }
 }
