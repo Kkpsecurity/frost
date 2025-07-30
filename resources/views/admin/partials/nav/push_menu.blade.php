@@ -4,13 +4,64 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
     </li>
 
-    <?php $segments = []; ?>
-    @foreach (Request()->segments() as $key => $segment)
-        @if (!is_numeric($segment))
-            <li class="nav-item"><a class="nav-link"
-                    href="{{ route(Request()->segment(1), array_push($segments, $segment)) }}">{{ ucwords($segment) }}</a>
-            </li>
-        @endif
+    {{-- Breadcrumb navigation --}}
+    @php
+        $segments = Request()->segments();
+        $breadcrumbs = [];
+
+        // Build safe breadcrumb links
+        if (count($segments) > 0) {
+            // First segment is always 'admin'
+            if ($segments[0] === 'admin') {
+                $breadcrumbs[] = [
+                    'name' => 'Dashboard',
+                    'url' => route('admin.dashboard')
+                ];
+
+                // Handle second segment
+                if (count($segments) > 1) {
+                    $secondSegment = $segments[1];
+
+                    // Map known routes
+                    $routeMap = [
+                        'settings' => ['name' => 'Settings', 'route' => 'admin.settings.index'],
+                        'admin-center' => ['name' => 'Admin Center', 'route' => 'admin.admin-center.admin-users.index'],
+                        // Add more mappings as needed
+                    ];
+
+                    if (isset($routeMap[$secondSegment])) {
+                        try {
+                            $breadcrumbs[] = [
+                                'name' => $routeMap[$secondSegment]['name'],
+                                'url' => route($routeMap[$secondSegment]['route'])
+                            ];
+                        } catch (Exception $e) {
+                            // Route doesn't exist, just show text
+                            $breadcrumbs[] = [
+                                'name' => ucwords(str_replace('-', ' ', $secondSegment)),
+                                'url' => null
+                            ];
+                        }
+                    } else {
+                        // Unknown segment, just show as text
+                        $breadcrumbs[] = [
+                            'name' => ucwords(str_replace('-', ' ', $secondSegment)),
+                            'url' => null
+                        ];
+                    }
+                }
+            }
+        }
+    @endphp
+
+    @foreach ($breadcrumbs as $breadcrumb)
+        <li class="nav-item">
+            @if ($breadcrumb['url'])
+                <a class="nav-link" href="{{ $breadcrumb['url'] }}">{{ $breadcrumb['name'] }}</a>
+            @else
+                <span class="nav-link text-muted">{{ $breadcrumb['name'] }}</span>
+            @endif
+        </li>
     @endforeach
 </ul>
 <script>

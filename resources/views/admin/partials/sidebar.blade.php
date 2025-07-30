@@ -1,217 +1,73 @@
-@php
+{{-- Custom Sidebar using AdminLTE Config --}}
+<aside class="main-sidebar {{ config('adminlte.classes_sidebar', 'sidebar-dark-primary elevation-4') }}">
 
-    $user = Auth::user();
-    // 'sysadmin', 'administrator', 'support', 'instructor'
-    $user_role_name =  Str::lower($user->role->name);
-
-    // dd($user, $user_role_name);
-
-    $menu_items = [
-        [
-            'route' => route('admin.dashboard'),
-            'url' => url('admin/dashboard'),
-            'icon' => 'fas fa-home',
-            'label' => 'Dashboard',
-            'segment' => 'dashboard',
-            'role' => ['open'],
-        ],
-        [
-            'route' => null,
-            'url' => '#',
-            'icon' => 'fas fa-tachometer-alt',
-            'label' => 'Admin Center',
-            'segment' => 'center',
-            'sub_items' => [
-                [
-                    'route' => route('admin.center.adminusers'),
-                    'url' => url('admin/center/adminusers'),
-                    'icon' => 'far fa-circle text-white',
-                    'label' => 'Admin Account',
-                    'segment' => 'adminusers',
-                ],
-                [
-                    'route' => route('admin.center.server_logs'),
-                    'url' => url('admin/center/server_logs'),
-                    'icon' => 'far fa-circle text-white',
-                    'label' => 'Server Logs',
-                    'segment' => 'server_logs',
-                ],
-            ],
-            'role' => ['sysadmin', 'administrator'],
-        ],
-        [
-            'route' => null,
-            'url' => '#',
-            'icon' => 'fas fa-user-secret',
-            'label' => 'SysAdmin',
-            'segment' => 'sysadmin',
-            'sub_items' => [
-                [
-                    'route' => route('admin'),
-                    'url' => url('admin/sysadmin'),
-                    'icon' => 'far fa-circle text-white',
-                    'label' => 'SysDashboard',
-                    'segment' => 'sysadmin',
-                ],
-                [
-                    'route' => route('admin.temp.site_configs'),
-                    'url' => url('admin/temp/site_configs'),
-                    'icon' => 'far fa-circle text-white',
-                    'label' => 'Site Configs',
-                    'segment' => 'sysadmin',
-                ],
-            ],
-            'role' => ['sysadmin'],
-        ],
-        [
-            'route' => route('admin.instructors.dashboard'),
-            'url' => url('admin/instructors/dashboard'),
-            'icon' => 'fas fa-school',
-            'label' => 'Instructors',
-            'segment' => 'instructors',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.students'),
-            'url' => url('admin/students'),
-            'icon' => 'fas fa-users',
-            'label' => 'Students',
-            'segment' => 'students',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.courses.dashboard'),
-            'url' => url('admin/courses/dashboard'),
-            'icon' => 'fas fa-book',
-            'label' => 'Courses',
-            'segment' => 'courses',
-            'role' => ['sysadmin', 'support', 'administrator'],
-        ],
-        [
-            'route' => route('admin.frost-support.dashboard'),
-            'url' => url('admin/frost-support/dashboard'),
-            'icon' => 'fas fa-headset',
-            'label' => 'Frost Support',
-            'segment' => 'frost-support',
-            'role' => ['sysadmin', 'administrator', 'support'],
-        ],
-
-        //
-        // begin jonesy temp items
-        //
-        [
-            'route' => route('admin.temp.orders'),
-            'url' => url('admin/temp/orders'),
-            'icon' => 'fas fa-shopping-bag',
-            'label' => 'Orders (Accounting)',
-            'segment' => 'orders',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.temp.course_auths'),
-            'url' => url('admin/temp/course_auths'),
-            'icon' => 'fas fa-book',
-            'label' => 'Active Courses',
-            'segment' => 'courses',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.temp.completed_course_auths'),
-            'url' => url('admin/temp/completed_course_auths'),
-            'icon' => 'fas fa-book',
-            'label' => 'Completed Courses',
-            'segment' => 'courses',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.temp.course_dates'),
-            'url' => url('admin/temp/course_dates'),
-            'icon' => 'fas fa-book',
-            'label' => 'Course Dates',
-            'segment' => 'courses',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.temp.ranges'),
-            'url' => url('admin/temp/ranges'),
-            'icon' => 'fas fa-book',
-            'label' => 'Ranges',
-            'segment' => 'ranges',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        [
-            'route' => route('admin.temp.discount_codes.clients'),
-            'url' => url('admin/temp/discount_codes/clients'),
-            'icon' => 'fas fa-book',
-            'label' => 'Client Codes',
-            'segment' => 'discount_codes',
-            'role' => ['sysadmin', 'administrator', 'support', 'instructor'],
-        ],
-        //
-        // end jonesy temp items
-        //
-        [
-            'route' => route('admin.reports.dashboard'),
-            'url' => url('admin/reports/dashboard'),
-            'icon' => 'fas fa-chart-pie',
-            'label' => 'Reports',
-            'segment' => 'reports',
-            'role' => ['sysadmin', 'administrator', 'instructor'],
-        ],
-    ];
-
-@endphp
-
-
-<aside class="main-sidebar sidebar-dark-primary elevation-4">
-
-    <a href="{{ route('admin') }}" class="brand-link">
+    {{-- Sidebar brand logo --}}
+    <a href="{{ route('admin.dashboard') }}" class="brand-link">
         <img src="{{ asset('assets/admin/dist/img/AdminLTELogo.png') }}" alt="{{ config('app.name') }}"
             class="brand-image img-circle elevation-3" style="opacity: .8">
         <span class="brand-text font-weight-light">{{ __('Admin Panel') }}</span>
     </a>
 
+    {{-- Sidebar menu --}}
     <div class="sidebar">
-        @include('admin.partials.logged_in_user')
-        <?php $segment2 = Request()->Segment(2); ?>
-        <?php $segment3 = Request()->Segment(3); ?>
+        {{-- User info --}}
+        @auth('admin')
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="{{ auth('admin')->user()->avatar ?? asset('assets/admin/dist/img/user2-160x160.jpg') }}"
+                     class="img-circle elevation-2" alt="User Image">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">{{ auth('admin')->user()->fname }} {{ auth('admin')->user()->lname }}</a>
+            </div>
+        </div>
+        @endauth
 
-        <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
-                data-accordion="true">
-                @foreach ($menu_items as $item)
+        <nav class="pt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column {{ config('adminlte.classes_sidebar_nav', '') }}"
+                data-widget="treeview" role="menu"
+                @if(config('adminlte.sidebar_nav_animation_speed') != 300)
+                    data-animation-speed="{{ config('adminlte.sidebar_nav_animation_speed') }}"
+                @endif
+                @if(!config('adminlte.sidebar_nav_accordion'))
+                    data-accordion="false"
+                @endif>
 
-                    @php
-                        $isAccessible = in_array('open', (array) @$item['role']) || in_array($user_role_name, (array) @$item['role']);
-                        $is_active = $segment2 == $item['segment'] ? 'active' : '';
-                        $has_sub_items = isset($item['sub_items']) && !empty($item['sub_items']);
-                    @endphp
-
-                    @if ($isAccessible)                        
-                        <li class="nav-item {{ $is_active }} {{ $has_sub_items ? 'menu-open' : '' }}">
-                            <a href="{{ $item['route'] ?? '#' }}" class="nav-link {{ $is_active }}">
-                                <i class="nav-icon {{ $item['icon'] }}"></i>
-                                <p>{{ $item['label'] }}</p>
-                                @if ($has_sub_items)
+                {{-- Build menu from config --}}
+                @foreach(config('adminlte.menu', []) as $item)
+                    @if(isset($item['header']))
+                        {{-- Header item --}}
+                        <li class="nav-header">{{ $item['header'] }}</li>
+                    @elseif(isset($item['submenu']))
+                        {{-- Menu with submenu --}}
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon {{ $item['icon'] ?? 'fas fa-circle' }}"></i>
+                                <p>
+                                    {{ $item['text'] ?? 'Menu Item' }}
                                     <i class="right fas fa-angle-left"></i>
-                                @endif
+                                </p>
                             </a>
-                            @if ($has_sub_items)
-                                <ul class="nav nav-treeview">
-                                    @foreach ($item['sub_items'] as $sub_item)
-                                        @php
-                                            $is_sub_active = $segment3 == $sub_item['segment'] ? 'active' : '';
-                                        @endphp
-                                        <li class="nav-item">
-                                            <a href="{{ $sub_item['route'] ?? '#' }}"
-                                                class="nav-link {{ $is_sub_active }}">
-                                                <i class="far {{ $sub_item['icon'] }} nav-icon"></i>
-                                                <p>{{ $sub_item['label'] }}</p>
-                                            </a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
+                            <ul class="nav nav-treeview">
+                                @foreach($item['submenu'] as $subitem)
+                                    <li class="nav-item">
+                                        <a href="{{ isset($subitem['route']) ? route($subitem['route']) : ($subitem['url'] ?? '#') }}"
+                                           class="nav-link">
+                                            <i class="{{ $subitem['icon'] ?? 'far fa-circle' }} nav-icon"></i>
+                                            <p>{{ $subitem['text'] ?? 'Submenu Item' }}</p>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </li>
+                    @elseif(isset($item['text']))
+                        {{-- Simple menu item --}}
+                        <li class="nav-item">
+                            <a href="{{ isset($item['route']) ? route($item['route']) : ($item['url'] ?? '#') }}"
+                               class="nav-link">
+                                <i class="nav-icon {{ $item['icon'] ?? 'fas fa-circle' }}"></i>
+                                <p>{{ $item['text'] }}</p>
+                            </a>
                         </li>
                     @endif
                 @endforeach
@@ -219,4 +75,5 @@
             </ul>
         </nav>
     </div>
+
 </aside>

@@ -17,7 +17,7 @@ trait PageMetaDataTrait
      */
     public static function renderPageMeta(string $method, ?string $content = null): array
     {
-        $pageTitle = ($method === 'index' ? __('Dashboard') : ucfirst(humanize($method)));
+        $pageTitle = ($method === 'index' ? __('Dashboard') : ucfirst(Str::replace('_', ' ', $method)));
 
         $title = Str::title($pageTitle);
         $keywords = self::generateKeywords($content, $pageTitle);

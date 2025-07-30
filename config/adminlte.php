@@ -326,12 +326,12 @@ return [
             'submenu' => [
                 [
                     'text' => 'Admin Users',
-                    'url' => 'admin/admin-center/admin-users',
+                    'route' => 'admin.admin-center.admin-users.index',
                     'icon' => 'fas fa-fw fa-user-shield',
                 ],
                 [
                     'text' => 'Site Settings',
-                    'url' => 'admin/site-settings',
+                    'route' => 'admin.settings.index',
                     'icon' => 'fas fa-fw fa-wrench',
                 ],
             ],

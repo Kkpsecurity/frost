@@ -207,7 +207,7 @@ return [
          * Application-specific
          */
         // KKP\Laravel\ServiceProviders\CollectionMacroServiceProvider::class,
-        // KKP\Laravel\ServiceProviders\JSDataServiceProvider::class,
+        KKP\Laravel\ServiceProviders\JSDataServiceProvider::class,
 
         // App\Providers\KeymasterServiceProvider::class,
         // App\Providers\KKPS3ServiceProvider::class,
@@ -253,7 +253,7 @@ return [
         // 'Helpers'           => App\Helpers\Helpers::class,
         // 'KKPS3'             => App\Classes\KKPS3::class,
 
-        // 'JSData'            => KKP\Laravel\JSData::class,
+        'JSData'            => KKP\Laravel\JSData::class,
         // 'PgTk'              => KKP\Laravel\PgTk::class,
         // 'TextTk'            => KKP\TextTk::class,
 

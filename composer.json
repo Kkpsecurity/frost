@@ -6,6 +6,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "akaunting/laravel-setting": "^1.2",
+        "artesaos/seotools": "^1.3",
         "aws/aws-sdk-php": "^3.351",
         "guzzlehttp/guzzle": "^7.2",
         "inertiajs/inertia-laravel": "^0.6.3",
@@ -42,7 +44,8 @@
         "files": [
             "app/Helpers/richievc.helper.php",
             "app/Helpers/jonesy.helper.php",
-            "app/Helpers/laravel.helper.php"
+            "app/Helpers/laravel.helper.php",
+            "KKP/Laravel/Helpers/vasset.php"
         ]
     },
     "autoload-dev": {
