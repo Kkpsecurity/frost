@@ -3,14 +3,7 @@
 @section('title', 'AdminLTE Settings')
 
 @section('content_header')
-    <h1>AdminLTE Settings</h1>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('admin.settings.index') }}">Settings</a></li>
-            <li class="breadcrumb-item active" aria-current="page">AdminLTE Settings</li>
-        </ol>
-    </nav>
+    <x-admin.admin-header />
 @stop
 
 @section('content')
@@ -127,10 +120,5 @@
 @stop
 
 @section('css')
-<style>
-    .breadcrumb {
-        background-color: transparent;
-        margin-bottom: 1rem;
-    }
-</style>
+    @vite('resources/css/admin.css')
 @stop

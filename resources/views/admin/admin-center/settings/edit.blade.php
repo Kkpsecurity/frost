@@ -3,6 +3,12 @@
 @section('title', 'Edit Setting')
 
 @section('content_header')
+    <x-admin.admin-header />
+@stopnlte::page')
+
+@section('title', 'Edit Setting')
+
+@section('content_header')
     <h1>Edit Setting</h1>
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -96,11 +102,8 @@
 @stop
 
 @section('css')
+    @vite('resources/css/admin.css')
 <style>
-    .breadcrumb {
-        background-color: transparent;
-        margin-bottom: 1rem;
-    }
     .form-control-plaintext {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;

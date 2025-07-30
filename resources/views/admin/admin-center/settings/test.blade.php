@@ -3,7 +3,7 @@
 @section('title', 'Settings Test')
 
 @section('content_header')
-    <h1>Settings System Test</h1>
+    <x-admin.admin-header />
 @stop
 
 @section('content')
@@ -156,6 +156,7 @@ $value = Setting::get('key', 'default');
 @stop
 
 @section('css')
+    @vite('resources/css/admin.css')
 <style>
 pre {
     font-size: 0.85em;

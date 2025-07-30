@@ -3,7 +3,7 @@
 @section('title', 'Settings Management')
 
 @section('content_header')
-    <h1>Settings Management</h1>
+    <x-admin.admin-header />
 @stop
 
 @section('content')
@@ -102,6 +102,7 @@
 @stop
 
 @section('css')
+    @vite('resources/css/admin.css')
 <style>
 .table-responsive {
     font-size: 0.9em;

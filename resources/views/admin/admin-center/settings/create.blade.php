@@ -3,6 +3,12 @@
 @section('title', 'Create Setting')
 
 @section('content_header')
+    <x-admin.admin-header />
+@stopnlte::page')
+
+@section('title', 'Create Setting')
+
+@section('content_header')
     <h1>Create Setting</h1>
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -91,10 +97,5 @@
 @stop
 
 @section('css')
-<style>
-    .breadcrumb {
-        background-color: transparent;
-        margin-bottom: 1rem;
-    }
-</style>
+    @vite('resources/css/admin.css')
 @stop
