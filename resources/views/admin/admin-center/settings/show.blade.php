@@ -4,9 +4,13 @@
 
 @section('content_header')
     <h1>Setting Details</h1>
-    <div class="breadcrumb-wrapper">
-        {{ Breadcrumbs::render('admin.settings.show', $key) }}
-    </div>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('admin.settings.index') }}">Settings</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ $key ?? 'Setting' }}</li>
+        </ol>
+    </nav>
 @stop
 
 @section('content')
@@ -136,8 +140,9 @@
 
 @section('css')
 <style>
-    .breadcrumb-wrapper {
-        margin-top: 10px;
+    .breadcrumb {
+        background-color: transparent;
+        margin-bottom: 1rem;
     }
     .form-control-plaintext {
         background-color: #f8f9fa;
