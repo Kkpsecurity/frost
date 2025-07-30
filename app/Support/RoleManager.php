@@ -9,12 +9,12 @@ namespace App\Support;
  * This class provides constants, methods, and utilities for handling user roles consistently across the application.
  *
  * Actual Database Structure:
- * 1    SysAdmin
- * 2    Administrator
- * 3    Support
- * 4    Instructor
- * 5    Student
- * 6    Guest
+ * 1    sys_admin
+ * 2    admin
+ * 3    support
+ * 4    instructor
+ * 5    student
+ * 6    guest
  */
 class RoleManager
 {
@@ -27,32 +27,96 @@ class RoleManager
     public const GUEST_ID = 6;
 
     // Role Name Constants (matching database values)
-    public const SYS_ADMIN_NAME = 'SysAdmin';
-    public const ADMIN_NAME = 'Administrator';
-    public const INSTRUCTOR_NAME = 'Instructor';
-    public const SUPPORT_NAME = 'Support';
-    public const STUDENT_NAME = 'Student';
-    public const GUEST_NAME = 'Guest';
+    public const SYS_ADMIN_NAME = 'sys_admin';
+    public const ADMIN_NAME = 'admin';
+    public const SUPPORT_NAME = 'support';
+    public const INSTRUCTOR_NAME = 'instructor';
+    public const STUDENT_NAME = 'student';
+    public const GUEST_NAME = 'guest';
 
-    // Role Display Names
-    public const SYS_ADMIN_DISPLAY = 'System Admin';
+    // Role Display Names (user-friendly names)
+    public const SYS_ADMIN_DISPLAY = 'Sys Admin';
     public const ADMIN_DISPLAY = 'Administrator';
-    public const INSTRUCTOR_DISPLAY = 'Instructor';
     public const SUPPORT_DISPLAY = 'Support';
+    public const INSTRUCTOR_DISPLAY = 'Instructor';
     public const STUDENT_DISPLAY = 'Student';
     public const GUEST_DISPLAY = 'Guest';
+
+    /**
+     * Master role configuration - single source of truth
+     */
+    private static function getRoleConfiguration(): array
+    {
+        return [
+            self::SYS_ADMIN_ID => [
+                'name' => self::SYS_ADMIN_NAME,
+                'display' => self::SYS_ADMIN_DISPLAY,
+                'badge' => 'badge-danger',
+                'is_admin' => true,
+                'hierarchy' => 1,
+                'permissions' => ['admin_access', 'user_management', 'system_settings', 'all_permissions', 'user_impersonation'],
+                'can_impersonate' => true,
+                'can_be_impersonated' => false,
+            ],
+            self::ADMIN_ID => [
+                'name' => self::ADMIN_NAME,
+                'display' => self::ADMIN_DISPLAY,
+                'badge' => 'badge-primary',
+                'is_admin' => true,
+                'hierarchy' => 2,
+                'permissions' => ['admin_access', 'user_management', 'content_management'],
+                'can_impersonate' => false,
+                'can_be_impersonated' => true,
+            ],
+            self::SUPPORT_ID => [
+                'name' => self::SUPPORT_NAME,
+                'display' => self::SUPPORT_DISPLAY,
+                'badge' => 'badge-warning',
+                'is_admin' => true,
+                'hierarchy' => 3,
+                'permissions' => ['admin_access', 'support_tickets', 'user_assistance'],
+                'can_impersonate' => false,
+                'can_be_impersonated' => true,
+            ],
+            self::INSTRUCTOR_ID => [
+                'name' => self::INSTRUCTOR_NAME,
+                'display' => self::INSTRUCTOR_DISPLAY,
+                'badge' => 'badge-info',
+                'is_admin' => true,
+                'hierarchy' => 4,
+                'permissions' => ['admin_access', 'course_management', 'student_management'],
+                'can_impersonate' => false,
+                'can_be_impersonated' => true,
+            ],
+            self::STUDENT_ID => [
+                'name' => self::STUDENT_NAME,
+                'display' => self::STUDENT_DISPLAY,
+                'badge' => 'badge-secondary',
+                'is_admin' => false,
+                'hierarchy' => 5,
+                'permissions' => [],
+                'can_impersonate' => false,
+                'can_be_impersonated' => true,
+            ],
+            self::GUEST_ID => [
+                'name' => self::GUEST_NAME,
+                'display' => self::GUEST_DISPLAY,
+                'badge' => 'badge-light',
+                'is_admin' => false,
+                'hierarchy' => 6,
+                'permissions' => [],
+                'can_impersonate' => false,
+                'can_be_impersonated' => true,
+            ],
+        ];
+    }
 
     /**
      * Get all admin role IDs (roles that have admin access)
      */
     public static function getAdminRoleIds(): array
     {
-        return [
-            self::SYS_ADMIN_ID,     // 1 - SysAdmin
-            self::ADMIN_ID,         // 2 - Administrator
-            self::SUPPORT_ID,       // 3 - Support
-            self::INSTRUCTOR_ID,    // 4 - Instructor
-        ];
+        return array_keys(array_filter(self::getRoleConfiguration(), fn($role) => $role['is_admin']));
     }
 
     /**
@@ -60,12 +124,8 @@ class RoleManager
      */
     public static function getAdminRoleNames(): array
     {
-        return [
-            self::SYS_ADMIN_NAME,   // sys_admin
-            self::ADMIN_NAME,       // admin
-            self::SUPPORT_NAME,     // support
-            self::INSTRUCTOR_NAME,  // instructor
-        ];
+        $adminRoles = array_filter(self::getRoleConfiguration(), fn($role) => $role['is_admin']);
+        return array_column($adminRoles, 'name');
     }
 
     /**
@@ -73,14 +133,7 @@ class RoleManager
      */
     public static function getRoleDisplayMap(): array
     {
-        return [
-            self::SYS_ADMIN_NAME => self::SYS_ADMIN_DISPLAY,
-            self::ADMIN_NAME => self::ADMIN_DISPLAY,
-            self::INSTRUCTOR_NAME => self::INSTRUCTOR_DISPLAY,
-            self::SUPPORT_NAME => self::SUPPORT_DISPLAY,
-            self::STUDENT_NAME => self::STUDENT_DISPLAY,
-            self::GUEST_NAME => self::GUEST_DISPLAY,
-        ];
+        return array_column(self::getRoleConfiguration(), 'display', 'name');
     }
 
     /**
@@ -88,26 +141,29 @@ class RoleManager
      */
     public static function getAdminRoleOptions(): array
     {
-        return [
-            '' => 'All Roles',
-            self::SYS_ADMIN_NAME => self::SYS_ADMIN_DISPLAY,
-            self::ADMIN_NAME => self::ADMIN_DISPLAY,
-            self::SUPPORT_NAME => self::SUPPORT_DISPLAY,
-            self::INSTRUCTOR_NAME => self::INSTRUCTOR_DISPLAY,
-        ];
+        $options = ['' => 'All Roles'];
+        $adminRoles = array_filter(self::getRoleConfiguration(), fn($role) => $role['is_admin']);
+
+        foreach ($adminRoles as $roleConfig) {
+            $options[$roleConfig['name']] = $roleConfig['display'];
+        }
+
+        return $options;
     }
 
     /**
-     * Get role options for creation forms
+     * Get role options for creation forms (using role IDs as keys)
      */
     public static function getCreationRoleOptions(): array
     {
-        return [
-            self::SYS_ADMIN_ID => self::SYS_ADMIN_DISPLAY,
-            self::ADMIN_ID => self::ADMIN_DISPLAY,
-            self::SUPPORT_ID => self::SUPPORT_DISPLAY,
-            self::INSTRUCTOR_ID => self::INSTRUCTOR_DISPLAY,
-        ];
+        $options = [];
+        $adminRoles = array_filter(self::getRoleConfiguration(), fn($role) => $role['is_admin']);
+
+        foreach ($adminRoles as $roleId => $roleConfig) {
+            $options[$roleId] = $roleConfig['display'];
+        }
+
+        return $options;
     }
 
     /**
@@ -115,7 +171,8 @@ class RoleManager
      */
     public static function isAdminRole(int $roleId): bool
     {
-        return in_array($roleId, self::getAdminRoleIds());
+        $config = self::getRoleConfiguration();
+        return $config[$roleId]['is_admin'] ?? false;
     }
 
     /**
@@ -140,16 +197,12 @@ class RoleManager
      */
     public static function getRoleId(string $roleName): ?int
     {
-        $roleMap = [
-            self::SYS_ADMIN_NAME => self::SYS_ADMIN_ID,     // sys_admin => 1
-            self::ADMIN_NAME => self::ADMIN_ID,             // admin => 2
-            self::SUPPORT_NAME => self::SUPPORT_ID,         // support => 3
-            self::INSTRUCTOR_NAME => self::INSTRUCTOR_ID,   // instructor => 4
-            self::STUDENT_NAME => self::STUDENT_ID,         // student => 5
-            self::GUEST_NAME => self::GUEST_ID,             // guest => 6
-        ];
-
-        return $roleMap[$roleName] ?? null;
+        foreach (self::getRoleConfiguration() as $roleId => $config) {
+            if ($config['name'] === $roleName) {
+                return $roleId;
+            }
+        }
+        return null;
     }
 
     /**
@@ -157,24 +210,16 @@ class RoleManager
      */
     public static function getRoleName(int $roleId): ?string
     {
-        $roleMap = [
-            self::SYS_ADMIN_ID => self::SYS_ADMIN_NAME,     // 1 => sys_admin
-            self::ADMIN_ID => self::ADMIN_NAME,             // 2 => admin
-            self::SUPPORT_ID => self::SUPPORT_NAME,         // 3 => support
-            self::INSTRUCTOR_ID => self::INSTRUCTOR_NAME,   // 4 => instructor
-            self::STUDENT_ID => self::STUDENT_NAME,         // 5 => student
-            self::GUEST_ID => self::GUEST_NAME,             // 6 => guest
-        ];
-
-        return $roleMap[$roleId] ?? null;
+        $config = self::getRoleConfiguration();
+        return $config[$roleId]['name'] ?? null;
     }
 
-    /**
+        /**
      * Get the maximum admin role ID (used for scoping)
      */
     public static function getMaxAdminRoleId(): int
     {
-        return self::INSTRUCTOR_ID; // 4 is the highest admin role
+        return max(self::getAdminRoleIds());
     }
 
     /**
@@ -186,18 +231,19 @@ class RoleManager
     }
 
     /**
+     * Get default role ID for new support users
+     */
+    public static function getDefaultSupportRoleId(): int
+    {
+        return self::SUPPORT_ID; // 3 - Support
+    }
+
+    /**
      * Get role hierarchy levels (lower number = higher privilege)
      */
     public static function getRoleHierarchy(): array
     {
-        return [
-            self::SYS_ADMIN_ID => 1,    // 1 - SysAdmin (highest)
-            self::ADMIN_ID => 2,        // 2 - Administrator
-            self::SUPPORT_ID => 3,      // 3 - Support
-            self::INSTRUCTOR_ID => 4,   // 4 - Instructor
-            self::STUDENT_ID => 5,      // 5 - Student
-            self::GUEST_ID => 6,        // 6 - Guest (lowest)
-        ];
+        return array_column(self::getRoleConfiguration(), 'hierarchy');
     }
 
     /**
@@ -205,74 +251,63 @@ class RoleManager
      */
     public static function hasHigherOrEqualPrivileges(int $roleIdA, int $roleIdB): bool
     {
-        $hierarchy = self::getRoleHierarchy();
-        $levelA = $hierarchy[$roleIdA] ?? PHP_INT_MAX;
-        $levelB = $hierarchy[$roleIdB] ?? PHP_INT_MAX;
+        $config = self::getRoleConfiguration();
+        $levelA = $config[$roleIdA]['hierarchy'] ?? PHP_INT_MAX;
+        $levelB = $config[$roleIdB]['hierarchy'] ?? PHP_INT_MAX;
 
         return $levelA <= $levelB;
     }
 
-        /**
+    /**
      * Get role badge class for UI display
      */
     public static function getRoleBadgeClass(string $roleName): string
     {
-        return match ($roleName) {
-            self::SYS_ADMIN_NAME => 'badge-danger',    // Red for SysAdmin
-            self::ADMIN_NAME => 'badge-primary',       // Blue for Administrator
-            self::SUPPORT_NAME => 'badge-warning',     // Yellow for Support
-            self::INSTRUCTOR_NAME => 'badge-info',     // Light Blue for Instructor
-            self::STUDENT_NAME => 'badge-secondary',   // Gray for Student
-            default => 'badge-light',
-        };
+        foreach (self::getRoleConfiguration() as $config) {
+            if ($config['name'] === $roleName) {
+                return $config['badge'];
+            }
+        }
+        return 'badge-light';
     }
 
     /**
-     * Get permissions for a role (can be extended later)
+     * Get permissions for a role
      */
     public static function getRolePermissions(string $roleName): array
     {
-        return match ($roleName) {
-            self::SYS_ADMIN_NAME => [
-                'admin_access',
-                'user_management',
-                'system_settings',
-                'all_permissions',
-                'user_impersonation',
-            ],
-            self::ADMIN_NAME => [
-                'admin_access',
-                'user_management',
-                'content_management',
-            ],
-            self::SUPPORT_NAME => [
-                'admin_access',
-                'support_tickets',
-                'user_assistance',
-            ],
-            self::INSTRUCTOR_NAME => [
-                'admin_access',
-                'course_management',
-                'student_management',
-            ],
-            default => [],
-        };
+        foreach (self::getRoleConfiguration() as $config) {
+            if ($config['name'] === $roleName) {
+                return $config['permissions'];
+            }
+        }
+        return [];
     }
 
     /**
-     * Check if a user can impersonate other users (sys admin only)
+     * Check if a user can impersonate other users
      */
     public static function canImpersonate(string $roleName): bool
     {
-        return $roleName === self::SYS_ADMIN_NAME;
+        foreach (self::getRoleConfiguration() as $config) {
+            if ($config['name'] === $roleName) {
+                return $config['can_impersonate'];
+            }
+        }
+        return false;
     }
 
     /**
-     * Check if a user can be impersonated (all roles except sys admin)
+     * Check if a user can be impersonated
      */
     public static function canBeImpersonated(string $roleName): bool
     {
-        return $roleName !== self::SYS_ADMIN_NAME;
+        foreach (self::getRoleConfiguration() as $config) {
+            if ($config['name'] === $roleName) {
+                return $config['can_be_impersonated'];
+            }
+        }
+        return true;
     }
 
     /**

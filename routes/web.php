@@ -30,3 +30,10 @@ Route::prefix('admin')
     ->group(function () {
         require __DIR__ . '/admin.php';
     });
+
+/**
+ * Test Routes (for debugging)
+ */
+Route::get('/test/blade-directives', function () {
+    return view('test.blade-directive-test');
+})->middleware(['admin']);

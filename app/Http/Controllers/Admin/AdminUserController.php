@@ -186,7 +186,7 @@ class AdminUserController extends Controller
     public function edit(string $id): View
     {
         $admin = Admin::findOrFail($id);
-        $roles = Role::where('id', '<=', 4)->get(); // Admin roles: System, Admin, Instructors, Support
+        $roles = Role::whereIn('id', RoleManager::getAdminRoleIds())->get();
         return view('admin.admin-center.admin-users.edit', compact('admin', 'roles'));
     }
 

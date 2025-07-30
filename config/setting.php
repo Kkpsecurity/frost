@@ -38,7 +38,7 @@ return [
     | Supported: "database", "json", "memory"
     |
     */
-    'driver'            => 'json',
+    'driver'            => 'database',
 
     /*
     |--------------------------------------------------------------------------

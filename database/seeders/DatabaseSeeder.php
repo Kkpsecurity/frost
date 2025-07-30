@@ -56,5 +56,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ZoomCredsTableSeeder::class,
         ]);
+
+        // Seed AdminLTE configuration settings
+        $this->call([
+            AdminLteConfigSeeder::class,
+        ]);
     }
 }

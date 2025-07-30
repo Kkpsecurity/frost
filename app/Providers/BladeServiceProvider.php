@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Auth;
-use Blade;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 #use App\Helpers\Helpers;
@@ -27,7 +27,52 @@ class BladeServiceProvider extends ServiceProvider
          * @endisAnyAdmin
          */
         Blade::if( 'isAnyAdmin', function() {
-            return Auth::check() && Auth::user()->IsAnyAdmin();
+            return Auth::guard('admin')->check() && Auth::guard('admin')->user()->IsAnyAdmin();
+        });
+
+        /**
+         * @sysadmin
+         * @else
+         * @endsysadmin
+         */
+        Blade::if( 'sysadmin', function() {
+            return Auth::guard('admin')->check() && Auth::guard('admin')->user()->IsSysAdmin();
+        });
+
+        /**
+         * @administrator
+         * @else
+         * @endadministrator
+         */
+        Blade::if( 'administrator', function() {
+            return Auth::guard('admin')->check() && Auth::guard('admin')->user()->IsAdministrator();
+        });
+
+        /**
+         * @support
+         * @else
+         * @endsupport
+         */
+        Blade::if( 'support', function() {
+            return Auth::guard('admin')->check() && Auth::guard('admin')->user()->IsSupport();
+        });
+
+        /**
+         * @instructor
+         * @else
+         * @endinstructor
+         */
+        Blade::if( 'instructor', function() {
+            return Auth::guard('admin')->check() && Auth::guard('admin')->user()->IsInstructor();
+        });
+
+        /**
+         * @student
+         * @else
+         * @endstudent
+         */
+        Blade::if( 'student', function() {
+            return Auth::guard('admin')->check() && Auth::guard('admin')->user()->IsStudent();
         });
 
 

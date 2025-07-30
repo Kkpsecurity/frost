@@ -10,6 +10,7 @@ export default defineConfig({
                 "resources/js/admin.ts",
                 "resources/css/app.css",
                 "resources/css/admin.css",
+                "resources/css/adminlte-config-tabs.css",
             ],
             publicDir: "public",
             outputDir: "public/build",

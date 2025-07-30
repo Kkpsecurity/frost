@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Akaunting\Setting\Facade as Setting;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Setting Helper
@@ -15,7 +16,15 @@ class SettingHelper
     /**
      * The prefix for settings
      */
-    protected static $prefix = '';
+    protected $prefix = '';
+
+    /**
+     * Constructor
+     */
+    public function __construct(string $prefix = '')
+    {
+        $this->prefix = $prefix;
+    }
 
     /**
      * Set the prefix for settings keys
@@ -23,9 +32,9 @@ class SettingHelper
      * @param string $prefix
      * @return void
      */
-    public static function setPrefix(string $prefix)
+    public function setPrefix(string $prefix)
     {
-        self::$prefix = $prefix;
+        $this->prefix = $prefix;
     }
 
     /**
@@ -33,9 +42,9 @@ class SettingHelper
      *
      * @return string
      */
-    public static function getPrefix()
+    public function getPrefix()
     {
-        return self::$prefix;
+        return $this->prefix;
     }
 
     /**
@@ -45,9 +54,9 @@ class SettingHelper
      * @param mixed $default
      * @return mixed
      */
-    public static function get(string $key, $default = null)
+    public function get(string $key, $default = null)
     {
-        $prefixedKey = self::$prefix ? self::$prefix . '.' . $key : $key;
+        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
         return Setting::get($prefixedKey, $default);
     }
 
@@ -58,10 +67,12 @@ class SettingHelper
      * @param mixed $value
      * @return bool
      */
-    public static function set(string $key, $value)
+    public function set(string $key, $value)
     {
-        $prefixedKey = self::$prefix ? self::$prefix . '.' . $key : $key;
-        return Setting::set($prefixedKey, $value);
+        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
+        Setting::set($prefixedKey, $value);
+        Setting::save(); // Force save to database
+        return true;
     }
 
     /**
@@ -70,9 +81,9 @@ class SettingHelper
      * @param string $key
      * @return bool
      */
-    public static function has(string $key)
+    public function has(string $key)
     {
-        $prefixedKey = self::$prefix ? self::$prefix . '.' . $key : $key;
+        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
         return Setting::has($prefixedKey);
     }
 
@@ -82,10 +93,12 @@ class SettingHelper
      * @param string $key
      * @return bool
      */
-    public static function forget(string $key)
+    public function forget(string $key)
     {
-        $prefixedKey = self::$prefix ? self::$prefix . '.' . $key : $key;
-        return Setting::forget($prefixedKey);
+        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
+        $result = Setting::forget($prefixedKey);
+        Setting::save(); // Force save to database
+        return $result;
     }
 
     /**
@@ -93,21 +106,26 @@ class SettingHelper
      *
      * @return array
      */
-    public static function all()
+    public function all()
     {
-        if (!self::$prefix) {
+        if (!$this->prefix) {
             return Setting::all();
         }
 
-        $allSettings = Setting::all();
-        $prefixedSettings = [];
-        $prefixLength = strlen(self::$prefix . '.');
+        // Query database directly for prefixed settings since Setting::all()
+        // doesn't seem to load all settings from database
+        $settings = DB::table('settings')
+            ->where('key', 'like', $this->prefix . '.%')
+            ->pluck('value', 'key')
+            ->toArray();
 
-        foreach ($allSettings as $key => $value) {
-            if (strpos($key, self::$prefix . '.') === 0) {
-                $unprefixedKey = substr($key, $prefixLength);
-                $prefixedSettings[$unprefixedKey] = $value;
-            }
+        // Remove prefix from keys
+        $prefixedSettings = [];
+        $prefixLength = strlen($this->prefix . '.');
+
+        foreach ($settings as $key => $value) {
+            $unprefixedKey = substr($key, $prefixLength);
+            $prefixedSettings[$unprefixedKey] = $value;
         }
 
         return $prefixedSettings;
@@ -119,11 +137,11 @@ class SettingHelper
      * @param array $settings
      * @return bool
      */
-    public static function setMany(array $settings)
+    public function setMany(array $settings)
     {
         $success = true;
         foreach ($settings as $key => $value) {
-            if (!self::set($key, $value)) {
+            if (!$this->set($key, $value)) {
                 $success = false;
             }
         }
@@ -137,11 +155,11 @@ class SettingHelper
      * @param mixed $default
      * @return array
      */
-    public static function getMany(array $keys, $default = null)
+    public function getMany(array $keys, $default = null)
     {
         $results = [];
         foreach ($keys as $key) {
-            $results[$key] = self::get($key, $default);
+            $results[$key] = $this->get($key, $default);
         }
         return $results;
     }
@@ -151,13 +169,13 @@ class SettingHelper
      *
      * @return bool
      */
-    public static function clear()
+    public function clear()
     {
-        $settings = self::all();
+        $settings = $this->all();
         $success = true;
 
         foreach (array_keys($settings) as $key) {
-            if (!self::forget($key)) {
+            if (!$this->forget($key)) {
                 $success = false;
             }
         }
@@ -172,9 +190,9 @@ class SettingHelper
      *
      * @return array
      */
-    public static function getGrouped()
+    public function getGrouped()
     {
-        $settings = self::all();
+        $settings = $this->all();
         $grouped = [];
 
         foreach ($settings as $key => $value) {

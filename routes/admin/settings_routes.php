@@ -17,6 +17,7 @@ Route::prefix('admin-center/settings')->name('settings.')->group(function () {
     // AdminLTE specific settings
     Route::get('/adminlte/config', [SettingsController::class, 'adminlte'])->name('adminlte');
     Route::put('/adminlte/config', [SettingsController::class, 'updateAdminlte'])->name('adminlte.update');
+    Route::get('/adminlte/debug', [SettingsController::class, 'debugAdminlte'])->name('adminlte.debug');
 
     // Test settings functionality
     Route::get('/test/functionality', [SettingsController::class, 'test'])->name('test');

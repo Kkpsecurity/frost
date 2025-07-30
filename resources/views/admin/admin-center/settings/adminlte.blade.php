@@ -8,112 +8,42 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Success/Error Messages -->
+    <x-admin.widgets.messages />
+
     <div class="row">
-        <div class="col-md-8">
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-palette"></i> AdminLTE Theme Settings
-                    </h3>
+        <div class="col-md-9">
+            <div class="card card-primary card-outline card-tabs mt-3">
+                <div class="card-header p-0 pt-1 border-bottom-0">
+                   <x-admin.widgets.admin-adminlte-config-tabs :activeTab="session('active_tab', 'title-logo')" />
                 </div>
 
-                <form action="{{ route('admin.settings.adminlte.update') }}" method="POST">
-                    @csrf
-                    <div class="card-body">
-                        @foreach($adminlteSettings as $key => $value)
-                        <div class="form-group">
-                            <label for="{{ $key }}">{{ ucwords(str_replace(['_', '.'], ' ', $key)) }}</label>
-
-                            @if(in_array($key, ['adminlte.skin', 'adminlte.layout']))
-                                <select class="form-control" name="{{ $key }}" id="{{ $key }}">
-                                    @if($key === 'adminlte.skin')
-                                        <option value="blue" {{ $value === 'blue' ? 'selected' : '' }}>Blue</option>
-                                        <option value="black" {{ $value === 'black' ? 'selected' : '' }}>Black</option>
-                                        <option value="purple" {{ $value === 'purple' ? 'selected' : '' }}>Purple</option>
-                                        <option value="green" {{ $value === 'green' ? 'selected' : '' }}>Green</option>
-                                        <option value="red" {{ $value === 'red' ? 'selected' : '' }}>Red</option>
-                                        <option value="yellow" {{ $value === 'yellow' ? 'selected' : '' }}>Yellow</option>
-                                    @else
-                                        <option value="fixed" {{ $value === 'fixed' ? 'selected' : '' }}>Fixed</option>
-                                        <option value="layout-fluid" {{ $value === 'layout-fluid' ? 'selected' : '' }}>Fluid</option>
-                                        <option value="layout-boxed" {{ $value === 'layout-boxed' ? 'selected' : '' }}>Boxed</option>
-                                    @endif
-                                </select>
-                            @elseif(in_array(strtolower($value), ['true', 'false', '1', '0']))
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input"
-                                           id="{{ $key }}" name="{{ $key }}" value="1"
-                                           {{ in_array(strtolower($value), ['true', '1']) ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="{{ $key }}"></label>
-                                </div>
-                            @else
-                                <input type="text" class="form-control"
-                                       name="{{ $key }}" id="{{ $key }}"
-                                       value="{{ $value }}" placeholder="Enter value">
-                            @endif
-
-                            <small class="form-text text-muted">
-                                Current: <code>{{ $value ?? 'null' }}</code>
-                            </small>
-                        </div>
-                        @endforeach
-                    </div>
-
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Update AdminLTE Settings
-                        </button>
-                        <a href="{{ route('admin.settings.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Settings
-                        </a>
-                    </div>
-                </form>
+                <x-admin.forms.admin-adminlte-config-content :activeTab="session('active_tab', 'title-logo')" :adminlteSettings="$adminlteSettings" />
             </div>
+
+            <!-- Debug Information Card -->
+            {{-- Debug: User Role Info --}}
+            @if(Auth::check())
+                <div class="alert alert-info mb-3" style="font-size: 0.9em;">
+                    <strong>Debug Info:</strong>
+                    User ID: {{ Auth::user()->id }} |
+                    Role ID: {{ Auth::user()->role_id }} ({{ gettype(Auth::user()->role_id) }}) |
+                    IsSysAdmin(): {{ Auth::user()->IsSysAdmin() ? 'true' : 'false' }} |
+                    Auth::check(): {{ Auth::check() ? 'true' : 'false' }}
+                </div>
+            @endif
+
+            @sysadmin
+                <x-admin.debug.adminlte-debug-card :adminlteSettings="$adminlteSettings" />
+            @else
+                <div class="alert alert-warning">
+                    <strong>Debug:</strong> {{'@'}}sysadmin directive condition failed. You need to be an System Administrator to see debug information.
+                </div>
+            @endsysadmin
         </div>
 
-        <div class="col-md-4">
-            <div class="card card-info">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-paint-brush"></i> Theme Preview
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <h6><strong>Current Theme:</strong></h6>
-                    <div class="mb-3">
-                        <span class="badge badge-primary">{{ $adminlteSettings['adminlte.skin'] ?? 'Default' }}</span>
-                        <span class="badge badge-secondary">{{ $adminlteSettings['adminlte.layout'] ?? 'Default' }}</span>
-                    </div>
-
-                    <h6><strong>Settings Groups:</strong></h6>
-                    @foreach($groupedSettings as $group => $settings)
-                        @if($group === 'adminlte')
-                        <div class="mb-2">
-                            <span class="badge badge-info">{{ ucfirst($group) }}</span>
-                            <small class="text-muted">({{ count($settings) }} settings)</small>
-                        </div>
-                        @endif
-                    @endforeach
-                </div>
-            </div>
-
-            <div class="card card-warning">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-exclamation-triangle"></i> Important Note
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <p class="text-warning">
-                        <strong>Theme changes may require:</strong>
-                    </p>
-                    <ul class="list-unstyled">
-                        <li>• Browser refresh</li>
-                        <li>• Cache clearing</li>
-                        <li>• CSS recompilation</li>
-                    </ul>
-                </div>
-            </div>
+        <div class="col-md-3">
+           <x-admin.widgets.admin-adminlte-settings-sidebar :activeTab="session('active_tab', 'title-logo')" :adminlteSettings="$adminlteSettings" />
         </div>
     </div>
 </div>
@@ -121,4 +51,261 @@
 
 @section('css')
     @vite('resources/css/admin.css')
+    @vite('resources/css/adminlte-config-tabs.css')
+@stop
+
+@section('js')
+    <script>
+        function previewTheme() {
+            alert('Theme preview functionality coming soon!');
+        }
+
+        function clearCache() {
+            if (confirm('Are you sure you want to clear the application cache?')) {
+                alert('Cache clearing functionality coming soon!');
+            }
+        }
+
+        // Global function for sidebar preview
+        function applySidebarPreview() {
+            var $body = $('body');
+            var $sidebar = $('.main-sidebar');
+
+            // Get current sidebar settings
+            var sidebarCollapsed = $('input[name="sidebar_collapsed"]').is(':checked');
+            var sidebarMini = $('input[name="sidebar_mini"]').is(':checked');
+            var sidebarDisable = $('input[name="sidebar_disable_expand"]').is(':checked');
+            var sidebarFixed = $('input[name="sidebar_fixed"]').is(':checked');
+
+            // Apply/remove sidebar-collapse class
+            if (sidebarCollapsed) {
+                $body.addClass('sidebar-collapse');
+                console.log('✅ Sidebar collapsed applied');
+            } else {
+                $body.removeClass('sidebar-collapse');
+                console.log('✅ Sidebar expanded applied');
+            }
+
+            // Apply/remove sidebar-mini class
+            if (sidebarMini) {
+                $body.addClass('sidebar-mini');
+                console.log('✅ Sidebar mini applied');
+            } else {
+                $body.removeClass('sidebar-mini');
+                console.log('✅ Sidebar mini removed');
+            }
+
+            // Apply/remove sidebar-no-expand class
+            if (sidebarDisable) {
+                $body.addClass('sidebar-no-expand');
+                console.log('✅ Sidebar no-expand applied');
+            } else {
+                $body.removeClass('sidebar-no-expand');
+                console.log('✅ Sidebar no-expand removed');
+            }
+
+            // Show visual feedback
+            var status = sidebarCollapsed ? 'Collapsed' : 'Expanded';
+            if (sidebarMini) status += ' (Mini)';
+            if (sidebarDisable) status += ' (No Expand)';
+
+            // Create temporary notification
+            var $notification = $('<div class="alert alert-success alert-dismissible fade show sidebar-notification">' +
+                '<i class="fas fa-check-circle"></i> <strong>Sidebar Updated:</strong> ' + status +
+                '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+                '</div>');
+
+            $('body').append($notification);
+
+            // Auto-remove notification after 4 seconds
+            setTimeout(function() {
+                $notification.fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 4000);
+        }
+
+        function debugForm() {
+            console.log('=== FORM DEBUG INFO ===');
+            console.log('Form action:', $('form').attr('action'));
+            console.log('Form method:', $('form').attr('method'));
+
+            // Check for invalid form controls
+            var invalidControls = $('form')[0].querySelectorAll(':invalid');
+            console.log('Invalid form controls:', invalidControls.length);
+            invalidControls.forEach(function(control) {
+                console.log('Invalid control:', control.name, 'Value:', control.value, 'Validation message:', control.validationMessage);
+            });
+
+            var formData = new FormData($('form')[0]);
+            console.log('Form data entries:');
+            var count = 0;
+            for (var pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+                count++;
+            }
+            console.log('Total form fields:', count);
+
+            var $inputs = $('#adminlte-tabContent input, #adminlte-tabContent select');
+            console.log('Total input fields found:', $inputs.length);
+
+            alert('Check browser console (F12) for debug information');
+        }
+
+        function debugSettings() {
+            $('#debug-card').show();
+
+            // Also make an AJAX call to get fresh database data
+            console.log('=== DATABASE DEBUG INFO ===');
+
+            // Log current form values vs database values for sidebar settings
+            console.log('Current form sidebar settings:');
+            $('input[name^="sidebar_"]').each(function() {
+                var $input = $(this);
+                var name = $input.attr('name');
+                var value = $input.is(':checkbox') ? $input.is(':checked') : $input.val();
+                console.log(name + ':', value);
+            });
+
+            // Check if database is being updated by making a test request
+            fetch('/admin/admin-center/settings/adminlte/debug', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('=== FRESH DATABASE DATA ===');
+                console.log('Database count:', data.database_count);
+                console.log('Config count:', data.config_count);
+                console.log('Raw settings count:', data.raw_count);
+                console.log('Sidebar settings from DB:', data.sidebar_settings);
+                console.log('Last updated:', data.last_updated);
+                console.log('Raw database settings (first 10):', data.raw_settings);
+                console.log('Database settings (first 10):', data.database_settings);
+                console.log('Config settings (first 10):', data.config_settings);
+
+                // Update the debug card with fresh data
+                var sidebarHtml = '<h6><strong>Live Sidebar Settings from Database:</strong></h6><ul>';
+                Object.keys(data.sidebar_settings).forEach(function(key) {
+                    sidebarHtml += '<li><code>' + key + '</code>: <span class="badge badge-success">' + data.sidebar_settings[key] + '</span></li>';
+                });
+                sidebarHtml += '</ul>';
+
+                $('#database-debug').parent().parent().append('<div class="col-12 mt-3">' + sidebarHtml + '</div>');
+
+                alert('Database debug completed! Check browser console (F12) for detailed comparison. Fresh data loaded at: ' + data.last_updated);
+            })
+            .catch(error => {
+                console.error('Error fetching fresh data:', error);
+                alert('Error fetching fresh database data. Check console for details.');
+            });
+        }
+
+        // Auto-save draft functionality
+        $(document).ready(function() {
+            // Restore active tab from session or localStorage
+            var activeTab = null;
+
+            @if(session('active_tab'))
+                activeTab = '{{ session("active_tab") }}';
+            @else
+                activeTab = localStorage.getItem('adminlte_active_tab');
+            @endif
+
+            if (activeTab) {
+                $('.nav-tabs a[href="' + activeTab + '"]').tab('show');
+                console.log('✅ Restored tab:', activeTab);
+            }
+
+            // Save active tab when changed
+            $('.nav-tabs a').on('shown.bs.tab', function(e) {
+                localStorage.setItem('adminlte_active_tab', $(e.target).attr('href'));
+            });
+
+            // Auto-save form data to localStorage every 30 seconds
+            setInterval(function() {
+                var formData = {};
+                $('#adminlte-tabContent input, #adminlte-tabContent select').each(function() {
+                    formData[$(this).attr('name')] = $(this).val();
+                });
+                localStorage.setItem('adminlte_draft', JSON.stringify(formData));
+            }, 30000);
+
+            // Bind real-time preview to sidebar settings
+            $(document).on('change', 'input[name^="sidebar_"]', function() {
+                console.log('Sidebar setting changed:', $(this).attr('name'), 'Value:', $(this).val());
+                setTimeout(applySidebarPreview, 100); // Small delay to ensure DOM is updated
+            });
+
+            // Enhanced form submission with debugging
+            $('form').on('submit', function(e) {
+                console.log('=== FORM SUBMISSION DEBUG ===');
+                console.log('Form submission triggered');
+
+                // Save current active tab before submission
+                var currentTab = $('.nav-tabs .nav-link.active').attr('href');
+                localStorage.setItem('adminlte_active_tab', currentTab);
+
+                // Add current tab as hidden field to maintain state after redirect
+                var existingTabField = $('input[name="current_tab"]');
+                if (existingTabField.length) {
+                    existingTabField.val(currentTab);
+                } else {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'current_tab',
+                        value: currentTab
+                    }).appendTo(this);
+                }
+
+                // Enhanced debugging - show exactly what's being submitted
+                var formData = new FormData(this);
+                console.log('=== FORM DATA BEING SUBMITTED ===');
+                var sidebarData = {};
+                var allData = {};
+                var dataCount = 0;
+
+                for (var pair of formData.entries()) {
+                    allData[pair[0]] = pair[1];
+                    if (pair[0].startsWith('sidebar_')) {
+                        sidebarData[pair[0]] = pair[1];
+                    }
+                    dataCount++;
+                }
+
+                console.log('Total fields being submitted:', dataCount);
+                console.log('Sidebar settings being submitted:', sidebarData);
+                console.log('All form data:', allData);
+
+                if (dataCount === 0) {
+                    e.preventDefault();
+                    alert('No settings data found to update. Please make sure the settings are loaded properly.');
+                    return false;
+                }
+
+                // Show loading state
+                var $submitBtn = $('button[type="submit"]');
+                var originalText = $submitBtn.html();
+                $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+                localStorage.removeItem('adminlte_draft');
+                console.log('AdminLTE settings are being updated...');
+                console.log('Current tab will be restored:', currentTab);
+
+                // Re-enable button after 3 seconds in case of issues
+                setTimeout(function() {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                }, 3000);
+            });
+
+            // Debug button click
+            $('button[type="submit"]').on('click', function(e) {
+                console.log('Submit button clicked');
+                console.log('Form action:', $('form').attr('action'));
+                console.log('Form method:', $('form').attr('method'));
+            });
+        });
+    </script>
 @stop

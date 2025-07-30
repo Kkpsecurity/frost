@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use App\Helpers\SettingHelper;
 use App\Http\Controllers\Controller;
 use Akaunting\Setting\Facade as Setting;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SettingsController extends Controller
 {
@@ -128,12 +130,12 @@ class SettingsController extends Controller
      */
     public function adminlte()
     {
-        // Set prefix for AdminLTE settings
-        SettingHelper::setPrefix('adminlte');
+        // Create SettingHelper instance with AdminLTE prefix
+        $settingHelper = new SettingHelper('adminlte');
 
         // Get all AdminLTE settings
-        $adminlteSettings = SettingHelper::all();
-        $groupedSettings = SettingHelper::getGrouped();
+        $adminlteSettings = $settingHelper->all();
+        $groupedSettings = $settingHelper->getGrouped();
 
         return view('admin.admin-center.settings.adminlte', compact('adminlteSettings', 'groupedSettings'));
     }
@@ -143,16 +145,92 @@ class SettingsController extends Controller
      */
     public function updateAdminlte(Request $request)
     {
-        SettingHelper::setPrefix('adminlte');
+        // Debug logging
+        Log::info('AdminLTE Settings Update Request', [
+            'request_data' => $request->all(),
+            'method' => $request->method(),
+            'url' => $request->url(),
+            'timestamp' => now()
+        ]);
 
-        $settings = $request->except(['_token', '_method']);
+        $settingHelper = new SettingHelper('adminlte');
+
+        $settings = $request->except(['_token', '_method', 'current_tab']);
+
+        Log::info('AdminLTE Settings to be saved', [
+            'settings_count' => count($settings),
+            'sidebar_settings' => array_filter($settings, function($key) {
+                return str_starts_with($key, 'sidebar_');
+            }, ARRAY_FILTER_USE_KEY),
+            'all_settings' => $settings
+        ]);
 
         foreach ($settings as $key => $value) {
-            SettingHelper::set($key, $value);
+            $oldValue = $settingHelper->get($key);
+            $settingHelper->set($key, $value);
+
+            // Log individual setting changes
+            if ($oldValue !== $value) {
+                Log::info("Setting changed: {$key}", [
+                    'old_value' => $oldValue,
+                    'new_value' => $value,
+                    'type_old' => gettype($oldValue),
+                    'type_new' => gettype($value)
+                ]);
+            }
         }
 
-        return redirect()->route('admin.settings.adminlte')
-                        ->with('success', 'AdminLTE settings updated successfully.');
+        // Handle tab state restoration
+        $redirectUrl = route('admin.settings.adminlte');
+        if ($request->has('current_tab') && $request->current_tab) {
+            $redirectUrl .= $request->current_tab;
+        }
+
+        Log::info('AdminLTE Settings Update Complete', [
+            'updated_count' => count($settings),
+            'redirect_url' => $redirectUrl,
+            'tab' => $request->current_tab
+        ]);
+
+        return redirect($redirectUrl)
+                        ->with('success', 'AdminLTE settings updated successfully.')
+                        ->with('active_tab', $request->current_tab);
+    }
+
+    /**
+     * Debug AdminLTE settings - check database vs config
+     */
+    public function debugAdminlte()
+    {
+        $settingHelper = new SettingHelper('adminlte');
+
+        // Get database settings
+        $databaseSettings = $settingHelper->all();
+
+        // Get config settings
+        $configSettings = config('adminlte');
+
+        // Get raw database entries to check what's actually stored
+        $rawSettings = DB::table('settings')
+            ->where('key', 'like', 'adminlte.%')
+            ->get()
+            ->pluck('value', 'key')
+            ->mapWithKeys(function ($value, $key) {
+                return [str_replace('adminlte.', '', $key) => $value];
+            });
+
+        return response()->json([
+            'database_count' => count($databaseSettings),
+            'config_count' => count($configSettings),
+            'raw_count' => count($rawSettings),
+            'database_settings' => array_slice($databaseSettings, 0, 10, true),
+            'config_settings' => array_slice($configSettings, 0, 10, true),
+            'raw_settings' => array_slice($rawSettings->toArray(), 0, 10, true),
+            'sidebar_settings' => array_filter($databaseSettings, function($key) {
+                return str_starts_with($key, 'sidebar_');
+            }, ARRAY_FILTER_USE_KEY),
+            'last_updated' => now()->toDateTimeString()
+        ]);
     }
 
     /**
@@ -168,9 +246,9 @@ class SettingsController extends Controller
         $tests['basic_set'] = Setting::get('test_setting') === 'test_value';
 
         // Test 2: Setting with SettingHelper and prefix
-        SettingHelper::setPrefix('test');
-        SettingHelper::set('helper_setting', 'helper_value');
-        $tests['helper_set'] = SettingHelper::get('helper_setting') === 'helper_value';
+        $settingHelper = new SettingHelper('test');
+        $settingHelper->set('helper_setting', 'helper_value');
+        $tests['helper_set'] = $settingHelper->get('helper_setting') === 'helper_value';
 
         // Test 3: Verify prefix is working
         $tests['prefix_working'] = Setting::get('test.helper_setting') === 'helper_value';

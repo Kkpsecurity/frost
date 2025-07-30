@@ -23,10 +23,14 @@ class AdminLteService {
             }
 
             $configElements = new AdminLteConfigElements(new SettingHelper());
+
+            // Get the base configuration
+            $baseConfig = include(config_path('adminlte_config.php'));
+
+            // Merge with database-driven configuration
             return array_merge(
-                include(config_path('adminlte_config.php')),
-                $configElements->getTitle(),
-                // Add more config elements as needed
+                $baseConfig,
+                $configElements->getAllConfiguration()
             );
         } catch (\Exception $e) {
             // Return null if anything fails, let config fall back to static config
