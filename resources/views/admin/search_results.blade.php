@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('adminlte::page')
 
 @section('page-title') {{$content['title']}}  @stop
 @section('page-keywords') {{$content['keywords']}}  @stop

@@ -1,10 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\AdminCenter;
 
-use App\Http\Controllers\Controller;
-use App\Helpers\SettingHelper;
+/**
+ * SettingsController
+ * Handles CRUD operations for admin settings
+ */
+
 use Illuminate\Http\Request;
+use App\Helpers\SettingHelper;
+use App\Http\Controllers\Controller;
 use Akaunting\Setting\Facade as Setting;
 
 class SettingsController extends Controller

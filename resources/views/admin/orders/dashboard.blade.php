@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('adminlte::page')
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('assets/admin/css/swiftcrud.css') }}">
@@ -48,11 +48,11 @@
         'method' => 'DELETE',
         'id' => 'form-delete-record',
     ]);
-    
+
     $deleteRecord .= __('Are you sure you want to delete this item?');
     $deleteRecord .= Form::hidden('record_id', null, ['id' => 'record_id']);
     $deleteRecord .= Form::close();
-    
+
 @endphp
 
 @section('modals')

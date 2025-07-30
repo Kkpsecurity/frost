@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\AdminCenter\SettingsController;
 
 // Admin Center - Settings CRUD routes
 Route::prefix('admin-center/settings')->name('settings.')->group(function () {

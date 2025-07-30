@@ -25,3 +25,6 @@ require __DIR__ . '/admin/settings_routes.php';
 
 // Admin Center - Admin Users
 require __DIR__ . '/admin/admin_user_routes.php';
+
+// Admin Services (search, tools, etc.)
+require __DIR__ . '/admin/services_routes.php';
