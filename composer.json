@@ -19,7 +19,9 @@
         "laravel/scout": "^10.17",
         "laravel/tinker": "^2.8",
         "laravolt/avatar": "^6.2",
+        "league/flysystem-aws-s3-v3": "^3.29",
         "predis/predis": "^2.2",
+        "spatie/laravel-medialibrary": "^11.13",
         "teamtnt/laravel-scout-tntsearch-driver": "^15.0",
         "tightenco/ziggy": "^2.0",
         "yajra/laravel-datatables": "10.0"

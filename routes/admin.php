@@ -20,8 +20,37 @@ Route::get('/', [
     'dashboard'
 ])->name('dashboard');
 
+// FilePond Demo (legacy route - redirects to admin center)
+Route::get('/filepond-demo', function () {
+    return redirect()->route('admin.media-manager.index');
+})->name('filepond.demo');
+
+// Media Upload Routes (FilePond integration)
+Route::post('/upload', [
+    App\Http\Controllers\Admin\MediaController::class,
+    'upload'
+])->name('media.upload');
+
+Route::delete('/upload/revert', [
+    App\Http\Controllers\Admin\MediaController::class,
+    'revert'
+])->name('media.revert');
+
+Route::get('/upload/{uploadId}', [
+    App\Http\Controllers\Admin\MediaController::class,
+    'getUploadInfo'
+])->name('media.info');
+
+Route::post('/upload/finalize', [
+    App\Http\Controllers\Admin\MediaController::class,
+    'finalize'
+])->name('media.finalize');
+
 // Admin Center - Settings (already set up)
 require __DIR__ . '/admin/settings_routes.php';
+
+// Admin Center - Media Manager
+require __DIR__ . '/admin/media_manager_routes.php';
 
 // Admin Center - Admin Users
 require __DIR__ . '/admin/admin_user_routes.php';

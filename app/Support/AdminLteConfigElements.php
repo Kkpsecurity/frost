@@ -505,6 +505,11 @@ class AdminLteConfigElements {
                         'route' => 'admin.settings.index',
                         'icon' => 'fas fa-fw fa-wrench',
                     ],
+                    [
+                        'text' => 'Media Manager',
+                        'route' => 'admin.admin-center.media-manager.index',
+                        'icon' => 'fas fa-fw fa-cloud-upload-alt',
+                    ]
                 ],
             ],
 

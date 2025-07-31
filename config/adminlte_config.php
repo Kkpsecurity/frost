@@ -333,6 +333,11 @@ return [
                     'route' => 'admin.settings.index',
                     'icon' => 'fas fa-fw fa-wrench',
                 ],
+                [
+                    'text' => 'Media Manager',
+                    'route' => 'admin.media-manager.index',
+                    'icon' => 'fas fa-fw fa-cloud-upload-alt',
+                ],
             ],
         ],
 

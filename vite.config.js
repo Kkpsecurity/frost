@@ -8,10 +8,12 @@ export default defineConfig({
             input: [
                 "resources/js/app.ts",
                 "resources/js/admin.ts",
+                "resources/js/filepond.js",
                 "resources/css/app.css",
                 "resources/css/admin.css",
                 "resources/css/adminlte-config-tabs.css",
                 "resources/css/admin-settings.css",
+                "resources/css/filepond.css",
             ],
             publicDir: "public",
             outputDir: "public/build",

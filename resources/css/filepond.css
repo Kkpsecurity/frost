@@ -1,0 +1,324 @@
+/* FilePond Custom Styling for AdminLTE Dark Theme */
+
+/* Base FilePond container styling */
+.filepond--root {
+    margin-bottom: 1rem;
+    border-radius: 0.375rem;
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+/* Dark theme integration */
+.filepond--panel-root {
+    background-color: #2c3e50;
+    border: 2px dashed #4a5f7a;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+}
+
+.filepond--panel-root:hover {
+    border-color: #3498db;
+    background-color: #34495e;
+}
+
+/* Drop area styling */
+.filepond--drop-label {
+    color: #bdc3c7;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.filepond-drop-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 2rem;
+}
+
+.filepond-drop-area i {
+    opacity: 0.6;
+    margin-bottom: 1rem;
+}
+
+.filepond-drop-area .h5 {
+    color: #ecf0f1;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.filepond-drop-area .text-muted {
+    color: #95a5a6 !important;
+    font-size: 0.875rem;
+}
+
+/* Action button styling */
+.filepond-label-action {
+    color: #3498db !important;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.filepond-label-action:hover {
+    color: #2980b9 !important;
+}
+
+/* File item styling */
+.filepond--item {
+    border-radius: 0.375rem;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.filepond--item-panel {
+    background-color: #34495e;
+    border: 1px solid #4a5f7a;
+    border-radius: 0.375rem;
+}
+
+/* File info styling */
+.filepond--file-info {
+    color: #ecf0f1;
+}
+
+.filepond--file-info-main {
+    color: #ecf0f1;
+    font-weight: 500;
+}
+
+.filepond--file-info-sub {
+    color: #95a5a6;
+    font-size: 0.8rem;
+}
+
+/* Progress indicator */
+.filepond--file-status {
+    color: #ecf0f1;
+    font-size: 0.875rem;
+}
+
+.filepond--progress-indicator {
+    background-color: #4a5f7a;
+}
+
+.filepond--progress-indicator[data-progress="1"] {
+    background-color: #27ae60;
+}
+
+/* Load indicator */
+.filepond--load-indicator {
+    color: #3498db;
+}
+
+/* Buttons styling */
+.filepond--file-action-button {
+    background-color: rgba(52, 73, 94, 0.8);
+    border: 1px solid #4a5f7a;
+    color: #ecf0f1;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filepond--file-action-button:hover {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.filepond--file-action-button[data-align*="right"] {
+    margin-right: 0.5rem;
+}
+
+.filepond--file-action-button[data-align*="bottom"] {
+    margin-bottom: 0.5rem;
+}
+
+/* Process button */
+.filepond--file-action-button.filepond--action-process-item {
+    background-color: #27ae60;
+    border-color: #229954;
+}
+
+.filepond--file-action-button.filepond--action-process-item:hover {
+    background-color: #2ecc71;
+    border-color: #27ae60;
+}
+
+/* Remove button */
+.filepond--file-action-button.filepond--action-remove-item {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+.filepond--file-action-button.filepond--action-remove-item:hover {
+    background-color: #ec7063;
+    border-color: #e74c3c;
+}
+
+/* Image preview styling */
+.filepond--image-preview {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.filepond--image-preview-wrapper {
+    background-color: #2c3e50;
+    border-radius: 0.375rem;
+}
+
+.filepond--image-preview-overlay {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+}
+
+/* Drag over state */
+.filepond--root.filepond--hopper {
+    border-color: #3498db;
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.filepond--root.filepond--hopper .filepond--panel-root {
+    border-color: #3498db;
+    background-color: #34495e;
+    transform: scale(1.02);
+}
+
+/* Invalid file styling */
+.filepond--item.filepond--item-invalid .filepond--item-panel {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+.filepond--item.filepond--item-invalid .filepond--file-info {
+    color: #fff;
+}
+
+/* Processing state */
+.filepond--item.filepond--item-processing .filepond--item-panel {
+    background-color: #f39c12;
+    border-color: #e67e22;
+}
+
+/* Complete state */
+.filepond--item.filepond--item-processing-complete .filepond--item-panel {
+    background-color: #27ae60;
+    border-color: #229954;
+}
+
+/* Error state */
+.filepond--item.filepond--item-processing-error .filepond--item-panel {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+/* Compact layout */
+.filepond--root[data-style-panel-layout="compact"] .filepond--item {
+    margin-bottom: 0.25rem;
+}
+
+.filepond--root[data-style-panel-layout="compact"] .filepond--item-panel {
+    padding: 0.5rem;
+}
+
+/* Modern styling variant */
+.filepond-modern .filepond--drop-label {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 0.5rem;
+    border: 2px dashed #4a5f7a;
+    transition: all 0.3s ease;
+}
+
+.filepond-modern .filepond--drop-label:hover {
+    border-color: #3498db;
+    background: linear-gradient(135deg, #34495e 0%, #4a5f7a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .filepond-drop-area {
+        min-height: 150px;
+        padding: 1.5rem 1rem;
+    }
+
+    .filepond-drop-area .fa-3x {
+        font-size: 2rem !important;
+    }
+
+    .filepond-drop-area .h5 {
+        font-size: 1rem;
+    }
+
+    .filepond--file-action-button {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+}
+
+/* Integration with AdminLTE form groups */
+.form-group .filepond--root {
+    margin-bottom: 0;
+}
+
+.form-group .filepond--root + .form-text {
+    margin-top: 0.5rem;
+}
+
+/* Custom validation states */
+.is-invalid ~ .filepond--root .filepond--panel-root {
+    border-color: #dc3545;
+}
+
+.is-valid ~ .filepond--root .filepond--panel-root {
+    border-color: #28a745;
+}
+
+/* File type specific icons */
+.filepond--file-info-main:before {
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 0.5rem;
+    opacity: 0.7;
+}
+
+.filepond--item[data-file-type*="image"] .filepond--file-info-main:before {
+    content: '\f1c5'; /* fa-file-image */
+}
+
+.filepond--item[data-file-type*="pdf"] .filepond--file-info-main:before {
+    content: '\f1c1'; /* fa-file-pdf */
+}
+
+.filepond--item[data-file-type*="word"] .filepond--file-info-main:before {
+    content: '\f1c2'; /* fa-file-word */
+}
+
+.filepond--item[data-file-type*="text"] .filepond--file-info-main:before {
+    content: '\f15c'; /* fa-file-text */
+}
+
+/* Loading animation */
+@keyframes filepond-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.filepond--item.filepond--item-loading .filepond--item-panel {
+    animation: filepond-pulse 2s infinite;
+}
+
+/* Success animation */
+@keyframes filepond-success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.filepond--item.filepond--item-processing-complete .filepond--item-panel {
+    animation: filepond-success 0.6s ease-out;
+}
