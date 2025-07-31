@@ -17,7 +17,11 @@ class AdminLteConfigElements {
 
     // Add class members here as needed
     public function getTitle() {
-        return ['title' => $this->settingHelper->get('title', 'Admin Panel')];
+        return ['title' => $this->settingHelper->get('title', 'Admin P                    [
+                        'text' => 'Media Manager',
+                        'route' => 'admin.media-manager.index',
+                        'icon' => 'fas fa-fw fa-hdd',
+                    ])];
     }
 
     public function getTitlePrefix() {
@@ -507,8 +511,8 @@ class AdminLteConfigElements {
                     ],
                     [
                         'text' => 'Media Manager',
-                        'route' => 'admin.admin-center.media-manager.index',
-                        'icon' => 'fas fa-fw fa-cloud-upload-alt',
+                        'route' => 'admin.media-manager.index',
+                        'icon' => 'fas fa-fw fa-hdd',
                     ]
                 ],
             ],

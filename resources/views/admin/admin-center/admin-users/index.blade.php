@@ -3,11 +3,11 @@
 @section('title', 'Admin Users')
 
 @section('content_header')
-    <x-admin.admin-header />
+    <x-admin.widgets.admin-header />
 @stop
 
 @section('content')
-    <x-admin.admin-datatable />
+    <x-admin.datatables.admin-datatable />
 @stop
 
 @section('css')

@@ -36,8 +36,7 @@
         <div class="d-flex justify-content-between align-items-center admin-header-flex">
             <div>
                 <h2 class="page-title">
-                    <i class="fas fa-circle page-title-icon"></i>{{ $pageTitle }}
-                </h2>
+                    <i class="fas fa-circle page-title-icon"></i>{{ $pageTitle }}                </h2>
             </div>
             <nav aria-label="breadcrumb" class="breadcrumb-nav">
                 <ol class="breadcrumb breadcrumb-custom">

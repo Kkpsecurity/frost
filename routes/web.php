@@ -10,6 +10,13 @@
 use Illuminate\Support\Facades\Route;
 
 /**
+ * Home Route - Redirect to Admin
+ */
+Route::get('/', function () {
+    return redirect()->route('admin.login');
+})->name('home');
+
+/**
  * Admin Authentication Routes
  * These routes handle admin login/logout and are accessible without admin middleware
  */

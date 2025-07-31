@@ -33,6 +33,7 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app'),
+            'visibility' => 'private',
             'throw' => false,
         ],
 
@@ -53,6 +54,19 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+        ],
+
+        // Media Manager S3 Archive
+        'media_s3' => [
+            'driver' => 's3',
+            'key' => env('MEDIA_S3_ACCESS_KEY'),
+            'secret' => env('MEDIA_S3_SECRET_KEY'),
+            'region' => env('MEDIA_S3_REGION'),
+            'bucket' => env('MEDIA_S3_BUCKET'),
+            'endpoint' => env('MEDIA_S3_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'private',
             'throw' => false,
         ],
 

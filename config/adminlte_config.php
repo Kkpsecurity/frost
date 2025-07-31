@@ -336,7 +336,7 @@ return [
                 [
                     'text' => 'Media Manager',
                     'route' => 'admin.media-manager.index',
-                    'icon' => 'fas fa-fw fa-cloud-upload-alt',
+                    'icon' => 'fas fa-fw fa-hdd',
                 ],
             ],
         ],

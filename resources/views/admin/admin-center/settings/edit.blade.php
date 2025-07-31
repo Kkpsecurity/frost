@@ -3,7 +3,7 @@
 @section('title', 'Edit Setting')
 
 @section('content_header')
-    <x-admin.admin-header />
+    <x-admin.widgets.admin-header />
 @stop
 
 @section('title', 'Edit Setting')

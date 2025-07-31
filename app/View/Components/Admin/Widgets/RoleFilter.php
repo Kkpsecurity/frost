@@ -1,6 +1,6 @@
 <?php
 
-namespace App\View\Components;
+namespace App\View\Components\Admin\Widgets;
 
 use Illuminate\View\Component;
 use App\Support\RoleManager;
@@ -14,6 +14,6 @@ class RoleFilter extends Component
     {
         $roleOptions = RoleManager::getAdminRoleOptions();
 
-        return view('components.role-filter', compact('roleOptions'));
+        return view('components.admin.widgets.role-filter', compact('roleOptions'));
     }
 }

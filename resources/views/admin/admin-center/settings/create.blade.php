@@ -3,7 +3,7 @@
 @section('title', 'Create Setting')
 
 @section('content_header')
-    <x-admin.admin-header />
+    <x-admin.widgets.admin-header />
 @stopnlte::page')
 
 @section('title', 'Create Setting')
