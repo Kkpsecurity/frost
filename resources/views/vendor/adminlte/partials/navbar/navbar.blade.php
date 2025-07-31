@@ -25,7 +25,7 @@
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 
         {{-- User menu link --}}
-        @if(Auth::user())
+        @if(Auth::guard('admin')->user())
             @if(config('adminlte.usermenu_enabled'))
                 @include('adminlte::partials.navbar.menu-item-dropdown-user-menu')
             @else

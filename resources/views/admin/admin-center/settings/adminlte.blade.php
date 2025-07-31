@@ -7,46 +7,47 @@
 @stop
 
 @section('content')
-<div class="container-fluid">
-    <!-- Success/Error Messages -->
-    <x-admin.widgets.messages />
+    <div class="container-fluid">
+        <!-- Success/Error Messages -->
+        <x-admin.widgets.messages />
 
-    <div class="row">
-        <div class="col-md-9">
-            <div class="card card-primary card-outline card-tabs mt-3">
-                <div class="card-header p-0 pt-1 border-bottom-0">
-                   <x-admin.widgets.admin-adminlte-config-tabs :activeTab="session('active_tab', 'title-logo')" />
+        <div class="row">
+            <div class="col-md-9">
+                <div class="card card-primary card-outline card-tabs mt-3">
+                    <div class="card-header p-0 pt-1 border-bottom-0">
+                        <x-admin.widgets.admin-adminlte-config-tabs :activeTab="session('active_tab', 'title-logo')" />
+                    </div>
+
+                    <x-admin.forms.admin-adminlte-config-content :activeTab="session('active_tab', 'title-logo')" :adminlteSettings="$adminlteSettings" />
                 </div>
 
-                <x-admin.forms.admin-adminlte-config-content :activeTab="session('active_tab', 'title-logo')" :adminlteSettings="$adminlteSettings" />
+
+
+                @sysadmin
+                    <x-admin.debug.adminlte-debug-card :adminlteSettings="$adminlteSettings" />
+                @else
+                    <div class="alert alert-warning">
+                        <strong>Debug:</strong> {{ '@' }}sysadmin directive condition failed. You need to be an System
+                        Administrator to see debug information.
+                        {{-- Debug: User Role Info --}}
+                        @if (Auth::check())
+                            <div class="alert alert-info mb-3" style="font-size: 0.9em;">
+                                <strong>Debug Info:</strong>
+                                User ID: {{ Auth::user()->id }} |
+                                Role ID: {{ Auth::user()->role_id }} ({{ gettype(Auth::user()->role_id) }}) |
+                                IsSysAdmin(): {{ Auth::user()->IsSysAdmin() ? 'true' : 'false' }} |
+                                Auth::check(): {{ Auth::check() ? 'true' : 'false' }}
+                            </div>
+                        @endif
+                    </div>
+                @endsysadmin
             </div>
 
-            <!-- Debug Information Card -->
-            {{-- Debug: User Role Info --}}
-            @if(Auth::check())
-                <div class="alert alert-info mb-3" style="font-size: 0.9em;">
-                    <strong>Debug Info:</strong>
-                    User ID: {{ Auth::user()->id }} |
-                    Role ID: {{ Auth::user()->role_id }} ({{ gettype(Auth::user()->role_id) }}) |
-                    IsSysAdmin(): {{ Auth::user()->IsSysAdmin() ? 'true' : 'false' }} |
-                    Auth::check(): {{ Auth::check() ? 'true' : 'false' }}
-                </div>
-            @endif
-
-            @sysadmin
-                <x-admin.debug.adminlte-debug-card :adminlteSettings="$adminlteSettings" />
-            @else
-                <div class="alert alert-warning">
-                    <strong>Debug:</strong> {{'@'}}sysadmin directive condition failed. You need to be an System Administrator to see debug information.
-                </div>
-            @endsysadmin
-        </div>
-
-        <div class="col-md-3">
-           <x-admin.widgets.admin-adminlte-settings-sidebar :activeTab="session('active_tab', 'title-logo')" :adminlteSettings="$adminlteSettings" />
+            <div class="col-md-3">
+                <x-admin.widgets.admin-adminlte-settings-sidebar :activeTab="session('active_tab', 'title-logo')" :adminlteSettings="$adminlteSettings" />
+            </div>
         </div>
     </div>
-</div>
 @stop
 
 @section('css')
@@ -72,10 +73,10 @@
             var $sidebar = $('.main-sidebar');
 
             // Get current sidebar settings
-            var sidebarCollapsed = $('input[name="sidebar_collapsed"]').is(':checked');
-            var sidebarMini = $('input[name="sidebar_mini"]').is(':checked');
+            var sidebarCollapsed = $('input[name="sidebar_collapse"]').is(':checked');
+            var sidebarMini = $('select[name="sidebar_mini"]').val();
             var sidebarDisable = $('input[name="sidebar_disable_expand"]').is(':checked');
-            var sidebarFixed = $('input[name="sidebar_fixed"]').is(':checked');
+            var sidebarFixed = $('input[name="layout_fixed_sidebar"]').is(':checked');
 
             // Apply/remove sidebar-collapse class
             if (sidebarCollapsed) {
@@ -134,7 +135,8 @@
             var invalidControls = $('form')[0].querySelectorAll(':invalid');
             console.log('Invalid form controls:', invalidControls.length);
             invalidControls.forEach(function(control) {
-                console.log('Invalid control:', control.name, 'Value:', control.value, 'Validation message:', control.validationMessage);
+                console.log('Invalid control:', control.name, 'Value:', control.value, 'Validation message:',
+                    control.validationMessage);
             });
 
             var formData = new FormData($('form')[0]);
@@ -169,38 +171,40 @@
 
             // Check if database is being updated by making a test request
             fetch('/admin/admin-center/settings/adminlte/debug', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('=== FRESH DATABASE DATA ===');
-                console.log('Database count:', data.database_count);
-                console.log('Config count:', data.config_count);
-                console.log('Raw settings count:', data.raw_count);
-                console.log('Sidebar settings from DB:', data.sidebar_settings);
-                console.log('Last updated:', data.last_updated);
-                console.log('Raw database settings (first 10):', data.raw_settings);
-                console.log('Database settings (first 10):', data.database_settings);
-                console.log('Config settings (first 10):', data.config_settings);
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('=== FRESH DATABASE DATA ===');
+                    console.log('Database count:', data.database_count);
+                    console.log('Config count:', data.config_count);
+                    console.log('Raw settings count:', data.raw_count);
+                    console.log('Sidebar settings from DB:', data.sidebar_settings);
+                    console.log('Last updated:', data.last_updated);
+                    console.log('Raw database settings (first 10):', data.raw_settings);
+                    console.log('Database settings (first 10):', data.database_settings);
+                    console.log('Config settings (first 10):', data.config_settings);
 
-                // Update the debug card with fresh data
-                var sidebarHtml = '<h6><strong>Live Sidebar Settings from Database:</strong></h6><ul>';
-                Object.keys(data.sidebar_settings).forEach(function(key) {
-                    sidebarHtml += '<li><code>' + key + '</code>: <span class="badge badge-success">' + data.sidebar_settings[key] + '</span></li>';
+                    // Update the debug card with fresh data
+                    var sidebarHtml = '<h6><strong>Live Sidebar Settings from Database:</strong></h6><ul>';
+                    Object.keys(data.sidebar_settings).forEach(function(key) {
+                        sidebarHtml += '<li><code>' + key + '</code>: <span class="badge badge-success">' + data
+                            .sidebar_settings[key] + '</span></li>';
+                    });
+                    sidebarHtml += '</ul>';
+
+                    $('#database-debug').parent().parent().append('<div class="col-12 mt-3">' + sidebarHtml + '</div>');
+
+                    alert('Database debug completed! Check browser console (F12) for detailed comparison. Fresh data loaded at: ' +
+                        data.last_updated);
+                })
+                .catch(error => {
+                    console.error('Error fetching fresh data:', error);
+                    alert('Error fetching fresh database data. Check console for details.');
                 });
-                sidebarHtml += '</ul>';
-
-                $('#database-debug').parent().parent().append('<div class="col-12 mt-3">' + sidebarHtml + '</div>');
-
-                alert('Database debug completed! Check browser console (F12) for detailed comparison. Fresh data loaded at: ' + data.last_updated);
-            })
-            .catch(error => {
-                console.error('Error fetching fresh data:', error);
-                alert('Error fetching fresh database data. Check console for details.');
-            });
         }
 
         // Auto-save draft functionality
@@ -208,8 +212,8 @@
             // Restore active tab from session or localStorage
             var activeTab = null;
 
-            @if(session('active_tab'))
-                activeTab = '{{ session("active_tab") }}';
+            @if (session('active_tab'))
+                activeTab = '{{ session('active_tab') }}';
             @else
                 activeTab = localStorage.getItem('adminlte_active_tab');
             @endif
@@ -281,14 +285,16 @@
 
                 if (dataCount === 0) {
                     e.preventDefault();
-                    alert('No settings data found to update. Please make sure the settings are loaded properly.');
+                    alert(
+                        'No settings data found to update. Please make sure the settings are loaded properly.');
                     return false;
                 }
 
                 // Show loading state
                 var $submitBtn = $('button[type="submit"]');
                 var originalText = $submitBtn.html();
-                $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+                $submitBtn.prop('disabled', true).html(
+                '<i class="fas fa-spinner fa-spin"></i> Updating...');
 
                 localStorage.removeItem('adminlte_draft');
                 console.log('AdminLTE settings are being updated...');
@@ -305,6 +311,69 @@
                 console.log('Submit button clicked');
                 console.log('Form action:', $('form').attr('action'));
                 console.log('Form method:', $('form').attr('method'));
+            });
+
+            // Auto-apply sidebar collapse changes immediately
+            $(document).on('change', 'input[name="sidebar_collapse"]', function() {
+                var isCollapsed = $(this).is(':checked');
+                var $body = $('body');
+
+                if (isCollapsed) {
+                    $body.addClass('sidebar-collapse');
+                    console.log('✅ Sidebar auto-collapsed');
+                } else {
+                    $body.removeClass('sidebar-collapse');
+                    console.log('✅ Sidebar auto-expanded');
+                }
+
+                // Show brief notification
+                var status = isCollapsed ? 'Collapsed' : 'Expanded';
+                var $notification = $('<div class="alert alert-info alert-dismissible fade show position-fixed" style="top: 70px; right: 20px; z-index: 9999; width: 300px;">' +
+                    '<i class="fas fa-info-circle"></i> <strong>Sidebar ' + status + '</strong> (Preview)' +
+                    '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+                    '</div>');
+
+                $('body').append($notification);
+
+                // Auto-remove notification after 2 seconds
+                setTimeout(function() {
+                    $notification.alert('close');
+                }, 2000);
+            });
+
+            // Auto-apply sidebar mini changes immediately
+            $(document).on('change', 'select[name="sidebar_mini"]', function() {
+                var miniValue = $(this).val();
+                var $body = $('body');
+
+                // Remove all sidebar-mini classes
+                $body.removeClass('sidebar-mini sidebar-mini-md sidebar-mini-xs');
+
+                if (miniValue && miniValue !== '') {
+                    if (miniValue === 'lg') {
+                        $body.addClass('sidebar-mini');
+                    } else if (miniValue === 'md') {
+                        $body.addClass('sidebar-mini sidebar-mini-md');
+                    } else if (miniValue === 'sm') {
+                        $body.addClass('sidebar-mini sidebar-mini-xs');
+                    }
+                    console.log('✅ Sidebar mini mode:', miniValue);
+                } else {
+                    console.log('✅ Sidebar mini mode disabled');
+                }
+
+                // Show brief notification
+                var status = miniValue ? 'Mini (' + miniValue.toUpperCase() + ')' : 'Normal Size';
+                var $notification = $('<div class="alert alert-info alert-dismissible fade show position-fixed" style="top: 70px; right: 20px; z-index: 9999; width: 300px;">' +
+                    '<i class="fas fa-info-circle"></i> <strong>Sidebar ' + status + '</strong> (Preview)' +
+                    '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+                    '</div>');
+
+                $('body').append($notification);
+
+                setTimeout(function() {
+                    $notification.alert('close');
+                }, 2000);
             });
         });
     </script>

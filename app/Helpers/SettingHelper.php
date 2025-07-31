@@ -116,6 +116,7 @@ class SettingHelper
         // doesn't seem to load all settings from database
         $settings = DB::table('settings')
             ->where('key', 'like', $this->prefix . '.%')
+            ->orderBy('key')
             ->pluck('value', 'key')
             ->toArray();
 

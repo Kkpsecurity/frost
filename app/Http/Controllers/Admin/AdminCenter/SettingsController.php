@@ -137,6 +137,14 @@ class SettingsController extends Controller
         $adminlteSettings = $settingHelper->all();
         $groupedSettings = $settingHelper->getGrouped();
 
+        // Debug the layout_dark_mode value being passed to the view
+        Log::info('AdminLTE View Debug', [
+            'layout_dark_mode_value' => $adminlteSettings['layout_dark_mode'] ?? 'NOT_SET',
+            'layout_dark_mode_type' => gettype($adminlteSettings['layout_dark_mode'] ?? null),
+            'all_settings_count' => count($adminlteSettings),
+            'first_10_settings' => array_slice($adminlteSettings, 0, 10, true)
+        ]);
+
         return view('admin.admin-center.settings.adminlte', compact('adminlteSettings', 'groupedSettings'));
     }
 
@@ -157,6 +165,16 @@ class SettingsController extends Controller
 
         $settings = $request->except(['_token', '_method', 'current_tab']);
 
+        // Special debug for dark mode setting
+        Log::info('DARK MODE DEBUG - Raw request data', [
+            'all_request_data' => $request->all(),
+            'layout_dark_mode_in_request' => $request->has('layout_dark_mode'),
+            'layout_dark_mode_value' => $request->get('layout_dark_mode'),
+            'layout_dark_mode_in_settings' => isset($settings['layout_dark_mode']),
+            'settings_dark_mode_value' => $settings['layout_dark_mode'] ?? 'NOT_SET',
+            'current_tab' => $request->get('current_tab', 'NOT_SET')
+        ]);
+
         Log::info('AdminLTE Settings to be saved', [
             'settings_count' => count($settings),
             'sidebar_settings' => array_filter($settings, function($key) {
@@ -167,7 +185,31 @@ class SettingsController extends Controller
 
         foreach ($settings as $key => $value) {
             $oldValue = $settingHelper->get($key);
+
+            // Special debug for layout_dark_mode
+            if ($key === 'layout_dark_mode') {
+                Log::info("DARK MODE DEBUG - Processing", [
+                    'key' => $key,
+                    'received_value' => $value,
+                    'received_type' => gettype($value),
+                    'old_database_value' => $oldValue,
+                    'old_database_type' => gettype($oldValue),
+                    'raw_request_value' => $request->get('layout_dark_mode', 'NOT_FOUND')
+                ]);
+            }
+
             $settingHelper->set($key, $value);
+
+            // Verify the value was actually saved
+            $verifyValue = $settingHelper->get($key);
+            if ($key === 'layout_dark_mode') {
+                Log::info("DARK MODE DEBUG - After save", [
+                    'key' => $key,
+                    'saved_value' => $value,
+                    'verified_value' => $verifyValue,
+                    'save_successful' => ($value === $verifyValue)
+                ]);
+            }
 
             // Log individual setting changes
             if ($oldValue !== $value) {

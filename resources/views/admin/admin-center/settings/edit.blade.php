@@ -4,7 +4,7 @@
 
 @section('content_header')
     <x-admin.admin-header />
-@stopnlte::page')
+@stop
 
 @section('title', 'Edit Setting')
 
@@ -23,7 +23,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8">
-            <div class="card card-warning">
+            <div class="card card-warning mt-3">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-edit"></i> Edit Setting: {{ $settingName }}
@@ -45,9 +45,20 @@
 
                         <div class="form-group">
                             <label for="value">Setting Value</label>
+                            @php
+                                $displayValue = is_array($value) || is_object($value)
+                                    ? json_encode($value, JSON_PRETTY_PRINT)
+                                    : $value;
+                            @endphp
                             <textarea class="form-control @error('value') is-invalid @enderror"
-                                      id="value" name="value" rows="5"
-                                      placeholder="Enter the setting value">{{ old('value', $value) }}</textarea>
+                                      id="value" name="value" rows="10"
+                                      placeholder="Enter the setting value">{{ old('value', $displayValue) }}</textarea>
+                            @if(is_array($value) || is_object($value))
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    This setting contains JSON data. Edit carefully to maintain valid JSON format.
+                                </small>
+                            @endif
                             @error('value')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
@@ -77,7 +88,7 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card card-secondary">
+            <div class="card card-secondary mt-3">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-history"></i> Current Value
@@ -86,8 +97,15 @@
                 <div class="card-body">
                     <div class="form-group">
                         <label>Original Value:</label>
-                        <div class="border p-2 bg-light">
-                            <code>{{ $value ?? 'null' }}</code>
+                        <div class="border p-2 bg-light " style="min-height: 360px; max-height: 400px; overflow: auto;">
+                            <code class="text-muted">
+                                @php
+                                    $displayCurrentValue = is_array($value) || is_object($value)
+                                        ? json_encode($value, JSON_PRETTY_PRINT)
+                                        : ($value ?? 'null');
+                                @endphp
+                                {{ $displayCurrentValue }}
+                            </code>
                         </div>
                     </div>
 

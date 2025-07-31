@@ -241,7 +241,7 @@ return [
     'right_sidebar_slide' => true,
     'right_sidebar_push' => true,
     'right_sidebar_scrollbar_theme' => 'os-theme-light',
-    'right_sidebar_scrollbar_auto_hide' => 'l',
+    'right_sidebar_scrollbar_auto_hide' => 'l', // 'l' = always visible, 'leave' = auto-hide on scroll
 
     /*
     |--------------------------------------------------------------------------
