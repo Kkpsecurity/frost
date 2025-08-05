@@ -1,504 +1,1692 @@
 <script>
-    let currentDisk = 'public'; // Start with public disk
+    let currentDisk = 'public';
     let currentPath = '/';
-    let viewMode = 'grid';
+    let currentFolder = '';
+    let selectedFiles = [];
     let currentFiles = [];
     let currentDirectories = [];
+    let currentViewMode = 'grid'; // Default view mode
 
-    // Map disk names to their corresponding grid IDs in the templates
+    // Map disk names to their corresponding template IDs
     const diskToGridMap = {
         'public': 'public',
-        'local': 'private', // local disk uses 'private' as the grid ID
+        'local': 'private',
         's3': 's3'
     };
 
     $(document).ready(function() {
-        // Initialize the media manager
+        console.log('Initializing Media Manager...');
         initializeMediaManager();
-
-
     });
 
     function initializeMediaManager() {
-        console.log('Initializing Media Manager...');
-
-        // Debug: List all media manager elements
-        console.log('=== DEBUGGING MEDIA MANAGER ELEMENTS ===');
-        console.log('All elements with IDs containing "Loading":', $('[id*="Loading"]').map(function() { return this.id; }).get());
-        console.log('All elements with IDs containing "UploadArea":', $('[id*="UploadArea"]').map(function() { return this.id; }).get());
-        console.log('All elements with IDs containing "EmptyState":', $('[id*="EmptyState"]').map(function() { return this.id; }).get());
-        console.log('All elements with IDs containing "Grid":', $('[id*="Grid"]').map(function() { return this.id; }).get());
-        console.log('=== END DEBUG ===');
-
-        prepareUiDefaultState();
+        // Initialize tab functionality
+        initializeTabs();
+       
+        
+        // Set initial state
+        showLoadingState(currentDisk);
+        
+        // Bind event handlers
         bindEventHandlers();
-        checkAllDiskStatuses();
-
-        console.log(`Initial state - currentDisk: ${currentDisk}, currentPath: ${currentPath}`);
-
+        
         // Load initial files
-        loadFiles().then(() => {
-            console.log('Initial file loading completed');
-        }).catch((error) => {
-            console.error('Initial file loading failed:', error);
-        });
+        loadFiles(currentDisk);
     }
 
-    /**
-     * Get all three states: loading, uploader, and file list where the default state is loading
-     * and it only hides when the other states are properly loaded and ready
-     */
-    function prepareUiDefaultState() {
-        console.log('Preparing UI default state - showing loading until other states are ready');
-
-        // Hide all sections for all disks initially and show loading
-        Object.keys(diskToGridMap).forEach(diskName => {
-            const templateDiskId = diskToGridMap[diskName];
-
-            // Get all elements for this disk
-            const $grid = $(`#${templateDiskId}Grid`);
-            const $uploadArea = $(`#${templateDiskId}UploadArea`);
-            const $emptyState = $(`#${templateDiskId}EmptyState`);
-            const $loading = $(`#${templateDiskId}Loading`);
-
-            console.log(`=== PREPARING ${diskName.toUpperCase()} (${templateDiskId}) ===`);
-            console.log(`Found elements - Grid: ${$grid.length}, Upload: ${$uploadArea.length}, Empty: ${$emptyState.length}, Loading: ${$loading.length}`);
-
-            // NUCLEAR APPROACH - Force hide all content states with multiple methods
-            $grid.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            $uploadArea.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            $emptyState.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            // Show loading for all disks initially (will be hidden when content is ready)
-            $loading.show().css({
-                'display': 'block',
-                'visibility': 'visible',
-                'height': 'auto',
-                'min-height': 'auto',
-                'max-height': 'none',
-                'margin': '',
-                'padding': '',
-                'overflow': '',
-                'flex': '',
-                'flex-grow': '',
-                'flex-shrink': '',
-                'flex-basis': '',
-                'align-self': ''
-            }).addClass('show active');            console.log(`Disk ${diskName} (${templateDiskId}): All content hidden, loading shown`);
-
-            // Verify what we just did
-            console.log(`Verification - Grid visible: ${$grid.is(':visible')}, Upload visible: ${$uploadArea.is(':visible')}, Empty visible: ${$emptyState.is(':visible')}, Loading visible: ${$loading.is(':visible')}`);
+    function initializeTabs() {
+        console.log('Initializing tab functionality...');
+        
+        // Bind tab click handlers
+        $('.media-tabs .nav-link').on('click', function(e) {
+            e.preventDefault();
+            const targetDisk = $(this).data('disk');
+            
+            if (targetDisk && targetDisk !== currentDisk) {
+                switchToDisk(targetDisk);
+            }
         });
+        
+        // Set initial active tab
+        setActiveTab(currentDisk);
+    }
 
-        // Set the active tab
-        $('.nav-tabs a').removeClass('active');
-        $(`.nav-tabs a[data-disk="${currentDisk}"]`).addClass('active');
+    function switchToDisk(diskName) {
+        console.log(`Switching from ${currentDisk} to ${diskName}`);
+        
+        // Update current disk
+        currentDisk = diskName;
+        currentPath = '/';
+        currentFolder = '';
+        
+        // Update UI
+        setActiveTab(diskName);
+        showActiveTabContent(diskName);
+        updateCurrentDiskDisplay(diskName);
+        updateBreadcrumbs(diskName, 'media', '/');
+        showLoadingState(diskName);
+        
+        // Load files for new disk
+        loadFiles(diskName);
+    }
 
-        // Hide all tab content and show only the current disk's tab
+    function setActiveTab(diskName) {
+        // Remove active class from all tabs
+        $('.media-tabs .nav-link').removeClass('active');
+        
+        // Add active class to current tab
+        $(`.media-tabs .nav-link[data-disk="${diskName}"]`).addClass('active');
+        
+        console.log(`Set active tab: ${diskName}`);
+    }
+
+    function showActiveTabContent(diskName) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        
+        // Hide all tab panes
         $('.tab-pane').removeClass('show active').hide();
-        const currentTemplateDiskId = diskToGridMap[currentDisk] || currentDisk;
-        const $currentTab = $(`#${currentTemplateDiskId}`);
-        if ($currentTab.length > 0) {
-            $currentTab.addClass('show active').show();
-            console.log(`Activated tab for disk: ${currentDisk}`);
-        }
-
-        // Update current disk display
-        $('#currentDiskDisplay').text(currentDisk.charAt(0).toUpperCase() + currentDisk.slice(1));
-
-        console.log('UI default state preparation completed - loading states active');
-
-        // Final check of current disk
-        setTimeout(() => {
-            const $currentGrid = $(`#${currentTemplateDiskId}Grid`);
-            const $currentUpload = $(`#${currentTemplateDiskId}UploadArea`);
-            const $currentEmpty = $(`#${currentTemplateDiskId}EmptyState`);
-            const $currentLoading = $(`#${currentTemplateDiskId}Loading`);
-
-            console.log('=== FINAL STATE CHECK AFTER INITIALIZATION ===');
-            console.log(`Current disk (${currentDisk}) elements visible: Grid=${$currentGrid.is(':visible')}, Upload=${$currentUpload.is(':visible')}, Empty=${$currentEmpty.is(':visible')}, Loading=${$currentLoading.is(':visible')}`);
-
-            const visibleCount = [$currentGrid, $currentUpload, $currentEmpty, $currentLoading].filter(el => el.is(':visible')).length;
-            console.log(`VISIBLE COUNT AFTER INIT: ${visibleCount} (should be 1 - loading only)`);
-        }, 50);
+        
+        // Show current tab pane
+        $(`#${templateDiskId}`).addClass('show active').show();
+        
+        console.log(`Showing tab content for: ${diskName} (${templateDiskId})`);
     }
 
-    /**
-     * Test if all required components are loaded and ready, then hide loading state
-     */
-    function testAndHideLoadingWhenReady() {
-        const currentTemplateDiskId = diskToGridMap[currentDisk] || currentDisk;
-        const $grid = $(`#${currentTemplateDiskId}Grid`);
-        const $uploadArea = $(`#${currentTemplateDiskId}UploadArea`);
-        const $emptyState = $(`#${currentTemplateDiskId}EmptyState`);
-        const $loading = $(`#${currentTemplateDiskId}Loading`);
-
-        console.log('Testing if components are ready to hide loading...');
-
-        // AGGRESSIVE DEBUGGING - Let's see what's really happening
-        console.log('=== BEFORE HIDE/SHOW OPERATIONS ===');
-        console.log(`Grid - jQuery visible: ${$grid.is(':visible')}, CSS display: ${$grid.css('display')}, jQuery length: ${$grid.length}`);
-        console.log(`UploadArea - jQuery visible: ${$uploadArea.is(':visible')}, CSS display: ${$uploadArea.css('display')}, jQuery length: ${$uploadArea.length}`);
-        console.log(`EmptyState - jQuery visible: ${$emptyState.is(':visible')}, CSS display: ${$emptyState.css('display')}, jQuery length: ${$emptyState.length}`);
-        console.log(`Loading - jQuery visible: ${$loading.is(':visible')}, CSS display: ${$loading.css('display')}, jQuery length: ${$loading.length}`);
-
-        // Check if DOM elements exist
-        const elementsExist = $grid.length > 0 && $uploadArea.length > 0 && $emptyState.length > 0;
-
-        // Check if we have data or determined what to show
-        const hasDataOrState = currentFiles !== null && currentDirectories !== null;
-
-        // Check if any content state should be shown
-        const shouldShowContent = currentFiles.length > 0;
-        const shouldShowUpload = currentFiles.length === 0 && canUploadToCurrentDisk();
-        const shouldShowEmpty = currentFiles.length === 0 && !canUploadToCurrentDisk();
-
-        console.log(`Elements exist: ${elementsExist}, Has data: ${hasDataOrState}`);
-        console.log(`Should show - Content: ${shouldShowContent}, Upload: ${shouldShowUpload}, Empty: ${shouldShowEmpty}`);
-
-        if (elementsExist && hasDataOrState) {
-            // NUCLEAR APPROACH - Force hide EVERYTHING first
-            console.log('=== NUCLEAR HIDING ALL ELEMENTS ===');
-
-            // Hide with multiple methods AND remove all spacing + DISABLE FLEXBOX
-            $grid.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            $uploadArea.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            $emptyState.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            $loading.hide().css({
-                'display': 'none !important',
-                'visibility': 'hidden',
-                'height': '0 !important',
-                'min-height': '0 !important',
-                'max-height': '0 !important',
-                'margin': '0 !important',
-                'padding': '0 !important',
-                'overflow': 'hidden !important',
-                'flex': 'none !important',
-                'flex-grow': '0 !important',
-                'flex-shrink': '0 !important',
-                'flex-basis': '0 !important',
-                'align-self': 'auto !important'
-            }).removeClass('show active d-flex align-items-center justify-content-center');
-
-            console.log('=== AFTER NUCLEAR HIDING ===');
-            console.log(`Grid - visible: ${$grid.is(':visible')}, display: ${$grid.css('display')}`);
-            console.log(`UploadArea - visible: ${$uploadArea.is(':visible')}, display: ${$uploadArea.css('display')}`);
-            console.log(`EmptyState - visible: ${$emptyState.is(':visible')}, display: ${$emptyState.css('display')}`);
-            console.log(`Loading - visible: ${$loading.is(':visible')}, display: ${$loading.css('display')}`);
-
-            // Now show ONLY what we want - RESTORE FULL STYLING
-            if (shouldShowContent) {
-                console.log('=== SHOWING GRID ONLY ===');
-                $grid.css({
-                    'display': 'block',
-                    'visibility': 'visible',
-                    'height': 'auto',
-                    'min-height': 'auto',
-                    'max-height': 'none',
-                    'margin': '',
-                    'padding': '',
-                    'overflow': '',
-                    'flex': '',
-                    'flex-grow': '',
-                    'flex-shrink': '',
-                    'flex-basis': '',
-                    'align-self': ''
-                }).addClass('show active').show();
-                console.log('Loading hidden - showing file grid');
-            } else if (shouldShowUpload) {
-                console.log('=== SHOWING UPLOAD AREA ONLY ===');
-                $uploadArea.css({
-                    'display': 'block',
-                    'visibility': 'visible',
-                    'height': 'auto',
-                    'min-height': 'auto',
-                    'max-height': 'none',
-                    'margin': '',
-                    'padding': '',
-                    'overflow': '',
-                    'flex': '',
-                    'flex-grow': '',
-                    'flex-shrink': '',
-                    'flex-basis': '',
-                    'align-self': ''
-                }).addClass('show active').show();
-                console.log('Loading hidden - showing upload area');
-            } else if (shouldShowEmpty) {
-                console.log('=== SHOWING EMPTY STATE ONLY ===');
-                $emptyState.css({
-                    'display': 'block',
-                    'visibility': 'visible',
-                    'height': 'auto',
-                    'min-height': 'auto',
-                    'max-height': 'none',
-                    'margin': '',
-                    'padding': '',
-                    'overflow': '',
-                    'flex': '',
-                    'flex-grow': '',
-                    'flex-shrink': '',
-                    'flex-basis': '',
-                    'align-self': ''
-                }).addClass('show active').show();
-                console.log('Loading hidden - showing empty state');
-            }            // Final verification
-            setTimeout(() => {
-                console.log('=== FINAL VERIFICATION (after 100ms) ===');
-                console.log(`Grid - visible: ${$grid.is(':visible')}, display: ${$grid.css('display')}`);
-                console.log(`UploadArea - visible: ${$uploadArea.is(':visible')}, display: ${$uploadArea.css('display')}`);
-                console.log(`EmptyState - visible: ${$emptyState.is(':visible')}, display: ${$emptyState.css('display')}`);
-                console.log(`Loading - visible: ${$loading.is(':visible')}, display: ${$loading.css('display')}`);
-
-                // Count how many are visible
-                const visibleCount = [$grid, $uploadArea, $emptyState, $loading].filter(el => el.is(':visible')).length;
-                console.log(`TOTAL VISIBLE ELEMENTS: ${visibleCount} (should be 1)`);
-
-                if (visibleCount > 1) {
-                    console.error('❌ MULTIPLE ELEMENTS STILL VISIBLE - CSS CONFLICT DETECTED!');
-                } else {
-                    console.log('✅ SUCCESS - Only one element visible');
-                }
-
-                // DEBUG PARENT CONTAINERS AND SPACING ISSUES
-                console.log('=== DEBUGGING LAYOUT SPACING ISSUES ===');
-
-                // Find and log parent containers
-                const $tabContent = $('.tab-content');
-                const $currentTabPane = $(`#${currentTemplateDiskId}`);
-
-                console.log(`Tab content height: ${$tabContent.height()}px, visible: ${$tabContent.is(':visible')}`);
-                console.log(`Current tab pane height: ${$currentTabPane.height()}px, visible: ${$currentTabPane.is(':visible')}`);
-
-                // Check for hidden elements that might be taking up space
-                const hiddenButSpacing = [];
-                [$grid, $uploadArea, $emptyState, $loading].forEach((el, idx) => {
-                    const names = ['Grid', 'UploadArea', 'EmptyState', 'Loading'];
-                    if (!el.is(':visible') && el.height() > 0) {
-                        hiddenButSpacing.push({
-                            name: names[idx],
-                            height: el.height(),
-                            margin: el.css('margin'),
-                            padding: el.css('padding')
-                        });
-                    }
-                });
-
-                if (hiddenButSpacing.length > 0) {
-                    console.warn('🚨 HIDDEN ELEMENTS STILL TAKING UP SPACE:', hiddenButSpacing);
-
-                    // FORCE REMOVE SPACING FROM HIDDEN ELEMENTS
-                    hiddenButSpacing.forEach(info => {
-                        const elementName = info.name.toLowerCase();
-                        const $element = $(`#${currentTemplateDiskId}${info.name}`);
-                        $element.css({
-                            'height': '0 !important',
-                            'min-height': '0 !important',
-                            'max-height': '0 !important',
-                            'margin': '0 !important',
-                            'padding': '0 !important',
-                            'border': 'none !important',
-                            'overflow': 'hidden !important'
-                        });
-                        console.log(`🔧 FORCED ZERO HEIGHT FOR: ${info.name}`);
-                    });
-                } else {
-                    console.log('✅ No spacing issues detected');
-                }
-
-                // Also check for any row/column containers that might have spacing
-                const $containers = $currentTabPane.find('.row, .col, .container, .card, .card-body');
-                console.log(`Found ${$containers.length} potential spacing containers in tab pane`);
-
-                // FORCE ZERO HEIGHT ON FLEXBOX PARENTS OF HIDDEN ELEMENTS
-                const $tabPane = $(`#${currentTemplateDiskId}`);
-                if ($tabPane.hasClass('h-100') || $tabPane.css('height') !== 'auto') {
-                    console.log('🔧 FOUND TAB PANE WITH FIXED HEIGHT - ADJUSTING...');
-
-                    // If only upload area should be visible, make sure tab pane height adjusts
-                    if (shouldShowUpload && $uploadArea.is(':visible')) {
-                        $tabPane.css({
-                            'height': 'auto !important',
-                            'min-height': 'auto !important',
-                            'display': 'flex !important',
-                            'flex-direction': 'column !important',
-                            'align-items': 'stretch !important',
-                            'justify-content': 'flex-start !important'
-                        });
-                        console.log('✅ TAB PANE HEIGHT ADJUSTED FOR UPLOAD AREA');
-                    }
-                }
-
-                // Check for Bootstrap row containers that might be maintaining height
-                const $parentRow = $currentTabPane.closest('.row');
-                if ($parentRow.length > 0 && $parentRow.hasClass('h-100')) {
-                    console.log('🔧 FOUND PARENT ROW WITH h-100 CLASS');
-                    $parentRow.css('height', 'auto !important');
-                }
-
-                // Log dimensions of containers to identify spacing culprits
-                $containers.each(function(i) {
-                    const $container = $(this);
-                    const classes = $container.attr('class') || 'no-class';
-                    const height = $container.height();
-                    if (height > 10) { // Only log containers with significant height
-                        console.log(`Container ${i}: ${classes} - Height: ${height}px`);
-
-                        // If container has flex classes and is empty, zero it out
-                        if ((classes.includes('d-flex') || classes.includes('align-items') || classes.includes('justify-content')) && $container.children(':visible').length === 0) {
-                            console.log(`🔧 ZEROING EMPTY FLEX CONTAINER: ${classes}`);
-                            $container.css({
-                                'height': '0 !important',
-                                'min-height': '0 !important',
-                                'padding': '0 !important',
-                                'margin': '0 !important'
-                            });
-                        }
-                    }
-                });            }, 100);
-
-            return true; // Loading successfully hidden
-        } else {
-            console.log('Components not ready yet - keeping loading state');
-            return false; // Keep loading
-        }
+    function updateCurrentDiskDisplay(diskName) {
+        const displayName = diskName.charAt(0).toUpperCase() + diskName.slice(1);
+        $('#currentDiskDisplay').text(displayName);
     }
 
-    /**
-     * Role-based access control - check if user can upload to current disk
-     */
-    function canUploadToCurrentDisk() {
-        // This will be properly implemented when we add the full role checking
-        // For now, assume user can upload to public disk
-        return currentDisk === 'public';
+    function showLoadingState(diskName) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        
+        // NUCLEAR APPROACH - Hide ALL upload areas first, then show loading
+        $('.upload-area').hide().removeClass('show').css({
+            'display': 'none !important',
+            'visibility': 'hidden !important',
+            'height': '0 !important',
+            'min-height': '0 !important',
+            'max-height': '0 !important',
+            'padding': '0 !important',
+            'margin': '0 !important',
+            'overflow': 'hidden !important'
+        });
+
+  
+        // Force hide specific content states
+        $(`#${templateDiskId}Grid`).hide().css('display', 'none');
+        
+        // Show loading with explicit styling
+        $(`#${templateDiskId}Loading`).show().css('display', 'block');
+        
+        console.log(`Showing loading state for: ${diskName} - ALL upload areas hidden`);
+    }
+
+    function showUploadState(diskName) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        
+        // First hide ALL upload areas everywhere
+        $('.upload-area').hide().removeClass('show').css({
+            'display': 'none !important',
+            'visibility': 'hidden !important',
+            'height': '0 !important',
+            'min-height': '0 !important',
+            'max-height': '0 !important',
+            'padding': '0 !important',
+            'margin': '0 !important',
+            'overflow': 'hidden !important'
+        });
+        
+        // Force hide other states for this disk
+        $(`#${templateDiskId}Loading`).hide().css('display', 'none');
+        $(`#${templateDiskId}Grid`).hide().css('display', 'none');
+        
+        // Now show ONLY the current disk's upload area with FULL restoration
+        $(`#${templateDiskId}UploadArea`).addClass('show').show().css({
+            'display': 'flex !important',
+            'visibility': 'visible !important',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'width': '100%',
+            'min-height': '400px',
+            'height': 'auto !important',
+            'max-height': 'none !important',
+            'padding': '4rem 2rem !important',
+            'margin': '2rem auto !important',
+            'overflow': 'visible !important',
+            'pointer-events': 'auto !important',
+            'cursor': 'pointer !important'
+        });
+        
+        // Ensure buttons inside are clickable
+        $(`#${templateDiskId}UploadArea .upload-btn`).css({
+            'pointer-events': 'auto !important',
+            'cursor': 'pointer !important',
+            'display': 'inline-block !important'
+        });
+        
+        console.log(`Showing upload state for: ${diskName} - upload area visible and clickable`);
+    }
+
+    function showFileGrid(diskName) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        
+        // NUCLEAR APPROACH - Hide ALL upload areas first
+        $('.upload-area').hide().removeClass('show').css({
+            'display': 'none !important',
+            'visibility': 'hidden !important',
+            'height': '0 !important',
+            'min-height': '0 !important',
+            'max-height': '0 !important',
+            'padding': '0 !important',
+            'margin': '0 !important',
+            'overflow': 'hidden !important'
+        });
+        
+        // Force hide other states
+        $(`#${templateDiskId}Loading`).hide().css('display', 'none');
+        
+        // Show file grid with block display
+        $(`#${templateDiskId}Grid`).show().css({
+            'display': 'block',
+            'width': '100%'
+        });
+        
+        console.log(`Showing file grid for: ${diskName} - ALL upload areas hidden`);
+    }
+
+    function showErrorState(diskName, errorMessage, showConnectionScreen = false) {
+        console.log(`showErrorState called for ${diskName}:`, errorMessage, showConnectionScreen);
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        console.log(`Using template disk ID: ${templateDiskId}`);
+        
+        // Clear selected files
+        selectedFiles = [];
+        updateDeleteButtonState();
+        
+        // Hide all other states
+        $(`#${templateDiskId}Loading`).hide();
+        $(`#${templateDiskId}Grid`).hide();
+        $('.upload-area').hide();
+        
+        // Create error display content
+        const connectionInfo = showConnectionScreen ? `
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-exclamation-triangle mr-2"></i>Connection Required</h6>
+                <p class="mb-2">S3 storage connection is not available. This may be due to:</p>
+                <ul class="text-left mb-2">
+                    <li>Network connectivity issues</li>
+                    <li>DNS resolution problems</li>
+                    <li>S3 service configuration</li>
+                </ul>
+                <small class="text-muted">Contact your system administrator to resolve this issue.</small>
+            </div>
+        ` : '';
+        
+        const errorContent = `
+            <div class="error-state text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                    <h4 class="text-danger">Storage Error</h4>
+                    <p class="text-muted mb-3">${errorMessage}</p>
+                    ${connectionInfo}
+                </div>
+                <div class="mt-4">
+                    <button class="btn btn-outline-primary" onclick="loadFiles('${diskName}')">
+                        <i class="fas fa-sync-alt mr-2"></i>Retry Connection
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Show error in the grid area
+        $(`#${templateDiskId}Grid`).html(errorContent).show();
+        console.log(`Error content inserted into #${templateDiskId}Grid`);
+        
+        // Update directory tree to show disconnected state
+        updateDirectoryTreeError(diskName, errorMessage);
+        
+        console.log(`Showing error state for: ${diskName} - ${errorMessage}`);
+    }
+    
+    function updateDirectoryTreeError(diskName, errorMessage) {
+        const $tree = $('#directoryTree');
+        $tree.empty();
+        
+        $tree.append(`
+            <div class="tree-item error-item">
+                <i class="fas fa-exclamation-triangle mr-2 text-danger"></i>Connection Error
+                <small class="text-muted d-block ml-4">${errorMessage.substring(0, 50)}...</small>
+            </div>
+        `);
     }
 
     function bindEventHandlers() {
         console.log('Binding event handlers...');
-        // Event handlers will be implemented here
+        
+        // File upload handlers (original)
+        $(document).on('click', '.upload-btn', function(e) {
+            const diskId = $(this).closest('.tab-pane').attr('id');
+            $(`#${diskId}FileInput`).click();
+            console.log(`Upload button clicked for disk: ${diskId}`);
+        });
+        
+        // File Management Button Handlers
+        $(document).on('click', '#createFolderBtn', function() {
+            console.log('Create folder button clicked');
+            showCreateFolderModal();
+        });
+        
+        $(document).on('click', '#uploadFileBtn', function() {
+            console.log('Upload file button clicked');
+            $('#generalFileInput').click();
+        });
+        
+        $(document).on('click', '#refreshBtn', function() {
+            console.log('Refresh button clicked');
+            loadFiles(currentDisk);
+        });
+        
+        $(document).on('click', '#deleteSelectedBtn', function() {
+            console.log('Delete selected button clicked');
+            deleteSelectedFiles();
+        });
+        
+        // File selection handlers
+        $(document).on('change', '.file-checkbox', function() {
+            const fileName = $(this).val();
+            const isChecked = $(this).prop('checked');
+            
+            if (isChecked) {
+                if (!selectedFiles.includes(fileName)) {
+                    selectedFiles.push(fileName);
+                }
+            } else {
+                selectedFiles = selectedFiles.filter(f => f !== fileName);
+            }
+            
+            updateDeleteButtonState();
+            console.log(`File selection changed. Selected files:`, selectedFiles);
+        });
+        
+        // Individual file delete
+        $(document).on('click', '.delete-single-btn', function(e) {
+            e.stopPropagation();
+            const fileName = $(this).closest('.file-item').data('file');
+            if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                deleteSingleFile(fileName);
+            }
+        });
+        
+        // File download
+        $(document).on('click', '.download-btn', function(e) {
+            e.stopPropagation();
+            const fileName = $(this).closest('.file-item').data('file');
+            downloadFile(fileName);
+        });
+        
+        // FOLDER-ONLY VIEW HANDLERS
+        // Folder click for selection (single click)
+        $(document).on('click', '.folder-item', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const $folder = $(this);
+            const folderName = $folder.data('folder');
+            const $checkbox = $folder.find('.folder-checkbox');
+            
+            // Toggle selection state
+            const isSelected = $folder.hasClass('selected');
+            
+            if (e.ctrlKey || e.metaKey) {
+                // Multi-select with Ctrl/Cmd
+                if (isSelected) {
+                    $folder.removeClass('selected');
+                    $checkbox.prop('checked', false);
+                    selectedFiles = selectedFiles.filter(f => f !== folderName);
+                } else {
+                    $folder.addClass('selected');
+                    $checkbox.prop('checked', true);
+                    if (!selectedFiles.includes(folderName)) {
+                        selectedFiles.push(folderName);
+                    }
+                }
+            } else {
+                // Single select (clear others first)
+                $('.folder-item').removeClass('selected');
+                $('.folder-checkbox').prop('checked', false);
+                selectedFiles = [];
+                
+                // Select this one
+                $folder.addClass('selected');
+                $checkbox.prop('checked', true);
+                selectedFiles.push(folderName);
+            }
+            
+            updateDeleteButtonState();
+            console.log(`Folder selection changed. Selected folders:`, selectedFiles);
+        });
+        
+        // Folder double-click for navigation
+        $(document).on('dblclick', '.folder-item', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const folderPath = $(this).data('path');
+            const diskName = $(this).data('disk');
+            const folderName = $(this).data('folder');
+            
+            console.log(`Double-clicked folder: ${folderName} at path: ${folderPath} on disk: ${diskName}`);
+            
+            // Navigate into the folder
+            navigateToFolder(diskName, folderPath, folderName);
+        });
+        
+        // Folder selection handlers (kept for programmatic access)
+        $(document).on('change', '.folder-checkbox', function() {
+            const folderName = $(this).val();
+            const isChecked = $(this).prop('checked');
+            const $folder = $(this).closest('.folder-item');
+            
+            if (isChecked) {
+                $folder.addClass('selected');
+                if (!selectedFiles.includes(folderName)) {
+                    selectedFiles.push(folderName);
+                }
+            } else {
+                $folder.removeClass('selected');
+                selectedFiles = selectedFiles.filter(f => f !== folderName);
+            }
+            
+            updateDeleteButtonState();
+            console.log(`Folder checkbox changed. Selected folders:`, selectedFiles);
+        });
+        
+        // Create first folder button (in empty state)
+        $(document).on('click', '#createFirstFolderBtn', function() {
+            showCreateFolderModal();
+        });
+        
+        // General file input change handler
+        $(document).on('change', '#generalFileInput', function() {
+            const files = this.files;
+            if (files.length > 0) {
+                console.log(`Selected ${files.length} files for upload to current folder`);
+                uploadFilesToCurrentFolder(files);
+            }
+        });
+        
+        // Original file input change handlers (for backward compatibility)
+        $(document).on('change', 'input[type="file"]', function() {
+            const files = this.files;
+            if (files.length > 0 && $(this).attr('id') !== 'generalFileInput') {
+                console.log(`Selected ${files.length} files for upload`);
+                const diskId = $(this).attr('id').replace('FileInput', '');
+                uploadFiles(files, diskId);
+            }
+        });
+    }
+    
+    function updateDeleteButtonState() {
+        const deleteBtn = $('#deleteSelectedBtn');
+        if (selectedFiles.length > 0) {
+            deleteBtn.prop('disabled', false).attr('title', `Delete ${selectedFiles.length} selected file(s)`);
+        } else {
+            deleteBtn.prop('disabled', true).attr('title', 'No files selected');
+        }
+    }
+    
+    function deleteSingleFile(fileName) {
+        $.ajax({
+            url: `/admin/media-manager/delete/${encodeURIComponent(fileName)}`,
+            method: 'DELETE',
+            data: {
+                disk: currentDisk,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }
+        })
+        .done(function(response) {
+            console.log(`File deleted successfully: ${fileName}`);
+            loadFiles(currentDisk); // Refresh file list
+        })
+        .fail(function(xhr) {
+            console.error(`Delete failed for file: ${fileName}`, xhr.responseText);
+            alert(`Failed to delete file: ${xhr.responseJSON?.error || 'Unknown error'}`);
+        });
+    }
+    
+    function deleteSingleFolder(folderName) {
+        $.ajax({
+            url: `/admin/media-manager/delete/${encodeURIComponent(folderName)}`,
+            method: 'DELETE',
+            data: {
+                disk: currentDisk,
+                folder: true, // Indicate this is a folder deletion
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }
+        })
+        .done(function(response) {
+            console.log(`Folder deleted successfully: ${folderName}`);
+            loadFiles(currentDisk); // Refresh folder list
+        })
+        .fail(function(xhr) {
+            console.error(`Delete failed for folder: ${folderName}`, xhr.responseText);
+            alert(`Failed to delete folder: ${xhr.responseJSON?.error || 'Unknown error'}`);
+        });
+    }
+    
+    function downloadFile(fileName) {
+        window.open(`/admin/media-manager/download/${encodeURIComponent(fileName)}?disk=${currentDisk}`, '_blank');
+    }
+    
+    // Breadcrumb functions
+    function updateBreadcrumbs(disk, folder, path) {
+        const diskNames = {
+            'public': 'Public Storage',
+            'local': 'Private Storage', 
+            's3': 'S3 Archive Storage'
+        };
+        
+        const diskName = diskNames[disk] || disk;
+        
+        // Update breadcrumb elements based on navigation context
+        $('#currentDiskBreadcrumb').text(diskName);
+        
+        if (!folder || folder === 'media' || folder === '' || path === '/') {
+            // Root level - show Media Root
+            $('#currentFolderBreadcrumb').text('Media Root');
+            $('#currentLocationText').text('root');
+            
+            // Update breadcrumb data attributes for navigation
+            $('#mediaBreadcrumb .breadcrumb-item').first().attr('data-disk', disk);
+            $('#mediaBreadcrumb .breadcrumb-item').eq(1).attr('data-folder', 'media').attr('data-path', '/');
+            $('#mediaBreadcrumb .breadcrumb-item').last().attr('data-path', '/');
+            
+            console.log(`Breadcrumbs updated: ${diskName} > Media Root > root`);
+        } else {
+            // Inside a specific folder - show folder hierarchy
+            $('#currentFolderBreadcrumb').text('Media Root');
+            $('#currentLocationText').text(folder);
+            
+            // Update breadcrumb data attributes for navigation
+            $('#mediaBreadcrumb .breadcrumb-item').first().attr('data-disk', disk);
+            $('#mediaBreadcrumb .breadcrumb-item').eq(1).attr('data-folder', 'media').attr('data-path', '/');
+            $('#mediaBreadcrumb .breadcrumb-item').last().attr('data-path', path).attr('data-folder', folder);
+            
+            console.log(`Breadcrumbs updated: ${diskName} > Media Root > ${folder}`);
+        }
+    }
+    
+    function bindBreadcrumbNavigation() {
+        // Navigate to disk root when clicking disk breadcrumb
+        $(document).on('click', '#currentDiskBreadcrumb', function(e) {
+            e.preventDefault();
+            const disk = $(this).parent().attr('data-disk') || currentDisk;
+            console.log(`Breadcrumb: Navigating to disk root for ${disk}`);
+            
+            // Reset to root state
+            currentPath = '/';
+            currentFolder = '';
+            
+            // If switching to different disk, use switchToDisk
+            if (disk !== currentDisk) {
+                switchToDisk(disk);
+            } else {
+                // Same disk, just go to root
+                updateBreadcrumbs(disk, 'media', '/');
+                updateSidebarSelection('root');
+                loadFiles(disk);
+            }
+        });
+        
+        // Navigate to folder root when clicking folder breadcrumb  
+        $(document).on('click', '#currentFolderBreadcrumb', function(e) {
+            e.preventDefault();
+            console.log(`Breadcrumb: Navigating to media root for ${currentDisk}`);
+            
+            // Reset to root state
+            currentFolder = '';
+            currentPath = '/';
+            
+            // Update UI and load root folders
+            updateBreadcrumbs(currentDisk, 'media', '/');
+            updateSidebarSelection('root');
+            loadFiles(currentDisk);
+        });
+        
+        // Navigate to current location when clicking location breadcrumb
+        $(document).on('click', '#currentLocationText', function(e) {
+            e.preventDefault();
+            const path = $(this).parent().attr('data-path');
+            console.log(`Breadcrumb: Navigating to location ${path}`);
+            
+            if (path && path !== '/') {
+                // Navigate to specific path
+                loadFilesForPath(currentDisk, path);
+            } else {
+                // Same as clicking folder breadcrumb - go to root
+                $('#currentFolderBreadcrumb').click();
+            }
+        });
+        
+        // Visual feedback for clickable breadcrumbs
+        $(document).on('mouseenter', '.breadcrumb-item:not(.active) span', function() {
+            $(this).addClass('text-primary');
+        });
+        
+        $(document).on('mouseleave', '.breadcrumb-item:not(.active) span', function() {
+            $(this).removeClass('text-primary');
+        });
     }
 
-    function checkAllDiskStatuses() {
-        console.log('Checking all disk statuses...');
-        // Disk status checking will be implemented here
+    function loadFiles(diskName) {
+        console.log(`Loading files for disk: ${diskName}`);
+        
+        // Show loading first
+        showLoadingState(diskName);
+        
+        // Make actual API call to load files
+        $.ajax({
+            url: '/admin/media-manager/files',
+            method: 'GET',
+            data: {
+                disk: diskName,
+                path: '/'
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                console.log(`API Response for ${diskName}:`, response);
+                
+                if (response.success) {
+                    const files = response.files || [];
+                    const directories = response.directories || [];
+                    
+                    // Update current data
+                    currentFiles = files;
+                    currentDirectories = directories;
+                    
+                    // Update breadcrumbs for current location
+                    updateBreadcrumbs(diskName, 'media', '/');
+                    
+                    // Update sidebar with directories and upload tools
+                    updateDirectoryTree(diskName, directories);
+                    updateUploadTools(diskName);
+                    
+                    // Ensure sidebar shows root as selected for initial load
+                    updateSidebarSelection('root');
+                    
+                    // FOLDER-ONLY VIEW: Show folders in main content area
+                    if (directories.length > 0) {
+                        // Show folder grid in main content (Step 1: Folder-Only View)
+                        populateFolderGrid(diskName, directories);
+                        showFolderGrid(diskName);
+                        console.log(`Showing ${directories.length} folders for ${diskName}`);
+                    } else {
+                        // No folders available - show empty state
+                        showEmptyFolderState(diskName);
+                        console.log(`No folders found for ${diskName}`);
+                    }
+                    
+                    console.log(`Loaded ${files.length} files and ${directories.length} directories for ${diskName}`);
+                } else {
+                    console.error('Failed to load files:', response.error);
+                    console.log('Response details:', response);
+                    showErrorState(diskName, response.error, response.show_connection_screen);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(`Failed to load files for ${diskName}:`, xhr.responseText);
+                
+                let errorMessage = 'Failed to connect to storage';
+                let showConnectionScreen = false;
+                
+                if (xhr.responseJSON) {
+                    errorMessage = xhr.responseJSON.error || errorMessage;
+                    showConnectionScreen = xhr.responseJSON.show_connection_screen || false;
+                }
+                
+                showErrorState(diskName, errorMessage, showConnectionScreen);
+            }
+        });
+    }
+
+    function populateFileGrid(diskName, files) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        const $grid = $(`#${templateDiskId}Grid`);
+        
+        // Clear existing content and add grid class
+        $grid.empty().addClass('media-files-grid');
+        
+        if (!files || files.length === 0) {
+            $grid.removeClass('media-files-grid').html('<div class="no-files-message text-center py-4"><i class="fas fa-folder-open text-muted fa-3x mb-3"></i><p class="text-muted">No files found</p></div>');
+            return;
+        }
+        
+        // Add files to grid
+        files.forEach(file => {
+            const fileItem = createFileItem(file, diskName);
+            $grid.append(fileItem);
+        });
+        
+        console.log(`Populated grid with ${files.length} files`);
+    }
+    
+    function createFileItem(file, diskName) {
+        const isImage = /\.(jpg|jpeg|png|gif)$/i.test(file.name);
+        const icon = getFileIcon(file.name);
+        
+        return $(`
+            <div class=" file-item" data-file="${file.name}" data-disk="${diskName}">
+                <div class="file-selector">
+                    <input type="checkbox" class="file-checkbox" value="${file.name}">
+                </div>
+                <div class="file-preview">
+                    ${isImage ? 
+                        `<img src="${file.url}" alt="${file.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                         <i class="file-icon ${icon}" style="display: none;"></i>` :
+                        `<i class="file-icon ${icon}"></i>`
+                    }
+                </div>
+                <div class="file-info">
+                    <div class="file-name" title="${file.name}">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn btn-sm btn-outline-primary download-btn" title="Download">
+                        <i class="fas fa-download"></i>
+                    </button>finf trash
+                    <button class="btn btn-sm btn-outline-danger delete-single-btn" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `);
+    }
+    
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const iconMap = {
+            'pdf': 'fas fa-file-pdf text-danger',
+            'doc': 'fas fa-file-word text-primary',
+            'docx': 'fas fa-file-word text-primary',
+            'jpg': 'fas fa-file-image text-success',
+            'jpeg': 'fas fa-file-image text-success',
+            'png': 'fas fa-file-image text-success',
+            'gif': 'fas fa-file-image text-success',
+            'css': 'fas fa-file-code text-info',
+            'js': 'fas fa-file-code text-warning',
+            'json': 'fas fa-file-code text-secondary'
+        };
+        return iconMap[ext] || 'fas fa-file text-muted';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // FOLDER-ONLY VIEW FUNCTIONS
+    function populateFolderGrid(diskName, directories) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        const $grid = $(`#${templateDiskId}Grid`);
+        
+        console.log(`PopulateFolderGrid: diskName=${diskName}, currentViewMode=${currentViewMode}, templateDiskId=${templateDiskId}`);
+        
+        // Clear selected files when populating new grid
+        selectedFiles = [];
+        updateDeleteButtonState();
+        
+        // Clear existing content and add Bootstrap row class with folder grid class
+        $grid.empty().addClass('media-folders-grid row');
+        
+        // Force apply grid view class
+        if (currentViewMode === 'grid') {
+            $grid.addClass('view-grid');
+        } else {
+            $grid.addClass('view-list');
+        }
+        
+        console.log(`Grid classes applied:`, $grid.attr('class'));
+        
+        if (!directories || directories.length === 0) {
+            showEmptyFolderState(diskName);
+            return;
+        }
+        
+        // Add folders to grid
+        directories.forEach(directory => {
+            const folderItem = createFolderItem(directory, diskName);
+            $grid.append(folderItem);
+        });
+        
+        console.log(`Populated folder grid with ${directories.length} directories in ${currentViewMode} view`);
+    }
+    
+    function createFolderItem(directory, diskName) {
+        return $(`
+            <div class="col-3 folder-item" data-folder="${directory.name}" data-path="${directory.path}" data-disk="${diskName}">
+                <div class="folder-selector" style="display: none;">
+                    <input type="checkbox" class="folder-checkbox" value="${directory.name}">
+                </div>
+                <div class="folder-preview">
+                    <i class="fas fa-folder fa-3x text-warning"></i>
+                </div>
+                <div class="folder-info">
+                    <div class="folder-name" title="${directory.name}">${directory.name}</div>
+                    <div class="folder-details">
+                        <small class="text-muted">Folder</small>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+    
+    function showFolderGrid(diskName) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        
+        // Hide all other states
+        $('.upload-area').hide();
+        $(`#${templateDiskId}Loading`).hide();
+        
+        // Show folder grid with smooth animation
+        const $grid = $(`#${templateDiskId}Grid`);
+        $grid.hide().show().css('opacity', 0).animate({opacity: 1}, 300);
+        
+        // Update action buttons for folder-only view
+        updateFolderViewButtons(true);
+        
+        console.log(`Showing folder grid for: ${diskName}`);
+    }
+    
+    function showEmptyFolderState(diskName) {
+        const templateDiskId = diskToGridMap[diskName] || diskName;
+        
+        // Hide other states
+        $('.upload-area').hide();
+        $(`#${templateDiskId}Loading`).hide();
+        
+        // Show empty folder message
+        const emptyContent = `
+            <div class="empty-folder-state text-center py-5">
+                <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Folders Found</h4>
+                <p class="text-muted mb-4">This storage location doesn't contain any folders yet.</p>
+                <button class="btn btn-primary" id="createFirstFolderBtn">
+                    <i class="fas fa-folder-plus mr-2"></i>Create First Folder
+                </button>
+            </div>
+        `;
+        
+        $(`#${templateDiskId}Grid`).html(emptyContent).show();
+        
+        // Update action buttons for empty state
+        updateFolderViewButtons(false);
+        
+        console.log(`Showing empty folder state for: ${diskName}`);
+    }
+    
+    function updateFolderViewButtons(hasFolders) {
+        // Create Folder: always enabled
+        $('#createFolderBtn').prop('disabled', false);
+        
+        // Refresh: always enabled
+        $('#refreshBtn').prop('disabled', false);
+        
+        // Upload File: visible but disabled in folder-only view
+        $('#uploadFileBtn').prop('disabled', true).attr('title', 'Select a folder first to upload files');
+        
+        // Delete: enabled only when folders are selected
+        updateDeleteButtonState();
+        
+        console.log(`Updated folder view buttons. Has folders: ${hasFolders}`);
+    }
+
+    function canUploadToCurrentDisk(diskName) {
+        // Simple permission check - can be expanded based on user roles
+        // For now, allow upload to all disks for testing
+        return true; // Changed from diskName === 'public' to allow upload on all disks
     }
 
     /**
-     * Load files for the current disk and hide loading when ready
+     * Update the directory tree in the sidebar
      */
-    function loadFiles() {
-        console.log(`Loading files for disk: ${currentDisk}, path: ${currentPath}`);
+    function updateDirectoryTree(diskName, directories) {
+        const $tree = $('#directoryTree');
+        $tree.empty();
 
-        return new Promise((resolve, reject) => {
-            // Simulate loading files - replace with actual AJAX call
-            setTimeout(() => {
-                // Mock file data for testing
-                currentFiles = []; // Empty for now to test upload area
-                currentDirectories = [];
+        // Add root/media folder with proper data attributes
+        $tree.append(`
+            <div class="tree-item tree-root" data-path="/" data-disk="${diskName}" data-folder="">
+                <i class="fas fa-home mr-2 text-primary"></i>Media Root
+            </div>
+        `);
 
-                console.log(`Found ${currentFiles.length} files and ${currentDirectories.length} directories`);
-
-                // Test if we can hide loading and show appropriate content
-                const loadingHidden = testAndHideLoadingWhenReady();
-
-                if (loadingHidden) {
-                    resolve({
-                        success: true,
-                        files: currentFiles,
-                        directories: currentDirectories
-                    });
-                } else {
-                    reject(new Error('Components not ready'));
-                }
-            }, 1000); // 1 second delay to simulate loading
+        // Show the same directories that appear in the main content area
+        directories.forEach(dir => {
+            $tree.append(`
+                <div class="tree-item tree-folder" data-path="${dir.path}" data-disk="${diskName}" data-folder="${dir.name}">
+                    <i class="fas fa-folder mr-2 text-warning"></i>${dir.name}
+                </div>
+            `);
         });
+
+        // Set initial active state for root
+        updateSidebarSelection('root');
+
+        // Bind click handlers for directory navigation
+        bindSidebarNavigation();
+    }
+
+    /**
+     * Bind sidebar navigation event handlers
+     */
+    function bindSidebarNavigation() {
+        // Remove existing handlers to prevent duplicates
+        $('.tree-item').off('click.sidebar');
+        
+        // Bind click handlers with namespace
+        $(document).on('click.sidebar', '.tree-item', function(e) {
+            e.preventDefault();
+            
+            const $item = $(this);
+            const path = $item.data('path');
+            const disk = $item.data('disk');
+            const folder = $item.data('folder');
+            
+            console.log(`Sidebar: Clicked ${folder || 'root'} - path: ${path}, disk: ${disk}`);
+            
+            // Update active state immediately for responsive feedback
+            updateSidebarSelection(folder || 'root');
+            
+            // Navigate based on whether it's root or a folder
+            if (!folder || folder === '' || path === '/') {
+                // Root folder - load disk root
+                navigateToRoot(disk);
+            } else {
+                // Specific folder - navigate into it
+                navigateToFolder(disk, path, folder);
+            }
+        });
+    }
+
+    /**
+     * Update sidebar selection state with scroll preservation
+     */
+    function updateSidebarSelection(selectedFolder) {
+        // Preserve scroll position
+        const $tree = $('#directoryTree');
+        const scrollTop = $tree.scrollTop();
+        
+        // Remove active class from all tree items
+        $('.tree-item').removeClass('active');
+        
+        if (selectedFolder === 'root' || selectedFolder === '') {
+            // Highlight root item
+            $('.tree-root').addClass('active');
+            console.log('Sidebar: Selected root folder');
+        } else {
+            // Highlight specific folder
+            $(`.tree-folder[data-folder="${selectedFolder}"]`).addClass('active');
+            console.log(`Sidebar: Selected folder "${selectedFolder}"`);
+        }
+        
+        // Restore scroll position
+        $tree.scrollTop(scrollTop);
+    }
+
+    /**
+     * Navigate to disk root
+     */
+    function navigateToRoot(diskName) {
+        console.log(`Navigating to root of disk: ${diskName}`);
+        
+        // Update current state
+        currentDisk = diskName;
+        currentPath = '/';
+        currentFolder = '';
+        
+        // Clear selected files
+        selectedFiles = [];
+        updateDeleteButtonState();
+        
+        // Update breadcrumbs for root
+        updateBreadcrumbs(diskName, 'media', '/');
+        
+        // Show loading state
+        showLoadingState(diskName);
+        
+        // Load root folders
+        loadFiles(diskName);
+    }
+
+    /**
+     * Update upload tools in the sidebar
+     */
+    function updateUploadTools(diskName) {
+        const $toolsContainer = $('#folderTools');
+        const $toolsList = $('#uploadToolsList');
+        
+        $toolsList.empty();
+
+        if (diskName === 'public') {
+            $toolsContainer.show();
+
+            const uploadFolders = [
+                { 
+                    folder: 'images', 
+                    icon: 'fas fa-images', 
+                    label: 'Upload Images',
+                    accept: '.jpg,.jpeg,.png,.gif',
+                    description: 'Max 10MB each'
+                },
+                { 
+                    folder: 'documents', 
+                    icon: 'fas fa-file-pdf', 
+                    label: 'Upload Documents',
+                    accept: '.pdf,.doc,.docx',
+                    description: 'Max 25MB each'
+                },
+                { 
+                    folder: 'assets', 
+                    icon: 'fas fa-code', 
+                    label: 'Upload Assets',
+                    accept: '.css,.js,.json',
+                    description: 'Max 5MB each'
+                },
+                { 
+                    folder: 'validations/headshots', 
+                    icon: 'fas fa-user-circle', 
+                    label: 'Upload Headshots',
+                    accept: '.jpg,.jpeg,.png',
+                    description: 'Max 8MB each'
+                },
+                { 
+                    folder: 'validations/idcard', 
+                    icon: 'fas fa-id-card', 
+                    label: 'Upload ID Cards',
+                    accept: '.jpg,.jpeg,.png',
+                    description: 'Max 8MB each'
+                }
+            ];
+
+            uploadFolders.forEach(tool => {
+                $toolsList.append(`
+                    <div class="upload-tool-item mb-2">
+                        <button class="btn btn-outline-primary btn-sm w-100 text-left folder-upload-btn" 
+                                data-folder="${tool.folder}" 
+                                data-disk="${diskName}"
+                                data-accept="${tool.accept}">
+                            <i class="${tool.icon} mr-2"></i>${tool.label}
+                            <small class="text-muted d-block">${tool.description}</small>
+                        </button>
+                        <input type="file" 
+                               id="upload-${tool.folder.replace('/', '-')}" 
+                               class="d-none folder-file-input" 
+                               multiple 
+                               accept="${tool.accept}"
+                               data-folder="${tool.folder}"
+                               data-disk="${diskName}">
+                    </div>
+                `);
+            });
+
+            // Bind upload button handlers
+            $('.folder-upload-btn').off('click').on('click', function() {
+                const folder = $(this).data('folder');
+                const inputId = 'upload-' + folder.replace('/', '-');
+                $(`#${inputId}`).click();
+            });
+
+            // Bind file input handlers
+            $('.folder-file-input').off('change').on('change', function() {
+                const files = this.files;
+                const folder = $(this).data('folder');
+                const disk = $(this).data('disk');
+                
+                if (files.length > 0) {
+                    console.log(`Selected ${files.length} files for upload to ${disk}/${folder}`);
+                    uploadFilesToFolder(files, disk, folder);
+                }
+            });
+        } else {
+            $toolsContainer.hide();
+        }
+    }
+
+    /**
+     * Load files for a specific path with enhanced state management
+     */
+    function loadFilesForPath(diskName, path) {
+        console.log(`Loading files for ${diskName} at path: ${path}`);
+        
+        // Add loading class to relevant sidebar item
+        const $sidebarItem = $(`.tree-item[data-path="${path}"][data-disk="${diskName}"]`);
+        $sidebarItem.addClass('loading');
+        
+        showLoadingState(diskName);
+        
+        $.ajax({
+            url: '/admin/media-manager/files',
+            method: 'GET',
+            data: {
+                disk: diskName,
+                path: path
+            },
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                // Remove loading state
+                $sidebarItem.removeClass('loading');
+                
+                if (response.success) {
+                    const files = response.files || [];
+                    const directories = response.directories || [];
+                    
+                    // Update current data
+                    currentFiles = files;
+                    currentDirectories = directories;
+                    
+                    // If we have directories (subfolder view), show them
+                    if (directories.length > 0) {
+                        populateFolderGrid(diskName, directories);
+                        showFolderGrid(diskName);
+                        console.log(`Loaded ${directories.length} subdirectories for ${path}`);
+                    } else if (files.length > 0) {
+                        // Show files if no subdirectories
+                        populateFileGrid(diskName, files);
+                        showFileGrid(diskName);
+                        console.log(`Loaded ${files.length} files for ${path}`);
+                    } else {
+                        // Empty folder
+                        showEmptyFolderState(diskName);
+                        console.log(`Empty folder at ${path}`);
+                    }
+                } else {
+                    console.error('Failed to load files for path:', response.error);
+                    showUploadState(diskName);
+                }
+            },
+            error: function(xhr) {
+                // Remove loading state
+                $sidebarItem.removeClass('loading');
+                
+                console.error('Failed to load files for path:', xhr.responseText);
+                showUploadState(diskName);
+            }
+        });
+    }
+
+    /**
+     * Upload files to a specific folder
+     */
+    function uploadFilesToFolder(files, diskId, folder) {
+        console.log(`Starting folder upload for ${files.length} files to ${diskId}/${folder}`);
+        
+        const formData = new FormData();
+        
+        // Add files to FormData
+        Array.from(files).forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+        });
+        
+        // Add metadata
+        formData.append('disk', diskId);
+        formData.append('folder', folder);
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        
+        // Show progress
+        showUploadProgress(diskId, 0);
+        showProgressSection();
+        
+        // AJAX upload
+        $.ajax({
+            url: '/admin/media-manager/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 100;
+                        updateUploadProgress(diskId, progress);
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                console.log('Folder upload successful:', response);
+                handleUploadSuccess(response, diskId);
+                
+                // Refresh current view
+                loadFiles(diskId);
+            },
+            error: function(xhr) {
+                console.error('Folder upload failed:', xhr);
+                handleUploadError(xhr, diskId);
+            }
+        });
+    }
+
+    /**
+     * Show progress section in sidebar
+     */
+    function showProgressSection() {
+        $('#progressSection').show();
+    }
+
+    /**
+     * Upload files to a specific folder (called from header buttons)
+     */
+    function uploadFilesToFolder(files, diskId, folder) {
+        console.log(`Starting upload for ${files.length} files to folder: ${folder} on disk: ${diskId}`);
+        
+        const formData = new FormData();
+        
+        // Add files to FormData
+        Array.from(files).forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+        });
+        
+        // Add metadata
+        formData.append('disk', diskId);
+        formData.append('folder', folder);
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        
+        // Show progress indicator in header
+        showHeaderUploadProgress(0);
+        
+        // AJAX upload
+        $.ajax({
+            url: '/admin/media-manager/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 100;
+                        updateHeaderUploadProgress(progress);
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                console.log('Upload successful:', response);
+                handleHeaderUploadSuccess(response, diskId);
+            },
+            error: function(xhr) {
+                console.error('Upload failed:', xhr);
+                handleHeaderUploadError(xhr, diskId);
+            }
+        });
+    }
+
+    /**
+     * Upload files to the current disk and folder (original function)
+     */
+    function uploadFiles(files, diskId) {
+        console.log(`Starting upload for ${files.length} files to disk: ${diskId}`);
+        
+        const formData = new FormData();
+        const currentFolder = getCurrentFolder(diskId);
+        
+        // Add files to FormData
+        Array.from(files).forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+        });
+        
+        // Add metadata
+        formData.append('disk', diskId);
+        formData.append('folder', currentFolder);
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        
+        // Show progress indicator
+        showUploadProgress(diskId, 0);
+        
+        // AJAX upload
+        $.ajax({
+            url: '/admin/media-manager/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 100;
+                        updateUploadProgress(diskId, progress);
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                console.log('Upload successful:', response);
+                handleUploadSuccess(response, diskId);
+            },
+            error: function(xhr) {
+                console.error('Upload failed:', xhr);
+                handleUploadError(xhr, diskId);
+            }
+        });
+    }
+
+    /**
+     * Get current folder for the disk based on selected folder or default
+     */
+    function getCurrentFolder(diskId) {
+        // For now, default to 'images' folder for all uploads
+        // This can be extended to support folder selection in the UI
+        return 'images';
+    }    /**
+     * Show upload progress
+     */
+    function showUploadProgress(diskId, progress) {
+        const templateDiskId = diskToGridMap[diskId] || diskId;
+        const $progressContainer = $(`#${templateDiskId}ProgressContainer`);
+        const $progressBar = $(`#${templateDiskId}ProgressBar`);
+        
+        // Show progress container if hidden
+        $progressContainer.show();
+        
+        // Update progress bar
+        $progressBar.css('width', progress + '%');
+        $progressBar.attr('aria-valuenow', progress);
+        $progressBar.text(Math.round(progress) + '%');
+    }
+
+    /**
+     * Update upload progress
+     */
+    function updateUploadProgress(diskId, progress) {
+        showUploadProgress(diskId, progress);
+    }
+
+    /**
+     * Handle successful upload
+     */
+    function handleUploadSuccess(response, diskId) {
+        console.log('Upload success for disk:', diskId, response);
+        
+        // Hide progress
+        hideUploadProgress(diskId);
+        
+        if (response.success) {
+            // Show success message
+            showNotification('success', response.message);
+            
+            // Refresh file list
+            loadFiles(diskId);
+            
+            // Clear file input
+            clearFileInput(diskId);
+            
+        } else {
+            showNotification('error', response.message || 'Upload failed');
+        }
+    }
+
+    /**
+     * Handle upload error
+     */
+    function handleUploadError(xhr, diskId) {
+        console.error('Upload error for disk:', diskId, xhr);
+        
+        // Hide progress
+        hideUploadProgress(diskId);
+        
+        let errorMessage = 'Upload failed';
+        
+        if (xhr.responseJSON) {
+            errorMessage = xhr.responseJSON.message || errorMessage;
+        }
+        
+        showNotification('error', errorMessage);
+        
+        // Clear file input
+        clearFileInput(diskId);
+    }
+
+    /**
+     * Hide upload progress
+     */
+    function hideUploadProgress(diskId) {
+        const templateDiskId = diskToGridMap[diskId] || diskId;
+        const $progressContainer = $(`#${templateDiskId}ProgressContainer`);
+        
+        // Hide progress container
+        $progressContainer.hide();
+        
+        // Reset progress bar
+        const $progressBar = $(`#${templateDiskId}ProgressBar`);
+        $progressBar.css('width', '0%');
+        $progressBar.attr('aria-valuenow', 0);
+        $progressBar.text('0%');
+    }
+
+    /**
+     * Clear file input
+     */
+    function clearFileInput(diskId) {
+        const templateDiskId = diskToGridMap[diskId] || diskId;
+        $(`#${templateDiskId}FileInput`).val('');
+    }
+
+    /**
+     * Show notification message
+     */
+    function showNotification(type, message) {
+        // Create notification element
+        const notification = $(`
+            <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `);
+        
+        // Add to notification container (create if doesn't exist)
+        let $container = $('#notification-container');
+        if ($container.length === 0) {
+            $container = $('<div id="notification-container" class="position-fixed" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;"></div>');
+            $('body').append($container);
+        }
+        
+        $container.prepend(notification);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            notification.fadeOut(() => notification.remove());
+        }, 5000);
+    }
+
+    /**
+     * Header upload progress functions
+     */
+    function showHeaderUploadProgress(progress) {
+        const $progressContainer = $('#headerProgressContainer');
+        const $progressBar = $('#headerProgressBar');
+        
+        // Show progress container
+        $progressContainer.show();
+        
+        // Update progress bar
+        $progressBar.css('width', progress + '%');
+        $progressBar.attr('aria-valuenow', progress);
+    }
+
+    function updateHeaderUploadProgress(progress) {
+        showHeaderUploadProgress(progress);
+    }
+
+    function hideHeaderUploadProgress() {
+        const $progressContainer = $('#headerProgressContainer');
+        const $progressBar = $('#headerProgressBar');
+        
+        // Hide progress container after a short delay
+        setTimeout(() => {
+            $progressContainer.hide();
+            $progressBar.css('width', '0%');
+            $progressBar.attr('aria-valuenow', 0);
+        }, 1000);
+    }
+
+    function handleHeaderUploadSuccess(response, diskId) {
+        console.log('Header upload success for disk:', diskId, response);
+        
+        // Hide progress
+        hideHeaderUploadProgress();
+        
+        if (response.success) {
+            // Show success message
+            showNotification('success', response.message);
+            
+            // Refresh file list for current disk
+            loadFiles(diskId);
+            
+        } else {
+            showNotification('error', response.message || 'Upload failed');
+        }
+    }
+
+    function handleHeaderUploadError(xhr, diskId) {
+        console.error('Header upload error for disk:', diskId, xhr);
+        
+        // Hide progress
+        hideHeaderUploadProgress();
+        
+        let errorMessage = 'Upload failed';
+        
+        if (xhr.responseJSON) {
+            errorMessage = xhr.responseJSON.message || errorMessage;
+        }
+        
+        showNotification('error', errorMessage);
+    }
+
+    // Upload files to current folder/disk
+    function uploadFilesToCurrentFolder(files) {
+        showProgressBar();
+        
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files[]', files[i]);
+        }
+        formData.append('disk', currentDisk);
+        formData.append('folder', currentFolder);
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        
+        $.ajax({
+            url: '{{ route("admin.media-manager.upload") }}',
+            method: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        updateProgressBar((e.loaded / e.total) * 100);
+                    }
+                }, false);
+                return xhr;
+            }
+        })
+        .done(function(response) {
+            console.log('Upload successful:', response);
+            hideProgressBar();
+            loadFiles(currentDisk); // Refresh file list
+            
+            // Reset file input
+            $('#generalFileInput').val('');
+        })
+        .fail(function(xhr) {
+            console.error('Upload failed:', xhr.responseText);
+            hideProgressBar();
+            alert('Upload failed: ' + (xhr.responseJSON?.message || 'Unknown error'));
+        });
+    }
+    
+    // Show create folder modal
+    function showCreateFolderModal() {
+        const folderName = prompt('Enter folder name:');
+        if (folderName && folderName.trim()) {
+            createFolder(folderName.trim());
+        }
+    }
+    
+    // Create folder function
+    function createFolder(folderName) {
+        $.ajax({
+            url: '{{ route("admin.media-manager.create-folder") }}',
+            method: 'POST',
+            data: {
+                disk: currentDisk,
+                folder: currentFolder,
+                name: folderName,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }
+        })
+        .done(function(response) {
+            console.log('Folder created successfully:', response);
+            loadFiles(currentDisk); // Refresh file list
+        })
+        .fail(function(xhr) {
+            console.error('Folder creation failed:', xhr.responseText);
+            alert('Failed to create folder: ' + (xhr.responseJSON?.message || 'Unknown error'));
+        });
+    }
+    
+    // Delete selected files
+    function deleteSelectedFiles() {
+        if (selectedFiles.length === 0) {
+            alert('No files selected for deletion');
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to delete ${selectedFiles.length} selected item(s)?`)) {
+            return;
+        }
+        
+        // Show progress
+        const totalFiles = selectedFiles.length;
+        let deletedCount = 0;
+        let errors = [];
+        
+        // Delete each file individually
+        const deletePromises = selectedFiles.map(file => {
+            return $.ajax({
+                url: `/admin/media-manager/delete/${encodeURIComponent(file)}`,
+                method: 'DELETE',
+                data: {
+                    disk: currentDisk,
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }
+            })
+            .done(function(response) {
+                deletedCount++;
+                console.log(`File deleted successfully: ${file}`);
+            })
+            .fail(function(xhr) {
+                console.error(`Delete failed for file: ${file}`, xhr.responseText);
+                errors.push(`${file}: ${xhr.responseJSON?.error || 'Unknown error'}`);
+            });
+        });
+        
+        // Wait for all deletion requests to complete
+        Promise.allSettled(deletePromises).then(() => {
+            selectedFiles = [];
+            loadFiles(currentDisk); // Refresh file list
+            
+            // Show results
+            if (errors.length > 0) {
+                alert(`Deletion completed with errors:\n${errors.join('\n')}`);
+            } else {
+                console.log(`Successfully deleted ${deletedCount} files`);
+            }
+        });
+    }
+
+    // Initialize when document is ready
+    $(document).ready(function() {
+        console.log('Document ready - initializing Media Manager');
+        
+        // Set initial tab content visibility
+        showActiveTabContent(currentDisk);
+        
+        // Initialize breadcrumbs and navigation
+        updateBreadcrumbs(currentDisk, 'media', '/');
+        bindBreadcrumbNavigation();
+        
+        // Initialize view toggle functionality
+        initializeViewToggle();
+        
+        // Ensure sidebar shows root as selected initially
+        updateSidebarSelection('root');
+    });
+    
+    // VIEW TOGGLE FUNCTIONALITY
+    function getStoredViewMode() {
+        return localStorage.getItem('mediaManagerViewMode') || 'grid';
+    }
+    
+    function initializeViewToggle() {
+        // Load stored view mode preference
+        currentViewMode = getStoredViewMode();
+        
+        // Bind view toggle button events
+        $('#gridViewBtn').on('click', function() {
+            setViewMode('grid');
+        });
+        
+        $('#listViewBtn').on('click', function() {
+            setViewMode('list');
+        });
+        
+        // Set initial view mode
+        setViewMode(currentViewMode);
+    }
+    
+    function setViewMode(mode) {
+        currentViewMode = mode;
+        
+        // Update button states
+        $('.btn[data-view]').removeClass('active');
+        $(`[data-view="${mode}"]`).addClass('active');
+        
+        // Update all folder grids with new view mode
+        $('.media-folders-grid').removeClass('view-grid view-list').addClass(`view-${mode}`);
+        
+        // For list view, remove Bootstrap row class and add it back for grid view
+        if (mode === 'list') {
+            $('.media-folders-grid').removeClass('row');
+        } else {
+            $('.media-folders-grid').addClass('row');
+        }
+        
+        // Store preference in localStorage
+        localStorage.setItem('mediaManagerViewMode', mode);
+        
+        console.log(`View mode changed to: ${mode}`);
+    }
+    
+    // FOLDER NAVIGATION FUNCTIONALITY
+    function navigateToFolder(diskName, folderPath, folderName) {
+        console.log(`Navigating to folder: ${folderName} at path: ${folderPath} on disk: ${diskName}`);
+        
+        // Update current state
+        currentDisk = diskName;
+        currentPath = folderPath;
+        currentFolder = folderName;
+        
+        // Clear selected files
+        selectedFiles = [];
+        updateDeleteButtonState();
+        
+        // Update breadcrumbs for the specific folder
+        updateBreadcrumbs(diskName, folderName, folderPath);
+        
+        // Update sidebar selection
+        updateSidebarSelection(folderName);
+        
+        // Show loading state
+        showLoadingState(diskName);
+        
+        // Load files for the selected folder
+        loadFilesForPath(diskName, folderPath);
+    }
+    
+    function getStoredViewMode() {
+        return localStorage.getItem('mediaManagerViewMode') || 'grid';
     }
 </script>

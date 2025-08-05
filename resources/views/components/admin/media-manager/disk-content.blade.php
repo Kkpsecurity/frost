@@ -1,7 +1,7 @@
 @props(['diskId', 'diskName', 'icon', 'isActive' => false])
 
 <!-- {{ ucfirst($diskName) }} Disk -->
-<div class="tab-pane fade {{ $isActive ? 'show active' : '' }}" id="{{ $diskId }}" role="tabpanel" style="{{ !$isActive ? 'display: none;' : '' }}">
+<div class="tab-pane fade d-flex justify-content-center align-items-center {{ $isActive ? 'show active' : '' }}" id="{{ $diskId }}" role="tabpanel" style="width: 100%; {{ !$isActive ? 'display: none;' : '' }}">
     <!-- Loading indicator -->
     <div class="loading-indicator" id="{{ $diskId }}Loading" style="display: none;">
         <div class="text-center">
@@ -11,8 +11,8 @@
     </div>
 
     <!-- Upload Drop Area -->
-    <div class="upload-area" id="{{ $diskId }}UploadArea" style="display: none;">
-        <div class="upload-content">
+    <div class="upload-area d-flex justify-content-center align-items-center w-100" id="{{ $diskId }}UploadArea" style="display: none !important;">
+        <div class="upload-content text-center">
             <i class="{{ $icon }} fa-4x mb-3"></i>
             <h4 class="mb-2">Drop files here or click to upload</h4>
             <p class="text-muted mb-3">{{ $slot ?? 'Supports images, documents, and other file types accessible to all users' }}</p>
@@ -23,18 +23,8 @@
         <input type="file" id="{{ $diskId }}FileInput" multiple style="display: none;">
     </div>
 
-    <!-- Empty State -->
-    <div class="empty-state" id="{{ $diskId }}EmptyState" style="display: none;">
-        <i class="{{ $icon }} fa-4x mb-3"></i>
-        <h4 class="mb-2">No files found</h4>
-        <p class="text-muted mb-3">Start by uploading some files to this storage location</p>
-        <button class="btn btn-primary" onclick="$('#{{ $diskId }}FileInput').click()">
-            <i class="fas fa-plus mr-2"></i>Upload First File
-        </button>
-    </div>
-
     <!-- Files Grid - AdminLTE Gallery Style -->
-    <div class="row media-grid" id="{{ $diskId }}Grid" style="display: none;">
+    <div class="row media-grid vh-100 w-100 p-3" id="{{ $diskId }}Grid" style="display: none;">
         <!-- Files will be loaded here dynamically -->
     </div>
 </div>

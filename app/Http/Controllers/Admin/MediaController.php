@@ -36,7 +36,7 @@ class MediaController extends Controller
     }
 
     /**
-     * Handle FilePond file upload
+     * Handle file upload with new simplified folder structure
      *
      * @param Request $request
      * @return JsonResponse
@@ -44,89 +44,309 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         try {
-            // Validate the uploaded file
-            $validator = Validator::make($request->all(), [
-                'file' => [
-                    'required',
-                    'file',
-                    'max:51200', // 50MB in kilobytes
-                    'mimes:jpeg,jpg,png,gif,webp,pdf,doc,docx,txt,zip,rar,mp4,webm,avi,mov'
-                ]
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'error' => $validator->errors()->first()
-                ], 422);
+            // Check if this is the new media manager upload (with disk and folder parameters)
+            if ($request->has(['disk', 'folder', 'files'])) {
+                return $this->handleMediaManagerUpload($request);
             }
 
-            $file = $request->file('file');
-
-            if (!$file || !$file->isValid()) {
-                return response()->json([
-                    'error' => 'Invalid file upload'
-                ], 422);
-            }
-
-            // Generate unique filename
-            $originalName = $file->getClientOriginalName();
-            $extension = $file->getClientOriginalExtension();
-            $filename = pathinfo($originalName, PATHINFO_FILENAME);
-            $uniqueFilename = Str::slug($filename) . '_' . time() . '.' . $extension;
-
-            // Determine storage path based on file type
-            $storagePath = $this->getStoragePath($file->getMimeType());
-
-            // Get the storage disk (S3 or local)
-            $disk = $this->getUploadDisk();
-
-            // Store the file
-            $path = $file->storeAs($storagePath, $uniqueFilename, $disk);
-
-            if (!$path) {
-                return response()->json([
-                    'error' => 'Failed to store file'
-                ], 500);
-            }
-
-            // Get file URL
-            $url = Storage::disk($disk)->url($path);
-
-            // Create temporary upload record for FilePond
-            $uploadData = [
-                'id' => Str::uuid(),
-                'filename' => $uniqueFilename,
-                'original_name' => $originalName,
-                'path' => $path,
-                'disk' => $disk,
-                'url' => $url,
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-                'uploaded_at' => now()->toISOString(),
-                'temp' => true
-            ];
-
-            // Store temporary upload data in session
-            $tempUploads = session('temp_uploads', []);
-            $tempUploads[$uploadData['id']] = $uploadData;
-            session(['temp_uploads' => $tempUploads]);
-
-            // Return the temporary ID for FilePond
-            return response()->json($uploadData['id'], 200, [
-                'Content-Type' => 'text/plain'
-            ]);
+            // Fallback to original FilePond upload for backward compatibility
+            return $this->handleFilePondUpload($request);
 
         } catch (\Exception $e) {
-            Log::error('FilePond upload error: ' . $e->getMessage(), [
+            Log::error('Upload error: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
-                'error' => 'Upload failed: ' . $e->getMessage()
+                'success' => false,
+                'message' => 'Upload failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Handle new media manager uploads with simplified folder structure
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    private function handleMediaManagerUpload(Request $request): JsonResponse
+    {
+        // Define folder-specific validation rules
+        $folderRules = [
+            'images' => [
+                'extensions' => ['jpg', 'jpeg', 'png', 'gif'],
+                'max_size' => 10240, // 10MB in KB
+                'mime_types' => ['image/jpeg', 'image/png', 'image/gif']
+            ],
+            'documents' => [
+                'extensions' => ['pdf', 'doc', 'docx'],
+                'max_size' => 25600, // 25MB in KB
+                'mime_types' => ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            ],
+            'assets' => [
+                'extensions' => ['css', 'js', 'json'],
+                'max_size' => 5120, // 5MB in KB
+                'mime_types' => ['text/css', 'application/javascript', 'application/json']
+            ],
+            'validations' => [
+                'extensions' => ['jpg', 'jpeg', 'png'],
+                'max_size' => 8192, // 8MB in KB
+                'mime_types' => ['image/jpeg', 'image/png']
+            ]
+        ];
+
+        // Validate basic request structure
+        $request->validate([
+            'disk' => 'required|string|in:public,local,s3',
+            'folder' => 'required|string',
+            'files' => 'required|array|min:1',
+            'files.*' => 'required|file'
+        ]);
+
+        $disk = $request->input('disk');
+        $folder = $request->input('folder');
+        $files = $request->file('files');
+
+        // Only implement public disk for now
+        if ($disk !== 'public') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only public disk is currently supported'
+            ], 422);
+        }
+
+        // Get validation rules for the folder
+        $ruleKey = $folder;
+        if (Str::startsWith($folder, 'validations/')) {
+            $ruleKey = 'validations';
+        }
+
+        $rules = $folderRules[$ruleKey] ?? null;
+
+        if (!$rules) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid folder specified: ' . $folder
+            ], 422);
+        }
+
+        // Validate files against folder rules
+        $validator = Validator::make($request->all(), [
+            'files.*' => [
+                'required',
+                'file',
+                'max:' . $rules['max_size'],
+                'mimes:' . implode(',', $rules['extensions'])
+            ]
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $uploadedFiles = [];
+        $errors = [];
+
+        foreach ($files as $index => $file) {
+            try {
+                $result = $this->processMediaManagerFile($file, $disk, $folder);
+                $uploadedFiles[] = $result;
+            } catch (\Exception $e) {
+                $errors["file_{$index}"] = [$e->getMessage()];
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Some files failed to upload',
+                'uploaded' => $uploadedFiles,
+                'errors' => $errors
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => count($uploadedFiles) . ' file(s) uploaded successfully',
+            'files' => $uploadedFiles
+        ]);
+    }
+
+    /**
+     * Handle original FilePond upload for backward compatibility
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    private function handleFilePondUpload(Request $request): JsonResponse
+    {
+        // Validate the uploaded file
+        $validator = Validator::make($request->all(), [
+            'file' => [
+                'required',
+                'file',
+                'max:51200', // 50MB in kilobytes
+                'mimes:jpeg,jpg,png,gif,webp,pdf,doc,docx,txt,zip,rar,mp4,webm,avi,mov'
+            ]
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors()->first()
+            ], 422);
+        }
+
+        $file = $request->file('file');
+
+        if (!$file || !$file->isValid()) {
+            return response()->json([
+                'error' => 'Invalid file upload'
+            ], 422);
+        }
+
+        // Generate unique filename
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $filename = pathinfo($originalName, PATHINFO_FILENAME);
+        $uniqueFilename = Str::slug($filename) . '_' . time() . '.' . $extension;
+
+        // Determine storage path based on file type
+        $storagePath = $this->getStoragePath($file->getMimeType());
+
+        // Get the storage disk (S3 or local)
+        $disk = $this->getUploadDisk();
+
+        // Store the file
+        $path = $file->storeAs($storagePath, $uniqueFilename, $disk);
+
+        if (!$path) {
+            return response()->json([
+                'error' => 'Failed to store file'
+            ], 500);
+        }
+
+        // Get file URL
+        $url = $this->generateFileUrl($path, $disk);
+
+        // Create temporary upload record for FilePond
+        $uploadData = [
+            'id' => Str::uuid(),
+            'filename' => $uniqueFilename,
+            'original_name' => $originalName,
+            'path' => $path,
+            'disk' => $disk,
+            'url' => $url,
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'uploaded_at' => now()->toISOString(),
+            'temp' => true
+        ];
+
+        // Store temporary upload data in session
+        $tempUploads = session('temp_uploads', []);
+        $tempUploads[$uploadData['id']->toString()] = $uploadData;
+        session(['temp_uploads' => $tempUploads]);
+
+        // Return the temporary ID for FilePond
+        return response()->json($uploadData['id'], 200, [
+            'Content-Type' => 'text/plain'
+        ]);
+    }
+
+    /**
+     * Process individual file upload for media manager
+     */
+    private function processMediaManagerFile($file, $disk, $folder)
+    {
+        // Generate unique filename
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $timestamp = now()->format('Y-m-d_H-i-s');
+        $randomString = Str::random(6);
+        $filename = pathinfo($originalName, PATHINFO_FILENAME) . "_{$timestamp}_{$randomString}.{$extension}";
+
+        // Build storage path for new folder structure
+        $storagePath = "media/{$folder}";
+
+        // Store the file
+        $filePath = $file->storeAs($storagePath, $filename, $disk);
+
+        // Get file info
+        $fileInfo = [
+            'original_name' => $originalName,
+            'filename' => $filename,
+            'path' => $filePath,
+            'size' => $file->getSize(),
+            'size_formatted' => $this->formatBytes($file->getSize()),
+            'mime_type' => $file->getMimeType(),
+            'extension' => $extension,
+            'disk' => $disk,
+            'folder' => $folder,
+            'url' => $this->getMediaFileUrl($disk, $filePath),
+            'type' => $this->getFileTypeFromExtension($extension),
+            'uploaded_at' => now()->toISOString()
+        ];
+
+        return $fileInfo;
+    }
+
+    /**
+     * Get file URL for media manager files
+     */
+    private function getMediaFileUrl($disk, $filePath)
+    {
+        if ($disk === 'public') {
+            return asset('storage/' . $filePath);
+        }
+
+        return null; // Private files need special handling
+    }
+
+    /**
+     * Get file type from extension
+     */
+    private function getFileTypeFromExtension($extension)
+    {
+        $extension = strtolower($extension);
+
+        $imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $documentTypes = ['pdf', 'doc', 'docx'];
+        $assetTypes = ['css', 'js', 'json'];
+
+        if (in_array($extension, $imageTypes)) {
+            return 'image';
+        } elseif (in_array($extension, $documentTypes)) {
+            return 'document';
+        } elseif (in_array($extension, $assetTypes)) {
+            return 'asset';
+        }
+
+        return 'file';
+    }
+
+    /**
+     * Format bytes to human readable format
+     *
+     * @param int $bytes
+     * @param int $precision
+     * @return string
+     */
+    private function formatBytes(int $bytes, int $precision = 2): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        for ($i = 0; $bytes >= 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+
+        return round($bytes, $precision) . ' ' . $units[$i];
     }
 
     /**
@@ -199,7 +419,7 @@ class MediaController extends Controller
             'mime_type' => $uploadData['mime_type'],
             'size' => $uploadData['size'],
             'size_human' => $this->formatBytes($uploadData['size']),
-            'url' => $uploadData['url'] ?? Storage::disk($disk)->url($uploadData['path']),
+            'url' => $uploadData['url'] ?? $this->generateFileUrl($uploadData['path'], $disk),
             'uploaded_at' => $uploadData['uploaded_at']
         ]);
     }
@@ -307,7 +527,8 @@ class MediaController extends Controller
         if ($disk === 's3' || str_starts_with($disk, 's3')) {
             // For S3, generate a public URL
             try {
-                return Storage::disk($disk)->url($path);
+                // Use the asset helper for consistency
+                return asset('storage/' . $path);
             } catch (\Exception $e) {
                 Log::warning('Failed to generate S3 URL for path: ' . $path, [
                     'error' => $e->getMessage()
@@ -317,7 +538,7 @@ class MediaController extends Controller
         }
 
         // For local storage
-        return Storage::disk($disk)->url($path);
+        return asset('storage/' . $path);
     }
 
         /**

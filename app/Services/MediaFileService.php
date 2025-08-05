@@ -42,6 +42,11 @@ class MediaFileService
             // Map disk names to Laravel storage disks
             $storageDisk = $this->mapDiskName($disk);
 
+            // For public disk, default to media folder structure if at root
+            if ($disk === 'public' && ($path === '/' || $path === '')) {
+                $path = '/media';
+            }
+
             // Sanitize path
             $path = $this->sanitizePath($path);
 
@@ -494,7 +499,8 @@ class MediaFileService
             return trim($customPath, '/');
         }
 
-        $basePath = env('FILEPOND_S3_PATH', 'uploads');
+        // Use new simplified media folder structure
+        $basePath = 'media';
 
         if (str_starts_with($mimeType, 'image/')) {
             return $basePath . '/images';
@@ -514,6 +520,17 @@ class MediaFileService
             'application/x-zip-compressed'
         ])) {
             return $basePath . '/archives';
+        }
+
+        // For CSS, JS, JSON files
+        if (
+            in_array($mimeType, [
+                'text/css',
+                'application/javascript',
+                'application/json'
+            ])
+        ) {
+            return $basePath . '/assets';
         }
 
         return $basePath . '/files';

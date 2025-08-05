@@ -2,7 +2,7 @@
 
 <div class="media-manager-container">
     <!-- AdminLTE Card Structure -->
-    <div class="card media-content-card">
+    <div class="card">
         <!-- Card Header with Tabs -->
         <x-admin.media-manager.header />
 
