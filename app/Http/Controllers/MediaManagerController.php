@@ -28,7 +28,9 @@ class MediaManagerController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'file' => 'required|file|max:51200', // 50MB
+            'file' => 'required_without:files|file|max:51200', // 50MB for single file
+            'files' => 'required_without:file|array', // For multiple files
+            'files.*' => 'file|max:51200', // 50MB per file
             'disk' => 'required|string|in:public,local,media_s3',
             'collection' => 'nullable|string|max:255',
         ]);
@@ -41,15 +43,17 @@ class MediaManagerController extends Controller
         }
 
         try {
-            $mediaFile = $this->mediaManagerService->uploadFileToMediaManager(
-                $request->file('file'),
-                $request->input('disk'),
-                $request->input('collection')
-            );
+            $uploadedFiles = [];
 
-            return response()->json([
-                'success' => true,
-                'file' => [
+            // Handle single file upload
+            if ($request->hasFile('file')) {
+                $mediaFile = $this->mediaManagerService->uploadFileToMediaManager(
+                    $request->file('file'),
+                    $request->input('disk'),
+                    $request->input('collection')
+                );
+
+                $uploadedFiles[] = [
                     'id' => $mediaFile->id,
                     'name' => $mediaFile->name,
                     'original_name' => $mediaFile->original_name,
@@ -58,7 +62,35 @@ class MediaManagerController extends Controller
                     'size' => $mediaFile->formatted_size,
                     'mime_type' => $mediaFile->mime_type,
                     'collection' => $mediaFile->collection,
-                ]
+                ];
+            }
+
+            // Handle multiple files upload
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $file) {
+                    $mediaFile = $this->mediaManagerService->uploadFileToMediaManager(
+                        $file,
+                        $request->input('disk'),
+                        $request->input('collection')
+                    );
+
+                    $uploadedFiles[] = [
+                        'id' => $mediaFile->id,
+                        'name' => $mediaFile->name,
+                        'original_name' => $mediaFile->original_name,
+                        'path' => $mediaFile->path,
+                        'url' => $mediaFile->url,
+                        'size' => $mediaFile->formatted_size,
+                        'mime_type' => $mediaFile->mime_type,
+                        'collection' => $mediaFile->collection,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'files' => $uploadedFiles,
+                'message' => count($uploadedFiles) > 1 ? 'Files uploaded successfully' : 'File uploaded successfully'
             ]);
 
         } catch (\Exception $e) {
@@ -79,10 +111,12 @@ class MediaManagerController extends Controller
 
         try {
             $files = $this->mediaManagerService->listMediaFiles($disk, $path);
+            $directories = $this->mediaManagerService->getDirectoryTree($disk);
 
             return response()->json([
                 'success' => true,
                 'files' => $files,
+                'directories' => $directories['directories'] ?? [],
                 'disk' => $disk,
                 'path' => $path
             ]);

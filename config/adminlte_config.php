@@ -87,9 +87,9 @@ return [
         'img' => [
             'path' => 'images/200851589.jpg',
             'alt' => 'Frost Logo',
-            'class' => '',
-            'width' => 50,
-            'height' => 50,
+            'class' => 'img-circle',
+            'width' => 60,
+            'height' => 60,
         ],
     ],
 

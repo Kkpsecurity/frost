@@ -2,6 +2,60 @@
 
 @section('adminlte_css_pre')
     <link rel="stylesheet" href="{{ asset('vendor/icheck-bootstrap/icheck-bootstrap.min.css') }}">
+    <style>
+        /* Enhanced circular logo styling */
+        .login-logo img.img-circle,
+        .auth-logo img.img-circle {
+            border-radius: 50% !important;
+            border: 3px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+            transition: all 0.3s ease-in-out !important;
+            object-fit: cover !important;
+        }
+
+        /* Hover effect for logo */
+        .login-logo img.img-circle:hover,
+        .auth-logo img.img-circle:hover {
+            transform: scale(1.05) !important;
+            box-shadow:
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+            border-color: rgba(255, 255, 255, 0.4) !important;
+        }
+
+        /* Logo container styling */
+        .login-logo,
+        .auth-logo {
+            margin-bottom: 25px !important;
+        }
+
+        .login-logo a,
+        .auth-logo a {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 15px !important;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .login-logo img.img-circle,
+            .auth-logo img.img-circle {
+                width: 60px !important;
+                height: 60px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-logo img.img-circle,
+            .auth-logo img.img-circle {
+                width: 50px !important;
+                height: 50px !important;
+            }
+        }
+    </style>
 @stop
 
 @php

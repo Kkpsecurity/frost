@@ -1,0 +1,284 @@
+
+  
+
+    .tree-item {
+        padding: 12px 15px;
+        margin: 5px 0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .tree-item:hover {
+        background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        transform: translateX(5px);
+        color: #667eea;
+    }
+
+    .tree-item.active {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .main-content {
+        padding: 20px;
+        border-radius: 0 15px 15px 0;
+    }
+
+    .upload-area {
+        border: 3px dashed rgba(102, 126, 234, 0.3);
+        border-radius: 15px;
+        padding: 60px 20px;
+        text-align: center;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .upload-area:hover,
+    .upload-area.dragover {
+        border-color: #667eea;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        transform: scale(1.02);
+    }
+
+    .upload-area i {
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 20px 0;
+    }
+
+    .media-item {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .media-item:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .media-preview {
+        height: 180px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .media-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .media-item:hover .media-preview img {
+        transform: scale(1.1);
+    }
+
+    .file-icon {
+        font-size: 4rem;
+        opacity: 0.8;
+    }
+
+    .media-actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .media-item:hover .media-actions {
+        opacity: 1;
+    }
+
+    .media-actions .btn {
+        margin: 2px;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        color: #333;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .media-actions .btn:hover {
+        transform: scale(1.1);
+        color: white;
+    }
+
+    .media-actions .btn.btn-primary:hover {
+        background: #007bff;
+    }
+
+    .media-actions .btn.btn-success:hover {
+        background: #28a745;
+    }
+
+    .media-actions .btn.btn-danger:hover {
+        background: #dc3545;
+    }
+
+    .media-info {
+        padding: 15px;
+        background: white;
+    }
+
+    .media-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+        margin-bottom: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .media-size {
+        color: #6c757d;
+        font-size: 12px;
+    }
+
+    .search-box {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .search-box input {
+        border: none;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 25px;
+        padding: 12px 50px 12px 20px;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-box input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        background: white;
+    }
+
+    .search-box .search-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        border: none;
+    }
+
+    .progress {
+        height: 8px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 10px;
+    }
+
+    .alert {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .media-item {
+        animation: fadeInUp 0.5s ease forwards;
+    }
+
+    .media-item:nth-child(1) { animation-delay: 0.1s; }
+    .media-item:nth-child(2) { animation-delay: 0.2s; }
+    .media-item:nth-child(3) { animation-delay: 0.3s; }
+    .media-item:nth-child(4) { animation-delay: 0.4s; }
+    .media-item:nth-child(5) { animation-delay: 0.5s; }
+    .media-item:nth-child(6) { animation-delay: 0.6s; }
+
+    /* Loading spinner */
+    .loading-spinner {
+        color: #667eea;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .media-grid {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .sidebar {
+            display: none;
+        }
+
+        .main-content {
+            border-radius: 15px;
+        }
+    }
+</style>

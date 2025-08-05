@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\MediaFileService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +13,12 @@ use Illuminate\Support\Str;
 
 class MediaController extends Controller
 {
+    protected MediaFileService $mediaFileService;
+
+    public function __construct(MediaFileService $mediaFileService)
+    {
+        $this->mediaFileService = $mediaFileService;
+    }
     /**
      * Get the configured storage disk for uploads
      */
@@ -347,20 +354,162 @@ class MediaController extends Controller
     }
 
     /**
-     * Format bytes to human readable format
+     * List files for a specific disk with role-based access control
      *
-     * @param int $bytes
-     * @param int $precision
-     * @return string
+     * @param Request $request
+     * @return JsonResponse
      */
-    private function formatBytes(int $bytes, int $precision = 2): string
+    public function listFiles(Request $request): JsonResponse
     {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $validator = Validator::make($request->all(), [
+            'disk' => 'required|string|in:public,local,s3',
+            'path' => 'nullable|string',
+        ]);
 
-        for ($i = 0; $bytes >= 1024 && $i < count($units) - 1; $i++) {
-            $bytes /= 1024;
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid parameters: ' . $validator->errors()->first()
+            ], 422);
         }
 
-        return round($bytes, $precision) . ' ' . $units[$i];
+        $disk = $request->input('disk');
+        $path = $request->input('path', '/');
+
+        $result = $this->mediaFileService->listFiles($disk, $path);
+
+        if (!$result['success']) {
+            $statusCode = isset($result['show_connection_screen']) ? 503 :
+                         (str_contains($result['error'], 'Access denied') ? 403 : 500);
+            return response()->json($result, $statusCode);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Create a new folder
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createFolder(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'disk' => 'required|string|in:public,local,s3',
+            'path' => 'nullable|string',
+            'name' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid parameters: ' . $validator->errors()->first()
+            ], 422);
+        }
+
+        $result = $this->mediaFileService->createFolder(
+            $request->input('disk'),
+            $request->input('path', '/'),
+            $request->input('name')
+        );
+
+        if (!$result['success']) {
+            $statusCode = str_contains($result['error'], 'Access denied') ? 403 : 422;
+            return response()->json($result, $statusCode);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Delete a file
+     *
+     * @param Request $request
+     * @param string $file
+     * @return JsonResponse
+     */
+    public function deleteFile(Request $request, string $file): JsonResponse
+    {
+        $validator = Validator::make(array_merge($request->all(), ['file' => $file]), [
+            'disk' => 'required|string|in:public,local,s3',
+            'file' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Invalid parameters: ' . $validator->errors()->first()
+            ], 422);
+        }
+
+        $result = $this->mediaFileService->deleteFile(
+            $request->input('disk'),
+            $file
+        );
+
+        if (!$result['success']) {
+            $statusCode = str_contains($result['error'], 'Access denied') ? 403 : 404;
+            return response()->json($result, $statusCode);
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Placeholder methods for future implementation
+     */
+    public function getTree(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'error' => 'Tree view not yet implemented'
+        ], 501);
+    }
+
+    public function archiveFile(Request $request, string $file): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'error' => 'Archive functionality not yet implemented'
+        ], 501);
+    }
+
+    public function downloadFile(Request $request, string $file): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'error' => 'Download functionality not yet implemented'
+        ], 501);
+    }
+
+    public function getFileDetails(Request $request, string $file): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'error' => 'File details functionality not yet implemented'
+        ], 501);
+    }
+
+    /**
+     * Get disk status for all accessible disks
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getDiskStatuses(Request $request): JsonResponse
+    {
+        $result = $this->mediaFileService->getAllDiskStatuses();
+
+        if (isset($result['error'])) {
+            return response()->json($result, 401);
+        }
+
+        return response()->json($result);
+    }
+
+    public function index(): \Illuminate\View\View
+    {
+        return view('admin.admin-center.media.index');
     }
 }

@@ -13,7 +13,7 @@ class MediaFile extends Model
 
     protected $fillable = [
         'name',
-        'original_name', 
+        'original_name',
         'path',
         'disk',
         'mime_type',
@@ -38,7 +38,7 @@ class MediaFile extends Model
         if ($this->disk === 'public') {
             return asset('storage/' . $this->path);
         }
-        
+
         // For private files, return a secure URL
         return route('media.stream', ['file' => $this->id]);
     }
@@ -51,5 +51,42 @@ class MediaFile extends Model
         $suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
 
         return round(pow(1024, $base - floor($base)), $precision) . ' ' . $suffixes[floor($base)];
+    }
+
+    public function isImage(): bool
+    {
+        return str_starts_with($this->mime_type, 'image/');
+    }
+
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->mime_type, 'video/');
+    }
+
+    public function isAudio(): bool
+    {
+        return str_starts_with($this->mime_type, 'audio/');
+    }
+
+    public function isPdf(): bool
+    {
+        return $this->mime_type === 'application/pdf';
+    }
+
+    public function isDocument(): bool
+    {
+        $documentTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'text/plain',
+            'text/csv'
+        ];
+
+        return in_array($this->mime_type, $documentTypes);
     }
 }

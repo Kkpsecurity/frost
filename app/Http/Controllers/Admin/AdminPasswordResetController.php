@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
@@ -15,22 +14,24 @@ class AdminPasswordResetController extends Controller
 {
     /**
      * Show the form for requesting a password reset link.
+     * This method is called by the route: admin.password.request
      */
-    public function showLinkRequestForm()
+    public function create()
     {
         return view('admin.auth.passwords.email');
     }
 
     /**
      * Send a reset link to the given user.
+     * This method is called by the route: admin.password.email
      */
-    public function sendResetLinkEmail(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
-        // Check if the email belongs to an admin user (role_id < 3: System + Regular admins)
+        // Check if the email belongs to an admin user
         $admin = Admin::where('email', $request->email)->first();
 
         if (!$admin) {
@@ -51,9 +52,11 @@ class AdminPasswordResetController extends Controller
 
     /**
      * Show the password reset form.
+     * This method is called by the route: admin.password.reset
      */
-    public function showResetForm(Request $request, $token = null)
+    public function reset(Request $request)
     {
+        $token = $request->route('token');
         return view('admin.auth.passwords.reset')->with(
             ['token' => $token, 'email' => $request->email]
         );
@@ -61,8 +64,9 @@ class AdminPasswordResetController extends Controller
 
     /**
      * Reset the given user's password.
+     * This method is called by the route: admin.password.update
      */
-    public function reset(Request $request)
+    public function update(Request $request)
     {
         $request->validate([
             'token' => 'required',

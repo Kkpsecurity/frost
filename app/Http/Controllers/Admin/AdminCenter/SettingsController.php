@@ -305,4 +305,53 @@ class SettingsController extends Controller
 
         return view('admin.admin-center.settings.test', compact('tests', 'allSettings'));
     }
+
+    /**
+     * Display storage configuration settings
+     */
+    public function storage()
+    {
+        $storageSettings = [
+            'media_s3' => [
+                'key' => env('MEDIA_S3_ACCESS_KEY', ''),
+                'secret' => env('MEDIA_S3_SECRET_KEY', ''),
+                'region' => env('MEDIA_S3_REGION', ''),
+                'bucket' => env('MEDIA_S3_BUCKET', ''),
+                'endpoint' => env('MEDIA_S3_ENDPOINT', ''),
+            ],
+            'aws' => [
+                'key' => env('AWS_ACCESS_KEY_ID', ''),
+                'secret' => env('AWS_SECRET_ACCESS_KEY', ''),
+                'region' => env('AWS_DEFAULT_REGION', ''),
+                'bucket' => env('AWS_BUCKET', ''),
+                'endpoint' => env('AWS_ENDPOINT', ''),
+            ]
+        ];
+
+        return view('admin.admin-center.settings.storage', compact('storageSettings'));
+    }
+
+    /**
+     * Update storage configuration settings
+     */
+    public function updateStorage(Request $request)
+    {
+        $request->validate([
+            'media_s3_key' => 'nullable|string',
+            'media_s3_secret' => 'nullable|string',
+            'media_s3_region' => 'nullable|string',
+            'media_s3_bucket' => 'nullable|string',
+            'media_s3_endpoint' => 'nullable|url',
+        ]);
+
+        // Store S3 media settings
+        Setting::set('storage.media_s3_key', $request->input('media_s3_key'));
+        Setting::set('storage.media_s3_secret', $request->input('media_s3_secret'));
+        Setting::set('storage.media_s3_region', $request->input('media_s3_region'));
+        Setting::set('storage.media_s3_bucket', $request->input('media_s3_bucket'));
+        Setting::set('storage.media_s3_endpoint', $request->input('media_s3_endpoint'));
+
+        return redirect()->route('admin.settings.storage')
+            ->with('success', 'Storage settings updated successfully. Note: Environment variables take precedence over database settings.');
+    }
 }

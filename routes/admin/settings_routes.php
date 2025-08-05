@@ -19,6 +19,10 @@ Route::prefix('admin-center/settings')->name('settings.')->group(function () {
     Route::put('/adminlte/config', [SettingsController::class, 'updateAdminlte'])->name('adminlte.update');
     Route::get('/adminlte/debug', [SettingsController::class, 'debugAdminlte'])->name('adminlte.debug');
 
+    // Storage configuration settings
+    Route::get('/storage', [SettingsController::class, 'storage'])->name('storage');
+    Route::put('/storage', [SettingsController::class, 'updateStorage'])->name('storage.update');
+
     // Test settings functionality
     Route::get('/test/functionality', [SettingsController::class, 'test'])->name('test');
 });
