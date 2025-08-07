@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-#use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -35,6 +35,8 @@ class User extends Authenticatable implements MustVerifyEmail
 {
 
     #use HasApiTokens, HasFactory;
+
+    use HasFactory;
 
     use Notifiable; // Observable temporarily disabled
     use PgTimestamps, PresentsTimeStamps;
@@ -239,5 +241,34 @@ class User extends Authenticatable implements MustVerifyEmail
     public function shouldBeSearchable()
     {
         return $this->is_active; // Only index active users
+    }
+
+    /**
+     * Check if user has admin privileges
+     * Alias for IsAdministrator() method
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->IsAdministrator();
+    }
+
+    /**
+     * Get the image for AdminLTE user menu
+     * @return string|null
+     */
+    public function adminlte_image(): ?string
+    {
+        // Return null for default avatar or implement avatar logic
+        return $this->avatar_url ?? null;
+    }
+
+    /**
+     * Get the description for AdminLTE user menu
+     * @return string
+     */
+    public function adminlte_desc(): string
+    {
+        return $this->email ?? '';
     }
 }

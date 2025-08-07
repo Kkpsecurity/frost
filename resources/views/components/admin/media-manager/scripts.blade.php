@@ -1,4 +1,10 @@
 <script>
+    // CSRF Token for AJAX requests
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+    // FilePond variable (if using FilePond library)
+    let FilePond = null;
+
     let currentDisk = 'public';
     let currentPath = '/';
     let currentFolder = '';
@@ -996,8 +1002,90 @@
     }
 
     /**
-     * Update the directory tree in the sidebar
+     * Handle media manager upload (standardized upload function)
      */
+    function handleMediaManagerUpload(files, disk, path = '/') {
+        console.log(`handleMediaManagerUpload: Starting upload of ${files.length} files to ${disk}:${path}`);
+
+        const formData = new FormData();
+
+        // Add files to FormData
+        Array.from(files).forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+        });
+
+        // Add metadata
+        formData.append('disk', disk);
+        formData.append('path', path);
+        formData.append('_token', csrfToken);
+
+        // Show loading indicator
+        updateDiskStatusIndicator(disk, 'loading');
+
+        return $.ajax({
+            url: '/admin/media-manager/upload',
+            method: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const progress = (e.loaded / e.total) * 100;
+                        console.log(`Upload progress: ${Math.round(progress)}%`);
+                        // Update progress if UI elements exist
+                        updateUploadProgress(disk, progress);
+                    }
+                }, false);
+                return xhr;
+            }
+        })
+        .done(function(response) {
+            console.log('handleMediaManagerUpload: Upload successful:', response);
+            updateDiskStatusIndicator(disk, 'connected');
+
+            if (response.success) {
+                showNotification('success', response.message || 'Files uploaded successfully');
+                // Refresh current view
+                loadFiles(disk);
+            } else {
+                showNotification('error', response.error || 'Upload failed');
+            }
+        })
+        .fail(function(xhr) {
+            console.error('handleMediaManagerUpload: Upload failed:', xhr.responseText);
+            updateDiskStatusIndicator(disk, 'error', 'Upload failed');
+
+            let errorMessage = 'Upload failed';
+            if (xhr.responseJSON) {
+                errorMessage = xhr.responseJSON.error || xhr.responseJSON.message || errorMessage;
+            }
+            showNotification('error', errorMessage);
+        });
+    }
+
+    /**
+     * Get current path for navigation and uploads
+     */
+    function getCurrentPath() {
+        return currentPath || '/';
+    }
+
+    /**
+     * Get current disk
+     */
+    function getCurrentDisk() {
+        return currentDisk || 'public';
+    }
+
+    /**
+     * Update files list in the current view
+     */
+    function updateFilesList() {
+        console.log('updateFilesList: Refreshing current view');
+        loadFiles(getCurrentDisk());
+    }
     function updateDirectoryTree(diskName, directories) {
         const $tree = $('#directoryTree');
         $tree.empty();
@@ -1275,59 +1363,6 @@
 
                 updateDiskStatusIndicator(diskName, 'error', errorMessage);
                 showErrorState(diskName, errorMessage, xhr.responseJSON?.show_connection_screen);
-            }
-        });
-    }
-
-    /**
-     * Upload files to a specific folder
-     */
-    function uploadFilesToFolder(files, diskId, folder) {
-        console.log(`Starting folder upload for ${files.length} files to ${diskId}/${folder}`);
-
-        const formData = new FormData();
-
-        // Add files to FormData
-        Array.from(files).forEach((file, index) => {
-            formData.append(`files[${index}]`, file);
-        });
-
-        // Add metadata
-        formData.append('disk', diskId);
-        formData.append('folder', folder);
-        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-
-        // Show progress
-        showUploadProgress(diskId, 0);
-        showProgressSection();
-
-        // AJAX upload
-        $.ajax({
-            url: '/admin/media-manager/upload',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            xhr: function() {
-                const xhr = new XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const progress = (e.loaded / e.total) * 100;
-                        updateUploadProgress(diskId, progress);
-                    }
-                });
-                return xhr;
-            },
-            success: function(response) {
-                console.log('Folder upload successful:', response);
-                handleUploadSuccess(response, diskId);
-
-                // Refresh current view
-                loadFiles(diskId);
-            },
-            error: function(xhr) {
-                console.error('Folder upload failed:', xhr);
-                handleUploadError(xhr, diskId);
             }
         });
     }

@@ -321,10 +321,7 @@ class MediaFileService
             $statuses[$disk] = $this->checkDiskStatus($disk);
         }
 
-        return [
-            'success' => true,
-            'disk_statuses' => $statuses
-        ];
+        return $statuses;
     }
 
     /**

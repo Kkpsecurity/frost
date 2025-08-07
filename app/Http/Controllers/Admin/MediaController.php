@@ -52,6 +52,9 @@ class MediaController extends Controller
             // Fallback to original FilePond upload for backward compatibility
             return $this->handleFilePondUpload($request);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Re-throw validation exceptions to maintain proper HTTP status codes
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Upload error: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
@@ -98,13 +101,20 @@ class MediaController extends Controller
             ]
         ];
 
-        // Validate basic request structure
-        $request->validate([
-            'disk' => 'required|string|in:public,local,s3',
-            'folder' => 'required|string',
-            'files' => 'required|array|min:1',
-            'files.*' => 'required|file'
-        ]);
+        // Validate basic request structure with custom error handling
+        try {
+            $request->validate([
+                'disk' => 'required|string|in:public,local,s3',
+                'folder' => 'required|string',
+                'files' => 'required|array|min:1',
+                'files.*' => 'required|file'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 422);
+        }
 
         $disk = $request->input('disk');
         $folder = $request->input('folder');
@@ -597,6 +607,11 @@ class MediaController extends Controller
         $disk = $request->input('disk');
         $path = $request->input('path', '/');
 
+        // Ensure path is always a string, fallback to '/' if null or empty
+        if (empty($path) || $path === null) {
+            $path = '/';
+        }
+
         $result = $this->mediaFileService->listFiles($disk, $path);
 
         if (!$result['success']) {
@@ -722,11 +737,18 @@ class MediaController extends Controller
     {
         $result = $this->mediaFileService->getAllDiskStatuses();
 
-        if (isset($result['error'])) {
-            return response()->json($result, 401);
+        // If result is an array with error key, it's an error response
+        if (is_array($result) && isset($result['error'])) {
+            return response()->json([
+                'success' => false,
+                'error' => $result['error']
+            ], 401);
         }
 
-        return response()->json($result);
+        return response()->json([
+            'success' => true,
+            'disk_statuses' => $result
+        ]);
     }
 
     public function index(): \Illuminate\View\View

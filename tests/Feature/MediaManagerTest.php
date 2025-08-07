@@ -68,7 +68,7 @@ class MediaManagerTest extends TestCase
             ->get('/admin/admin-center/settings/storage');
 
         $response->assertStatus(200);
-        $response->assertViewIs('admin.admin-center.settings.storage');
+        $response->assertViewIs('admin.admin-center.settings.show');
     }
 
     /** @test */

@@ -13,7 +13,7 @@
                 <!-- Settings Management Card -->
                 <div class="card mt-3 admin-dark-card">
 
-                    <div class="card-body p-0">
+                    <div class="card-body p-2">
                         <x-admin.widgets.messages :message="session('success')" type="success" />
 
                         <!-- Filter Section -->
@@ -53,6 +53,7 @@
 @stop
 
 @section('js')
+
     <!-- Alert Management Utility -->
     @vite('resources/js/alert-manager.js')
     <!-- DataTables JS -->

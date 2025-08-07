@@ -54,8 +54,8 @@ class UserAccountController extends Controller
         'fname' => 'required',
         'lname' => 'required',
         'email' => 'required|email|unique:users,email,' . $user->id,
-        'dob' => 'required|date',
-        'phone' => 'required',            
+            'dob' => 'nullable|date',
+            'phone' => 'nullable',
     ]);
 
     if ($validator->fails()) {
@@ -97,8 +97,7 @@ class UserAccountController extends Controller
                 'message' => 'Profile updated successfully',
             ]);
         } else {
-            flash('Profile updated successfully')->success();
-            return redirect()->back();
+                return redirect()->back()->with('success', 'Profile updated successfully');
         }
     } catch (\Exception $e) {
         DB::rollBack(); // Rollback the transaction on error
@@ -111,8 +110,7 @@ class UserAccountController extends Controller
                 'message' => $errorMessage,
             ]);
         } else {
-            flash($errorMessage)->error();
-            return redirect()->back();
+                return redirect()->back()->with('error', $errorMessage);
         }
     }
 }
@@ -129,11 +127,6 @@ class UserAccountController extends Controller
         $user = Auth::user();
 
         // Validate the request data
-        $validator = Validator::make($request->all(), [
-            'old_password' => 'required|password',
-            'password' => 'required|min:8|confirmed',
-        ]);
-
         $validator = Validator::make($request->all(), [
             'old_password' => [
                 'required',
@@ -153,8 +146,7 @@ class UserAccountController extends Controller
                     'message' => $validator->errors()->first(),
                 ]);
             } else {
-                flash($validator->errors()->first())->error();
-                return redirect()->back();
+                return redirect()->back()->with('error', $validator->errors()->first());
             }
         }
 
@@ -167,8 +159,7 @@ class UserAccountController extends Controller
                 'message' => 'You have updated your password.',
             ]);
         } else {
-            flash('You have updated your password.')->success();
-            return redirect()->route('account', 'password');
+            return redirect()->route('account', 'password')->with('success', 'You have updated your password.');
         }
     }
 

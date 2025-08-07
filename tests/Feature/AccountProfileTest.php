@@ -5,6 +5,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 use App\Models\User;
 
@@ -33,7 +34,6 @@ class AccountProfileTest extends TestCase
     }
 
     /** @test */
-    /** @test */
     public function user_can_update_profile_information()
     {
         $user = $this->getStudentUser();
@@ -45,6 +45,11 @@ class AccountProfileTest extends TestCase
             'lname' => 'User',
             'email' => 'testuser@example.com',
         ]);
+
+        if ($response->status() !== 302) {
+            echo "Response status: " . $response->status() . "\n";
+            echo "Response content: " . $response->getContent() . "\n";
+        }
 
         $response->assertStatus(302);
         $this->assertDatabaseHas('users', [
@@ -67,8 +72,13 @@ class AccountProfileTest extends TestCase
             'password_confirmation' => 'newpassword',
         ]);
 
+        if ($response->status() !== 302) {
+            echo "Response status: " . $response->status() . "\n";
+            echo "Response content: " . $response->getContent() . "\n";
+        }
+
         $response->assertStatus(302);
-        $this->assertTrue(\Hash::check('newpassword', $user->fresh()->password));
+        $this->assertTrue(Hash::check('newpassword', $user->fresh()->password));
     }
 
     /** @test */

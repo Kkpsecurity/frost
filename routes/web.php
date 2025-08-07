@@ -39,6 +39,21 @@ Route::prefix('admin')
     });
 
 /**
+ * Frontend User Account Routes
+ * These routes handle user account management functionality
+ */
+Route::middleware(['auth'])
+    ->group(function () {
+        require __DIR__ . '/frontend/account_routes.php';
+    });
+
+/**
+ * User Authentication Routes
+ * These routes handle user login/logout, registration, and password reset
+ */
+require __DIR__ . '/auth.php';
+
+/**
  * Test Routes (for debugging)
  */
 Route::get('/test/blade-directives', function () {
