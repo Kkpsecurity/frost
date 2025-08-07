@@ -21,22 +21,26 @@ class SettingsController extends Controller
      */
     public function index()
     {
-        // Get all settings grouped by prefix
-        $allSettings = Setting::all();
-        $groupedSettings = [];
+        // Get all settings directly from database with normalized structure
+        $rawSettings = DB::table('settings')->get();
 
-        foreach ($allSettings as $key => $value) {
-            if (strpos($key, '.') !== false) {
-                $parts = explode('.', $key, 2);
-                $prefix = $parts[0];
-                $setting = $parts[1];
-                $groupedSettings[$prefix][$setting] = $value;
-            } else {
-                $groupedSettings['general'][$key] = $value;
-            }
+        // Create a flat structure for the datatable using the normalized columns
+        $settingsForTable = [];
+        foreach ($rawSettings as $setting) {
+            $settingsForTable[] = [
+                'key' => $setting->group . '.' . $setting->key, // Reconstruct full key for display
+                'value' => $setting->value,
+                'group' => $setting->group
+            ];
         }
 
-        return view('admin.admin-center.settings.index', compact('groupedSettings'));
+        // Create grouped structure for filter dropdown using normalized columns
+        $groupedSettings = [];
+        foreach ($rawSettings as $setting) {
+            $groupedSettings[$setting->group][$setting->key] = $setting->value;
+        }
+
+        return view('admin.admin-center.settings.index', compact('settingsForTable', 'groupedSettings'));
     }
 
     /**

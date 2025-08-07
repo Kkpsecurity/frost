@@ -12,7 +12,6 @@
             <div class="col-12">
                 <!-- Settings Management Card -->
                 <div class="card mt-3 admin-dark-card">
-                    <x-admin.widgets.settings.general-header :title="'Settings Management'" />
 
                     <div class="card-body p-0">
                         <x-admin.widgets.messages :message="session('success')" type="success" />
@@ -23,11 +22,11 @@
                         @endphp
                         <x-admin.widgets.settings.filter-section :groups="$groups" />
 
-                        @if (count($groupedSettings) > 0)
-                            <x-admin.widgets.settings.admin-general-setting-datatable :settings="$groupedSettings" />
+                        @if (count($settingsForTable) > 0)
+                            <x-admin.widgets.settings.admin-general-setting-datatable :settings="$settingsForTable" />
                         @else
                             <div class="p-4 text-center">
-                                <div class="alert alert-info">
+                                <div class="alert alert-info alert-persistent no-auto-hide">
                                     <i class="fas fa-info-circle fa-2x mb-3"></i>
                                     <h5>No settings found</h5>
                                     <p class="mb-3">Get started by creating your first setting.</p>
@@ -47,12 +46,15 @@
 @section('css')
     @vite('resources/css/admin.css')
     @vite('resources/css/admin-settings.css')
+    @vite('resources/css/alert-utilities.css')
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
 @stop
 
 @section('js')
+    <!-- Alert Management Utility -->
+    @vite('resources/js/alert-manager.js')
     <!-- DataTables JS -->
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
@@ -141,8 +143,9 @@
                 }
             });
 
-            // Auto-hide alerts after 5 seconds
-            $('.alert').delay(5000).fadeOut(300);
+            // Auto-hide temporary alerts only (success/warning/danger messages)
+            // Persistent alerts (like "no content found") will not auto-hide
+            $('.alert.alert-success, .alert.alert-warning, .alert.alert-danger').not('.no-auto-hide').delay(5000).fadeOut(300);
         });
 
         // Toggle filters function - Match admin users functionality

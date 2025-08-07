@@ -1,0 +1,32 @@
+/**
+ * Alert Utilities - Persistent and Temporary Alert Classes
+ *
+ * Use these classes to control alert behavior consistently across the application
+ */
+
+/* Persistent alerts - for "no content found", empty states, and permanent information */
+.alert-persistent {
+    /* These alerts should never auto-hide */
+    position: relative;
+}
+
+.alert-persistent.alert-info {
+    /* Specific styling for info alerts that are persistent */
+    border-left: 4px solid #17a2b8;
+}
+
+/* Temporary alerts - for success/error notifications that should auto-hide */
+.alert-temporary {
+    /* These alerts will auto-hide after timeout */
+    position: relative;
+}
+
+/* Auto-hide utility class */
+.auto-hide {
+    /* JavaScript will target this class for auto-hiding */
+}
+
+/* Prevent auto-hide utility class */
+.no-auto-hide {
+    /* JavaScript will exclude this class from auto-hiding */
+}

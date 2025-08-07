@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('site_configs', function (Blueprint $table) {
             $table->id();
+            $table->string('cast_to', 50);
+            $table->string('config_name', 255);
+            $table->text('config_value');
             $table->timestamps();
+
+            // Add indexes for better performance
+            $table->index('config_name');
         });
     }
 

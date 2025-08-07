@@ -4,7 +4,7 @@
 
 @section('content_header')
     <x-admin.widgets.admin-header />
-@stopnlte::page')
+@stop
 
 @section('title', 'Create Setting')
 

@@ -14,6 +14,76 @@
     margin: 0;
 }
 
+/* Breadcrumb Styles */
+.media-manager-container .breadcrumb {
+    background: transparent;
+    padding: 0.25rem 0;
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+.media-manager-container .breadcrumb-link {
+    color: #6c757d;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out;
+}
+
+.media-manager-container .breadcrumb-link:hover {
+    color: #007bff !important;
+    text-decoration: underline;
+}
+
+.dark-mode .media-manager-container .breadcrumb-link {
+    color: #adb5bd;
+}
+
+.dark-mode .media-manager-container .breadcrumb-link:hover {
+    color: #6ea8fe !important;
+}
+
+/* Disk Status Indicators */
+.disk-status-indicator {
+    display: inline-block;
+    margin-left: 0.25rem;
+}
+
+.disk-status-indicator.status-connected i {
+    animation: none;
+}
+
+.disk-status-indicator.status-loading i {
+    animation: fa-spin 2s infinite linear;
+}
+
+.disk-status-indicator.status-error i {
+    animation: pulse-error 2s infinite;
+}
+
+@keyframes pulse-error {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Tab Error States */
+.nav-tabs .nav-link.text-danger {
+    border-color: #dc3545 !important;
+}
+
+.nav-tabs .nav-link.text-danger:hover {
+    border-color: #c82333 !important;
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.dark-mode .nav-tabs .nav-link.text-danger {
+    color: #f1646a !important;
+}
+
+.dark-mode .nav-tabs .nav-link.text-danger:hover {
+    color: #f5878c !important;
+    background-color: rgba(241, 100, 106, 0.1) !important;
+}
+
 /* Tab Content Management */
 .media-manager-container .tab-pane:not(.active) {
     display: none !important;
@@ -173,7 +243,7 @@
         padding: 0.5rem 0.75rem !important;
         font-size: 0.875rem !important;
     }
-    
+
     .media-manager-container .nav-tabs .nav-link small {
         font-size: 0.7rem !important;
     }

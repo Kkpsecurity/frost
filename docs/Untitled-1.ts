@@ -1,6 +1,6 @@
 <script>
     let currentDisk = 'public';
-    let currentPath = '/';
+    let currentPath = '/';  // Start at root to show all folders
     let currentFolder = '';
     let selectedFiles = [];
     let currentFiles = [];
@@ -16,6 +16,15 @@
 
     $(document).ready(function() {
         console.log('Initializing Media Manager...');
+
+        // Setup CSRF token for all AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
         initializeMediaManager();
     });
 
@@ -58,14 +67,15 @@
 
         // Update current disk
         currentDisk = diskName;
-        currentPath = '/';
-        currentFolder = '';
+        // Keep current path and folder when switching disks
+        // currentPath = '/';
+        // currentFolder = '';
 
         // Update UI
         setActiveTab(diskName);
         showActiveTabContent(diskName);
         updateCurrentDiskDisplay(diskName);
-        updateBreadcrumbs(diskName, 'media', '/');
+        updateBreadcrumbs(diskName, currentFolder || 'media', currentPath || '/');
         showLoadingState(diskName);
 
         // Load files for new disk
@@ -353,8 +363,8 @@
         });
 
         $(document).on('click', '#uploadFileBtn', function() {
-            console.log('Upload file button clicked');
-            $('#generalFileInput').click();
+            console.log('Upload file button clicked - showing modal');
+            showUploadModal();
         });
 
         $(document).on('click', '#refreshBtn', function() {
@@ -494,10 +504,39 @@
         // Original file input change handlers (for backward compatibility)
         $(document).on('change', 'input[type="file"]', function() {
             const files = this.files;
-            if (files.length > 0 && $(this).attr('id') !== 'generalFileInput') {
-                console.log(`Selected ${files.length} files for upload`);
-                const diskId = $(this).attr('id').replace('FileInput', '');
-                uploadFiles(files, diskId);
+            const inputId = $(this).attr('id');
+
+            // Skip generalFileInput and modal fileInput - they have their own handlers
+            if (files.length > 0 && inputId !== 'generalFileInput' && inputId !== 'fileInput') {
+                console.log(`Selected ${files.length} files for upload via ${inputId}`);
+                const diskId = inputId.replace('FileInput', '');
+
+                // Validate that we have a valid disk name
+                if (diskId && ['public', 'local', 's3'].includes(diskId)) {
+                    uploadFiles(files, diskId);
+                } else {
+                    console.error('Invalid disk ID extracted from input:', inputId, 'resulting diskId:', diskId);
+                }
+            }
+        });
+
+        // Upload Modal Event Handlers
+        $(document).on('change', '#fileInput', function() {
+            const files = this.files;
+            $('#uploadSubmit').prop('disabled', files.length === 0);
+
+            if (files.length > 0) {
+                console.log(`Selected ${files.length} files in upload modal`);
+            }
+        });
+
+        $(document).on('click', '#uploadSubmit', function() {
+            const files = $('#fileInput')[0].files;
+
+            if (files.length > 0) {
+                console.log(`Starting upload of ${files.length} files to current location`);
+                uploadFilesToCurrentFolder(files);
+                $('#uploadModal').modal('hide');
             }
         });
     }
@@ -725,13 +764,16 @@
         updateDiskStatusIndicator(diskName, 'loading');
         showLoadingState(diskName);
 
+        // Use currentPath if we're not at root, otherwise load root folders
+        const pathToLoad = (currentPath && currentPath !== '/') ? currentPath : '/';
+
         // Make actual API call to load files
         $.ajax({
             url: '/admin/media-manager/files',
             method: 'GET',
             data: {
                 disk: diskName,
-                path: '/'
+                path: pathToLoad
             },
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1121,20 +1163,6 @@
 
             const uploadFolders = [
                 {
-                    folder: 'images',
-                    icon: 'fas fa-images',
-                    label: 'Upload Images',
-                    accept: '.jpg,.jpeg,.png,.gif',
-                    description: 'Max 10MB each'
-                },
-                {
-                    folder: 'documents',
-                    icon: 'fas fa-file-pdf',
-                    label: 'Upload Documents',
-                    accept: '.pdf,.doc,.docx',
-                    description: 'Max 25MB each'
-                },
-                {
                     folder: 'assets',
                     icon: 'fas fa-code',
                     label: 'Upload Assets',
@@ -1142,16 +1170,16 @@
                     description: 'Max 5MB each'
                 },
                 {
-                    folder: 'validations/headshots',
-                    icon: 'fas fa-user-circle',
-                    label: 'Upload Headshots',
-                    accept: '.jpg,.jpeg,.png',
-                    description: 'Max 8MB each'
+                    folder: 'documents',
+                    icon: 'fas fa-file-alt',
+                    label: 'Upload Documents',
+                    accept: '.pdf,.doc,.docx',
+                    description: 'Max 25MB each'
                 },
                 {
-                    folder: 'validations/idcard',
-                    icon: 'fas fa-id-card',
-                    label: 'Upload ID Cards',
+                    folder: 'validations',
+                    icon: 'fas fa-user-circle',
+                    label: 'Upload Validations',
                     accept: '.jpg,.jpeg,.png',
                     description: 'Max 8MB each'
                 }
@@ -1394,6 +1422,19 @@
     function uploadFiles(files, diskId) {
         console.log(`Starting upload for ${files.length} files to disk: ${diskId}`);
 
+        // Validate disk ID
+        if (!diskId || !['public', 'local', 's3'].includes(diskId)) {
+            console.error('Invalid disk ID for upload:', diskId);
+            alert('Invalid storage disk selected. Please try again.');
+            return;
+        }
+
+        // Check if disk supports uploads (currently only public)
+        if (diskId !== 'public') {
+            alert(`Upload is currently only supported for Public Storage. Please switch to the Public Storage tab to upload files.`);
+            return;
+        }
+
         const formData = new FormData();
         const currentFolder = getCurrentFolder(diskId);
 
@@ -1442,9 +1483,9 @@
      * Get current folder for the disk based on selected folder or default
      */
     function getCurrentFolder(diskId) {
-        // For now, default to 'images' folder for all uploads
+        // Default to 'assets' folder for all uploads (only assets and validations allowed)
         // This can be extended to support folder selection in the UI
-        return 'images';
+        return 'assets';
     }    /**
      * Show upload progress
      */
@@ -1541,11 +1582,8 @@
 
     /**
      * Show notification message
-     * @param {string} type - 'success' or 'error'
-     * @param {string} message - The message to display
-     * @param {boolean} persistent - Whether the notification should stay visible (default: false)
      */
-    function showNotification(type, message, persistent = false) {
+    function showNotification(type, message) {
         // Create notification element
         const notification = $(`
             <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show" role="alert">
@@ -1564,12 +1602,10 @@
 
         $container.prepend(notification);
 
-        // Auto-hide after 5 seconds only if not persistent
-        if (!persistent) {
-            setTimeout(() => {
-                notification.fadeOut(() => notification.remove());
-            }, 5000);
-        }
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            notification.fadeOut(() => notification.remove());
+        }, 5000);
     }
 
     /**
@@ -1636,25 +1672,123 @@
         showNotification('error', errorMessage);
     }
 
+    // Determine target folder based on file types (assets default)
+    // Upload to current folder - no file type detection
+    function determineTargetFolderForAssetValidationOnly(files) {
+        // Always return the current path/folder - upload to where user is
+        let targetFolder = currentPath || '/';
+
+        console.log(`Current path before processing: ${currentPath}`);
+        console.log(`Target folder before processing: ${targetFolder}`);
+
+        // If at root ('/') or undefined/empty, default to 'assets' as the base folder
+        if (!targetFolder || targetFolder === '/' || targetFolder === '') {
+            console.log('At root or empty path, defaulting to assets');
+            return 'assets';
+        }
+
+        // Remove leading slash if present (e.g., '/validations' -> 'validations')
+        if (targetFolder.startsWith('/')) {
+            targetFolder = targetFolder.substring(1);
+        }
+
+        console.log(`Final target folder: ${targetFolder}`);
+        return targetFolder;
+    }
+
+    // Determine target folder based on file types
+    function determineTargetFolderFromFiles(files) {
+        if (!files || files.length === 0) return 'images'; // Default fallback
+
+        // Get the first file's extension to determine folder
+        const firstFile = files[0];
+        const fileName = firstFile.name.toLowerCase();
+        const extension = fileName.split('.').pop();
+
+        // Map file extensions to folders based on MediaController validation rules
+        const folderMap = {
+            // Images folder - jpg, jpeg, png, gif (max 10MB)
+            'jpg': 'images',
+            'jpeg': 'images',
+            'png': 'images',
+            'gif': 'images',
+
+            // Documents folder - pdf, doc, docx (max 25MB)
+            'pdf': 'documents',
+            'doc': 'documents',
+            'docx': 'documents',
+
+            // Assets folder - css, js, json (max 5MB)
+            'css': 'assets',
+            'js': 'assets',
+            'json': 'assets'
+        };
+
+        const targetFolder = folderMap[extension] || 'documents'; // Default to documents for unknown types
+        console.log(`Auto-detected folder for .${extension} file: ${targetFolder}`);
+
+        return targetFolder;
+    }
+
     // Upload files to current folder/disk
-    function uploadFilesToCurrentFolder(files) {
+    function uploadFilesToCurrentFolder(files, collection = null) {
         console.log(`Starting upload of ${files.length} files to ${currentDisk}:${currentPath}`);
 
         // Show loading state for current disk
         updateDiskStatusIndicator(currentDisk, 'loading');
 
+        // Show modal progress if modal is open
+        const isModalUpload = $('#uploadModal').hasClass('show');
+        if (isModalUpload) {
+            $('#uploadProgress').show();
+            $('.progress-bar').css('width', '0%').text('0%');
+        }
+
         const formData = new FormData();
+
+        // Add files with correct field name for media manager
         for (let i = 0; i < files.length; i++) {
             formData.append('files[]', files[i]);
         }
+
+        // Upload to current folder only - no root uploads
+        let targetFolder = currentPath;
+
+        console.log(`Initial currentPath: ${currentPath}`);
+        console.log(`Using currentPath directly as targetFolder: ${targetFolder}`);
+
+        // If at root, ask user to navigate to a folder first
+        if (!targetFolder || targetFolder === '' || targetFolder === '/') {
+            alert('Please navigate to a specific folder before uploading files.\n\nDouble-click on a folder (like "assets", "documents", "validations") to enter it, then upload your files.');
+            return;
+        }
+
+        // Remove leading slash if present (e.g., '/validations' -> 'validations')
+        if (targetFolder.startsWith('/')) {
+            targetFolder = targetFolder.substring(1);
+            console.log(`After removing leading slash: ${targetFolder}`);
+        }
+
+        console.log(`Final targetFolder for FormData: ${targetFolder}`);
+
         formData.append('disk', currentDisk);
+        formData.append('folder', targetFolder);
 
-        // Use current path, or default to root if empty
-        const uploadPath = currentPath || '/';
-        formData.append('path', uploadPath);
-        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        // Get fresh CSRF token
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        if (!csrfToken) {
+            console.error('CSRF token not found in meta tag');
+            alert('Security token missing. Please refresh the page and try again.');
+            return;
+        }
+        formData.append('_token', csrfToken);
 
-        console.log(`Upload details: disk=${currentDisk}, path=${uploadPath}`);
+        // Debug logging
+        console.log(`Upload details: disk=${currentDisk}, folder=${targetFolder}, files=${files.length}`);
+        console.log('FormData contents:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File(${pair[1].name})` : pair[1]));
+        }
 
         $.ajax({
             url: '/admin/media-manager/upload',
@@ -1662,12 +1796,21 @@
             data: formData,
             contentType: false,
             processData: false,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             xhr: function() {
                 const xhr = new window.XMLHttpRequest();
                 xhr.upload.addEventListener('progress', function(e) {
                     if (e.lengthComputable) {
                         const progress = (e.loaded / e.total) * 100;
-                        console.log(`Upload progress: ${Math.round(progress)}%`);
+                        console.log(`Upload progress: ${progress.toFixed(1)}%`);
+
+                        // Update modal progress if modal upload
+                        if (isModalUpload) {
+                            $('.progress-bar').css('width', progress + '%').text(Math.round(progress) + '%');
+                        }
                     }
                 }, false);
                 return xhr;
@@ -1676,6 +1819,11 @@
         .done(function(response) {
             console.log('Upload successful:', response);
 
+            // Hide modal progress
+            if (isModalUpload) {
+                $('#uploadProgress').hide();
+            }
+
             // Update disk status to connected
             updateDiskStatusIndicator(currentDisk, 'connected');
 
@@ -1683,8 +1831,18 @@
             if (response.success) {
                 console.log(`Successfully uploaded ${response.files?.length || files.length} files`);
 
-                // Refresh current view to show new files
-                loadFiles(currentDisk);
+                // If we uploaded from root but had to use a default folder, stay at root
+                if (currentPath === '/') {
+                    loadFiles(currentDisk);
+                    console.log('Staying at root after upload');
+                } else {
+                    // Otherwise, refresh the current view
+                    loadFilesForPath(currentDisk, currentPath);
+                }
+
+                // Show success message
+                const locationText = currentPath === '/' ? 'root folder' : currentPath;
+                alert(`Successfully uploaded ${files.length} file(s) to ${locationText}`);
             } else {
                 console.error('Upload response indicates failure:', response.error);
                 alert('Upload failed: ' + (response.error || 'Unknown error'));
@@ -1696,15 +1854,45 @@
         .fail(function(xhr) {
             console.error('Upload failed:', xhr.responseText);
 
+            // Hide modal progress
+            if (isModalUpload) {
+                $('#uploadProgress').hide();
+            }
+
             // Update disk status to error
             updateDiskStatusIndicator(currentDisk, 'error', 'Upload failed');
 
             let errorMessage = 'Upload failed';
             if (xhr.responseJSON) {
-                errorMessage = xhr.responseJSON.error || xhr.responseJSON.message || errorMessage;
+                if (xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+
+                    // Handle CSRF token mismatch specifically
+                    if (xhr.responseJSON.message.includes('CSRF token mismatch')) {
+                        errorMessage = 'Security token expired. Please refresh the page and try again.';
+                        // Optionally refresh the page automatically
+                        if (confirm('Security token expired. Would you like to refresh the page?')) {
+                            window.location.reload();
+                            return;
+                        }
+                    }
+                } else if (xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseJSON.errors) {
+                    // Laravel validation errors
+                    const errors = Object.values(xhr.responseJSON.errors).flat();
+                    errorMessage = errors.join(', ');
+                }
+            } else if (xhr.status === 419) {
+                errorMessage = 'Security token expired. Please refresh the page and try again.';
+            } else if (xhr.status === 422) {
+                errorMessage = 'Validation failed. Please check your file selection and try again.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error occurred during upload.';
             }
 
-            alert(errorMessage);
+            console.error('Upload error details:', errorMessage);
+            alert('Upload Error: ' + errorMessage);
 
             // Reset file input
             $('#generalFileInput').val('');
@@ -1717,6 +1905,38 @@
         if (folderName && folderName.trim()) {
             createFolder(folderName.trim());
         }
+    }
+
+    // Show upload modal
+    function showUploadModal() {
+        console.log('Showing upload modal for disk:', currentDisk, 'path:', currentPath);
+
+        // Clear previous selections
+        $('#fileInput').val('');
+        $('#uploadProgress').hide();
+        $('#uploadSubmit').prop('disabled', true);
+
+        // Update modal title with current location
+        const diskNames = {
+            'public': 'Public Storage',
+            'local': 'Private Storage',
+            's3': 'Archive S3 Storage'
+        };
+
+        const diskName = diskNames[currentDisk] || currentDisk;
+        const pathDisplay = currentPath === '/' ? 'Root' : currentPath.replace(/^\//, '');
+
+        $('#uploadModal .modal-title').html(`
+            <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Files to ${diskName}
+        `);
+
+        // Update location info
+        $('#uploadLocationText').html(`
+            <strong>${diskName}</strong> → <code>${pathDisplay}</code>
+        `);
+
+        // Show the modal
+        $('#uploadModal').modal('show');
     }
 
     // Create folder function
