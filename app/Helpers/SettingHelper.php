@@ -56,8 +56,23 @@ class SettingHelper
      */
     public function get(string $key, $default = null)
     {
-        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
-        return Setting::get($prefixedKey, $default);
+        // Parse the key to extract group and actual key
+        $fullKey = $this->prefix ? $this->prefix . '.' . $key : $key;
+
+        if (str_contains($fullKey, '.')) {
+            [$group, $actualKey] = explode('.', $fullKey, 2);
+        } else {
+            $group = 'general';
+            $actualKey = $fullKey;
+        }
+
+        // Query the database directly
+        $setting = DB::table('settings')
+            ->where('group', $group)
+            ->where('key', $actualKey)
+            ->first();
+
+        return $setting ? $setting->value : $default;
     }
 
     /**
@@ -69,9 +84,22 @@ class SettingHelper
      */
     public function set(string $key, $value)
     {
-        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
-        Setting::set($prefixedKey, $value);
-        Setting::save(); // Force save to database
+        // Parse the key to extract group and actual key
+        $fullKey = $this->prefix ? $this->prefix . '.' . $key : $key;
+
+        if (str_contains($fullKey, '.')) {
+            [$group, $actualKey] = explode('.', $fullKey, 2);
+        } else {
+            $group = 'general';
+            $actualKey = $fullKey;
+        }
+
+        // Use direct database insertion to handle the group column
+        DB::table('settings')->updateOrInsert(
+            ['group' => $group, 'key' => $actualKey],
+            ['value' => $value]
+        );
+
         return true;
     }
 
@@ -83,8 +111,21 @@ class SettingHelper
      */
     public function has(string $key)
     {
-        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
-        return Setting::has($prefixedKey);
+        // Parse the key to extract group and actual key
+        $fullKey = $this->prefix ? $this->prefix . '.' . $key : $key;
+
+        if (str_contains($fullKey, '.')) {
+            [$group, $actualKey] = explode('.', $fullKey, 2);
+        } else {
+            $group = 'general';
+            $actualKey = $fullKey;
+        }
+
+        // Query the database directly
+        return DB::table('settings')
+            ->where('group', $group)
+            ->where('key', $actualKey)
+            ->exists();
     }
 
     /**
@@ -95,10 +136,23 @@ class SettingHelper
      */
     public function forget(string $key)
     {
-        $prefixedKey = $this->prefix ? $this->prefix . '.' . $key : $key;
-        $result = Setting::forget($prefixedKey);
-        Setting::save(); // Force save to database
-        return $result;
+        // Parse the key to extract group and actual key
+        $fullKey = $this->prefix ? $this->prefix . '.' . $key : $key;
+
+        if (str_contains($fullKey, '.')) {
+            [$group, $actualKey] = explode('.', $fullKey, 2);
+        } else {
+            $group = 'general';
+            $actualKey = $fullKey;
+        }
+
+        // Delete from database directly
+        $deleted = DB::table('settings')
+            ->where('group', $group)
+            ->where('key', $actualKey)
+            ->delete();
+
+        return $deleted > 0;
     }
 
     /**
@@ -109,27 +163,31 @@ class SettingHelper
     public function all()
     {
         if (!$this->prefix) {
-            return Setting::all();
+            // Return all settings grouped by their original key format
+            $settings = DB::table('settings')
+                ->orderBy('group')
+                ->orderBy('key')
+                ->get();
+
+            $result = [];
+            foreach ($settings as $setting) {
+                if ($setting->group === 'general') {
+                    $result[$setting->key] = $setting->value;
+                } else {
+                    $result[$setting->group . '.' . $setting->key] = $setting->value;
+                }
+            }
+            return $result;
         }
 
-        // Query database directly for prefixed settings since Setting::all()
-        // doesn't seem to load all settings from database
+        // Query database directly for prefixed settings
         $settings = DB::table('settings')
-            ->where('key', 'like', $this->prefix . '.%')
+            ->where('group', $this->prefix)
             ->orderBy('key')
             ->pluck('value', 'key')
             ->toArray();
 
-        // Remove prefix from keys
-        $prefixedSettings = [];
-        $prefixLength = strlen($this->prefix . '.');
-
-        foreach ($settings as $key => $value) {
-            $unprefixedKey = substr($key, $prefixLength);
-            $prefixedSettings[$unprefixedKey] = $value;
-        }
-
-        return $prefixedSettings;
+        return $settings;
     }
 
     /**
