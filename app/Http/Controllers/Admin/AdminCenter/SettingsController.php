@@ -10,6 +10,7 @@ namespace App\Http\Controllers\Admin\AdminCenter;
 use Illuminate\Http\Request;
 use App\Helpers\SettingHelper;
 use App\Http\Controllers\Controller;
+use App\Services\SiteConfigService;
 use Akaunting\Setting\Facade as Setting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -357,5 +358,53 @@ class SettingsController extends Controller
 
         return redirect()->route('admin.settings.storage')
             ->with('success', 'Storage settings updated successfully. Note: Environment variables take precedence over database settings.');
+    }
+
+    /**
+     * Display authentication settings
+     */
+    public function auth()
+    {
+        $siteConfigService = app(SiteConfigService::class);
+        $authSettings = $siteConfigService->getAuthSettings();
+        $siteSettings = $siteConfigService->getSiteSettings();
+
+        return view('admin.admin-center.settings.auth', compact('authSettings', 'siteSettings'));
+    }
+
+    /**
+     * Update authentication settings
+     */
+    public function updateAuth(Request $request)
+    {
+        $request->validate([
+            'login_title' => 'nullable|string|max:255',
+            'login_subtitle' => 'nullable|string|max:255',
+            'password_reset_enabled' => 'nullable|boolean',
+            'registration_enabled' => 'nullable|boolean',
+            'remember_me_enabled' => 'nullable|boolean',
+            'password_min_length' => 'required|integer|min:6|max:128',
+            'password_require_uppercase' => 'nullable|boolean',
+            'password_require_lowercase' => 'nullable|boolean',
+            'password_require_numbers' => 'nullable|boolean',
+            'password_require_symbols' => 'nullable|boolean',
+        ]);
+
+        $siteConfigService = app(SiteConfigService::class);
+
+        // Update auth settings
+        $siteConfigService->setAuthSetting('login_title', $request->input('login_title'));
+        $siteConfigService->setAuthSetting('login_subtitle', $request->input('login_subtitle'));
+        $siteConfigService->setAuthSetting('password_reset_enabled', (bool) $request->input('password_reset_enabled', false));
+        $siteConfigService->setAuthSetting('registration_enabled', (bool) $request->input('registration_enabled', false));
+        $siteConfigService->setAuthSetting('remember_me_enabled', (bool) $request->input('remember_me_enabled', false));
+        $siteConfigService->setAuthSetting('password_min_length', (int) $request->input('password_min_length'));
+        $siteConfigService->setAuthSetting('password_require_uppercase', (bool) $request->input('password_require_uppercase', false));
+        $siteConfigService->setAuthSetting('password_require_lowercase', (bool) $request->input('password_require_lowercase', false));
+        $siteConfigService->setAuthSetting('password_require_numbers', (bool) $request->input('password_require_numbers', false));
+        $siteConfigService->setAuthSetting('password_require_symbols', (bool) $request->input('password_require_symbols', false));
+
+        return redirect()->route('admin.settings.auth')
+            ->with('success', 'Authentication settings updated successfully.');
     }
 }

@@ -311,3 +311,101 @@ if (!function_exists('addressBlock')) {
         return nl2br(implode(PHP_EOL, $addressParts));
     }
 }
+
+/**
+ * Get a setting with fallback to config and env
+ * Priority: 1. Database setting, 2. Laravel config, 3. Environment variable
+ *
+ * @param string $group The group/namespace (e.g., 'auth', 'app', 'mail')
+ * @param string $key The setting key
+ * @param mixed $default Default value if nothing is found
+ * @return mixed
+ */
+if (!function_exists('getSetting')) {
+    function getSetting(string $group, string $key, $default = null)
+    {
+        static $settingHelper = null;
+
+        if ($settingHelper === null) {
+            $settingHelper = new \App\Helpers\SettingHelper();
+        }
+
+        // Try to get from database settings first
+        $settingValue = $settingHelper->get("{$group}.{$key}");
+
+        if ($settingValue !== null) {
+            return $settingValue;
+        }
+
+        // Fallback to Laravel config
+        $configKey = "{$group}.{$key}";
+        $configValue = config($configKey);
+
+        if ($configValue !== null) {
+            return $configValue;
+        }
+
+        // Check for environment variable override
+        // Convert group.key to ENV format: GROUP_KEY
+        $envKey = strtoupper(str_replace('.', '_', $configKey));
+        $envValue = env($envKey);
+
+        if ($envValue !== null) {
+            return $envValue;
+        }
+
+        return $default;
+    }
+}
+
+/**
+ * Get a site configuration value using the settings system
+ *
+ * @param string $key The setting key (with group prefix, e.g., 'site.company_name' or 'auth.login_title')
+ * @param mixed $default Default value if setting doesn't exist
+ * @return mixed
+ */
+if (!function_exists('siteConfig')) {
+    function siteConfig(string $key, $default = null)
+    {
+        static $settingHelper = null;
+
+        if ($settingHelper === null) {
+            $settingHelper = new \App\Helpers\SettingHelper();
+        }
+
+        return $settingHelper->get($key, $default);
+    }
+}
+
+/**
+ * Get auth configuration service instance
+ *
+ * @return \App\Services\SiteConfigService
+ */
+if (!function_exists('authConfig')) {
+    function authConfig(): \App\Services\SiteConfigService
+    {
+        static $service = null;
+
+        if ($service === null) {
+            $service = app(\App\Services\SiteConfigService::class);
+        }
+
+        return $service;
+    }
+}
+
+/**
+ * Check if a feature is enabled based on site configuration
+ *
+ * @param string $feature Feature key (e.g., 'password_reset_enabled', 'registration_enabled')
+ * @param bool $default Default value
+ * @return bool
+ */
+if (!function_exists('featureEnabled')) {
+    function featureEnabled(string $feature, bool $default = true): bool
+    {
+        return (bool) siteConfig("auth.{$feature}", $default);
+    }
+}

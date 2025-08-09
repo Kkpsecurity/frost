@@ -1,6 +1,6 @@
 @extends('layouts.frontend-auth')
 
-@section('title', 'Register - Frost')
+@section('title', 'Register - ' . siteConfig('site.company_name', 'Frost'))
 @section('subtitle', 'Create your account to get started.')
 
 @section('content')
@@ -32,6 +32,18 @@
         <label for="password" class="form-label">Password</label>
         <input id="password" type="password" class="form-control @error('password') is-invalid @enderror"
                name="password" required autocomplete="new-password">
+        <div class="form-text">
+            @php
+                $requirements = authConfig()->getPasswordRequirements();
+                $parts = [];
+                $parts[] = "At least {$requirements['min_length']} characters";
+                if($requirements['require_uppercase']) $parts[] = "uppercase letter";
+                if($requirements['require_lowercase']) $parts[] = "lowercase letter";
+                if($requirements['require_numbers']) $parts[] = "number";
+                if($requirements['require_symbols']) $parts[] = "special character";
+            @endphp
+            Password must contain: {{ implode(', ', $parts) }}
+        </div>
         @error('password')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror

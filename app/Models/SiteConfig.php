@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 
 use RCache;
 use App\Helpers\TextTk;
-use App\Support\RCache\RCacheModelTrait;
+use App\RCache\RCacheModelTrait;
 
 
 class SiteConfig extends Model

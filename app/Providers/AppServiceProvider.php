@@ -28,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Load AdminLTE settings from database and merge with config
         $this->loadAdminLteSettings();
+
+        // Load app config overrides from database
+        $this->loadAppConfigOverrides();
     }
 
     /**
@@ -91,5 +94,65 @@ class AppServiceProvider extends ServiceProvider
             // Silently fail if database isn't ready yet
             // This prevents errors during migrations, cache clearing, etc.
         }
+    }
+
+    /**
+     * Load app config overrides from database settings with group = 'app'
+     */
+    private function loadAppConfigOverrides(): void
+    {
+        try {
+            // Only load if database and settings table exist
+            if (Schema::hasTable('settings')) {
+                // Get app settings from database
+                $appSettings = DB::table('settings')
+                    ->where('group', 'app')
+                    ->pluck('value', 'key');
+
+                // Process each setting to override app config
+                foreach ($appSettings as $key => $value) {
+                    // Convert string values to appropriate types
+                    $configValue = $this->parseConfigValue($value);
+
+                    // Set the config value
+                    config([$key => $configValue]);
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently fail if database isn't ready yet
+            // This prevents errors during migrations, cache clearing, etc.
+        }
+    }
+
+    /**
+     * Parse config value from string to appropriate type
+     */
+    private function parseConfigValue(string $value)
+    {
+        // Handle boolean values
+        if (in_array(strtolower($value), ['true', 'false'])) {
+            return strtolower($value) === 'true';
+        }
+
+        // Handle numeric values
+        if (is_numeric($value)) {
+            return str_contains($value, '.') ? (float) $value : (int) $value;
+        }
+
+        // Handle JSON arrays/objects
+        if (str_starts_with($value, '[') || str_starts_with($value, '{')) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $decoded;
+            }
+        }
+
+        // Handle null
+        if (strtolower($value) === 'null') {
+            return null;
+        }
+
+        // Return as string
+        return $value;
     }
 }

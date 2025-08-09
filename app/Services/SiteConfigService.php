@@ -81,6 +81,7 @@ class SiteConfigService
             'student' => $this->getStudentSettings(),
             'instructor' => $this->getInstructorSettings(),
             'chat' => $this->getChatSettings(),
+            'auth' => $this->getAuthSettings(),
         ];
     }
 
@@ -122,5 +123,91 @@ class SiteConfigService
     public function setChatSetting(string $key, $value): void
     {
         Setting::set("chat.{$key}", $value);
+    }
+
+    /**
+     * Get auth-related settings
+     */
+    public function getAuthSettings(): array
+    {
+        return [
+            'login_title' => getSetting('auth', 'login_title', $this->getSiteSettings()['company_name']),
+            'login_subtitle' => getSetting('auth', 'login_subtitle', 'Welcome back! Please sign in to your account.'),
+            'password_reset_enabled' => (bool) getSetting('auth', 'password_reset_enabled', true),
+            'registration_enabled' => (bool) getSetting('auth', 'registration_enabled', true),
+            'remember_me_enabled' => (bool) getSetting('auth', 'remember_me_enabled', true),
+            'password_min_length' => (int) getSetting('auth', 'password_min_length', 8),
+            'password_require_uppercase' => (bool) getSetting('auth', 'password_require_uppercase', false),
+            'password_require_lowercase' => (bool) getSetting('auth', 'password_require_lowercase', false),
+            'password_require_numbers' => (bool) getSetting('auth', 'password_require_numbers', false),
+            'password_require_symbols' => (bool) getSetting('auth', 'password_require_symbols', false),
+            // Laravel auth config overrides
+            'session_lifetime' => (int) getSetting('auth', 'session_lifetime', config('session.lifetime', 120)),
+            'password_timeout' => (int) getSetting('auth', 'password_timeout', config('auth.password_timeout', 10800)),
+            'password_reset_expire' => (int) getSetting('auth', 'password_reset_expire', config('auth.passwords.users.expire', 60)),
+            'password_reset_throttle' => (int) getSetting('auth', 'password_reset_throttle', config('auth.passwords.users.throttle', 60)),
+        ];
+    }
+
+    /**
+     * Update an auth setting
+     */
+    public function setAuthSetting(string $key, $value): void
+    {
+        Setting::set("auth.{$key}", $value);
+    }
+
+    /**
+     * Check if password reset is enabled
+     */
+    public function isPasswordResetEnabled(): bool
+    {
+        return (bool) getSetting('auth', 'password_reset_enabled', true);
+    }
+
+    /**
+     * Check if registration is enabled
+     */
+    public function isRegistrationEnabled(): bool
+    {
+        return (bool) getSetting('auth', 'registration_enabled', true);
+    }
+
+    /**
+     * Check if remember me is enabled
+     */
+    public function isRememberMeEnabled(): bool
+    {
+        return (bool) getSetting('auth', 'remember_me_enabled', true);
+    }
+
+    /**
+     * Get the login page title (defaults to company name)
+     */
+    public function getLoginTitle(): string
+    {
+        return getSetting('auth', 'login_title', $this->getSiteSettings()['company_name']);
+    }
+
+    /**
+     * Get the login page subtitle
+     */
+    public function getLoginSubtitle(): string
+    {
+        return getSetting('auth', 'login_subtitle', 'Welcome back! Please sign in to your account.');
+    }
+
+    /**
+     * Get password requirements
+     */
+    public function getPasswordRequirements(): array
+    {
+        return [
+            'min_length' => (int) getSetting('auth', 'password_min_length', 8),
+            'require_uppercase' => (bool) getSetting('auth', 'password_require_uppercase', false),
+            'require_lowercase' => (bool) getSetting('auth', 'password_require_lowercase', false),
+            'require_numbers' => (bool) getSetting('auth', 'password_require_numbers', false),
+            'require_symbols' => (bool) getSetting('auth', 'password_require_symbols', false),
+        ];
     }
 }

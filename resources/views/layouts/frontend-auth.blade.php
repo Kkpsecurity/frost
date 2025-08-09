@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Authentication - Frost')</title>
+    <title>@yield('title', 'Authentication - ' . siteConfig('site.company_name', 'Frost'))</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -170,8 +170,8 @@
         <div class="auth-container">
             <div class="auth-card">
                 <div class="auth-logo">
-                    <h1><i class="fas fa-snowflake"></i> Frost</h1>
-                    <p>@yield('subtitle', 'Welcome back')</p>
+                    <h1><i class="fas fa-snowflake"></i> {{ siteConfig('site.company_name', 'Frost') }}</h1>
+                    <p>@yield('subtitle', authConfig()->getLoginSubtitle())</p>
                 </div>
 
                 @if (session('status'))
