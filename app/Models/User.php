@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 
 use Carbon\Carbon;
 use Laravel\Scout\Searchable;
+use Cmgmyr\Messenger\Traits\Messagable;
 use Lab404\Impersonate\Models\Impersonate;
 
 use App\Services\RCache;
@@ -17,6 +18,7 @@ use App\Models\Role;
 use App\Models\UserPref;
 use App\Models\InstLicense;
 use App\Models\UserBrowser;
+
 use App\Models\Traits\User\ExamsTrait;
 use App\Models\Traits\User\RolesTrait;
 use App\Models\Traits\User\UserPrefsTrait;
@@ -25,6 +27,7 @@ use App\Models\Traits\User\UserBrowserTrait;
 
 use App\Casts\JSONCast;
 use App\Helpers\TextTk;
+
 // use App\Traits\Observable; // Temporarily disabled - missing observer
 use App\Traits\AvatarTrait;
 use App\Traits\PgTimestamps;
@@ -42,6 +45,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use PgTimestamps, PresentsTimeStamps;
     use CourseAuthsTrait, ExamsTrait, RolesTrait, UserBrowserTrait, UserPrefsTrait;
     use AvatarTrait, Searchable, Impersonate;
+    use Messagable;
 
     const SEARCHABLE_FIELDS = ['id', 'email', 'fname', 'lname'];
 

@@ -18,36 +18,51 @@
     </div>
 
     <!-- Storage Type Tabs -->
-    <ul class="nav nav-tabs media-tabs" role="tablist">
+    <ul class="nav nav-tabs media-tabs d-flex" role="tablist">
         <!-- Public Tab -->
-        <li class="nav-item">
-            <a class="nav-link active" href="#public" data-disk="public" role="tab">
-                <i class="fas fa-globe mr-2"></i>Public
-                <small class="d-block">Images, Assets</small>
-                <span class="disk-status-indicator" data-disk="public"></span>
+        <li class="nav-item flex-fill">
+            <a class="nav-link active text-center" href="#public" data-disk="public" role="tab">
+                <div class="tab-icon-container">
+                    <i class="fas fa-globe tab-icon"></i>
+                    <span class="disk-status-indicator" data-disk="public"></span>
+                </div>
+                <div class="tab-content-wrapper">
+                    <span class="tab-title">Public</span>
+                    <small class="tab-subtitle d-block">Images, Assets</small>
+                </div>
             </a>
         </li>
 
         <!-- Private Tab -->
         @if(auth('admin')->check() && auth('admin')->user()->IsInstructor())
-        <li class="nav-item">
-            <a class="nav-link" href="#private" data-disk="local" role="tab">
-                <i class="fas fa-shield-alt mr-2"></i>Private
-                <small class="d-block">Documents, Files</small>
-                <span class="disk-status-indicator" data-disk="local"></span>
-            </a>
-        </li>
+            <li class="nav-item flex-fill">
+                <a class="nav-link text-center" href="#private" data-disk="local" role="tab">
+                    <div class="tab-icon-container">
+                        <i class="fas fa-shield-alt tab-icon"></i>
+                        <span class="disk-status-indicator" data-disk="local"></span>
+                    </div>
+                    <div class="tab-content-wrapper">
+                        <span class="tab-title">Private</span>
+                        <small class="tab-subtitle d-block">Documents, Files</small>
+                    </div>
+                </a>
+            </li>
         @endif
 
         <!-- Archive S3 Tab -->
         @if(auth('admin')->check() && auth('admin')->user()->IsAdministrator())
-        <li class="nav-item">
-            <a class="nav-link" href="#s3" data-disk="s3" role="tab">
-                <i class="fas fa-archive mr-2"></i>Archive S3
-                <small class="d-block">Long-term Storage</small>
-                <span class="disk-status-indicator" data-disk="s3"></span>
-            </a>
-        </li>
+            <li class="nav-item flex-fill">
+                <a class="nav-link text-center" href="#s3" data-disk="s3" role="tab">
+                    <div class="tab-icon-container">
+                        <i class="fas fa-archive tab-icon"></i>
+                        <span class="disk-status-indicator" data-disk="s3"></span>
+                    </div>
+                    <div class="tab-content-wrapper">
+                        <span class="tab-title">Archive S3</span>
+                        <small class="tab-subtitle d-block">Long-term Storage</small>
+                    </div>
+                </a>
+            </li>
         @endif
     </ul>
 
@@ -103,7 +118,7 @@
                     </button>
 
                     <!-- Upload File Button -->
-                    <button type="button" class="btn btn-outline-success btn-sm" id="uploadFileBtn" title="Upload Files">
+                    <button type="button" class="btn btn-outline-success btn-sm" id="uploadFileBtn" title="Upload Files" data-toggle="modal" data-target="#uploadModal">
                         <i class="fas fa-upload"></i>
                     </button>
 

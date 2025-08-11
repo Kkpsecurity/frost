@@ -24,4 +24,7 @@
 @section('js')
     <!-- Media Manager Scripts Component -->
     <x-admin.media-manager.scripts />
+
+    <!-- React Upload Modal -->
+    @vite('resources/js/upload-modal-manager.tsx')
 @stop

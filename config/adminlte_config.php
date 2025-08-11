@@ -307,6 +307,28 @@ return [
             'topnav_right' => true,
         ],
 
+        // Notifications Bell
+        [
+            'text' => '',
+            'icon' => 'far fa-bell',
+            'topnav_right' => true,
+            'id' => 'notifications-toggle',
+            'title' => 'Notifications',
+            'classes' => 'nav-link',
+            'shift' => 'mr-2',
+        ],
+
+        // Messages Envelope
+        [
+            'text' => '',
+            'icon' => 'far fa-envelope',
+            'topnav_right' => true,
+            'id' => 'messages-toggle',
+            'title' => 'Messages',
+            'classes' => 'nav-link',
+            'shift' => 'mr-2',
+        ],
+
         // Sidebar items:
         [
             'type' => 'sidebar-menu-search',

@@ -8,6 +8,9 @@ export default defineConfig({
             input: [
                 "resources/js/app.ts",
                 "resources/js/admin.ts",
+                "resources/js/instructor.ts",
+                "resources/js/support.ts",
+                "resources/js/upload-modal-manager.tsx",
                 "resources/js/filepond.js",
                 "resources/js/alert-manager.js",
                 "resources/css/app.css",
