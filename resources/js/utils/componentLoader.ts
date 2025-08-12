@@ -131,14 +131,21 @@ export class ComponentLoader {
         // Load the component
         return new Promise((resolve, reject) => {
             try {
-                require(config.path);
-                const loadTime = performance.now() - startTime;
+                import(config.path)
+                    .then(() => {
+                        const loadTime = performance.now() - startTime;
 
-                if (isDevelopment) {
-                    console.log(`📊 ${componentKey} loaded in ${loadTime.toFixed(2)}ms`);
-                }
+                        if (isDevelopment) {
+                            console.log(
+                                `📊 ${componentKey} loaded in ${loadTime.toFixed(
+                                    2
+                                )}ms`
+                            );
+                        }
 
-                resolve();
+                        resolve();
+                    })
+                    .catch(reject);
             } catch (error) {
                 reject(error);
             }

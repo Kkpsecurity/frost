@@ -68,3 +68,41 @@ Route::prefix('student')
             'getUpcomingAssignments'
         ]);
     });
+
+/**
+ * Instructor Dashboard API Routes
+ */
+Route::prefix('instructor')
+    ->middleware(['auth:sanctum'])
+    ->group(function () {
+        // Dashboard data
+        Route::get('/dashboard', [
+            App\Http\Controllers\Api\InstructorDashboardController::class,
+            'dashboard'
+        ]);
+    });
+
+/**
+ * Admin access to instructor dashboard
+ */
+Route::prefix('admin/instructor')
+    ->middleware(['auth:web'])
+    ->group(function () {
+        // Dashboard data for admin users
+        Route::get('/dashboard', [
+            App\Http\Controllers\Api\InstructorDashboardController::class,
+            'dashboard'
+        ]);
+    });
+
+/**
+ * Test routes for development
+ */
+Route::prefix('instructor')
+    ->group(function () {
+        // Dashboard data (no auth for testing)
+        Route::get('/dashboard-test', [
+            App\Http\Controllers\Api\InstructorDashboardController::class,
+            'dashboard'
+        ]);
+    });

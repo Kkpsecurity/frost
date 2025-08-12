@@ -13,7 +13,9 @@ logRouteInfo();
  * Only when the url is /instructor/dashboard
  */
 if (RouteCheckers.isInstructorDashboard()) {
-    require("./React/Instructor/app");
+    import("./React/Instructor/app").catch((err) =>
+        console.error("Failed to load Instructor Dashboard:", err)
+    );
 }
 
 /**
@@ -21,8 +23,12 @@ if (RouteCheckers.isInstructorDashboard()) {
  * Only when the url is /instructor/classroom
  */
 if (RouteCheckers.isInstructorClassroom()) {
-    require("./React/Instructor/Classroom/ClassroomManager");
-    require("./React/Instructor/Classroom/InstructorDashboard");
+    import("./React/Instructor/Classroom/ClassroomManager").catch((err) =>
+        console.error("Failed to load Classroom Manager:", err)
+    );
+    import("./React/Instructor/Components/InstructorDashboard").catch((err) =>
+        console.error("Failed to load Instructor Dashboard:", err)
+    );
 }
 
 /**
@@ -30,7 +36,9 @@ if (RouteCheckers.isInstructorClassroom()) {
  * Only when the url is /instructor/students
  */
 if (RouteCheckers.isInstructorStudents()) {
-    require("./React/Instructor/Classroom/StudentManagement");
+    import("./React/Instructor/Classroom/StudentManagement").catch((err) =>
+        console.error("Failed to load Student Management:", err)
+    );
 }
 
 /**
@@ -38,7 +46,9 @@ if (RouteCheckers.isInstructorStudents()) {
  * Only when the url contains /live-class/
  */
 if (RouteCheckers.isLiveClass()) {
-    require("./React/Instructor/Classroom/LiveClassControls");
+    import("./React/Instructor/Classroom/LiveClassControls").catch((err) =>
+        console.error("Failed to load Live Class Controls:", err)
+    );
 }
 
 console.log("Instructor.ts loaded for route:", window.location.pathname);

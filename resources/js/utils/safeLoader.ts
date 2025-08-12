@@ -5,20 +5,11 @@
 
 export function safeRequire(componentPath: string, componentName: string = componentPath) {
     try {
-        require(componentPath);
-        console.log(`✅ Successfully loaded: ${componentName}`);
+        import(componentPath).catch((error) => {
+            console.error(`Failed to load component ${componentName}:`, error);
+        });
     } catch (error) {
-        console.error(`❌ Failed to load component: ${componentName}`, error);
-
-        // Optional: Report to error tracking service
-        if (typeof window !== 'undefined' && (window as any).errorTracker) {
-            (window as any).errorTracker.report({
-                type: 'component_load_error',
-                component: componentName,
-                error: error,
-                route: window.location.pathname
-            });
-        }
+        console.error(`Failed to load component ${componentName}:`, error);
     }
 }
 

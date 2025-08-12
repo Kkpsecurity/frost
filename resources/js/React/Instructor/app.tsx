@@ -1,13 +1,17 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import React from "react";
+
+/**
+ * IInstructor Entry
+ * Purpose to load and setup the Tanstack Query
+ * Load the InstrcutorDataLayer which will load all api coming from Laravel
+ */
+
+import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 // Instructor Components will go here
-import InstructorDashboard from './Components/InstructorDashboard';
-import ClassroomManager from './Classroom/ClassroomManager';
-import StudentManagement from './Classroom/StudentManagement';
-import LiveClassControls from './Classroom/LiveClassControls';
+import InstructorDashboard from "./Components/InstructorDashboard";
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -31,29 +35,26 @@ const queryClient = new QueryClient({
 // Global interface for Instructor components
 interface InstructorComponents {
     InstructorDashboard: typeof InstructorDashboard;
-    ClassroomManager: typeof ClassroomManager;
-    StudentManagement: typeof StudentManagement;
-    LiveClassControls: typeof LiveClassControls;
 }
 
 // Wrapper component with QueryClient provider
-const InstructorAppWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const InstructorAppWrapper: React.FC<{ children: React.ReactNode }> = ({
+    children,
+}) => (
     <QueryClientProvider client={queryClient}>
         {children}
-        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+        {process.env.NODE_ENV === "development" && (
+            <ReactQueryDevtools initialIsOpen={false} />
+        )}
     </QueryClientProvider>
 );
 
-// Make components available globally for insertion into HTML pages
-declare global {
-    interface Window {
-        InstructorComponents: InstructorComponents;
-        renderInstructorComponent: (componentName: keyof InstructorComponents, containerId: string, props?: any) => void;
-    }
-}
-
 // Function to render instructor components into HTML containers
-window.renderInstructorComponent = (componentName: keyof InstructorComponents, containerId: string, props = {}) => {
+window.renderInstructorComponent = (
+    componentName: string,
+    containerId: string,
+    props = {}
+) => {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Container with ID "${containerId}" not found`);
@@ -77,12 +78,9 @@ window.renderInstructorComponent = (componentName: keyof InstructorComponents, c
 // Export components globally
 window.InstructorComponents = {
     InstructorDashboard,
-    ClassroomManager,
-    StudentManagement,
-    LiveClassControls,
 };
 
-console.log('Instructor React components loaded');
+console.log("Instructor React components loaded");
 
 // Export queryClient for access in other parts of the app
 export { queryClient };

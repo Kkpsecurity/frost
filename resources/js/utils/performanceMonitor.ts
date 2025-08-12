@@ -72,11 +72,19 @@ export const loadMonitor = new ComponentLoadMonitor();
 export function monitoredRequire(componentPath: string, componentName: string = componentPath) {
     try {
         const startTime = performance.now();
-        require(componentPath);
-        const endTime = performance.now();
-
-        loadMonitor.trackComponentLoad(componentName);
-        console.log(`✅ ${componentName} loaded in ${(endTime - startTime).toFixed(2)}ms`);
+        import(componentPath)
+            .then(() => {
+                const endTime = performance.now();
+                loadMonitor.trackComponentLoad(componentName);
+                console.log(
+                    `✅ ${componentName} loaded in ${(
+                        endTime - startTime
+                    ).toFixed(2)}ms`
+                );
+            })
+            .catch((error) => {
+                console.error(`❌ Failed to load: ${componentName}`, error);
+            });
     } catch (error) {
         console.error(`❌ Failed to load: ${componentName}`, error);
     }

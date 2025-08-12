@@ -27,6 +27,13 @@ Route::get('/test-notifications', function () {
 })->name('test.notifications')->middleware('auth');
 
 /**
+ * Test Instructor Dashboard
+ */
+Route::get('/test-instructor-dashboard', function () {
+    return view('test-instructor-dashboard');
+})->name('test.instructor.dashboard')->middleware('auth');
+
+/**
  * Admin Authentication Routes
  * These routes handle admin login/logout and are accessible without admin middleware
  */

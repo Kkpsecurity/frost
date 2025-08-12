@@ -13,7 +13,9 @@ logRouteInfo();
  * Only when the url is /admin/dashboard
  */
 if (RouteCheckers.isAdminDashboard()) {
-    require("./React/Admin/app");
+    import("./React/Admin/app").catch((err) =>
+        console.error("Failed to load Admin Dashboard:", err)
+    );
 }
 
 /**
@@ -21,7 +23,9 @@ if (RouteCheckers.isAdminDashboard()) {
  * Only when the url is /admin/media
  */
 if (RouteCheckers.isAdminMedia()) {
-    require("./React/Admin/MediaManager/AdvancedUploadModal");
+    import("./React/Admin/MediaManager/AdvancedUploadModal").catch((err) =>
+        console.error("Failed to load Media Manager:", err)
+    );
 }
 
 /**
@@ -29,7 +33,9 @@ if (RouteCheckers.isAdminMedia()) {
  * Only when the url is /admin/support
  */
 if (RouteCheckers.isAdminSupport()) {
-    require("./React/Support/app");
+    import("./React/Support/app").catch((err) =>
+        console.error("Failed to load Support Dashboard:", err)
+    );
 }
 
 /**
@@ -37,7 +43,9 @@ if (RouteCheckers.isAdminSupport()) {
  * Only when the url is /admin/instructors
  */
 if (RouteCheckers.isAdminInstructors()) {
-    require("./React/Instructor/app");
+    import("./React/Instructor/app").catch((err) =>
+        console.error("Failed to load Instructor Dashboard:", err)
+    );
 }
 
 /**
