@@ -176,6 +176,114 @@ class Course extends Model
     //
 
 
+    /**
+     * Get course type (D or G) based on title
+     */
+    public function getCourseType(): string
+    {
+        if (str_contains(strtoupper($this->title), 'D COURSE') || str_contains(strtoupper($this->title), 'D-COURSE')) {
+            return 'D';
+        }
+
+        if (str_contains(strtoupper($this->title), 'G COURSE') || str_contains(strtoupper($this->title), 'G-COURSE')) {
+            return 'G';
+        }
+
+        // Default fallback - check if title starts with D or G
+        $firstChar = strtoupper(substr(trim($this->title), 0, 1));
+        return in_array($firstChar, ['D', 'G']) ? $firstChar : 'D';
+    }
+
+    /**
+     * Get course duration in days
+     */
+    public function getDurationDays(): int
+    {
+        return $this->getCourseType() === 'D' ? 5 : 3;
+    }
+
+    /**
+     * Get course frequency type
+     */
+    public function getFrequencyType(): string
+    {
+        return $this->getCourseType() === 'D' ? 'weekly' : 'biweekly';
+    }
+
+    /**
+     * Get course type display name
+     */
+    public function getCourseTypeDisplayName(): string
+    {
+        return $this->getCourseType() === 'D' ? 'D Course (5-day, Weekly)' : 'G Course (3-day, Biweekly)';
+    }
+
+    /**
+     * Get maximum participants for course type
+     */
+    public function getMaxParticipants(): int
+    {
+        // Default max participants - can be overridden per course
+        return $this->getCourseType() === 'D' ? 20 : 15;
+    }
+
+    /**
+     * Calculate total minutes based on course type
+     */
+    public function getCalculatedTotalMinutes(): int
+    {
+        // Assuming 8-hour days (480 minutes per day)
+        return $this->getDurationDays() * 480;
+    }
+
+    /**
+     * Check if course is D type
+     */
+    public function isDCourse(): bool
+    {
+        return $this->getCourseType() === 'D';
+    }
+
+    /**
+     * Check if course is G type
+     */
+    public function isGCourse(): bool
+    {
+        return $this->getCourseType() === 'G';
+    }
+
+    /**
+     * Get course type badge color for UI
+     */
+    public function getCourseTypeBadgeColor(): string
+    {
+        return $this->getCourseType() === 'D' ? 'success' : 'info';
+    }
+
+    /**
+     * Check if course is archived
+     */
+    public function isArchived(): bool
+    {
+        return !$this->is_active;
+    }
+
+    /**
+     * Archive the course
+     */
+    public function archive(): bool
+    {
+        return $this->update(['is_active' => false]);
+    }
+
+    /**
+     * Restore the course from archive
+     */
+    public function restore(): bool
+    {
+        return $this->update(['is_active' => true]);
+    }
+
     public function GetDocs(): array
     {
 

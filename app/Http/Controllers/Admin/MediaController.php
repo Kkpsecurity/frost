@@ -44,8 +44,8 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         try {
-            // Check if this is the new media manager upload (with disk and folder/path parameters)
-            if ($request->has('disk') && ($request->has('folder') || $request->has('path')) && $request->has('files')) {
+            // Check if this is the new media manager upload (with disk and folder parameters)
+            if ($request->has(['disk', 'folder', 'files'])) {
                 return $this->handleMediaManagerUpload($request);
             }
 

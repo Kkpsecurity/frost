@@ -1,17 +1,17 @@
 <?php
 
 return [
-/*
-    |--------------------------------------------------------------------------
-    | Title
-    |--------------------------------------------------------------------------
-    |
-    | Here you can change the default title of your admin panel.
-    |
-    | For detailed instructions you can look the title section here:
-    | https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Basic-Configuration
-    |
-    */
+    /*
+        |--------------------------------------------------------------------------
+        | Title
+        |--------------------------------------------------------------------------
+        |
+        | Here you can change the default title of your admin panel.
+        |
+        | For detailed instructions you can look the title section here:
+        | https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Basic-Configuration
+        |
+        */
 
     'title' => 'Frost Admin',
     'title_prefix' => '',
@@ -380,6 +380,11 @@ return [
             'text' => 'Courses',
             'url' => 'admin/courses',
             'icon' => 'fas fa-fw fa-book',
+        ],
+        [
+            'text' => 'Lessons',
+            'url' => 'admin/lessons',
+            'icon' => 'fas fa-fw fa-list',
         ],
         [
             'text' => 'Course Dates',

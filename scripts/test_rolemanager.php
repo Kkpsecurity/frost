@@ -33,6 +33,6 @@ foreach ($admins as $admin) {
     echo "- Role Name: " . ($admin->Role->name ?? 'N/A') . "\n";
     echo "- Display Name: {$admin->role_display_name}\n";
     echo "- Badge Class: {$admin->role_badge_class}\n";
-    echo "- Has 'admin' role: " . ($admin->hasRole('admin') ? 'Yes' : 'No') . "\n";
+    echo "- Has 'admin' role: " . ($admin->hasRoleName('admin') ? 'Yes' : 'No') . "\n";
     echo "---\n";
 }

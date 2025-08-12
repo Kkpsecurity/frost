@@ -65,7 +65,7 @@ if (!function_exists('abortToDashboard')) {
         $dashboardRoute = match (true) {
             method_exists($user, 'getDashboardRoute') => $user->getDashboardRoute(),
             method_exists($user, 'Dashboard') => $user->Dashboard(),
-            $user->hasRole('admin') ?? false => 'admin.dashboard',
+            $user->IsAnyAdmin() ?? false => 'admin.dashboard',
             default => 'dashboard'
         };
 

@@ -70,5 +70,60 @@ require __DIR__ . '/admin/admin_user_routes.php';
 // Student Management
 require __DIR__ . '/admin/student_routes.php';
 
+// Course Management
+require __DIR__ . '/admin/course_routes.php';
+
+// Lesson Management
+require __DIR__ . '/admin/lesson_routes.php';
+
+// Course Dates (Scheduling)
+Route::prefix('course-dates')->name('course-dates.')->group(function () {
+    Route::get('/', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'index'
+    ])->name('index');
+
+    Route::get('/create', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'create'
+    ])->name('create');
+
+    Route::post('/', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'store'
+    ])->name('store');
+
+    Route::get('/{courseDate}', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'show'
+    ])->name('show');
+
+    Route::get('/{courseDate}/edit', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'edit'
+    ])->name('edit');
+
+    Route::put('/{courseDate}', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'update'
+    ])->name('update');
+
+    Route::delete('/{courseDate}', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'destroy'
+    ])->name('destroy');
+
+    Route::post('/{courseDate}/toggle-active', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'toggleActive'
+    ])->name('toggle-active');
+
+    // API route for loading course units by course
+    Route::get('/course-units/{course}', [
+        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
+        'getCourseUnits'
+    ])->name('course-units');
+});
+
 // Admin Services (search, tools, etc.)
 require __DIR__ . '/admin/services_routes.php';

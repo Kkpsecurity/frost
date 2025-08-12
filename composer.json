@@ -26,6 +26,7 @@
         "league/flysystem-aws-s3-v3": "^3.29",
         "predis/predis": "^2.2",
         "spatie/laravel-medialibrary": "^11.13",
+        "spatie/laravel-permission": "^6.21",
         "teamtnt/laravel-scout-tntsearch-driver": "^15.0",
         "tightenco/ziggy": "^2.0",
         "yajra/laravel-datatables": "^10.0"
@@ -51,7 +52,9 @@
             "app/Helpers/richievc.helper.php",
             "app/Helpers/jonesy.helper.php",
             "app/Helpers/laravel.helper.php",
-            "KKP/Laravel/Helpers/vasset.php"
+            "app/Helpers/kkpdebug.php",
+            "KKP/Laravel/Helpers/vasset.php",
+            "KKP/helpers_laravel.php"
         ]
     },
     "autoload-dev": {

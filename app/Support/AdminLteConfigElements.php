@@ -548,6 +548,11 @@ class AdminLteConfigElements {
                 'icon' => 'fas fa-fw fa-book',
             ],
             [
+                'text' => 'Lessons',
+                'url' => 'admin/lessons',
+                'icon' => 'fas fa-fw fa-list',
+            ],
+            [
                 'text' => 'Course Dates',
                 'url' => 'admin/course-dates',
                 'icon' => 'fas fa-fw fa-calendar-alt',

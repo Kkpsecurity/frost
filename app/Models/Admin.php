@@ -88,9 +88,9 @@ class Admin extends User
     }
 
     /**
-     * Check if admin has specific role
+     * Check if admin has specific role by name
      */
-    public function hasRole(string $roleName): bool
+    public function hasRoleName(string $roleName): bool
     {
         return $this->Role && $this->Role->name === $roleName;
     }

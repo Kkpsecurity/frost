@@ -26,7 +26,7 @@ trait RCacheModels
 
         if ( ! $force_db_query && $Models = self::_getStatic( $model_name ) )
         {
-            kkpdebug( 'RCacheDebug', "LoadModelCache :: {$model_name} :: Returning Static" );
+            \App\Helpers\kkpdebug('RCacheDebug', "LoadModelCache :: {$model_name} :: Returning Static");
             return $Models;
         }
 
@@ -38,12 +38,17 @@ trait RCacheModels
         //   DB
         //
 
+        // Initialize ModelCaches if null
+        if (self::$_ModelCaches === null) {
+            self::$_ModelCaches = collect();
+        }
+
         $model_key_name = self::_model_get_key_name( $model_name );
 
         if ( ! $force_db_query && self::$_ModelCaches->has( $model_name ) )
         {
 
-            kkpdebug( 'RCacheDebug', "LoadModelCache :: {$model_name} :: Returning from ModelCaches" );
+            \App\Helpers\kkpdebug('RCacheDebug', "LoadModelCache :: {$model_name} :: Returning from ModelCaches");
 
             return self::$_ModelCaches->get( $model_name );
 
@@ -51,7 +56,7 @@ trait RCacheModels
         else if ( ! $force_db_query && self::exists( $model_name ) )
         {
 
-            kkpdebug( 'RCacheDebug', "LoadModelCache :: {$model_name} :: Loading from Redis" );
+            \App\Helpers\kkpdebug('RCacheDebug', "LoadModelCache :: {$model_name} :: Loading from Redis");
 
             $Models = $model_name::hydrate( array_map( self::Unserializer() , array_values( self::hgetall( $model_name ) ) ) )
                                   ->sortBy( $model_key_name )
@@ -61,7 +66,7 @@ trait RCacheModels
         else
         {
 
-            kkpdebug( 'RCache', "LoadModelCache :: {$model_name} :: " . ( $force_db_query ? 'RELOADING' : 'Loading' ) . ' from DB' );
+            \App\Helpers\kkpdebug('RCache', "LoadModelCache :: {$model_name} :: " . ($force_db_query ? 'RELOADING' : 'Loading') . ' from DB');
 
             $Models = $model_name::all()
                               ->sortBy( $model_key_name )
@@ -82,14 +87,17 @@ trait RCacheModels
         if ( self::IsStaticModel( $model_name ) )
         {
 
-            kkpdebug( 'RCacheDebug', "LoadModelCache :: {$model_name} :: Caching Static" );
+            \App\Helpers\kkpdebug('RCacheDebug', "LoadModelCache :: {$model_name} :: Caching Static");
             self::$_StaticCaches->put( $model_name, $Models );
 
         }
         else if ( self::$_cache_models )
         {
 
-            kkpdebug( 'RCacheDebug', "LoadModelCache :: {$model_name} :: Caching Model" );
+            \App\Helpers\kkpdebug('RCacheDebug', "LoadModelCache :: {$model_name} :: Caching Model");
+            if (self::$_ModelCaches === null) {
+                self::$_ModelCaches = collect();
+            }
             self::$_ModelCaches->put( $model_name, $Models );
 
         }
@@ -111,6 +119,11 @@ trait RCacheModels
     protected static function _getStatic( string $model_name ) : ?Collection
     {
 
+        // Initialize static caches if not already done
+        if (is_null(self::$_StaticCaches)) {
+            self::$_StaticCaches = new Collection();
+        }
+
         if ( self::$_StaticCaches->has( $model_name ) )
         {
             return self::$_StaticCaches->get( $model_name );
@@ -124,7 +137,7 @@ trait RCacheModels
     protected static function _getModelCache( string $model_name, $value, $key ) : object
     {
 
-        kkpdebug( 'RCacheDebug', "_getModelCache :: {$model_name}" );
+        \App\Helpers\kkpdebug('RCacheDebug', "_getModelCache :: {$model_name}");
 
         $Models = self::LoadModelCache( $model_name, false );
 

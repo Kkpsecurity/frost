@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 use Carbon\Carbon;
 use Laravel\Scout\Searchable;
@@ -46,6 +47,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use CourseAuthsTrait, ExamsTrait, RolesTrait, UserBrowserTrait, UserPrefsTrait;
     use AvatarTrait, Searchable, Impersonate;
     use Messagable;
+    use HasRoles;
 
     const SEARCHABLE_FIELDS = ['id', 'email', 'fname', 'lname'];
 
