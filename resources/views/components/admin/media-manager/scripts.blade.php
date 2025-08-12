@@ -1000,14 +1000,21 @@
     }
 
     /**
-     * Handle media manager upload (standardized upload function)
+     * UNIFIED UPLOAD FUNCTION - Handles all media manager uploads
+     * @param {FileList|Array} files - Files to upload
+     * @param {string} disk - Target disk (public, local, s3)
+     * @param {string} folder - Target folder (images, documents, etc.) or path
+     * @param {object} options - Additional options like progress callbacks
      */
-    function handleMediaManagerUpload(files, disk, path = '/') {
-        console.log(`handleMediaManagerUpload: Starting upload of ${files.length} files to ${disk}:${path}`);
+    function unifiedUpload(files, disk, folder, options = {}) {
+        console.log(`Starting upload of ${files.length} files to ${disk}/${folder}`);
+
+        // Normalize folder parameter - handle both folder names and paths
+        const targetFolder = folder.startsWith('/') ? folder.replace(/^\/+/, '') || 'general' : folder;
 
         const formData = new FormData();
 
-        // Add files to FormData
+        // Add files to FormData with consistent naming
         Array.from(files).forEach((file, index) => {
             formData.append(`files[${index}]`, file);
         });
@@ -1019,19 +1026,14 @@
 
         // Add metadata
         formData.append('disk', disk);
-        formData.append('folder', folder);
-        formData.append('_token', csrfToken);
+        formData.append('folder', targetFolder);
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
 
-        // Log what we're sending
-        console.log('Upload request data:', {
-            disk: disk,
-            folder: folder,
-            filesCount: files.length,
-            csrfToken: csrfToken ? 'present' : 'missing'
-        });
-
-        // Show loading indicator
+        // Show loading state
         updateDiskStatusIndicator(disk, 'loading');
+        if (options.showProgress !== false) {
+            showHeaderUploadProgress(0);
+        }
 
         return $.ajax({
             url: '/admin/media-manager/upload',
@@ -1040,42 +1042,47 @@
             contentType: false,
             processData: false,
             xhr: function() {
-                const xhr = new window.XMLHttpRequest();
+                const xhr = new XMLHttpRequest();
                 xhr.upload.addEventListener('progress', function(e) {
                     if (e.lengthComputable) {
                         const progress = (e.loaded / e.total) * 100;
                         console.log(`Upload progress: ${Math.round(progress)}%`);
-                        // Update progress if UI elements exist
-                        updateUploadProgress(disk, progress);
+                        if (options.showProgress !== false) {
+                            updateHeaderUploadProgress(progress);
+                        }
+                        if (options.onProgress) {
+                            options.onProgress(progress);
+                        }
                     }
                 }, false);
                 return xhr;
             }
         })
         .done(function(response) {
-            console.log('handleMediaManagerUpload: Upload successful:', response);
+            console.log('Upload successful:', response);
             updateDiskStatusIndicator(disk, 'connected');
+            hideHeaderUploadProgress();
 
-            // Check if response exists and has success property
-            if (response && typeof response === 'object') {
-                if (response.success) {
-                    showNotification('success', response.message || 'Files uploaded successfully');
-                    // Refresh current view
-                    loadFiles(disk);
+            if (response.success) {
+                if (options.onSuccess) {
+                    options.onSuccess(response);
                 } else {
-                    console.error('Upload response indicates failure:', response);
-                    showNotification('error', response.error || response.message || 'Upload failed');
+                    showNotification('success', response.message || `${files.length} file(s) uploaded successfully`);
+                    loadFiles(disk); // Refresh current view
                 }
             } else {
-                console.error('Upload response is not a valid object:', response);
-                showNotification('error', 'Invalid response from server');
+                const errorMsg = response.error || 'Upload failed';
+                if (options.onError) {
+                    options.onError(null, errorMsg);
+                } else {
+                    showNotification('error', errorMsg);
+                }
             }
         })
         .fail(function(xhr) {
-            console.error('handleMediaManagerUpload: Upload failed:', xhr.responseText);
-            console.error('XHR status:', xhr.status);
-            console.error('XHR response:', xhr.responseJSON);
+            console.error('Upload failed:', xhr.responseText);
             updateDiskStatusIndicator(disk, 'error', 'Upload failed');
+            hideHeaderUploadProgress();
 
             let errorMessage = 'Upload failed';
             if (xhr.status === 422) {
@@ -1097,9 +1104,17 @@
                 }
             }
 
-            console.error('Final error message:', errorMessage);
-            showNotification('error', errorMessage);
+            if (options.onError) {
+                options.onError(xhr, errorMessage);
+            } else {
+                showNotification('error', errorMessage);
+            }
         });
+    }
+
+    // LEGACY WRAPPER FUNCTIONS - For backward compatibility
+    function handleMediaManagerUpload(files, disk, path = '/') {
+        return unifiedUpload(files, disk, path);
     }
 
     /**
@@ -1494,102 +1509,19 @@
         $('#progressSection').show();
     }
 
-    /**
-     * Upload files to a specific folder (called from header buttons)
-     */
     function uploadFilesToFolder(files, diskId, folder) {
-        console.log(`Starting upload for ${files.length} files to folder: ${folder} on disk: ${diskId}`);
-
-        const formData = new FormData();
-
-        // Add files to FormData
-        Array.from(files).forEach((file, index) => {
-            formData.append(`files[${index}]`, file);
-        });
-
-        // Add metadata
-        formData.append('disk', diskId);
-        formData.append('folder', folder);
-        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-
-        // Show progress indicator in header
-        showHeaderUploadProgress(0);
-
-        // AJAX upload
-        $.ajax({
-            url: '/admin/media-manager/upload',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            xhr: function() {
-                const xhr = new XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const progress = (e.loaded / e.total) * 100;
-                        updateHeaderUploadProgress(progress);
-                    }
-                });
-                return xhr;
-            },
-            success: function(response) {
-                console.log('Upload successful:', response);
-                handleHeaderUploadSuccess(response, diskId);
-            },
-            error: function(xhr) {
-                console.error('Upload failed:', xhr);
-                handleHeaderUploadError(xhr, diskId);
-            }
-        });
+        return uploadFiles(files, diskId, folder);
     }
 
     /**
-     * Upload files to the current disk and folder (original function)
+     * Upload files to the current disk and folder (legacy wrapper)
      */
     function uploadFiles(files, diskId) {
-        console.log(`Starting upload for ${files.length} files to disk: ${diskId}`);
-
-        const formData = new FormData();
         const currentFolder = getCurrentFolder(diskId);
-
-        // Add files to FormData
-        Array.from(files).forEach((file, index) => {
-            formData.append(`files[${index}]`, file);
-        });
-
-        // Add metadata
-        formData.append('disk', diskId);
-        formData.append('folder', currentFolder);
-        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-
-        // Show progress indicator
-        showUploadProgress(diskId, 0);
-
-        // AJAX upload
-        $.ajax({
-            url: '/admin/media-manager/upload',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            xhr: function() {
-                const xhr = new XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const progress = (e.loaded / e.total) * 100;
-                        updateUploadProgress(diskId, progress);
-                    }
-                });
-                return xhr;
-            },
-            success: function(response) {
-                console.log('Upload successful:', response);
-                handleUploadSuccess(response, diskId);
-            },
-            error: function(xhr) {
-                console.error('Upload failed:', xhr);
-                handleUploadError(xhr, diskId);
-            }
+        return unifiedUpload(files, diskId, currentFolder, {
+            onProgress: (progress) => updateUploadProgress(diskId, progress),
+            onSuccess: (response) => handleUploadSuccess(response, diskId),
+            onError: (xhr, message) => handleUploadError(xhr, diskId)
         });
     }
 
@@ -1791,78 +1723,20 @@
         showNotification('error', errorMessage);
     }
 
-    // Upload files to current folder/disk
+    // Upload files to current folder/disk (legacy wrapper)
     function uploadFilesToCurrentFolder(files) {
-        console.log(`Starting upload of ${files.length} files to ${currentDisk}:${currentPath}`);
-
-        // Show loading state for current disk
-        updateDiskStatusIndicator(currentDisk, 'loading');
-
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files[]', files[i]);
-        }
-        formData.append('disk', currentDisk);
-
-        // Use current path, or default to root if empty
         const uploadPath = currentPath || '/';
-        formData.append('path', uploadPath);
-        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-
-        console.log(`Upload details: disk=${currentDisk}, path=${uploadPath}`);
-
-        $.ajax({
-            url: '/admin/media-manager/upload',
-            method: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            xhr: function() {
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const progress = (e.loaded / e.total) * 100;
-                        console.log(`Upload progress: ${Math.round(progress)}%`);
-                    }
-                }, false);
-                return xhr;
-            }
-        })
-        .done(function(response) {
-            console.log('Upload successful:', response);
-
-            // Update disk status to connected
-            updateDiskStatusIndicator(currentDisk, 'connected');
-
-            // Show success notification
-            if (response.success) {
+        return unifiedUpload(files, currentDisk, uploadPath, {
+            showProgress: false, // This function doesn't show header progress
+            onSuccess: function(response) {
                 console.log(`Successfully uploaded ${response.files?.length || files.length} files`);
-
-                // Refresh current view to show new files
-                loadFiles(currentDisk);
-            } else {
-                console.error('Upload response indicates failure:', response.error);
-                alert('Upload failed: ' + (response.error || 'Unknown error'));
+                loadFiles(currentDisk); // Refresh current view
+                $('#generalFileInput').val(''); // Reset file input
+            },
+            onError: function(xhr, errorMessage) {
+                alert(errorMessage);
+                $('#generalFileInput').val(''); // Reset file input
             }
-
-            // Reset file input
-            $('#generalFileInput').val('');
-        })
-        .fail(function(xhr) {
-            console.error('Upload failed:', xhr.responseText);
-
-            // Update disk status to error
-            updateDiskStatusIndicator(currentDisk, 'error', 'Upload failed');
-
-            let errorMessage = 'Upload failed';
-            if (xhr.responseJSON) {
-                errorMessage = xhr.responseJSON.error || xhr.responseJSON.message || errorMessage;
-            }
-
-            alert(errorMessage);
-
-            // Reset file input
-            $('#generalFileInput').val('');
         });
     }
 

@@ -44,9 +44,8 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         try {
-            // Check if this is the new media manager upload (with disk and folder parameters)
-            // Check for both input and hasFile to ensure proper detection
-            if ($request->has(['disk', 'folder']) && $request->hasFile('files')) {
+            // Check if this is the new media manager upload (with disk and folder/path parameters)
+            if ($request->has('disk') && ($request->has('folder') || $request->has('path')) && $request->has('files')) {
                 return $this->handleMediaManagerUpload($request);
             }
 
@@ -106,10 +105,17 @@ class MediaController extends Controller
         try {
             $request->validate([
                 'disk' => 'required|string|in:public,local,s3',
-                'folder' => 'required|string',
                 'files' => 'required|array|min:1',
                 'files.*' => 'required|file'
             ]);
+
+            // Validate that we have either folder or path parameter
+            if (!$request->has('folder') && !$request->has('path')) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Either folder or path parameter is required'
+                ], 422);
+            }
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -118,7 +124,11 @@ class MediaController extends Controller
         }
 
         $disk = $request->input('disk');
-        $folder = $request->input('folder');
+        // Handle both folder and path parameters - normalize to folder
+        $folder = $request->input('folder') ?: trim($request->input('path', '/'), '/');
+        if (empty($folder) || $folder === '/') {
+            $folder = 'general'; // Default folder for root uploads
+        }
         $files = $request->file('files');
 
         // Only implement public disk for now
