@@ -45,7 +45,8 @@ class MediaController extends Controller
     {
         try {
             // Check if this is the new media manager upload (with disk and folder parameters)
-            if ($request->has(['disk', 'folder', 'files'])) {
+            // Check for both input and hasFile to ensure proper detection
+            if ($request->has(['disk', 'folder']) && $request->hasFile('files')) {
                 return $this->handleMediaManagerUpload($request);
             }
 

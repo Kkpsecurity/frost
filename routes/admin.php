@@ -20,6 +20,18 @@ Route::get('/', [
     'dashboard'
 ])->name('dashboard');
 
+// Instructor Dashboard
+Route::get('/instructors', [
+    App\Http\Controllers\Admin\InstructorDashboardController::class,
+    'index'
+])->name('instructors.dashboard');
+
+// Support Dashboard
+Route::get('/support', [
+    App\Http\Controllers\Admin\SupportDashboardController::class,
+    'index'
+])->name('support.dashboard');
+
 // FilePond Demo (legacy route - redirects to admin center)
 Route::get('/filepond-demo', function () {
     return redirect()->route('admin.media-manager.index');
@@ -54,6 +66,9 @@ require __DIR__ . '/admin/media_manager_routes.php';
 
 // Admin Center - Admin Users
 require __DIR__ . '/admin/admin_user_routes.php';
+
+// Student Management
+require __DIR__ . '/admin/student_routes.php';
 
 // Admin Services (search, tools, etc.)
 require __DIR__ . '/admin/services_routes.php';

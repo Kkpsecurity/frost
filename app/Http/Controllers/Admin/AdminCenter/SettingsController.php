@@ -29,9 +29,10 @@ class SettingsController extends Controller
         $settingsForTable = [];
         foreach ($rawSettings as $setting) {
             $settingsForTable[] = [
-                'key' => $setting->group . '.' . $setting->key, // Reconstruct full key for display
+                'key' => $setting->key, // Use actual key, not reconstructed
                 'value' => $setting->value,
-                'group' => $setting->group
+                'group' => $setting->group,
+                'full_key' => $setting->group . '.' . $setting->key // For reference if needed
             ];
         }
 
@@ -85,23 +86,37 @@ class SettingsController extends Controller
      */
     public function edit($key)
     {
-        $value = Setting::get($key);
+        // First try to find the setting using new group structure
+        $setting = DB::table('settings')->where('key', $key)->first();
 
-        if ($value === null) {
-            abort(404, 'Setting not found');
+        if (!$setting) {
+            // Fallback: try old dot notation approach
+            $value = Setting::get($key);
+            if ($value === null) {
+                abort(404, 'Setting not found');
+            }
+
+            // Split key into prefix and setting name for backward compatibility
+            $prefix = '';
+            $settingName = $key;
+            $group = '';
+
+            if (strpos($key, '.') !== false) {
+                $parts = explode('.', $key, 2);
+                $prefix = $parts[0];
+                $settingName = $parts[1];
+                $group = $parts[0];
+            }
+        } else {
+            // New structure: use group field
+            $value = $setting->value;
+            $group = $setting->group;
+            $settingName = $setting->key;
+            $prefix = $setting->group; // For backward compatibility in views
+            $key = $setting->key; // Use the actual key without group prefix
         }
 
-        // Split key into prefix and setting name
-        $prefix = '';
-        $settingName = $key;
-
-        if (strpos($key, '.') !== false) {
-            $parts = explode('.', $key, 2);
-            $prefix = $parts[0];
-            $settingName = $parts[1];
-        }
-
-        return view('admin.admin-center.settings.edit', compact('key', 'value', 'prefix', 'settingName'));
+        return view('admin.admin-center.settings.edit', compact('key', 'value', 'prefix', 'settingName', 'group'));
     }
 
     /**
@@ -113,7 +128,18 @@ class SettingsController extends Controller
             'value' => 'required',
         ]);
 
-        Setting::set($key, $request->value);
+        // Check if this is a new group-based setting
+        $setting = DB::table('settings')->where('key', $key)->first();
+
+        if ($setting) {
+            // Update using new structure
+            DB::table('settings')
+                ->where('key', $key)
+                ->update(['value' => $request->value]);
+        } else {
+            // Fallback to old method for backward compatibility
+            Setting::set($key, $request->value);
+        }
 
         return redirect()->route('admin.settings.index')
                         ->with('success', 'Setting updated successfully.');
@@ -124,7 +150,16 @@ class SettingsController extends Controller
      */
     public function destroy($key)
     {
-        Setting::forget($key);
+        // Check if this is a new group-based setting
+        $setting = DB::table('settings')->where('key', $key)->first();
+
+        if ($setting) {
+            // Delete using new structure
+            DB::table('settings')->where('key', $key)->delete();
+        } else {
+            // Fallback to old method for backward compatibility
+            Setting::forget($key);
+        }
 
         return redirect()->route('admin.settings.index')
                         ->with('success', 'Setting deleted successfully.');

@@ -358,10 +358,8 @@
             showCreateFolderModal();
         });
 
-        $(document).on('click', '#uploadFileBtn', function() {
-            console.log('Upload file button clicked');
-            $('#generalFileInput').click();
-        });
+        // Upload file button handler is now handled by advanced upload modal
+        // See upload-modal-scripts.blade.php
 
         $(document).on('click', '#refreshBtn', function() {
             console.log('Refresh button clicked');
@@ -1014,10 +1012,23 @@
             formData.append(`files[${index}]`, file);
         });
 
+        // Determine folder based on file types in the upload
+        let folder = determineUploadFolder(files);
+
+        console.log(`handleMediaManagerUpload: Determined folder: ${folder}`);
+
         // Add metadata
         formData.append('disk', disk);
-        formData.append('path', path);
+        formData.append('folder', folder);
         formData.append('_token', csrfToken);
+
+        // Log what we're sending
+        console.log('Upload request data:', {
+            disk: disk,
+            folder: folder,
+            filesCount: files.length,
+            csrfToken: csrfToken ? 'present' : 'missing'
+        });
 
         // Show loading indicator
         updateDiskStatusIndicator(disk, 'loading');
@@ -1045,22 +1056,48 @@
             console.log('handleMediaManagerUpload: Upload successful:', response);
             updateDiskStatusIndicator(disk, 'connected');
 
-            if (response.success) {
-                showNotification('success', response.message || 'Files uploaded successfully');
-                // Refresh current view
-                loadFiles(disk);
+            // Check if response exists and has success property
+            if (response && typeof response === 'object') {
+                if (response.success) {
+                    showNotification('success', response.message || 'Files uploaded successfully');
+                    // Refresh current view
+                    loadFiles(disk);
+                } else {
+                    console.error('Upload response indicates failure:', response);
+                    showNotification('error', response.error || response.message || 'Upload failed');
+                }
             } else {
-                showNotification('error', response.error || 'Upload failed');
+                console.error('Upload response is not a valid object:', response);
+                showNotification('error', 'Invalid response from server');
             }
         })
         .fail(function(xhr) {
             console.error('handleMediaManagerUpload: Upload failed:', xhr.responseText);
+            console.error('XHR status:', xhr.status);
+            console.error('XHR response:', xhr.responseJSON);
             updateDiskStatusIndicator(disk, 'error', 'Upload failed');
 
             let errorMessage = 'Upload failed';
-            if (xhr.responseJSON) {
+            if (xhr.status === 422) {
+                errorMessage = 'Validation failed';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    const errors = Object.values(xhr.responseJSON.errors).flat();
+                    errorMessage = errors.join(', ');
+                }
+            } else if (xhr.responseJSON) {
                 errorMessage = xhr.responseJSON.error || xhr.responseJSON.message || errorMessage;
+            } else if (xhr.responseText) {
+                try {
+                    const parsed = JSON.parse(xhr.responseText);
+                    errorMessage = parsed.error || parsed.message || errorMessage;
+                } catch (e) {
+                    errorMessage = `Server error (${xhr.status})`;
+                }
             }
+
+            console.error('Final error message:', errorMessage);
             showNotification('error', errorMessage);
         });
     }
@@ -1085,6 +1122,89 @@
     function updateFilesList() {
         console.log('updateFilesList: Refreshing current view');
         loadFiles(getCurrentDisk());
+    }
+
+    /**
+     * Upload files to the current folder
+     */
+    function uploadFilesToCurrentFolder(files) {
+        if (!files || files.length === 0) {
+            console.log('uploadFilesToCurrentFolder: No files selected');
+            return;
+        }
+
+        const disk = getCurrentDisk();
+        const path = getCurrentPath();
+
+        console.log(`uploadFilesToCurrentFolder: Uploading ${files.length} files to ${disk}:${path}`);
+
+        // Show progress indicator in header
+        showUploadProgress();
+
+        // Use the existing standardized upload function
+        handleMediaManagerUpload(files, disk, path)
+            .always(function() {
+                // Hide progress indicator
+                hideUploadProgress();
+                // Clear the file input
+                $('#generalFileInput').val('');
+            });
+    }
+
+    /**
+     * Show upload progress in header
+     */
+    function showUploadProgress() {
+        $('#headerProgressContainer').show();
+        $('#headerProgressBar').css('width', '0%').attr('aria-valuenow', 0);
+        $('#progressText').text('Uploading...');
+    }
+
+    /**
+     * Update upload progress
+     */
+    function updateUploadProgress(disk, progress) {
+        $('#headerProgressBar').css('width', progress + '%').attr('aria-valuenow', progress);
+        $('#progressText').text(`Uploading... ${Math.round(progress)}%`);
+    }
+
+    /**
+     * Hide upload progress in header
+     */
+    function hideUploadProgress() {
+        $('#headerProgressContainer').hide();
+    }
+
+    /**
+     * Determine the appropriate folder for upload based on file types
+     */
+    function determineUploadFolder(files) {
+        if (!files || files.length === 0) {
+            return 'images'; // Default fallback
+        }
+
+        // File type mappings based on controller validation rules
+        const fileTypeMap = {
+            'images': ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
+            'documents': ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            'assets': ['text/css', 'application/javascript', 'application/json']
+        };
+
+        // Check the first file's type to determine folder
+        const firstFile = files[0];
+        const fileType = firstFile.type || '';
+
+        // Find matching folder
+        for (const [folder, mimeTypes] of Object.entries(fileTypeMap)) {
+            if (mimeTypes.includes(fileType)) {
+                console.log(`Determined folder '${folder}' for file type '${fileType}'`);
+                return folder;
+            }
+        }
+
+        // Default to images for unknown types
+        console.log(`Unknown file type '${fileType}', defaulting to 'images' folder`);
+        return 'images';
     }
     function updateDirectoryTree(diskName, directories) {
         const $tree = $('#directoryTree');
@@ -1919,3 +2039,5 @@
         return localStorage.getItem('mediaManagerViewMode') || 'grid';
     }
 </script>
+
+<!-- React Upload Modal will be loaded separately -->

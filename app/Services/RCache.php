@@ -3,27 +3,30 @@
 namespace App\Services;
 
 /**
- * @file RCache.php
- * @brief Service for managing Redis caching.
- * @details This service provides methods to cache and retrieve various models and queries, as well as utility functions for serialization and debugging.
+ * Redis-based caching service
+ * Provides methods to cache and retrieve data using Redis.
+ *
+ * @version: 1.0.3
+ * @package: App\Services
+ * @author: Chris Jones
  */
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Redis;
-use App\Support\RCache\RCacheTraitLoader;
 
-// Models
-use App\Models\Exam;
-use App\Models\Role;
-use App\Models\User;
+use App\RCache\RCacheTraitLoader;
+
 use App\Models\Course;
 use App\Models\Lesson;
-use App\Models\SiteConfig;
 use App\Models\CourseUnit;
+use App\Models\CourseUnitLesson;
+
+use App\Models\Exam;
+use App\Models\ExamQuestionSpec;
 use App\Models\PaymentType;
 use App\Models\DiscountCode;
-use App\Models\CourseUnitLesson;
-use App\Models\ExamQuestionSpec;
+
+use App\Models\Role;
+use App\Models\SiteConfig;
 
 
 class RCache
@@ -32,9 +35,9 @@ class RCache
     use RCacheTraitLoader;
 
 
-    protected static $_ModelCaches;
-    protected static $_StaticCaches;
     protected static $_cache_models = false;
+    protected static $_StaticCaches;
+    protected static $_ModelCaches;
 
 
     protected static $_static_models = [
@@ -47,17 +50,7 @@ class RCache
         Role::class,
     ];
 
-    /**
-     * Deprecated method for handling Redis DebugBar.
-     * This method is now a no-op and should not be used.
-     * It is retained for backward compatibility.
-     */
-    public function RedisDebugBar(): void
-    {
-        if (config('app.debug') && class_exists('Debugbar')) {
-            log('RCache::RedisDebugBar() called');
-        }
-    }
+
 
     #########################
     ###                   ###
@@ -116,18 +109,6 @@ class RCache
         return self::_getModelCache(SiteConfig::class, $value, $key);
     }
 
-    public static function User(int $user_id): User
-    {
-        return self::_getModelCache(User::class, $user_id, 'id');
-    }
-
-    public static function Course_CourseUnits(int $course_id): Collection
-    {
-        return self::CourseUnits()
-            ->where('course_id', $course_id)
-            ->sortBy('id')
-            ->pluck('id');
-    }
 
 
     ########################
@@ -155,34 +136,5 @@ class RCache
     {
         $countries = self::Unserialize(self::get('countries'));
         return ($as_hash ? idx2hash($countries) : $countries);
-    }
-
-    /**
-     * Get lessons for a specific course
-     *
-     * @param int $course_id
-     * @return Collection
-     */
-    public static function Course_Lessons(int $course_id): Collection
-    {
-        $course = Course::find($course_id);
-        if (!$course) {
-            return collect();
-        }
-
-        // Get all lessons for this course through course units
-        $lessons = collect();
-        $courseUnits = self::Course_CourseUnits($course_id);
-
-        foreach ($courseUnits as $unit) {
-            $unitLessons = CourseUnitLesson::where('course_unit_id', $unit->id)
-                ->with('lesson')
-                ->get()
-                ->pluck('lesson')
-                ->filter();
-            $lessons = $lessons->merge($unitLessons);
-        }
-
-        return $lessons;
     }
 }

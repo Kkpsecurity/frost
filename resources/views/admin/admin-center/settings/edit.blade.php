@@ -14,7 +14,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="{{ route('admin.settings.index') }}">Settings</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Edit: {{ $key ?? 'Setting' }}</li>
+            <li class="breadcrumb-item active" aria-current="page">Edit: {{ $group ?? '' }}{{ $group ? '.' : '' }}{{ $key ?? 'Setting' }}</li>
         </ol>
     </nav>
 @stop
@@ -26,7 +26,7 @@
             <div class="card card-warning mt-3">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-edit"></i> Edit Setting: {{ $settingName }}
+                        <i class="fas fa-edit"></i> Edit Setting: {{ $group ? $group . '.' : '' }}{{ $settingName }}
                     </h3>
                 </div>
 
@@ -34,6 +34,15 @@
                     @csrf
                     @method('PUT')
                     <div class="card-body">
+                        <div class="form-group">
+                            <label for="group">Setting Group</label>
+                            <input type="text" class="form-control-plaintext"
+                                   id="group" value="{{ $group ?? 'No Group' }}" readonly>
+                            <small class="form-text text-muted">
+                                Settings are organized by groups for better management
+                            </small>
+                        </div>
+
                         <div class="form-group">
                             <label for="key">Setting Key</label>
                             <input type="text" class="form-control-plaintext"

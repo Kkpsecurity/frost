@@ -14,6 +14,143 @@
     margin: 0;
 }
 
+/* ===================================
+   Symmetrical Tab Layout
+   =================================== */
+
+/* Media Manager Tabs Container */
+.media-manager-container .media-tabs {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 0;
+    background: transparent;
+}
+
+.media-manager-container .media-tabs.d-flex {
+    display: flex !important;
+}
+
+/* Individual Tab Items */
+.media-manager-container .media-tabs .nav-item.flex-fill {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+/* Tab Links */
+.media-manager-container .media-tabs .nav-link {
+    border: 1px solid transparent;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+    margin-bottom: -1px;
+    background: none;
+    padding: 1rem 0.75rem;
+    transition: all 0.15s ease-in-out;
+    position: relative;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Tab Icon Container */
+.media-manager-container .tab-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 0.25rem;
+}
+
+.media-manager-container .tab-icon {
+    font-size: 1.25rem;
+    margin-right: 0;
+    transition: all 0.15s ease-in-out;
+}
+
+/* Tab Content Wrapper */
+.media-manager-container .tab-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.media-manager-container .tab-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    margin-bottom: 0.125rem;
+}
+
+.media-manager-container .tab-subtitle {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    line-height: 1.1;
+    margin-bottom: 0;
+}
+
+/* Active Tab State */
+.media-manager-container .media-tabs .nav-link.active {
+    color: #007bff;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.media-manager-container .media-tabs .nav-link.active .tab-icon {
+    color: #007bff;
+    transform: scale(1.1);
+}
+
+/* Hover State */
+.media-manager-container .media-tabs .nav-link:hover:not(.active) {
+    border-color: #e9ecef #e9ecef #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.media-manager-container .media-tabs .nav-link:hover .tab-icon {
+    transform: scale(1.05);
+}
+
+/* Responsive Tab Layout */
+@media (max-width: 768px) {
+    .media-manager-container .media-tabs .nav-link {
+        padding: 0.75rem 0.5rem;
+        min-height: 70px;
+    }
+
+    .media-manager-container .tab-icon {
+        font-size: 1.1rem;
+    }
+
+    .media-manager-container .tab-title {
+        font-size: 0.8rem;
+    }
+
+    .media-manager-container .tab-subtitle {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .media-manager-container .media-tabs .nav-link {
+        padding: 0.5rem 0.25rem;
+        min-height: 60px;
+    }
+
+    .media-manager-container .tab-subtitle {
+        display: none !important;
+    }
+
+    .media-manager-container .tab-title {
+        font-size: 0.75rem;
+    }
+
+    .media-manager-container .tab-icon {
+        font-size: 1rem;
+    }
+}
+
 /* Breadcrumb Styles */
 .media-manager-container .breadcrumb {
     background: transparent;
@@ -44,16 +181,38 @@
 
 /* Disk Status Indicators */
 .disk-status-indicator {
-    display: inline-block;
-    margin-left: 0.25rem;
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #28a745;
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.disk-status-indicator.status-connected i {
-    animation: none;
+.disk-status-indicator i {
+    font-size: 0.5rem;
+    color: #fff;
+}
+
+.disk-status-indicator.status-connected {
+    background: #28a745;
+}
+
+.disk-status-indicator.status-loading {
+    background: #ffc107;
 }
 
 .disk-status-indicator.status-loading i {
     animation: fa-spin 2s infinite linear;
+}
+
+.disk-status-indicator.status-error {
+    background: #dc3545;
 }
 
 .disk-status-indicator.status-error i {
@@ -94,31 +253,52 @@
 }
 
 /* Dark Mode Adjustments */
-.dark-mode .media-manager-container .nav-tabs {
+.dark-mode .media-manager-container .media-tabs {
     background: var(--bs-dark, #343a40) !important;
     border-bottom-color: var(--bs-gray-700, #495057) !important;
 }
 
-.dark-mode .media-manager-container .nav-tabs .nav-link {
+.dark-mode .media-manager-container .media-tabs .nav-link {
     color: var(--bs-gray-300, #dee2e6) !important;
     border-color: transparent !important;
 }
 
-.dark-mode .media-manager-container .nav-tabs .nav-link:hover {
+.dark-mode .media-manager-container .media-tabs .nav-link:hover:not(.active) {
     color: var(--bs-primary, #6ea8fe) !important;
     background: rgba(110, 168, 254, 0.1) !important;
     border-color: var(--bs-gray-600, #6c757d) !important;
 }
 
-.dark-mode .media-manager-container .nav-tabs .nav-link.active {
+.dark-mode .media-manager-container .media-tabs .nav-link.active {
     color: var(--bs-primary, #6ea8fe) !important;
     background: var(--bs-gray-800, #495057) !important;
     border-color: var(--bs-gray-700, #495057) var(--bs-gray-700, #495057) var(--bs-gray-800, #495057) !important;
 }
 
+.dark-mode .media-manager-container .media-tabs .nav-link.active .tab-icon {
+    color: var(--bs-primary, #6ea8fe) !important;
+}
+
 .dark-mode .media-manager-container .tab-content {
     background: var(--bs-gray-800, #495057) !important;
     border-color: var(--bs-gray-700, #495057) !important;
+}
+
+/* Dark mode disk status indicators */
+.dark-mode .disk-status-indicator {
+    border-color: var(--bs-gray-800, #495057) !important;
+}
+
+.dark-mode .disk-status-indicator.status-connected {
+    background: #198754 !important;
+}
+
+.dark-mode .disk-status-indicator.status-loading {
+    background: #f57c00 !important;
+}
+
+.dark-mode .disk-status-indicator.status-error {
+    background: #dc3545 !important;
 }
 
 .dark-mode .media-manager-container .upload-area {

@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminCenter\AdminUserController;
 
 /**
  * Admin Center - Admin Users CRUD routes

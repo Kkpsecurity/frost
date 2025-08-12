@@ -17,11 +17,7 @@ class AdminLteConfigElements {
 
     // Add class members here as needed
     public function getTitle() {
-        return ['title' => $this->settingHelper->get('title', 'Admin P                    [
-                        'text' => 'Media Manager',
-                        'route' => 'admin.media-manager.index',
-                        'icon' => 'fas fa-fw fa-hdd',
-                    ])];
+        return ['title' => $this->settingHelper->get('title', 'Admin Panel')];
     }
 
     public function getTitlePrefix() {
@@ -304,7 +300,7 @@ class AdminLteConfigElements {
 
     public function getRightSidebar()
     {
-        return ['right_sidebar' => $this->settingHelper->get('right_sidebar', false)];
+        return ['right_sidebar' => $this->settingHelper->get('right_sidebar', true)];
     }
 
     public function getRightSidebarIcon()
@@ -477,6 +473,22 @@ class AdminLteConfigElements {
                 'type' => 'navbar-search',
                 'text' => 'search',
                 'topnav_right' => true,
+            ],
+            [
+                'text' => 'Notifications',
+                'icon' => 'far fa-bell',
+                'url' => '/messaging/notifications',
+                'id' => 'notifications-toggle',
+                'topnav_right' => true,
+                'classes' => 'nav-notification-item',
+            ],
+            [
+                'text' => 'Messages',
+                'icon' => 'far fa-envelope',
+                'url' => '/messaging',
+                'id' => 'messages-toggle',
+                'topnav_right' => true,
+                'classes' => 'nav-message-item',
             ],
             [
                 'type' => 'fullscreen-widget',
