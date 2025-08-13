@@ -8,25 +8,25 @@ import React, { Suspense } from 'react';
 // Lazy load components based on routes
 export const LazyComponents = {
     // Admin Components
-    AdminDashboard: React.lazy(() => import('../React/Admin/AdminDashboard')),
-    MediaManager: React.lazy(() => import('../React/Admin/MediaManager/AdvancedUploadModal')),
+    AdminDashboard: React.lazy(() => import('../Admin/AdminDashboard')),
+    MediaManager: React.lazy(() => import('../Admin/MediaManager/AdvancedUploadModal')),
 
     // Student Components
-    StudentDashboard: React.lazy(() => import('../React/Student/StudentDashboard')),
-    VideoPlayer: React.lazy(() => import('../React/Student/Components/VideoPlayer')),
-    LessonViewer: React.lazy(() => import('../React/Student/Components/LessonViewer')),
-    AssignmentSubmission: React.lazy(() => import('../React/Student/Offline/AssignmentSubmission')),
+    StudentDashboard: React.lazy(() => import('../Student/StudentDashboard')),
+    VideoPlayer: React.lazy(() => import('../Student/Components/VideoPlayer')),
+    LessonViewer: React.lazy(() => import('../Student/Components/LessonViewer')),
+    AssignmentSubmission: React.lazy(() => import('../Student/Offline/AssignmentSubmission')),
 
     // Instructor Components
-    InstructorDashboard: React.lazy(() => import('../React/Instructor/Classroom/InstructorDashboard')),
-    ClassroomManager: React.lazy(() => import('../React/Instructor/Classroom/ClassroomManager')),
-    StudentManagement: React.lazy(() => import('../React/Instructor/Classroom/StudentManagement')),
-    LiveClassControls: React.lazy(() => import('../React/Instructor/Classroom/LiveClassControls')),
+    InstructorDashboard: React.lazy(() => import('../Instructor/Classroom/InstructorDashboard')),
+    ClassroomManager: React.lazy(() => import('../Instructor/Classroom/ClassroomManager')),
+    StudentManagement: React.lazy(() => import('../Instructor/Classroom/StudentManagement')),
+    LiveClassControls: React.lazy(() => import('../Instructor/Classroom/LiveClassControls')),
 
     // Support Components
-    SupportDashboard: React.lazy(() => import('../React/Support/Components/SupportDashboard')),
-    TicketManager: React.lazy(() => import('../React/Support/Components/TicketManager')),
-    StudentSearch: React.lazy(() => import('../React/Support/Components/StudentSearch')),
+    SupportDashboard: React.lazy(() => import('../Support/Components/SupportDashboard')),
+    TicketManager: React.lazy(() => import('../Support/Components/TicketManager')),
+    StudentSearch: React.lazy(() => import('../Support/Components/StudentSearch')),
 };
 
 // Loading fallback component

@@ -1,16 +1,35 @@
 import React from 'react'
+import { useLaravelAdminHook } from "../Hooks/useAdminLaravelHook";
 
 /**
- * Retrive the Laraval Config and setting
- * Get InstrcutorSession
+ * Retrieve the Laravel Config and setting
+ * Get InstructorSession
  * Get ClassRoomSession
- * @returns
  */
 
-const InstructorDataLayer = () => {
-  return (
-    <div>InstructorDataLayer</div>
-  )
+interface InstructorDataLayerProps {
+    instructorId?: any;
+    debug?: boolean;
 }
 
-export default InstructorDataLayer
+const InstructorDataLayer: React.FC<InstructorDataLayerProps> = ({
+    instructorId,
+    debug = false,
+}) => {
+    if (debug) {
+        console.log("🔧 InstructorDataLayer props:", { instructorId, debug });
+    }
+
+    const { data: laravelData, isLoading, error } = useLaravelAdminHook();
+
+    return (
+        <div>
+            <h2>Instructor Data Layer</h2>
+            {isLoading && <p>Loading Laravel config...</p>}
+            {error && <p>Error: {error.message}</p>}
+            {laravelData && <pre>{JSON.stringify(laravelData, null, 2)}</pre>}
+        </div>
+    );
+};
+
+export default InstructorDataLayer;

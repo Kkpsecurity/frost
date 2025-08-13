@@ -1,16 +1,23 @@
 <?php
 
-namespace App\Http\Controllers\Admin\CourseDates;
+namespace App\Http\Controllers\Admin\Frost;
+
+/**
+ * CourseDate Controller
+ * Handles course date related actions
+ * @version 2.0.0
+ * @author KKP Security
+ */
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
 
-use App\Models\CourseDate;
 use App\Models\Course;
-use App\Models\CourseUnit;
-use App\Models\InstUnit;
 use App\Services\RCache;
+use App\Models\InstUnit;
+use App\Models\CourseDate;
+use App\Models\CourseUnit;
 use App\Traits\PageMetaDataTrait;
 
 class CourseDateController extends Controller

@@ -1,129 +1,223 @@
 <?php
 
-/**
- * Admin Master Route File
- * Parent Route load for all admin routes.
- * This file is included in the main web.php file.
- * It sets up the admin routes with the following configurations:
- * - Prefix: admin
- * - Name: admin.
- * - Middleware: admin, verified
- */
-
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\Frost\CourseDateController;
+use App\Http\Controllers\Admin\AdminCenter\AdminUserController;
 
+/**
+ * Ensure Dashboard Route
+ */
 Route::redirect('/admin', '/admin/dashboard', 301);
 
-// Admin Dashboard
-Route::get('/', [
-    App\Http\Controllers\Admin\AdminDashboardController::class,
-    'dashboard'
-])->name('dashboard');
+Route::middleware(['auth:admin', 'admin', 'verified'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // Admin Dashboard
+        Route::get('/', [
+            AdminDashboardController::class,
+            'dashboard'
+        ])->name('dashboard');
 
-// Instructor Dashboard
-Route::get('/instructors', [
-    App\Http\Controllers\Admin\InstructorDashboardController::class,
-    'index'
-])->name('instructors.dashboard');
+        // Admin Center Routes
+        Route::prefix('admin-center')
+            ->name('admin-center.')
+            ->group(function () {
+            // Admin Users Management
+            Route::prefix('admin-users')
+                ->name('admin-users.')
+                ->group(function () {
 
-// Support Dashboard
-Route::get('/support', [
-    App\Http\Controllers\Admin\SupportDashboardController::class,
-    'index'
-])->name('support.dashboard');
+                // Admin Users Index
+                Route::get('/', [
+                    AdminUserController::class,
+                    'index'
+                ])->name('index');
 
-// FilePond Demo (legacy route - redirects to admin center)
-Route::get('/filepond-demo', function () {
-    return redirect()->route('admin.media-manager.index');
-})->name('filepond.demo');
+                // Admin Users DataTables Data (AJAX endpoint)
+                Route::get('/data', [
+                    AdminUserController::class,
+                    'getData'
+                ])->name('data');
 
-// Media Upload Routes (FilePond integration)
-Route::post('/upload', [
-    App\Http\Controllers\Admin\MediaController::class,
-    'upload'
-])->name('media.upload');
+                // Admin Users Create Form
+                Route::get('/create', [
+                    AdminUserController::class,
+                    'create'
+                ])->name('create');
 
-Route::delete('/upload/revert', [
-    App\Http\Controllers\Admin\MediaController::class,
-    'revert'
-])->name('media.revert');
+                // Admin Users Store
+                Route::post('/', [
+                    AdminUserController::class,
+                    'store'
+                ])->name('store');
 
-Route::get('/upload/{uploadId}', [
-    App\Http\Controllers\Admin\MediaController::class,
-    'getUploadInfo'
-])->name('media.info');
+                // Admin Users Show
+                Route::get('/{user}', [
+                    AdminUserController::class,
+                    'show'
+                ])->name('show');
 
-Route::post('/upload/finalize', [
-    App\Http\Controllers\Admin\MediaController::class,
-    'finalize'
-])->name('media.finalize');
+                // Admin Users Edit Form
+                Route::get('/{user}/edit', [
+                    AdminUserController::class,
+                    'edit'
+                ])->name('edit');
 
-// Admin Center - Settings (already set up)
-require __DIR__ . '/admin/settings_routes.php';
+                // Admin Users Update
+                Route::put('/{user}', [
+                    AdminUserController::class,
+                    'update'
+                ])->name('update');
 
-// Admin Center - Media Manager
-require __DIR__ . '/admin/media_manager_routes.php';
+                // Admin Users Delete
+                Route::delete('/{user}', [
+                    AdminUserController::class,
+                    'destroy'
+                ])->name('destroy');
 
-// Admin Center - Admin Users
-require __DIR__ . '/admin/admin_user_routes.php';
+                // Admin Users Deactivate
+                Route::post('/{user}/deactivate', [
+                    AdminUserController::class,
+                    'deactivate'
+                ])->name('deactivate');
 
-// Student Management
-require __DIR__ . '/admin/student_routes.php';
+                // Admin Users Activate
+                Route::post('/{user}/activate', [
+                    AdminUserController::class,
+                    'activate'
+                ])->name('activate');
 
-// Course Management
-require __DIR__ . '/admin/course_routes.php';
+                // Admin Users Password Update
+                Route::post('/{user}/password', [
+                    AdminUserController::class,
+                    'updatePassword'
+                ])->name('password');
 
-// Lesson Management
-require __DIR__ . '/admin/lesson_routes.php';
+                // Admin Users Avatar Update
+                Route::post('/{user}/avatar', [
+                    AdminUserController::class,
+                    'updateAvatar'
+                ])->name('avatar');
 
-// Course Dates (Scheduling)
-Route::prefix('course-dates')->name('course-dates.')->group(function () {
-    Route::get('/', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'index'
-    ])->name('index');
+            });
+        });
 
-    Route::get('/create', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'create'
-    ])->name('create');
+        // Impersonate Routes (outside admin-center but within admin)
+        Route::prefix('impersonate')
+            ->name('impersonate.')
+            ->group(function () {
 
-    Route::post('/', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'store'
-    ])->name('store');
+            // Start impersonating a user
+            Route::get('/{user}', [
+                AdminUserController::class,
+                'impersonate'
+            ])->name('start');
 
-    Route::get('/{courseDate}', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'show'
-    ])->name('show');
+            // Stop impersonating and return to original user
+            Route::get('/stop', [
+                AdminUserController::class,
+                'stopImpersonating'
+            ])->name('stop');
 
-    Route::get('/{courseDate}/edit', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'edit'
-    ])->name('edit');
+        });
 
-    Route::put('/{courseDate}', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'update'
-    ])->name('update');
+        // Add a simple route for backwards compatibility
+        Route::get('/impersonate/{user}', [
+            AdminUserController::class,
+            'impersonate'
+        ])->name('impersonate');
 
-    Route::delete('/{courseDate}', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'destroy'
-    ])->name('destroy');
+        // Students Management Routes
+        Route::prefix('students')
+            ->name('students.')
+            ->group(function () {
 
-    Route::post('/{courseDate}/toggle-active', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'toggleActive'
-    ])->name('toggle-active');
+            // Students Index
+            Route::get('/', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'index'
+            ])->name('index');
 
-    // API route for loading course units by course
-    Route::get('/course-units/{course}', [
-        App\Http\Controllers\Admin\CourseDates\CourseDateController::class,
-        'getCourseUnits'
-    ])->name('course-units');
-});
+            // Students DataTables Data (AJAX endpoint)
+            Route::get('/data', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'getData'
+            ])->name('data');
 
-// Admin Services (search, tools, etc.)
-require __DIR__ . '/admin/services_routes.php';
+            // Students Create Form
+            Route::get('/create', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'create'
+            ])->name('create');
+
+            // Students Store
+            Route::post('/', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'store'
+            ])->name('store');
+
+            // Students Show
+            Route::get('/{student}', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'show'
+            ])->name('show');
+
+            // Students Edit Form
+            Route::get('/{student}/edit', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'edit'
+            ])->name('edit');
+
+            // Students Update
+            Route::put('/{student}', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'update'
+            ])->name('update');
+
+            // Students Delete
+            Route::delete('/{student}', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'destroy'
+            ])->name('destroy');
+
+            // Student Details API endpoint
+            Route::get('/details/{studentId}', [
+                \App\Http\Controllers\Admin\Students\StudentController::class,
+                'getStudentDetails'
+            ])->name('details');
+
+        });
+
+        // Settings Routes
+        require __DIR__ . '/admin/settings.php';
+
+        // Media Manager Routes
+        require __DIR__ . '/admin/media.php';
+
+        // Messaging Routes
+        require __DIR__ . '/admin/messaging.php';
+
+        // Courses Routes
+        require __DIR__ . '/admin/courses.php';
+
+        // Lessons Routes
+        require __DIR__ . '/admin/lessons.php';
+
+        // Course Dates Routes
+        require __DIR__ . '/admin/course-dates.php';
+
+        // Admin Center Dashboard
+        Route::get('/courses/course_dates', [
+            CourseDateController::class,
+            'index'
+        ])->name('courses.courses_dates');
+
+        Route::prefix('notifications')
+            ->name('notifications.')
+            ->group(function () {
+                // Student Dashboard
+                require __DIR__ . '/frontend/classroom.routes.php';
+            });
+    });

@@ -46,64 +46,73 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     queryKey: ['instructor', 'dashboard', instructorId],
     queryFn: async (): Promise<DashboardResponse> => {
       try {
-        // Try existing admin endpoints for instructor validation
-        const validateResponse = await fetch('/admin/instructors/validate', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': (window as any).csrfToken || '',
-          },
-          credentials: 'include'
-        });
+          // Try existing admin endpoints for instructor validation
+          const validateResponse = await fetch("/admin/instructors/validate", {
+              method: "GET",
+              headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                  "X-Requested-With": "XMLHttpRequest",
+                  "X-CSRF-TOKEN": (window as any).csrfToken || "",
+              },
+              credentials: "include",
+          });
 
-        if (!validateResponse.ok) {
-          throw new Error(`Instructor validation failed: ${validateResponse.status}`);
-        }
+          if (!validateResponse.ok) {
+              throw new Error(
+                  `Instructor validation failed: ${validateResponse.status}`
+              );
+          }
 
-        const validationData = await validateResponse.json();
-        console.log('✅ Instructor validation successful:', validationData);
+          const validationData = await validateResponse.json();
+          console.log("✅ Instructor validation successful:", validationData);
 
-        // Then get classroom data using existing endpoint
-        const classDataResponse = await fetch('/admin/instructors/portal/course/get', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': (window as any).csrfToken || '',
-          },
-          credentials: 'include'
-        });
+          // Then get classroom data using new organized endpoint
+          const classDataResponse = await fetch(
+              "/admin/instructors/data/classroom",
+              {
+                  method: "GET",
+                  headers: {
+                      Accept: "application/json",
+                      "Content-Type": "application/json",
+                      "X-Requested-With": "XMLHttpRequest",
+                      "X-CSRF-TOKEN": (window as any).csrfToken || "",
+                  },
+                  credentials: "include",
+              }
+          );
 
-        if (!classDataResponse.ok) {
-          throw new Error(`Class data fetch failed: ${classDataResponse.status}`);
-        }
+          if (!classDataResponse.ok) {
+              throw new Error(
+                  `Class data fetch failed: ${classDataResponse.status}`
+              );
+          }
 
-        const classData = await classDataResponse.json();
-        console.log('✅ Class data fetch successful:', classData);
+          const classData = await classDataResponse.json();
+          console.log("✅ Classroom data fetch successful:", classData);
 
-        // Transform to DashboardResponse format
-        const hasScheduledCourses = !!(classData.course_dates && classData.course_dates.length > 0);
+          // Transform new classroom data structure to DashboardResponse format
+          const hasScheduledCourses =
+              classData.classroom?.status === "admin_access";
 
-        return {
-          has_scheduled_courses: hasScheduledCourses,
-          active_courses: classData.course_dates?.filter((cd: any) => cd.status === 'active') || [],
-          upcoming_courses: classData.course_dates?.filter((cd: any) => cd.status === 'scheduled') || [],
-          recent_courses: classData.course_dates?.filter((cd: any) => cd.status === 'completed') || [],
-          bulletin_content: {
-            announcements: classData.announcements || [],
-            available_courses: [],
-            instructor_resources: classData.resources || [],
-            quick_stats: {
-              total_instructors: 1,
-              active_courses_today: classData.course_dates?.filter((cd: any) => cd.status === 'active').length || 0,
-              students_in_system: classData.students?.length || 0
-            }
-          },
-          instructor_profile: validationData.instructor || classData.instructor || {}
-        };
+          return {
+              has_scheduled_courses: hasScheduledCourses,
+              active_courses: hasScheduledCourses ? [classData.classroom] : [],
+              upcoming_courses: [],
+              recent_courses: [],
+              bulletin_content: {
+                  announcements: [],
+                  available_courses: [],
+                  instructor_resources: [],
+                  quick_stats: {
+                      total_instructors: 1,
+                      active_courses_today: hasScheduledCourses ? 1 : 0,
+                      students_in_system:
+                          classData.classroom?.current_enrollment || 0,
+                  },
+              },
+              instructor_profile: validationData.instructor || {},
+          };
       } catch (error) {
         console.error('Dashboard fetch error:', error);
         throw error;

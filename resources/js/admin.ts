@@ -3,7 +3,7 @@
  * Implements route-based component loading for admin panel components
  */
 
-import { RouteCheckers, logRouteInfo } from './utils/routeUtils';
+import { RouteCheckers, logRouteInfo } from "./React/utils/routeUtils";
 
 // Log route info for debugging
 logRouteInfo();
@@ -15,6 +15,16 @@ logRouteInfo();
 if (RouteCheckers.isAdminDashboard()) {
     import("./React/Admin/app").catch((err) =>
         console.error("Failed to load Admin Dashboard:", err)
+    );
+}
+
+/**
+ * Load the React components for the Instructor Dashboard
+ * Only when the url is /admin/instructors
+ */
+if (RouteCheckers.isAdminInstructors()) {
+    import("./React/Instructor/app").catch((err) =>
+        console.error("Failed to load Instructor Dashboard:", err)
     );
 }
 

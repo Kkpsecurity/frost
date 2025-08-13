@@ -1,5 +1,5 @@
-// FilePond integration for file uploads
-console.log('FilePond module loaded');
+/**
+ * FilePond integration
+ */
 
-// Export empty object for now - will be implemented later
-export {};
+console.log('FilePond.js loaded');

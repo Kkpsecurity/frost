@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '../../../utils/queryConfig';
+import { queryKeys } from "../../utils/queryConfig";
 
 interface StudentStats {
     enrolledCourses: number;

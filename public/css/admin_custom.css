@@ -1,0 +1,78 @@
+/**
+ * Admin Custom CSS
+ * Additional styles for the admin panel
+ */
+
+/* Instructor Dashboard Specific Styles */
+.instructor-dashboard {
+    padding: 20px;
+}
+
+.instructor-dashboard .classroom-interface {
+    margin-top: 20px;
+}
+
+/* Notification Badges */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Fix for AdminLTE sidebar notifications */
+.control-sidebar-content {
+    padding: 15px;
+}
+
+.notification-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* React Component Loading States */
+.react-component-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.react-component-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+/* Instructor Classroom Interface Styles */
+.classroom-interface .alert {
+    margin: 15px;
+}
+
+.classroom-interface .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Button improvements */
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}

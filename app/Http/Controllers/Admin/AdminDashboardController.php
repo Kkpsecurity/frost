@@ -142,4 +142,82 @@ class AdminDashboardController extends Controller
             ];
         }
     }
+
+    /**
+     * Get admin configuration data for React components
+     */
+    public function config(Request $request)
+    {
+        try {
+            $user = $request->user('admin') ?? $request->user();
+            
+            return response()->json([
+                'success' => true,
+                'config' => [
+                    'aiagents' => config('aiagents', [
+                        'openai' => [
+                            'enable_ai' => false,
+                            'api_key' => '',
+                            'org_id' => '',
+                            'url' => '',
+                            'default_model' => '',
+                            'default_system_role' => '',
+                            'default_temperature' => 0,
+                        ],
+                        'write_progress' => [
+                            'file_path' => '',
+                            'default_message' => '',
+                        ],
+                    ]),
+                    'messaging' => config('messenger', []),
+                    'notifications' => [
+                        'enabled' => true,
+                        'realtime' => false,
+                    ]
+                ],
+                'auth' => [
+                    'user' => $user ? [
+                        'id' => $user->id,
+                        'name' => $user->name ?? ($user->fname . ' ' . $user->lname),
+                        'email' => $user->email,
+                    ] : null,
+                    'guard' => $user ? ($request->user('admin') ? 'admin' : 'web') : null,
+                ],
+                'timestamp' => now()->toISOString(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin config API error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Configuration loading failed',
+                'config' => [
+                    'aiagents' => [
+                        'openai' => [
+                            'enable_ai' => false,
+                            'api_key' => '',
+                            'org_id' => '',
+                            'url' => '',
+                            'default_model' => '',
+                            'default_system_role' => '',
+                            'default_temperature' => 0,
+                        ],
+                        'write_progress' => [
+                            'file_path' => '',
+                            'default_message' => '',
+                        ],
+                    ],
+                    'messaging' => [],
+                    'notifications' => [
+                        'enabled' => false,
+                        'realtime' => false,
+                    ]
+                ],
+                'auth' => [
+                    'user' => null,
+                    'guard' => null,
+                ],
+            ], 200); // Return 200 even on error to prevent auth issues
+        }
+    }
 }

@@ -1,44 +1,37 @@
-import React from "react";
-
-/**
- * IInstructor Entry
- * Purpose to load and setup the Tanstack Query
- * Load the InstrcutorDataLayer which will load all api coming from Laravel
- */
-
-import { createRoot } from "react-dom/client";
+// instructorEntry.tsx
+import React, { ReactNode, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { createRoot } from "react-dom/client";
+import EnrtyErrorBoundary from "./ErrorBoundry/EntryErrorBoundry";
 
-// Instructor Components will go here
-import InstructorDashboard from "./Components/InstructorDashboard";
+// Lazy-load to ensure we only load the DataLayer if setup succeeds
+const InstructorDataLayer = React.lazy(() => import("./InstructorDataLayer"));
 
-// Create a client for TanStack Query
+/** ---- Error Boundary ---- */
+type EBProps = {
+    children: ReactNode;
+    onError?: (error: unknown, info?: unknown) => void;
+};
+type EBState = { hasError: boolean; error?: unknown };
+
+/** ---- TanStack Query Setup ---- */
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 1000 * 60 * 5, // 5 minutes
-            gcTime: 1000 * 60 * 10, // 10 minutes
+            staleTime: 1000 * 60 * 5,
+            gcTime: 1000 * 60 * 10,
             retry: (failureCount, error: any) => {
-                if (error?.status >= 400 && error?.status < 500) {
-                    return false;
-                }
+                if (error?.status >= 400 && error?.status < 500) return false;
                 return failureCount < 3;
             },
+            refetchOnWindowFocus: false,
         },
-        mutations: {
-            retry: 1,
-        },
+        mutations: { retry: 1 },
     },
 });
 
-// Global interface for Instructor components
-interface InstructorComponents {
-    InstructorDashboard: typeof InstructorDashboard;
-}
-
-// Wrapper component with QueryClient provider
-const InstructorAppWrapper: React.FC<{ children: React.ReactNode }> = ({
+export const InstructorAppWrapper: React.FC<{ children: ReactNode }> = ({
     children,
 }) => (
     <QueryClientProvider client={queryClient}>
@@ -49,38 +42,79 @@ const InstructorAppWrapper: React.FC<{ children: React.ReactNode }> = ({
     </QueryClientProvider>
 );
 
-// Function to render instructor components into HTML containers
-window.renderInstructorComponent = (
-    componentName: string,
-    containerId: string,
-    props = {}
-) => {
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error(`Container with ID "${containerId}" not found`);
-        return;
-    }
+/**
+ * Root entry: providers + error boundary + (lazy) DataLayer.
+ * No globals, no direct DOM mounting here.
+ */
+export const InstructorEntry: React.FC = () => (
+    <InstructorAppWrapper>
+        <EnrtyErrorBoundary>
+            <Suspense
+                fallback={
+                    <div style={{ padding: 16 }}>Loading instructor layer…</div>
+                }
+            >
+                <InstructorDataLayer />
+            </Suspense>
+        </EnrtyErrorBoundary>
+    </InstructorAppWrapper>
+);
 
-    const Component = window.InstructorComponents[componentName];
-    if (!Component) {
-        console.error(`Instructor component "${componentName}" not found`);
-        return;
-    }
+export { queryClient, ErrorBoundary };
 
-    const root = createRoot(container);
-    root.render(
-        <InstructorAppWrapper>
-            {React.createElement(Component as React.ComponentType<any>, props)}
-        </InstructorAppWrapper>
+// DOM mounting logic for instructor components
+// Auto-mount when this module loads
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("🚀 InstructorEntry: DOM loaded, looking for container...");
+
+    const container = document.getElementById("instructor-dashboard-container");
+    if (container) {
+        console.log(
+            "✅ Found instructor container, mounting InstructorEntry..."
+        );
+        const root = createRoot(container);
+        root.render(<InstructorEntry />);
+        console.log("✅ InstructorEntry mounted successfully");
+    } else {
+        console.log("⚠️ No instructor container found");
+        // Try again after a short delay in case the DOM isn't fully ready
+        setTimeout(() => {
+            const delayedContainer = document.getElementById(
+                "instructor-dashboard-container"
+            );
+            if (delayedContainer) {
+                console.log(
+                    "✅ Found instructor container (delayed), mounting InstructorEntry..."
+                );
+                const root = createRoot(delayedContainer);
+                root.render(<InstructorEntry />);
+                console.log(
+                    "✅ InstructorEntry mounted successfully (delayed)"
+                );
+            } else {
+                console.error(
+                    "❌ Could not find instructor-dashboard-container"
+                );
+            }
+        }, 1000);
+    }
+});
+
+// Also try mounting immediately if DOM is already loaded
+if (document.readyState === "loading") {
+    // DOM hasn't finished loading yet
+} else {
+    // DOM has already loaded
+    console.log(
+        "🚀 InstructorEntry: DOM already loaded, looking for container..."
     );
-};
-
-// Export components globally
-window.InstructorComponents = {
-    InstructorDashboard,
-};
-
-console.log("Instructor React components loaded");
-
-// Export queryClient for access in other parts of the app
-export { queryClient };
+    const container = document.getElementById("instructor-dashboard-container");
+    if (container) {
+        console.log(
+            "✅ Found instructor container (immediate), mounting InstructorEntry..."
+        );
+        const root = createRoot(container);
+        root.render(<InstructorEntry />);
+        console.log("✅ InstructorEntry mounted successfully (immediate)");
+    }
+}

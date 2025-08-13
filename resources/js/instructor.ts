@@ -3,16 +3,19 @@
  * Implements route-based component loading for instructor panel components
  */
 
-import { RouteCheckers, logRouteInfo } from './utils/routeUtils';
+import { RouteCheckers, logRouteInfo } from "./React/utils/routeUtils";
 
 // Log route info for debugging
 logRouteInfo();
 
 /**
  * Load the React components for the Instructor Dashboard
- * Only when the url is /instructor/dashboard
+ * When on /instructor/dashboard OR /admin/instructors
  */
-if (RouteCheckers.isInstructorDashboard()) {
+if (
+    RouteCheckers.isInstructorDashboard() ||
+    RouteCheckers.isAdminInstructors()
+) {
     import("./React/Instructor/app").catch((err) =>
         console.error("Failed to load Instructor Dashboard:", err)
     );

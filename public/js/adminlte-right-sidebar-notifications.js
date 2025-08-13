@@ -18,24 +18,48 @@ class FrostAdminLTENotifications {
             return;
         }
 
-        // Ensure notification icons exist in navbar
-        this.ensureNotificationIcons();
+        try {
+            // Ensure notification icons exist in navbar
+            this.ensureNotificationIcons();
 
-        // Customize right sidebar content
-        this.setupRightSidebar();
+            // Customize right sidebar content
+            this.setupRightSidebar();
 
-        this.bindEvents();
-        await this.loadNotifications();
-        await this.loadMessages();
-        this.updateBadges();
+            this.bindEvents();
+            await this.loadNotifications();
+            await this.loadMessages();
 
-        console.log('✅ Frost AdminLTE Right Sidebar Notifications initialized');
+            // Ensure updateBadges function exists before calling
+            if (typeof this.updateBadges === "function") {
+                this.updateBadges();
+            } else {
+                console.warn(
+                    "updateBadges function not found, calling individual badge updates"
+                );
+                this.updateNotificationsBadge();
+                this.updateMessagesBadge();
+            }
 
-        // Auto-refresh
-        setInterval(() => {
-            this.loadNotifications();
-            this.loadMessages();
-        }, this.refreshInterval);
+            console.log(
+                "✅ Frost AdminLTE Right Sidebar Notifications initialized"
+            );
+
+            // Auto-refresh
+            setInterval(() => {
+                this.loadNotifications();
+                this.loadMessages();
+            }, this.refreshInterval);
+        } catch (error) {
+            console.error(
+                "❌ Error initializing AdminLTE notifications:",
+                error
+            );
+            // Initialize with empty data to prevent crashes
+            this.notifications = [];
+            this.messages = [];
+            this.updateNotificationsBadge();
+            this.updateMessagesBadge();
+        }
     }
 
     ensureNotificationIcons() {
@@ -198,11 +222,16 @@ class FrostAdminLTENotifications {
 
     async loadNotifications() {
         try {
-            const response = await fetch('/messaging/notifications', {
+            const response = await fetch("/admin/messaging/notifications", {
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
+                    "X-Requested-With": "XMLHttpRequest",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                },
+                credentials: "same-origin",
             });
 
             if (response.ok) {
@@ -211,21 +240,34 @@ class FrostAdminLTENotifications {
                 if (this.currentView === 'notifications') {
                     this.updateNotificationsSidebar();
                 }
+            } else if (response.status === 401) {
+                console.warn('Authentication required for notifications');
+                this.notifications = [];
+                this.updateNotificationsBadge();
             } else {
                 console.warn('Failed to load notifications:', response.status);
+                this.notifications = [];
+                this.updateNotificationsBadge();
             }
         } catch (error) {
             console.error('Failed to load notifications:', error);
+            this.notifications = [];
+            this.updateNotificationsBadge();
         }
     }
 
     async loadMessages() {
         try {
-            const response = await fetch('/messaging/threads', {
+            const response = await fetch("/admin/messaging/threads", {
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
+                    "X-Requested-With": "XMLHttpRequest",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                },
+                credentials: "same-origin",
             });
 
             if (response.ok) {
@@ -234,12 +276,25 @@ class FrostAdminLTENotifications {
                 if (this.currentView === 'messages') {
                     this.updateMessagesSidebar();
                 }
+            } else if (response.status === 401) {
+                console.warn('Authentication required for messages');
+                this.messages = [];
+                this.updateMessagesBadge();
             } else {
                 console.warn('Failed to load messages:', response.status);
+                this.messages = [];
+                this.updateMessagesBadge();
             }
         } catch (error) {
             console.error('Failed to load messages:', error);
+            this.messages = [];
+            this.updateMessagesBadge();
         }
+    }
+
+    updateBadges() {
+        this.updateNotificationsBadge();
+        this.updateMessagesBadge();
     }
 
     updateNotificationsBadge() {

@@ -54,7 +54,7 @@
 
 @section('adminlte_js')
     {{-- Include AdminLTE Right Sidebar Notifications System --}}
-    <script src="{{ asset('js/adminlte-right-sidebar-notifications.js') }}"></script>
+    <script src="{{ asset('js/adminlte-right-sidebar-notifications.js?v=' . time()) }}"></script>
     @stack('js')
     @yield('js')
 @stop
