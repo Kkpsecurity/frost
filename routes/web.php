@@ -12,11 +12,14 @@ use Cmgmyr\Messenger\Models\Thread;
 use Cmgmyr\Messenger\Models\Message;
 use App\Support\Settings;
 
-
-
+/**
+ * =============================================================================
+ * ADMIN ROUTES
+ * =============================================================================
+ */
 
 /**
- * Admin Authentication Routes
+ * Admin Authentication Routes (No Middleware)
  * These routes handle admin login/logout and are accessible without admin middleware
  */
 Route::prefix('admin')
@@ -28,23 +31,21 @@ Route::prefix('admin')
 /**
  * Protected Admin Routes
  * These routes are prefixed with 'admin' and require admin middleware.
- * They include settings management, services, and other admin functionalities.
+ * The admin.php file contains its own route groups and prefixes.
  */
-Route::prefix('admin')
-    ->name('admin.')
-    ->middleware(['admin'])
-    ->group(function () {
-        require __DIR__ . '/admin.php';
-    });
+require __DIR__ . '/admin.php';
+
+/**
+ * =============================================================================
+ * FRONTEND ROUTES
+ * =============================================================================
+ */
 
 /**
  * Frontend User Authentication Routes
  * These routes handle user login/logout, registration, and password reset
  */
 require __DIR__ . '/auth.php';
-
-require __DIR__ . '/admin.php';
-
 
 /**
  * Frontend User Account Routes
@@ -55,7 +56,6 @@ Route::middleware(['auth'])
         require __DIR__ . '/frontend/account.routes.php';
     });
 
-
 /**
  * Student Classroom Routes
  * These routes handle student learning functionality
@@ -64,11 +64,16 @@ Route::prefix('classroom')
     ->name('classroom.')
     ->middleware(['auth'])
     ->group(function () {
-        // Student Dashboard
         require __DIR__ . '/frontend/classroom.routes.php';
     });
 
-/*
+/**
+ * =============================================================================
+ * DEVELOPMENT/TEST ROUTES
+ * =============================================================================
+ */
+
+/**
  * Test AdminLTE Notifications
  */
 Route::get('/test-notifications', function () {

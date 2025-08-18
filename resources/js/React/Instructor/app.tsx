@@ -60,7 +60,7 @@ export const InstructorEntry: React.FC = () => (
     </InstructorAppWrapper>
 );
 
-export { queryClient, ErrorBoundary };
+export { queryClient, EnrtyErrorBoundary };
 
 // DOM mounting logic for instructor components
 // Auto-mount when this module loads

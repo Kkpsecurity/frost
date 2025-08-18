@@ -72,16 +72,16 @@ export const RouteCheckers = {
     isAdminRoute: () => routeStartsWith(["admin"]),
 
     // Instructor routes
-    isInstructorDashboard: () => isRoute(["instructor", "dashboard"]),
-    isInstructorClassroom: () => isRoute(["instructor", "classroom"]),
-    isInstructorStudents: () => isRoute(["instructor", "students"]),
-    isInstructorRoute: () => routeStartsWith(["instructor"]),
+    isInstructorDashboard: () => isRoute(["admin", "instructor", "dashboard"]),
+    isInstructorClassroom: () => isRoute(["admin", "instructor", "classroom"]),
+    isInstructorStudents: () => isRoute(["admin", "instructor", "students"]),
+    isInstructorRoute: () => routeStartsWith(["admin", "instructor"]),
     isLiveClass: () => routeContains("live-class"),
 
     // Support routes
-    isSupportDashboard: () => isRoute(["support", "dashboard"]),
-    isSupportTickets: () => isRoute(["support", "tickets"]),
-    isSupportStudents: () => isRoute(["support", "students"]),
+    isSupportDashboard: () => isRoute(["admin", "support", "dashboard"]),
+    isSupportTickets: () => isRoute(["admin", "support", "tickets"]),
+    isSupportStudents: () => isRoute(["admin", "support", "students"]),
     isSupportRoute: () => routeStartsWith(["support"]),
 
     // Student routes

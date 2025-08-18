@@ -3,37 +3,54 @@
 @section('title', 'Support Dashboard - Frost')
 
 @section('content_header')
-    @include('admin.partials.impersonation-banner')
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Support Dashboard</h1>
+    <x-admin.widgets.admin-header />
+@stop
+
+@section('content')
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-book"></i> Documentation Center
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> New Article
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm ml-1">
+                            <i class="fas fa-cogs"></i> Manage
+                        </button>
+                    </div>
                 </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Admin</a></li>
-                        <li class="breadcrumb-item active">Support Dashboard</li>
-                    </ol>
+                <div class="card-body">
+                    <!-- React Component Container -->
+                    <div id="support-dashboard-container">
+                        <div class="text-center p-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                            <p class="mt-2">Loading Documentation Center...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 @stop
 
-@section('content')
-    <div class="container-fluid">
-        <!-- React Component Container -->
-        <div id="support-dashboard-container"></div>
-    </div>
-@stop
-
 @section('css')
-    <link rel="stylesheet" href="/css/admin_custom.css">
+    @vite('resources/css/admin.css')
     <style>
-        .content-header h1 {
-            color: #495057;
-            font-weight: 600;
+        .support-dashboard {
+            background: transparent !important;
+            min-height: 400px;
+        }
+
+        .support-dashboard .bg-gray-50 {
+            background: transparent !important;
+        }
+
+        .support-dashboard .text-gray-800 {
+            color: #495057 !important;
         }
 
         #support-dashboard-container {
@@ -46,16 +63,21 @@
     @vite(['resources/js/admin.ts'])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Support Dashboard: DOM loaded, initializing...');
+            
             // Wait for React components to load
-            setTimeout(() => {
+            const checkAndRender = () => {
                 if (window.renderSupportComponent) {
-                    // Render the Support Dashboard React component
+                    console.log('✅ Support: renderSupportComponent found, rendering...');
                     window.renderSupportComponent('SupportDashboard', 'support-dashboard-container');
-                    console.log('Support Dashboard React component loaded!');
                 } else {
-                    console.error('renderSupportComponent not found. Make sure admin.ts is loaded.');
+                    console.log('⏳ Support: Waiting for renderSupportComponent...');
+                    setTimeout(checkAndRender, 100);
                 }
-            }, 500);
+            };
+
+            // Start checking after a brief delay
+            setTimeout(checkAndRender, 500);
         });
     </script>
 @stop

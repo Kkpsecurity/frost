@@ -333,6 +333,11 @@ class AdminLteConfigElements {
         return ['right_sidebar_scrollbar_auto_hide' => $this->settingHelper->get('right_sidebar_scrollbar_auto_hide', 'l')];
     }
 
+    public function getRightSidebarWidth()
+    {
+        return ['right_sidebar_width' => $this->settingHelper->get('right_sidebar_width', '500px')];
+    }
+
     public function getUseRouteUrl()
     {
         return ['use_route_url' => $this->settingHelper->get('use_route_url', false)];
@@ -806,6 +811,7 @@ class AdminLteConfigElements {
             $this->getRightSidebarPush(),
             $this->getRightSidebarScrollbarTheme(),
             $this->getRightSidebarScrollbarAutoHide(),
+            $this->getRightSidebarWidth(),
             $this->getUseRouteUrl(),
             $this->getDashboardUrl(),
             $this->getLogoutUrl(),
@@ -900,7 +906,8 @@ class AdminLteConfigElements {
             $this->getRightSidebarSlide(),
             $this->getRightSidebarPush(),
             $this->getRightSidebarScrollbarTheme(),
-            $this->getRightSidebarScrollbarAutoHide()
+            $this->getRightSidebarScrollbarAutoHide(),
+            $this->getRightSidebarWidth()
         );
     }
 

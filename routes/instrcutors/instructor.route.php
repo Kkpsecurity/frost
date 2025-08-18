@@ -6,11 +6,23 @@ use App\Http\Controllers\Admin\Frost\CourseDateController;
 Route::prefix('instructors')->group(function () {
 
     // Dashboard & Validation
-
-
     Route::get('/', [App\Http\Controllers\Admin\Instructors\InstructorDashboardController::class, 'dashboard'])
         ->name('admin.instructors');
 
+    // Instructor validation endpoint
+    Route::get('/validate', [App\Http\Controllers\Admin\Instructors\InstructorDashboardController::class, 'validateInstructorSession'])
+        ->name('admin.instructors.validate');
+
+    // API Endpoints
+    Route::get('/api/bulletin-board', [App\Http\Controllers\Admin\Instructors\InstructorDashboardController::class, 'getBulletinBoardData'])
+        ->name('admin.instructors.api.bulletin-board');
+
+    // Data endpoints
+    Route::get('/data/classroom', [App\Http\Controllers\Admin\Instructors\InstructorDashboardController::class, 'getClassroomData'])
+        ->name('admin.instructors.data.classroom');
+
+    Route::get('/data/students', [App\Http\Controllers\Admin\Instructors\InstructorDashboardController::class, 'getStudentsData'])
+        ->name('admin.instructors.data.students');
 
 });
 

@@ -208,6 +208,18 @@ Route::middleware(['auth:admin', 'admin', 'verified'])
         // Course Dates Routes
         require __DIR__ . '/admin/course-dates.php';
 
+        // Orders Routes
+        require __DIR__ . '/admin/orders.php';
+
+        // Support Routes
+        require __DIR__ . '/admin/support.php';
+
+        // Reports Routes
+        require __DIR__ . '/admin/reports.php';
+
+        // Instructor Routes
+        require __DIR__ . '/instrcutors/instructor.route.php';
+
         // Admin Center Dashboard
         Route::get('/courses/course_dates', [
             CourseDateController::class,

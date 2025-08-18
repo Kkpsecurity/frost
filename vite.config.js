@@ -29,7 +29,9 @@ export default defineConfig({
                 "resources/**/*.blade.php",
             ],
         }),
-        react(),
+        react({
+            include: "**/*.{jsx,tsx}",
+        }),
     ],
     server: {
         host: "localhost",

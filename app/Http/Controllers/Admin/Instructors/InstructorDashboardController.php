@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Admin\Instructors;
 use App\Http\Controllers\Controller;
 use App\Traits\PageMetaDataTrait;
 use App\Traits\StoragePathTrait;
+use App\Services\Frost\Instructors\InstructorDashboardService;
+use App\Services\Frost\Instructors\CourseDatesService;
+use App\Services\Frost\Instructors\ClassroomService;
+use App\Services\Frost\Students\BackendStudentService;
 
 class InstructorDashboardController extends Controller
 {
@@ -12,13 +16,25 @@ class InstructorDashboardController extends Controller
     use StoragePathTrait;
 
     public $classData = [];
-
     public $instructorData = [];
-
     public $students = [];
 
-    public function __construct()
-    {
+    protected InstructorDashboardService $dashboardService;
+    protected CourseDatesService $courseDatesService;
+    protected ClassroomService $classroomService;
+    protected BackendStudentService $studentService;
+
+    public function __construct(
+        InstructorDashboardService $dashboardService,
+        CourseDatesService $courseDatesService,
+        ClassroomService $classroomService,
+        BackendStudentService $studentService
+    ) {
+        $this->dashboardService = $dashboardService;
+        $this->courseDatesService = $courseDatesService;
+        $this->classroomService = $classroomService;
+        $this->studentService = $studentService;
+
         // Make sure that the validation directories are created
         $idcardsPath = config('storage.paths.idcards', 'idcards');
         $headshotsPath = config('storage.paths.headshots', 'headshots');
@@ -42,23 +58,13 @@ class InstructorDashboardController extends Controller
      */
     public function validateInstructorSession()
     {
-        $admin = auth('admin')->user();
+        $sessionData = $this->dashboardService->validateSession();
 
-        if (!$admin) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+        if (!$sessionData['authenticated']) {
+            return response()->json(['message' => $sessionData['message']], 401);
         }
 
-        return response()->json([
-            'instructor' => [
-                'id' => $admin->id,
-                'fname' => $admin->name ?? 'Admin',
-                'lname' => 'User',
-                'name' => $admin->name ?? 'Admin User',
-                'email' => $admin->email ?? '',
-            ],
-            'course_date' => null, // No active course for admin viewing
-            'status' => 'admin_view'
-        ]);
+        return response()->json($sessionData);
     }
 
     /**
@@ -66,31 +72,13 @@ class InstructorDashboardController extends Controller
      */
     public function getClassroomData()
     {
-        $admin = auth('admin')->user();
+        $classroomData = $this->classroomService->getClassroomData();
 
-        if (!$admin) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+        if (isset($classroomData['error'])) {
+            return response()->json(['message' => $classroomData['error']], 401);
         }
 
-        // Return classroom data structure for admin viewing
-        return response()->json([
-            'classroom' => [
-                'id' => 'admin-view',
-                'name' => 'Admin Classroom View',
-                'course_name' => 'Course Management Overview',
-                'status' => 'admin_access',
-                'capacity' => null,
-                'current_enrollment' => 0,
-                'start_date' => null,
-                'end_date' => null,
-                'schedule' => null
-            ],
-            'metadata' => [
-                'view_type' => 'admin',
-                'permissions' => ['view_all', 'manage_all'],
-                'last_updated' => now()->toISOString()
-            ]
-        ]);
+        return response()->json($classroomData);
     }
 
     /**
@@ -98,26 +86,28 @@ class InstructorDashboardController extends Controller
      */
     public function getStudentsData()
     {
+        $studentsData = $this->studentService->getStudentsForInstructor();
+
+        if (isset($studentsData['error'])) {
+            return response()->json(['message' => $studentsData['error']], 401);
+        }
+
+        return response()->json($studentsData);
+    }
+
+    /**
+     * Get bulletin board data for when no active course dates
+     */
+    public function getBulletinBoardData()
+    {
         $admin = auth('admin')->user();
 
         if (!$admin) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        // Return students data structure for admin viewing
-        return response()->json([
-            'students' => [], // Empty for admin view - will be populated when viewing specific courses
-            'summary' => [
-                'total_students' => 0,
-                'active_students' => 0,
-                'pending_enrollments' => 0,
-                'completed_courses' => 0
-            ],
-            'metadata' => [
-                'view_type' => 'admin',
-                'course_context' => null,
-                'last_updated' => now()->toISOString()
-            ]
-        ]);
+        $bulletinData = $this->courseDatesService->getBulletinBoardData();
+
+        return response()->json($bulletinData);
     }
 }
