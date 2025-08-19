@@ -1,8 +1,8 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getCsrfToken } from '@/React/utils/LaravelHelper';
+import { getCsrfToken } from "../../utils/LaravelHelper";
 import { BaseLaravelShape } from '../Types/laravel.types';
-import endpoints from '@/React/utils/endpoints';
+// import endpoints from '@/React/utils/endpoints'; // TODO: Create endpoints file
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -41,17 +41,17 @@ export const useLaravelAdminHook = () =>
         }
 
         if (isDev) {
-          console.log('🔄 Fetching Laravel admin config…', {
-            endpoint: endpoints.laravel.config,
-            csrf: csrf ? '✅ Present' : '❌ Missing',
+          console.log("🔄 Fetching Laravel admin config…", {
+              endpoint: "/api/admin/config", // TODO: Move to endpoints file
+              csrf: csrf ? "✅ Present" : "❌ Missing",
           });
         }
 
-        const res = await fetch(endpoints.laravel.config, {
-          method: 'GET',
-          headers,
-          credentials: 'include',
-          signal,
+        const res = await fetch("/api/admin/config", {
+            method: "GET",
+            headers,
+            credentials: "include",
+            signal,
         });
 
         if (!res.ok) {

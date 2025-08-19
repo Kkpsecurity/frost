@@ -3,7 +3,7 @@
 
 <head>@include('frontend.partials.head')</head>
 
-<body>
+<body class="font-sans antialiased">
 
     <!--[if lt IE 8]>
         <div class="alert alert-danger browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
@@ -53,7 +53,6 @@
     <script src="{{ vasset('js/app.js') }}"></script>
 
     @yield('scripts')
-
 
 
 </body></html>

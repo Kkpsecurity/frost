@@ -1,0 +1,240 @@
+/**
+ * ============================================================================
+ * FROST - ROOT COLOR SYSTEM & CSS VARIABLES
+ * ============================================================================
+ *
+ * Based on Security Training Group professional design
+ * Colors extracted from current site theme and enhanced for consistency
+ */
+
+:root {
+
+    /* ===== FROST THEME COLOR SYSTEM ===== */
+    --primary-theme: #283849;    /* The Dark Blue from your header */
+    --secondary-theme: #4a5568;  /* The deeper blue-gray from your image */
+    --accent-theme: #06b6d4;     /* The light blue where the date/greeter is */
+    --highlight-theme: #f97316;  /* The orange/yellow color */
+    --base-theme: #525e73;       /* Base color from your image - sophisticated blue-gray */
+
+    /* ===== 5-COLOR SYSTEM - UPDATED WITH BASE THEME ===== */
+    /* 1. PRIMARY - Dark Blue (from your header) */
+    --primary-50: #f0f4f8;
+    --primary-100: #d9e6f2;
+    --primary-200: #b3d0e8;
+    --primary-300: #8bb5dc;
+    --primary-400: #6699d0;
+    --primary-500: var(--base-theme);    /* Using base theme as medium tone */
+    --primary-600: #3d5f85;              /* Primary buttons */
+    --primary-700: #314863;              /* Primary hover */
+    --primary-800: var(--primary-theme); /* Header background - YOUR EXACT DARK BLUE */
+    --primary-900: #1f2a33;              /* Darkest navy */
+
+    /* 2. SECONDARY - Deeper Blue-Gray */
+    --secondary-50: #f7fafc;
+    --secondary-100: #edf2f7;
+    --secondary-200: #e2e8f0;
+    --secondary-300: #cbd5e0;
+    --secondary-400: #a0aec0;
+    --secondary-500: var(--secondary-theme); /* Deeper blue-gray from your image */
+    --secondary-600: #4a5568;
+    --secondary-700: #2d3748;
+    --secondary-800: #1a202c;
+    --secondary-900: #171923;
+
+    /* 3. ACCENT - Professional Orange/Yellow */
+    --accent-50: #fff7ed;
+    --accent-100: #ffedd5;
+    --accent-200: #fed7aa;
+    --accent-300: #fdba74;
+    --accent-400: #fb923c;
+    --accent-500: var(--highlight-theme);  /* Orange highlight color */
+    --accent-600: #ea580c;
+    --accent-700: #c2410c;
+    --accent-800: #9a3412;
+    --accent-900: #7c2d12;
+
+    /* 4. SUCCESS - Professional Green */
+    --success-50: #f0fdf4;
+    --success-100: #dcfce7;
+    --success-200: #bbf7d0;
+    --success-300: #86efac;
+    --success-400: #4ade80;
+    --success-500: #22c55e;  /* Success states */
+    --success-600: #16a34a;
+    --success-700: #15803d;
+    --success-800: #166534;
+    --success-900: #14532d;
+
+    /* 5. NEUTRAL - Professional Grays (Based on Base Theme) */
+    --neutral-50: #f8fafc;
+    --neutral-100: #f1f5f9;
+    --neutral-200: #e2e8f0;
+    --neutral-300: #cbd5e1;
+    --neutral-400: #94a3b8;
+    --neutral-500: var(--base-theme);    /* Using base theme as neutral medium */
+    --neutral-600: #475569;
+    --neutral-700: #334155;
+    --neutral-800: #1e293b;
+    --neutral-900: #0f172a;
+
+    /* ===== SEMANTIC COLORS (Using 5-Color System) ===== */
+    --warning-50: var(--accent-50);
+    --warning-500: var(--accent-500);
+    --warning-600: var(--accent-600);
+    --warning-700: var(--accent-700);
+
+    --danger-50: #fef2f2;
+    --danger-500: #ef4444;
+    --danger-600: #dc2626;
+    --danger-700: #b91c1c;
+
+    --info-50: var(--secondary-50);
+    --info-500: var(--secondary-500);
+    --info-600: var(--secondary-600);
+    --info-700: var(--secondary-700);
+
+    /* ===== NEUTRAL GRAYS (Using 5-Color System) ===== */
+    --gray-25: #fcfcfd;
+    --gray-50: var(--neutral-50);
+    --gray-100: var(--neutral-100);
+    --gray-200: var(--neutral-200);
+    --gray-300: var(--neutral-300);
+    --gray-400: var(--neutral-400);
+    --gray-500: var(--neutral-500);
+    --gray-600: var(--neutral-600);
+    --gray-700: var(--neutral-700);
+    --gray-800: var(--neutral-800);
+    --gray-900: var(--neutral-900);
+
+    /* ===== COMPONENT-SPECIFIC COLORS (Updated with Theme Colors) ===== */
+    /* Based on your exact theme color definitions */
+    --header-bg: var(--primary-theme);         /* Dark Blue Header */
+    --header-text: #ffffff;
+    --header-text-muted: var(--neutral-300);
+
+    --topbar-bg: var(--secondary-theme);       /* Light blue topbar */
+    --greeter-bg: var(--accent-theme);         /* Light blue greeter area */
+
+    --hero-bg-start: var(--primary-900);       /* Hero gradient start */
+    --hero-bg-end: var(--primary-600);         /* Hero gradient end */
+    --hero-text: #ffffff;
+    --hero-text-muted: var(--neutral-300);
+
+    --card-bg: #ffffff;
+    --card-border: var(--neutral-200);
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+    --course-price: var(--highlight-theme);     /* Orange highlight price */
+    --course-enrolled: var(--success-500);     /* Green enrolled */
+    --course-detail-btn: var(--accent-theme);  /* Light blue detail button */
+
+    /* ===== LAYOUT & TYPOGRAPHY (Updated with Base Theme) ===== */
+    --body-bg: var(--neutral-50);
+    --body-text: var(--neutral-800);
+    --text-muted: var(--base-theme);           /* Using base theme for muted text */
+    --text-light: var(--neutral-400);
+
+    --border-color: var(--gray-200);
+    --border-color-light: var(--gray-100);
+    --border-color-dark: var(--gray-300);
+
+    /* ===== AUTHENTICATION THEME (Updated with Theme Colors) ===== */
+    --auth-bg-gradient-start: var(--primary-600);
+    --auth-bg-gradient-end: var(--accent-theme);   /* Light blue accent from greeter */
+    --auth-card-bg: #ffffff;
+    --auth-card-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --auth-input-border: var(--neutral-200);
+    --auth-input-focus: var(--base-theme);         /* Using base theme for focus */
+
+    /* ===== SPACING SYSTEM ===== */
+    --space-xs: 0.25rem;    /* 4px */
+    --space-sm: 0.5rem;     /* 8px */
+    --space-md: 1rem;       /* 16px */
+    --space-lg: 1.5rem;     /* 24px */
+    --space-xl: 2rem;       /* 32px */
+    --space-2xl: 2.5rem;    /* 40px */
+    --space-3xl: 3rem;      /* 48px */
+
+    /* ===== BORDER RADIUS ===== */
+    --radius-sm: 0.25rem;   /* 4px */
+    --radius-md: 0.375rem;  /* 6px */
+    --radius-lg: 0.5rem;    /* 8px */
+    --radius-xl: 0.75rem;   /* 12px */
+    --radius-2xl: 1rem;     /* 16px */
+    --radius-full: 9999px;
+
+    /* ===== TYPOGRAPHY SCALE ===== */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 1.875rem;  /* 30px */
+    --font-size-4xl: 2.25rem;   /* 36px */
+    --font-size-5xl: 3rem;      /* 48px */
+
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    /* ===== TRANSITIONS ===== */
+    --transition-fast: 0.15s ease-in-out;
+    --transition-base: 0.2s ease-in-out;
+    --transition-slow: 0.3s ease-in-out;
+
+    /* ===== SHADOWS ===== */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== DARK MODE SUPPORT (Optional) ===== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --body-bg: var(--gray-900);
+        --body-text: var(--gray-100);
+        --text-muted: var(--gray-400);
+        --text-light: var(--gray-500);
+
+        --card-bg: var(--gray-800);
+        --card-border: var(--gray-700);
+
+        --border-color: var(--gray-700);
+        --border-color-light: var(--gray-600);
+        --border-color-dark: var(--gray-500);
+    }
+}
+
+/* ===== BASE STYLES USING CSS VARIABLES ===== */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    line-height: 1.5;
+    font-family: var(--font-family-sans);
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--body-bg);
+    color: var(--body-text);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}

@@ -1,30 +1,44 @@
-@extends('layouts.app')
+{{-- Site Home Page - Uses Site Layout Component --}}
+<x-site.layout title="Welcome to {{ config('app.name') }}">
+    <x-slot:head>
+        <meta name="description" content="Professional security training and certification courses">
+        <meta name="keywords" content="security, training, certification, cyber security">
+    </x-slot:head>
 
-@section('page-title') {{ $content['title'] }} @stop
-@section('page-keywords') {{ $content['keywords'] }} @stop
-@section('page-description') {{ $content['description'] }} @stop
+    <x-site.partials.header />
 
-@section('content')
 
-    @php
-        $courses = \App\RCache::Courses()->where('is_active', true);
-
-        $welcomeTitle = 'Welcome to The Security Training Group';
-        $welcomeSubtitle = 'Florida Class D Security License and Armed Statewide Firearms Class G License';
-        $classDIcon = asset('assets/img/icon/online-course-icon-class-d.png');
-        $classGIcon = asset('assets/img/icon/online-course-icon-class-g.png');
-        $courseDTitle = 'Florida Class D Security License Course';
-        $courseDInfo = 'Comprehensive online training program. Flexible schedule.';
-        $courseDPrice = '$125.00 USD';
-        $courseGTitle = 'Armed Statewide Firearms Class G License Course';
-        $courseGInfo = 'Combination of online learning and in-person range training.';
-        $courseGPrice = '$250.00 USD';
-        $content1 = 'The Security Training Groups Online Security Training Program offers comprehensive courses for individuals seeking the Florida Class D Security License and the Armed Statewide Firearms Class G License. With the flexibility and convenience of online learning, students can now access high-quality training from anywhere in Florida.';
-        $content2 = 'The Florida Class D Security License course provides in-depth training on essential aspects of security operations, including legal guidelines, emergency response procedures, communication skills, and ethical conduct. Our expert instructors deliver engaging lessons that equip students with the knowledge and skills required to excel as security professionals.';
-    @endphp
-
-    <x-panels.welcome-login-slider :title="$welcomeTitle" :subtitle="$welcomeSubtitle" :class-d-icon="$classDIcon" :class-g-icon="$classGIcon" :course-d-title="$courseDTitle" :course-d-info="$courseDInfo" :course-d-price="$courseDPrice" :course-g-title="$courseGTitle" :course-g-info="$courseGInfo" :course-g-price="$courseGPrice" :content1="$content1" :content2="$content2" />
-
-    <x-panels.getting-started />
-
-@stop
+    <x-slot:footer>
+        <footer>
+            <div class="container text-center">
+                <div style="padding: 2rem 0; border-bottom: 1px solid #4b5563; margin-bottom: 2rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; text-align: left;">
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">{{ config('app.name') }}</h4>
+                            <p style="color: #9ca3af;">Professional security training and certification platform.</p>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">Quick Links</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <a href="#courses" style="color: #9ca3af; text-decoration: none;">Courses</a>
+                                <a href="#about" style="color: #9ca3af; text-decoration: none;">About</a>
+                                <a href="#contact" style="color: #9ca3af; text-decoration: none;">Contact</a>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 1rem;">Support</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <a href="#help" style="color: #9ca3af; text-decoration: none;">Help Center</a>
+                                <a href="#faq" style="color: #9ca3af; text-decoration: none;">FAQ</a>
+                                <a href="#privacy" style="color: #9ca3af; text-decoration: none;">Privacy Policy</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p style="color: #9ca3af; margin: 0;">
+                    © {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+                </p>
+            </div>
+        </footer>
+    </x-slot:footer>
+</x-site.layout>

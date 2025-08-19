@@ -16,9 +16,13 @@ class SitePageController extends Controller
      * @param string|null $page
      * @return mixed
      */
-    public function render(string $page = null)
+    public function render(?string $page = 'home')
     {
-        $content = array_merge([], self::renderPageMeta($page ?? 'index'));
+        $page = $page == 'home' ? 'render' : $page;
+
+        $content = array_merge([
+
+        ], self::renderPageMeta($page ?? 'index'));
 
         return view('frontend.pages.' . ($page ?? 'render'), compact('content'));
     }

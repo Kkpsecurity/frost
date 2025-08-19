@@ -70,7 +70,6 @@ document.addEventListener("DOMContentLoaded", () => {
         root.render(<InstructorEntry />);
         console.log("✅ InstructorEntry mounted successfully");
     } else {
-        axc
         console.log("⚠️ No instructor container found");
         // Try again after a short delay in case the DOM isn't fully ready
         setTimeout(() => {

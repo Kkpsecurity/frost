@@ -1,19 +1,21 @@
 /**
  * Enhanced API Client for Instructor Module
- * Leverages existing utilities with instructor-specific configurations
+ * TODO: Implement when required utilities are available
  */
 
-import apiClient from '@/React/utils/axios';
-import { getCsrfToken } from '@/React/utils/LaravelHelper';
-import { endpoints } from '@/React/utils/endpoints';
-import { loadMonitor } from '@/React/utils/performanceMonitor';
+import { getCsrfToken } from '../../utils/LaravelHelper';
 
 // Instructor-specific API client with enhanced features
 class InstructorApiClient {
-  private baseClient = apiClient;
-
+  // TODO: Implement when dependencies are available
   constructor() {
-    // Add instructor-specific interceptors
+    // Add instructor-specific interceptors when ready
+  }
+}
+
+// Export a placeholder for now
+export const instructorApi = new InstructorApiClient();
+export default instructorApi;
     this.setupInterceptors();
   }
 

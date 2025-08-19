@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CourseDate, Instructor } from '../../types/global';
+import type { CourseDate, Instructor } from "../../types/global.d";
 
 interface ClassDashboardProps {
   activeCourses: CourseDate[];

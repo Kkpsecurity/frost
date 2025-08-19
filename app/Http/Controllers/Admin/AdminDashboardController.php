@@ -31,7 +31,7 @@ class AdminDashboardController extends Controller
     public function dashboard()
     {
         // Scan for available widgets
-        $available_widgets = scandir(resource_path('views/admin/plugins/widgets/dashboard'));
+        $available_widgets = [];
 
         // Constructing the widgets array
         $widgets = [];
@@ -150,7 +150,7 @@ class AdminDashboardController extends Controller
     {
         try {
             $user = $request->user('admin') ?? $request->user();
-            
+
             return response()->json([
                 'success' => true,
                 'config' => [
@@ -187,7 +187,7 @@ class AdminDashboardController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Admin config API error: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'error' => 'Configuration loading failed',

@@ -1,5 +1,10 @@
 import React from 'react';
-import type { BulletinBoardData, Instructor, Announcement, InstructorResource } from '../../types/global';
+import type {
+    BulletinBoardData,
+    Instructor,
+    Announcement,
+    InstructorResource,
+} from "../../types/global.d";
 
 interface BulletinBoardProps {
   data: BulletinBoardData;

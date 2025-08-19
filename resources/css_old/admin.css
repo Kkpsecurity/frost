@@ -1,0 +1,587 @@
+/* Admin Panel Styles */
+
+/* Import Bootstrap for admin layout */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Import admin-specific layout components */
+@import 'layout/admin-header.css';
+
+/* AdminLTE Layout Overrides - Remove all default padding and margins */
+.content-wrapper {
+    padding: 0 !important;
+}
+
+.content-wrapper .content {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.content-wrapper .content .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+}
+
+.content-wrapper .content-header .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.content-header {
+    background-color: #343a40;
+    color: #fff;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: 1px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Main container styling - no gaps */
+.container-fluid.p-0 {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Filter section styling */
+.bg-white.border-bottom {
+    border-bottom: 1px solid #dee2e6 !important;
+    margin: 0;
+}
+
+.px-3.py-3 {
+    padding: 1rem !important;
+}
+
+/* Table section - completely flush */
+.bg-white {
+    background-color: #fff !important;
+    margin: 0 !important;
+}
+
+/* Ensure table takes full width with no gaps */
+#admin-users-table {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.table-responsive {
+    margin: 0 !important;
+    border: none !important;
+}
+
+/* Table styling improvements */
+.table {
+    margin-bottom: 0 !important;
+}
+
+.table th,
+.table td {
+    border-top: 1px solid #dee2e6;
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.thead-dark th {
+    background-color: #343a40;
+    border-color: #454d55;
+    color: #fff;
+}
+
+/* Dark header styling */
+.card-header.bg-dark .card-title {
+    color: #fff !important;
+}
+
+/* DataTables wrapper styling */
+.dataTables_wrapper {
+    width: 100%;
+    padding: 1rem;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 4px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border-radius: 4px;
+}
+
+/* Avatar column styling */
+#admin-users-table td:first-child {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Actions column styling */
+#admin-users-table td:last-child {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.8em;
+}
+
+/* Role filter section styling */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+#role-filter {
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#role-filter:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Filter section responsive */
+@media (max-width: 767.98px) {
+    .col-md-6.text-right {
+        text-align: left !important;
+        margin-top: 10px;
+    }
+}
+
+/* Remove any default Bootstrap container padding */
+.row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Ensure buttons look good */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Filter section styling */
+.filter-section {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.filter-section.hidden {
+    max-height: 0;
+    padding: 0 !important;
+    opacity: 0;
+}
+
+.filter-section.visible {
+    max-height: 200px;
+    opacity: 1;
+}
+
+/* Force dark mode for DataTables - specific to admin users table */
+#admin-users-table_wrapper {
+    background-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+}
+
+#admin-users-table_wrapper .dataTables_length,
+#admin-users-table_wrapper .dataTables_filter,
+#admin-users-table_wrapper .dataTables_info,
+#admin-users-table_wrapper .dataTables_paginate {
+    color: #e2e8f0 !important;
+}
+
+#admin-users-table_wrapper .dataTables_length select,
+#admin-users-table_wrapper .dataTables_filter input {
+    background-color: #374151 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #4a5568 !important;
+}
+
+/* Override Bootstrap table classes for dark mode */
+#admin-users-table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #374151 !important;
+}
+
+#admin-users-table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #2d3748 !important;
+}
+
+#admin-users-table.table-hover tbody tr:hover {
+    background-color: #4b5563 !important;
+    color: #f9fafb !important;
+}
+
+/* Admin-specific base styles */
+.admin-wrapper {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.admin-content {
+    padding: 0;
+    margin: 0;
+}
+
+/* Admin dashboard cards */
+.admin-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.admin-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Admin table styles */
+.admin-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-table th {
+    background-color: #343a40;
+    color: white;
+    font-weight: 600;
+    border: none;
+}
+
+.admin-table td {
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+/* Admin buttons */
+.btn-admin-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+    font-weight: 500;
+}
+
+.btn-admin-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+/* Admin utility classes */
+.admin-text-muted {
+    color: #6c757d !important;
+}
+
+.admin-bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.admin-border-light {
+    border-color: #e9ecef !important;
+}
+
+/* Responsive admin styles */
+@media (max-width: 768px) {
+    .admin-content {
+        padding: 0.5rem;
+    }
+    
+    .admin-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Dark Mode Table Styling */
+.admin-dark-table {
+    background-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #4a5568 !important;
+}
+
+.admin-dark-table thead th {
+    background-color: #1a202c !important;
+    color: #f7fafc !important;
+    border-color: #4a5568 !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+}
+
+.admin-dark-table tbody tr {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    transition: background-color 0.2s ease;
+}
+
+.admin-dark-table tbody tr:hover {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+}
+
+.admin-dark-table tbody tr:nth-child(even) {
+    background-color: #374151 !important;
+}
+
+.admin-dark-table tbody tr:nth-child(even):hover {
+    background-color: #4b5563 !important;
+}
+
+.admin-dark-table td {
+    border-color: #4a5568 !important;
+    color: #e2e8f0 !important;
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+/* DataTables Dark Mode Integration */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    color: #e2e8f0 !important;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    background-color: #374151 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #4a5568 !important;
+    border-radius: 4px;
+}
+
+.dataTables_wrapper .dataTables_length select:focus,
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+    outline: none;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    background-color: #374151 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #4a5568 !important;
+    margin: 0 2px;
+    border-radius: 4px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background-color: #4b5563 !important;
+    color: #f9fafb !important;
+    border-color: #6b7280 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+    background-color: #1f2937 !important;
+    color: #6b7280 !important;
+    border-color: #374151 !important;
+}
+
+/* Dark Mode Cards and Containers */
+.admin-dark-card {
+    background-color: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+.admin-dark-card .card-header {
+    background-color: #1a202c !important;
+    border-bottom: 1px solid #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+.admin-dark-card .card-body {
+    background-color: #2d3748 !important;
+}
+
+/* Dark Mode Filter Section */
+.admin-dark-filter {
+    background-color: #374151 !important;
+    border-color: #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+.admin-dark-filter .form-control {
+    background-color: #4b5563 !important;
+    border-color: #6b7280 !important;
+    color: #f9fafb !important;
+}
+
+.admin-dark-filter .form-control:focus {
+    background-color: #4b5563 !important;
+    border-color: #60a5fa !important;
+    color: #f9fafb !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+}
+
+.admin-dark-filter .form-label {
+    color: #d1d5db !important;
+    font-weight: 600;
+}
+
+/* Dark Mode Status Badges */
+.admin-dark-badge-active {
+    background-color: #059669 !important;
+    color: #ffffff !important;
+}
+
+.admin-dark-badge-inactive {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+.admin-dark-badge-pending {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+}
+
+/* Dark Mode Role Badges - Override Bootstrap badge classes for dark theme */
+#admin-users-table .badge-danger {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#admin-users-table .badge-primary {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#admin-users-table .badge-warning {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#admin-users-table .badge-info {
+    background-color: #0891b2 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#admin-users-table .badge-secondary {
+    background-color: #6b7280 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#admin-users-table .badge-success {
+    background-color: #059669 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#admin-users-table .badge-light {
+    background-color: #374151 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #4a5568 !important;
+    font-weight: 600;
+}
+
+/* General badge styling for dark theme */
+.admin-dark-table .badge {
+    font-size: 0.8em;
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Dark Mode Action Buttons */
+.admin-dark-btn-group .btn {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #e2e8f0 !important;
+    margin: 0 2px;
+}
+
+.admin-dark-btn-group .btn:hover {
+    background-color: #4b5563 !important;
+    border-color: #6b7280 !important;
+    color: #f9fafb !important;
+}
+
+.admin-dark-btn-group .btn-primary {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+.admin-dark-btn-group .btn-primary:hover {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+}
+
+.admin-dark-btn-group .btn-danger {
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+}
+
+.admin-dark-btn-group .btn-danger:hover {
+    background-color: #b91c1c !important;
+    border-color: #b91c1c !important;
+}
+
+.admin-dark-btn-group .btn-warning {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+}
+
+.admin-dark-btn-group .btn-warning:hover {
+    background-color: #b45309 !important;
+    border-color: #b45309 !important;
+}
+
+/* Dark Mode Text Colors */
+.admin-dark-text-primary {
+    color: #60a5fa !important;
+}
+
+.admin-dark-text-secondary {
+    color: #9ca3af !important;
+}
+
+.admin-dark-text-success {
+    color: #34d399 !important;
+}
+
+.admin-dark-text-danger {
+    color: #f87171 !important;
+}
+
+.admin-dark-text-warning {
+    color: #fbbf24 !important;
+}
+
+.admin-dark-text-info {
+    color: #60a5fa !important;
+}
+
+.admin-dark-text-muted {
+    color: #6b7280 !important;
+}
+
+/* Dark Mode Scrollbar */
+.admin-dark-table::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.admin-dark-table::-webkit-scrollbar-track {
+    background-color: #374151;
+    border-radius: 4px;
+}
+
+.admin-dark-table::-webkit-scrollbar-thumb {
+    background-color: #6b7280;
+    border-radius: 4px;
+}
+
+.admin-dark-table::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+}

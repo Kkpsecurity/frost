@@ -88,8 +88,8 @@ return [
             'path' => 'images/200851589.jpg',
             'alt' => 'Frost Logo',
             'class' => 'img-circle',
-            'width' => 60,
-            'height' => 60,
+            'width' => 80,
+            'height' => 80,
         ],
     ],
 
@@ -257,13 +257,14 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
-    'logout_url' => 'logout',
-    'login_url' => 'login',
+    'dashboard_url' => 'admin',
+    'logout_url' => 'admin/logout',
+    'login_url' => 'admin/login',
     'register_url' => 'register',
-    'password_reset_url' => 'password/reset',
-    'password_email_url' => 'password/email',
+    'password_reset_url' => 'admin/password/reset',
+    'password_email_url' => 'admin/password/email',
     'profile_url' => false,
+    'logout_method' => 'POST',
     'disable_darkmode_routes' => false,
 
     /*
@@ -342,6 +343,8 @@ return [
         ],
 
         ['header' => 'ADMINISTRATION'],
+        // TODO: Uncomment when routes are created
+        /*
         [
             'text' => 'Admin Center',
             'icon' => 'fas fa-fw fa-cogs',
@@ -363,6 +366,7 @@ return [
                 ],
             ],
         ],
+        */
         [
             'text' => 'Frost Support',
             'url' => 'admin/frost-support',
@@ -550,6 +554,17 @@ return [
             'use_navbar_items' => true,
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Settings
+    |--------------------------------------------------------------------------
+    |
+    | Admin authentication specific settings
+    |
+    */
+
+    'password_reset_enabled' => env('ADMIN_PASSWORD_RESET_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

@@ -23,7 +23,8 @@
         $content2 = 'The Florida Class D Security License course provides in-depth training on essential aspects of security operations, including legal guidelines, emergency response procedures, communication skills, and ethical conduct. Our expert instructors deliver engaging lessons that equip students with the knowledge and skills required to excel as security professionals.';
     @endphp
 
-    @include('frontend/panels/welcome_login_slider')
-    @include('frontend/panels/getting-started')
+    <x-panels.welcome-login-slider :title="$welcomeTitle" :subtitle="$welcomeSubtitle" :class-d-icon="$classDIcon" :class-g-icon="$classGIcon" :course-d-title="$courseDTitle" :course-d-info="$courseDInfo" :course-d-price="$courseDPrice" :course-g-title="$courseGTitle" :course-g-info="$courseGInfo" :course-g-price="$courseGPrice" :content1="$content1" :content2="$content2" />
+
+    <x-panels.getting-started />
 
 @stop

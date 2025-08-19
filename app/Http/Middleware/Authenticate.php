@@ -18,7 +18,7 @@ class Authenticate extends Middleware
 
         // Check if this is an admin route by looking at the URL pattern
         if ($request->is('admin') || $request->is('admin/*')) {
-            return route('admin.login');
+            return route('admin.auth.login');
         }
 
         return route('login');
@@ -38,7 +38,9 @@ class Authenticate extends Middleware
         // If admin guard is specified, redirect to admin login
         if (in_array('admin', $guards)) {
             throw new \Illuminate\Auth\AuthenticationException(
-                'Unauthenticated.', $guards, route('admin.login')
+                'Unauthenticated.',
+                $guards,
+                route('admin.auth.login')
             );
         }
 
