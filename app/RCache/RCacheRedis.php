@@ -5,6 +5,7 @@ namespace App\RCache;
 use stdClass;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Log;
 
 use KKP\TextTk;
 
@@ -19,9 +20,37 @@ trait RCacheRedis
     protected static $_redis_writes    = 0;
 
 
-    public static function Redis() : object
+    private static $redis_available = null;
+
+    private static function isRedisAvailable() : bool
     {
-        return Redis::Connection( 'rcache' );
+        if (self::$redis_available === null) {
+            try {
+                // Check if Redis is configured and available
+                if (!config('database.redis.rcache')) {
+                    self::$redis_available = false;
+                    return false;
+                }
+
+                $redis = \Illuminate\Support\Facades\Redis::connection('rcache');
+                $redis->ping();
+                self::$redis_available = true;
+            } catch (\Exception $e) {
+                Log::warning('Redis connection failed, falling back to database: ' . $e->getMessage());
+                self::$redis_available = false;
+            }
+        }
+
+        return self::$redis_available;
+    }
+
+    public static function Redis() : object|null
+    {
+        if (!self::isRedisAvailable()) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Redis::connection( 'rcache' );
     }
 
 
@@ -76,7 +105,8 @@ trait RCacheRedis
     {
         self::$_redis_exists++;
         \App\Helpers\kkpdebug('RCacheRedis', "EXISTS( '{$key}' )");
-        return self::Redis()->exists( $key );
+        $redis = self::Redis();
+        return $redis ? $redis->exists( $key ) : false;
     }
 
 
@@ -132,7 +162,8 @@ trait RCacheRedis
     {
         self::$_redis_exists++;
         \App\Helpers\kkpdebug('RCacheRedis', "HEXISTS( '{$hkey}', '{$id}' )");
-        return self::Redis()->hexists( $hkey, $id );
+        $redis = self::Redis();
+        return $redis ? $redis->hexists( $hkey, $id ) : false;
     }
 
 
@@ -140,7 +171,8 @@ trait RCacheRedis
     {
         self::$_redis_reads++;
         \App\Helpers\kkpdebug('RCacheRedis', "HGET( '{$hkey}', '{$id}' )");
-        return self::Redis()->hget( $hkey, $id );
+        $redis = self::Redis();
+        return $redis ? $redis->hget( $hkey, $id ) : null;
     }
 
 
@@ -148,7 +180,8 @@ trait RCacheRedis
     {
         self::$_redis_reads++;
         \App\Helpers\kkpdebug('RCacheRedis', "HGETALL( '{$hkey}' )");
-        return self::Redis()->hgetall( $hkey );
+        $redis = self::Redis();
+        return $redis ? $redis->hgetall( $hkey ) : [];
     }
 
 
@@ -156,7 +189,10 @@ trait RCacheRedis
     {
         self::$_redis_writes++;
         \App\Helpers\kkpdebug('RCacheRedis', "HSET( '{$hkey}', '{$id}', [value] )");
-        self::Redis()->hset( $hkey, $id, $val );
+        $redis = self::Redis();
+        if ($redis) {
+            $redis->hset( $hkey, $id, $val );
+        }
     }
 
 

@@ -1,12 +1,12 @@
 // instructorEntry.tsx
-import React, { ReactNode, Suspense } from "react";
+import React, { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRoot } from "react-dom/client";
-import EnrtyErrorBoundary from "./ErrorBoundry/EntryErrorBoundry";
+import EntryErrorBoundary from "./ErrorBoundry/EntryErrorBoundry";
+import InstructorDataLayer from "./InstructorDataLayer";
 
-// Lazy-load to ensure we only load the DataLayer if setup succeeds
-const InstructorDataLayer = React.lazy(() => import("./InstructorDataLayer"));
+// Direct import instead of lazy loading for testing
 
 /** ---- Error Boundary ---- */
 type EBProps = {
@@ -48,19 +48,13 @@ export const InstructorAppWrapper: React.FC<{ children: ReactNode }> = ({
  */
 export const InstructorEntry: React.FC = () => (
     <InstructorAppWrapper>
-        <EnrtyErrorBoundary>
-            <Suspense
-                fallback={
-                    <div style={{ padding: 16 }}>Loading instructor layer…</div>
-                }
-            >
-                <InstructorDataLayer />
-            </Suspense>
-        </EnrtyErrorBoundary>
+        <EntryErrorBoundary>
+            <InstructorDataLayer />
+        </EntryErrorBoundary>
     </InstructorAppWrapper>
 );
 
-export { queryClient, EnrtyErrorBoundary };
+export { queryClient, EntryErrorBoundary };
 
 // DOM mounting logic for instructor components
 // Auto-mount when this module loads
@@ -76,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         root.render(<InstructorEntry />);
         console.log("✅ InstructorEntry mounted successfully");
     } else {
+        axc
         console.log("⚠️ No instructor container found");
         // Try again after a short delay in case the DOM isn't fully ready
         setTimeout(() => {
@@ -87,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "✅ Found instructor container (delayed), mounting InstructorEntry..."
                 );
                 const root = createRoot(delayedContainer);
-                root.render(<InstructorEntry />);
+                root.render(<InstructorDataLayer />);
                 console.log(
                     "✅ InstructorEntry mounted successfully (delayed)"
                 );
@@ -118,3 +113,4 @@ if (document.readyState === "loading") {
         console.log("✅ InstructorEntry mounted successfully (immediate)");
     }
 }
+

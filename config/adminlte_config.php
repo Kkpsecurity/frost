@@ -363,6 +363,11 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'Frost Support',
+            'url' => 'admin/frost-support',
+            'icon' => 'fas fa-fw fa-life-ring',
+        ],
 
         ['header' => 'USER MANAGEMENT'],
         [
@@ -398,11 +403,6 @@ return [
             'text' => 'Orders',
             'url' => 'admin/orders',
             'icon' => 'fas fa-fw fa-shopping-cart',
-        ],
-        [
-            'text' => 'Support',
-            'url' => 'admin/support',
-            'icon' => 'fas fa-fw fa-life-ring',
         ],
         [
             'text' => 'Reports',

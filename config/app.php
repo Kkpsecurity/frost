@@ -213,7 +213,7 @@ return [
         // App\Providers\KKPS3ServiceProvider::class,
 
         // last
-        App\Providers\RCacheServiceProvider::class,
+        // App\Providers\RCacheServiceProvider::class,
         // App\RCacheWarmer::class,
 
     ],

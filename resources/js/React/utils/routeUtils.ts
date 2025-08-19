@@ -83,6 +83,8 @@ export const RouteCheckers = {
     isSupportTickets: () => isRoute(["admin", "support", "tickets"]),
     isSupportStudents: () => isRoute(["admin", "support", "students"]),
     isSupportRoute: () => routeStartsWith(["support"]),
+    isSupport: () => routeContains("support"), // Simple support route checker
+    isAdminFrostSupport: () => isRoute(["admin", "frost-support"]), // New Frost Support route
 
     // Student routes
     isClassroomPortal: () => isRoute(["classroom", "portal"]),

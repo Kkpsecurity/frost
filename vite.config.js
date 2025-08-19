@@ -31,12 +31,22 @@ export default defineConfig({
         }),
         react({
             include: "**/*.{jsx,tsx}",
+            jsxRuntime: 'automatic',
         }),
     ],
     server: {
         host: "localhost",
         port: 5174,
-        cors: true,
+        cors: {
+            origin: ["http://frost.test", "http://localhost", "http://127.0.0.1"],
+            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+            credentials: true,
+        },
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control",
+        },
     },
     base: "/",
     build: {

@@ -100,6 +100,11 @@ class RCache
         return self::_getModelCache( SiteConfig::class, $value, $key );
     }
 
+    public static function SiteConfig( string $key, $default = null )
+    {
+        return getSetting('site', $key, $default);
+    }
+
 
 
     ########################

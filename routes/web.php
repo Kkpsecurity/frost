@@ -7,6 +7,7 @@
  * It includes routes for the admin settings, services, and other application features.
  */
 
+use App\Http\Controllers\Web\SitePageController;
 use Illuminate\Support\Facades\Route;
 use Cmgmyr\Messenger\Models\Thread;
 use Cmgmyr\Messenger\Models\Message;
@@ -56,6 +57,10 @@ Route::middleware(['auth'])
         require __DIR__ . '/frontend/account.routes.php';
     });
 
+Route::redirect('/', '/pages', 302);
+Route::redirect('/home', '/pages', 302)->name('home');
+Route::get('pages/{slug?}', [SitePageController::class, 'render'])->name('pages');
+
 /**
  * Student Classroom Routes
  * These routes handle student learning functionality
@@ -86,4 +91,3 @@ Route::get('/test-notifications', function () {
 Route::get('/test-instructor-dashboard', function () {
     return view('test-instructor-dashboard');
 })->name('test.instructor.dashboard')->middleware('auth');
-

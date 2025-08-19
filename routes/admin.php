@@ -214,6 +214,28 @@ Route::middleware(['auth:admin', 'admin', 'verified'])
         // Support Routes
         require __DIR__ . '/admin/support.php';
 
+        // Frost Support Routes (new admin support area)
+        Route::get('/frost-support', [
+            \App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class,
+            'index'
+        ])->name('frost-support.index');
+
+        // Frost Support API Routes
+        Route::get('/frost-support/stats', [
+            \App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class,
+            'getStats'
+        ])->name('frost-support.stats');
+
+        Route::get('/frost-support/search-students', [
+            \App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class,
+            'searchStudents'
+        ])->name('frost-support.search-students');
+
+        Route::get('/frost-support/student/{studentId}', [
+            \App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class,
+            'getStudentDetails'
+        ])->name('frost-support.student-details');
+
         // Reports Routes
         require __DIR__ . '/admin/reports.php';
 

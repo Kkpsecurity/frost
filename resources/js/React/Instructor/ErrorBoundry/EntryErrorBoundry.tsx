@@ -9,7 +9,7 @@ type EBProps = {
 type EBState = { hasError: boolean; error?: unknown };
 
 
-class EnrtyErrorBoundary extends React.Component<EBProps, EBState> {
+class EntryErrorBoundary extends React.Component<EBProps, EBState> {
     state: EBState = { hasError: false };
 
     static getDerivedStateFromError(error: unknown): EBState {
@@ -41,4 +41,4 @@ class EnrtyErrorBoundary extends React.Component<EBProps, EBState> {
     }
 }
 
-export default EnrtyErrorBoundary;
+export default EntryErrorBoundary;
