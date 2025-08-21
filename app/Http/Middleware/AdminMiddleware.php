@@ -16,18 +16,21 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::guard('admin')->check()) {
+        // Check if user is authenticated on either web or admin guard
+        if (!Auth::guard('web')->check()) {
             return redirect()->route('admin.login');
         }
 
-        // Check if the authenticated user has admin role (role_id = 1)
-        $user = Auth::guard('admin')->user();
+        // Check if the authenticated user has admin role
+        $user = Auth::guard('web')->user();
         if (!$user || !$user->isAdmin()) {
-            Auth::guard('admin')->logout();
             return redirect()->route('admin.login')->withErrors([
                 'email' => 'You do not have admin privileges.'
             ]);
         }
+
+        // Set the admin guard to use the same user
+        Auth::guard('admin')->setUser($user);
 
         return $next($request);
     }

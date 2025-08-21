@@ -18,13 +18,43 @@ class SitePageController extends Controller
      */
     public function render(?string $page = 'home')
     {
-        $page = $page == 'home' ? 'render' : $page;
+        // Define pages with panel configurations
+        $pages = [
+            'home' => [
+                'title' => 'Welcome to ' . config('app.name'),
+                'description' => 'Professional security training and certification courses',
+                'keywords' => 'security, training, certification, cyber security',
+                'panels' => ['welcome-hero', 'getting-started']
+            ],
+            'faqs' => [
+                'title' => 'Frequently Asked Questions - ' . config('app.name'),
+                'description' => 'Common questions about our security training programs',
+                'keywords' => 'faqs, questions, security training, help',
+                'panels' => ['faqs-hero', 'faqs']
+            ],
+            'contact' => [
+                'title' => 'Contact Us - ' . config('app.name'),
+                'description' => 'Get in touch with our security training experts',
+                'keywords' => 'contact, support, help, security training',
+                'panels' => ['contact-hero']
+            ],
+            // Add more pages as needed
+        ];
 
-        $content = array_merge([
+        // Get the current page or default to home
+        $currentPage = $page ?? 'home';
 
-        ], self::renderPageMeta($page ?? 'index'));
+        // If page doesn't exist in our config, default to home
+        if (!array_key_exists($currentPage, $pages)) {
+            $currentPage = 'home';
+        }
 
-        return view('frontend.pages.' . ($page ?? 'render'), compact('content'));
+        $pageData = $pages[$currentPage];
+
+        // Merge with meta data
+        $content = array_merge($pageData, self::renderPageMeta($currentPage));
+
+        return view('frontend.pages.render', compact('content', 'pages', 'currentPage'));
     }
 
     public function sendContactEmail(Request $request)

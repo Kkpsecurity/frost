@@ -7,105 +7,46 @@ import { getCsrfToken } from '../../utils/LaravelHelper';
 
 // Instructor-specific API client with enhanced features
 class InstructorApiClient {
-  // TODO: Implement when dependencies are available
-  constructor() {
-    // Add instructor-specific interceptors when ready
-  }
-}
+    // TODO: Implement when dependencies are available
+    constructor() {
+        // Add instructor-specific interceptors when ready
+    }
 
-// Export a placeholder for now
-export const instructorApi = new InstructorApiClient();
-export default instructorApi;
-    this.setupInterceptors();
-  }
+    // Placeholder methods for future implementation
+    async fetchLaravelConfig() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve({ status: "placeholder" });
+    }
 
-  private setupInterceptors() {
-    // Request interceptor for CSRF token refresh
-    this.baseClient.interceptors.request.use(
-      (config) => {
-        // Always use fresh CSRF token
-        const csrf = getCsrfToken();
-        if (csrf) {
-          config.headers['X-CSRF-TOKEN'] = csrf;
-          config.headers['X-XSRF-TOKEN'] = csrf;
-        }
+    async validateInstructor() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve({ valid: true });
+    }
 
-        // Add instructor context header
-        config.headers['X-Context'] = 'instructor-dashboard';
+    async fetchClassroomData() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve([]);
+    }
 
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`🔄 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-        }
+    async fetchStudentsData() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve([]);
+    }
 
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
+    async fetchNotifications() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve([]);
+    }
 
-    // Response interceptor for enhanced error handling
-    this.baseClient.interceptors.response.use(
-      (response) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`✅ API Response: ${response.status} ${response.config.url}`);
-        }
-        return response;
-      },
-      (error) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`❌ API Error: ${error.response?.status || 'Network Error'} ${error.config?.url}`);
-        }
+    async fetchMessageThreads() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve([]);
+    }
 
-        // Handle specific instructor-related errors
-        if (error.response?.status === 401) {
-          console.warn('⚠️ Instructor authentication expired');
-          // Could emit event for auth refresh
-        }
-
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  // Laravel admin config
-  async fetchLaravelConfig() {
-    const response = await this.baseClient.get(endpoints.laravel.config);
-    return response.data;
-  }
-
-  // Instructor validation
-  async validateInstructor() {
-    const response = await this.baseClient.get(endpoints.instructor.validate);
-    return response.data;
-  }
-
-  // Classroom data
-  async fetchClassroomData() {
-    const response = await this.baseClient.get(endpoints.instructor.data.classroom);
-    return response.data;
-  }
-
-  // Students data
-  async fetchStudentsData() {
-    const response = await this.baseClient.get(endpoints.instructor.data.students);
-    return response.data;
-  }
-
-  // Messaging endpoints
-  async fetchNotifications() {
-    const response = await this.baseClient.get(endpoints.messaging.admin.notifications);
-    return response.data;
-  }
-
-  async fetchMessageThreads() {
-    const response = await this.baseClient.get(endpoints.messaging.admin.threads);
-    return response.data;
-  }
-
-  // Health check endpoint
-  async testConnection() {
-    const response = await this.baseClient.get(endpoints.laravel.test);
-    return response.data;
-  }
+    async testConnection() {
+        // TODO: Implement when endpoints are available
+        return Promise.resolve({ connected: true });
+    }
 }
 
 // Singleton instance

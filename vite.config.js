@@ -6,21 +6,32 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
+                // Core Laravel TypeScript files
                 "resources/js/app.ts",
                 "resources/js/admin.ts",
                 "resources/js/instructor.ts",
                 "resources/js/support.ts",
-                "resources/js/upload-modal-manager.tsx",
-                "resources/js/filepond.js",
-                "resources/js/alert-manager.js",
-                "resources/js/site.js",
+                "resources/js/student.ts",
+
+                // Laravel JavaScript modules
+                "resources/js/modules/filepond.js",
+                "resources/js/modules/site.js",
+
+                // Laravel JavaScript components
+                "resources/js/components/alert-manager.js",
+
+                // React Components (proper path)
+                "resources/js/React/Components/UploadModalManager.tsx",
+
+                // CSS files (updated paths)
                 "resources/css/app.css",
-                "resources/css/admin.css",
-                "resources/css/adminlte-config-tabs.css",
-                "resources/css/admin-settings.css",
-                "resources/css/alert-utilities.css",
-                "resources/css/filepond.css",
-                "resources/css/site.css",
+                "resources/css/style.css",
+                "resources/css/pages/admin.css",
+                "resources/css/vendor/adminlte-config-tabs.css",
+                "resources/css/pages/admin-settings.css",
+                "resources/css/components/alerts.css",
+                "resources/css/vendor/filepond.css",
+                "resources/css/pages/site.css",
             ],
             publicDir: "public",
             outputDir: "public/build",

@@ -1,0 +1,210 @@
+/**
+ * AdminLTE Configuration Tabs Styles
+ * Custom styles for configuration tab interfaces
+ */
+
+.config-tabs {
+    border: none;
+    background: transparent;
+}
+
+.config-tabs .nav-item {
+    margin-right: 0.5rem;
+}
+
+.config-tabs .nav-link {
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 0.375rem 0.375rem 0 0;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.config-tabs .nav-link:hover {
+    color: #495057;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.config-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    border-bottom-color: transparent;
+}
+
+.tab-content {
+    border: 1px solid #dee2e6;
+    border-radius: 0 0.375rem 0.375rem 0.375rem;
+    padding: 1.5rem;
+    background-color: #fff;
+    min-height: 400px;
+}
+
+/* Configuration form styles */
+.config-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.config-form .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.config-form .form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.config-form .form-control {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+}
+
+.config-form .form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Toggle switches for configuration */
+.config-toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.config-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.config-toggle .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.config-toggle .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+.config-toggle input:checked + .slider {
+    background-color: #28a745;
+}
+
+.config-toggle input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Configuration sections */
+.config-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+}
+
+.config-section h5 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.config-section .description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* Action buttons */
+.config-actions {
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.config-actions .btn {
+    min-width: 100px;
+}
+
+/* Status indicators */
+.config-status {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 500;
+}
+
+.config-status.enabled {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.config-status.disabled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.config-status.warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .config-tabs {
+        flex-direction: column;
+    }
+    
+    .config-tabs .nav-item {
+        margin-right: 0;
+        margin-bottom: 0.25rem;
+    }
+    
+    .config-tabs .nav-link {
+        border-radius: 0.375rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .tab-content {
+        border-radius: 0.375rem;
+        margin-top: 0.5rem;
+    }
+    
+    .config-actions {
+        flex-direction: column;
+    }
+    
+    .config-actions .btn {
+        width: 100%;
+    }
+}

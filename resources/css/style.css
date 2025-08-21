@@ -1,0 +1,67 @@
+/**
+ * ============================================================================
+ * FROST - MAIN STYLESHEET
+ * ============================================================================
+ *
+ * Modular CSS Architecture for Professional Site Theme
+ * All styles organized by component and functionality
+ */
+
+/* ===== ROOT COLOR SYSTEM ===== */
+@import url('base/root.css');
+
+/* ===== BASE STYLES ===== */
+@import url('base/html.css');
+
+/* ===== LAYOUT COMPONENTS ===== */
+@import url('components/topbar.css');
+@import url('components/bottombar.css');
+@import url('components/loader.css');
+@import url('components/login-form.css');
+@import url('components/welcome-hero.css');
+@import url('components/scroll-up.css');
+@import url('components/welcome-hero.css');
+@import url('components/top-right-nav.css');
+@import url('components/footer.css');
+@import url('components/support-services.css');
+@import url('components/courses.css');
+
+/* ===== PAGE SPECIFIC STYLES ===== */
+@import url('pages/auth.css');
+@import url('pages/dashboard.css');
+
+/* ===== UTILITY CLASSES ===== */
+@import url('base/utilities.css');
+
+/**
+ * ============================================================================
+ * LAYOUT POSITIONING FIXES
+ * ============================================================================
+ */
+
+/* Main content positioning */
+.main-content {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Ensure content appears below the sticky header */
+.main-content .container-fluid {
+    position: relative;
+    z-index: 1;
+    /* Remove margin - content should be flush with header */
+    margin-top: 0;
+}
+
+/* Fix for panels that might have absolute positioning */
+.welcome-login-area {
+    position: relative;
+    margin-top: 0;
+    padding-top: 2rem;
+}
+
+/**
+ * Main style.css serves as the central import hub
+ * Individual component files keep styles organized and maintainable
+ */

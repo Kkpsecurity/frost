@@ -3,7 +3,7 @@
  * includes setting up common functionality like CSRF tokens and axios.
  */
 
-import './bootstrap';
+import "./core/bootstrap";
 
 
 /**

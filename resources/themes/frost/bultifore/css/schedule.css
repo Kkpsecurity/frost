@@ -7,89 +7,261 @@
     width: 100%;
     margin: 0 auto;
     padding: 0 20px;
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--frost-light-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* Make all cells the same height */
-.fc-daygrid-day-frame {
-    height: 100px !important;
-}
+/* ================================
+   FROST THEME CALENDAR STYLING
+   ================================ */
 
-.fc-col-header-cell {
-    background: var(--frost-primary-color);
-}
-
-.fc-scrollgrid-sync-inner {
-    color: white;
-}
-
-.fc-col-header-cell .fc-scrollgrid-sync-inner a {
-    color: white;
-}
-
-/* Make all cells white */
-.fc-daygrid-day {
-    background-color: white !important;
-}
-
-/* Optionally, if you want to style the highlighted "today" differently */
-.fc-day-today {
-    background-color: yellow !important;
-    border-color:  darkgoldenrod;
-    /* This is an example light gray color. Change as needed */
-}
-
-/* Optionally, if you want to style the highlighted "selected" date differently */
-.fc-day-selected {
-    background-color: #e0e0e0 !important;
-    /* This is an example light gray color. Change as needed */
-}
-
-/* Make the borders of each cell dark blue */
-.fc-daygrid-day-top {
-    border-color: darkblue !important;
-}
-
-.fc-header-toolbar {
-background-color: #222222;
-color: #ffffff;
+/* CSS Custom Properties to override FullCalendar defaults */
+:root {
+    --fc-page-bg-color: var(--frost-light-primary-color);
+    --fc-neutral-bg-color: var(--frost-light-primary-color);
+    --fc-today-bg-color: rgba(254, 222, 89, 0.3);
+    --fc-border-color: var(--frost-base-color);
+    --fc-button-bg-color: var(--frost-secondary-color);
+    --fc-button-text-color: var(--frost-white-color);
+    --fc-button-hover-bg-color: var(--frost-info-color);
+    --fc-button-active-bg-color: var(--frost-highlight-color);
+    --fc-event-bg-color: var(--frost-info-color);
+    --fc-event-border-color: var(--frost-info-color);
+    --fc-event-text-color: var(--frost-white-color);
 }
 
 /* Main Calendar Container */
 .fc {
-font-family: Arial, sans-serif;
+    font-family: var(--font-roboto, "Roboto", sans-serif);
+    background
+.fc-col-header-cell .fc-scrollgrid-sync-inner {
+    color: var(--frost-white-color);
+    font-weight: 600;
+    padding: 12px 8px;
 }
 
-/* Header Toolbar */
-.fc-header-toolbar {
-background-color: #f4f4f4;
-border-bottom: 1px solid #ddd;
+.fc-col-header-cell .fc-scrollgrid-sync-inner a {
+    color: var(--frost-white-color);
+    text-decoration: none;
 }
 
-.fc-header-toolbar .fc-button {
-color: #555;
-background-color: #e7e7e7;
-border: 1px solid #ddd;
+/* Calendar Grid and Day Cells */
+.fc-daygrid-day-frame {
+    height: 100px !important;
+    min-height: 100px;
+    background-color: var(--frost-light-primary-color) !important;
 }
 
-/* Event Styles */
-.fc-event {
-background-color: #007BFF;
-border-color: #0056b3;
-color: #fff;
+.fc-daygrid-day,
+.fc-daygrid-day.fc-day-other {
+    background-color: var(--frost-light-primary-color) !important;
+    border: 1px solid var(--frost-base-color) !important;
+    transition: background-color 0.2s ease;
+}
+
+.fc-daygrid-day:hover {
+    background-color: rgba(155, 164, 181, 0.5) !important;
+}
+
+/* Additional overrides for stubborn white backgrounds */
+.fc-daygrid-day-top,
+.fc-daygrid-day-events,
+.fc-daygrid-day-bg {
+    background-color: transparent !important;
 }
 
 /* Today Highlight */
 .fc-day-today {
-background-color: #e9ecef;
-border: 1px solid #ced4da;
+    background-color: rgba(254, 222, 89, 0.25) !important;
+    border: 2px solid var(--frost-highlight-color) !important;
+    position: relative;
 }
 
-/* Cells */
-.fc-daygrid-day {
-border: 1px solid darkblue;
+.fc-day-today .fc-daygrid-day-number {
+    background-color: var(--frost-highlight-color);
+    color: var(--frost-primary-color);
+    font-weight: bold;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px;
 }
 
-.fc-daygrid-day.fc-day-today {
-border: 2px solid darkblue;
+/* Selected Date */
+.fc-day-selected {
+    background-color: rgba(57, 72, 103, 0.2) !important;
+    border-color: var(--frost-secondary-color) !important;
+}
+
+/* Day Numbers */
+.fc-daygrid-day-number {
+    color: var(--frost-dark-color);
+    font-weight: 600;
+    padding: 4px 8px;
+}
+
+/* Events */
+.fc-event {
+    background-color: var(--frost-info-color);
+    border-color: var(--frost-info-color);
+    color: var(--frost-white-color);
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.fc-event:hover {
+    background-color: var(--frost-secondary-color);
+    border-color: var(--frost-secondary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Event Text */
+.fc-event-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* More Events Link */
+.fc-daygrid-more-link {
+    background-color: var(--frost-highlight-color);
+    color: var(--frost-primary-color);
+    font-weight: 600;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin: 2px;
+}
+
+.fc-daygrid-more-link:hover {
+    background-color: var(--frost-secondary-color);
+    color: var(--frost-white-color);
+}
+
+/* Calendar Border */
+.fc-theme-standard .fc-scrollgrid {
+    border: 1px solid var(--frost-secondary-color);
+    border-radius: 0 0 8px 8px;
+    background-color: var(--frost-light-primary-color) !important;
+}
+
+/* Calendar Table Background */
+.fc-scrollgrid-sync-table {
+    background-color: var(--frost-light-primary-color) !important;
+}
+
+/* Additional background overrides */
+.fc-theme-standard td,
+.fc-theme-standard th {
+    background-color: var(--frost-light-primary-color) !important;
+}
+
+.fc-theme-standard .fc-scrollgrid-section > * {
+    background-color: var(--frost-light-primary-color) !important;
+}
+
+/* Force background for all calendar elements */
+.fc *:not(.fc-event):not(.fc-button):not(.fc-col-header-cell):not(.fc-day-today .fc-daygrid-day-number) {
+    background-color: var(--frost-light-primary-color) !important;
+}
+
+/* ================================
+   CUSTOM JAVASCRIPT CALENDAR STYLING
+   Override white backgrounds in custom calendar component
+   ================================ */
+
+/* Calendar Grid Override */
+.calendar-grid {
+    background: var(--frost-light-primary-color) !important;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Calendar Day Cells Override */
+.calendar-day {
+    background: var(--frost-light-primary-color) !important;
+    color: var(--frost-dark-color) !important;
+    border-right: 1px solid var(--frost-base-color) !important;
+}
+
+.calendar-day:last-child {
+    border-right: none;
+}
+
+/* Calendar Week Rows */
+.calendar-week {
+    border-bottom: 1px solid var(--frost-base-color) !important;
+}
+
+/* Other Month Days */
+.calendar-day.other-month {
+    background: rgba(155, 164, 181, 0.3) !important;
+    color: var(--frost-gray-color) !important;
+}
+
+/* Today Highlight */
+.calendar-day.today {
+    background: rgba(254, 222, 89, 0.3) !important;
+    border: 2px solid var(--frost-highlight-color) !important;
+}
+
+/* Day Numbers */
+.day-number {
+    color: var(--frost-dark-color) !important;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+/* Course Events */
+.course-event {
+    background: var(--frost-info-color) !important;
+    color: var(--frost-white-color) !important;
+}
+
+.course-event:hover {
+    background: var(--frost-secondary-color) !important;
+    color: var(--frost-white-color) !important;
+}
+
+.course-event.d40 {
+    background: var(--frost-secondary-color) !important;
+}
+
+.course-event.g28 {
+    background: var(--frost-info-color) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .course-page-area {
+        padding: 50px 20px;
+    }
+
+    #calendar {
+        padding: 0 10px;
+    }
+
+    .fc-header-toolbar {
+        padding: 10px 15px;
+    }
+
+    .fc-header-toolbar h2 {
+        font-size: 1.25rem;
+    }
+
+    .fc-header-toolbar .fc-button {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+    }
+
+    .fc-daygrid-day-frame {
+        height: 80px !important;
+        min-height: 80px;
+    }
 }
