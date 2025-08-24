@@ -1,0 +1,125 @@
+/**
+ * ============================================================================
+ * FROST - ROOT COLOR SYSTEM & CSS VARIABLES
+ * ============================================================================
+ *
+ * Centralized root variables for the Frost theme
+ * Based on Security Training Group professional design
+ */
+
+:root {
+    /* ===== FROST THEME COLORS ===== */
+    --frost-primary-color: #212a3e;       /* Main dark blue */
+    --frost-secondary-color: #394867;     /* Secondary blue-gray */
+    --frost-dark-primary-color: #1a202c;  /* Darker variant */
+    --frost-light-primary-color: #e2e8f0; /* Light variant */
+
+    --frost-highlight-color: #fede59;     /* Yellow highlight */
+    --frost-info-color: #17aac9;          /* Info blue */
+    --frost-success-color: #22c55e;       /* Success green */
+    --frost-warning-color: #f59e0b;       /* Warning orange */
+    --frost-danger-color: #ef4444;        /* Danger red */
+
+    --frost-white-color: #ffffff;
+    --frost-light-color: #f8f9fa;
+    --frost-base-color: #6b7280;
+    --frost-dark-color: #374151;
+
+    /* ===== LAYOUT DIMENSIONS ===== */
+    --frost-topbar-height: 45px;
+    --frost-bottombar-height: 80px;
+    --frost-header-height: 100px;
+    --frost-footer-height: 200px;
+
+    /* ===== COMPATIBILITY ALIASES ===== */
+    --topbar-height: var(--frost-topbar-height);
+    --botbar-height: var(--frost-bottombar-height);
+    --primary-theme: var(--frost-primary-color);
+    --secondary-theme: var(--frost-secondary-color);
+    --base-theme: var(--frost-base-color);
+    --accent-theme: var(--frost-info-color);
+    --highlight-theme: var(--frost-highlight-color);
+    --transition-base: var(--frost-transition-base);
+    --radius-md: var(--frost-radius-md);
+    --radius-lg: var(--frost-radius-lg);
+    --radius-full: var(--frost-radius-full);
+    --shadow-md: var(--frost-shadow-md);
+    --shadow-xl: var(--frost-shadow-xl);
+
+    /* Additional theme variables */
+    --text-primary: var(--frost-dark-color);
+    --text-muted: var(--frost-base-color);
+    --bg-light: var(--frost-light-color);
+    --border-light: var(--frost-light-primary-color);
+    --accent-500: var(--frost-info-color);
+    --neutral-50: #f9fafb;
+    --neutral-700: #374151;
+    --primary-50: #eff6ff;
+    --primary-500: var(--frost-primary-color);
+    --primary-700: var(--frost-dark-primary-color);
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-size-sm: var(--frost-font-size-sm);
+
+    /* ===== SPACING SYSTEM ===== */
+    --frost-space-xs: 0.25rem;   /* 4px */
+    --frost-space-sm: 0.5rem;    /* 8px */
+    --frost-space-md: 1rem;      /* 16px */
+    --frost-space-lg: 1.5rem;    /* 24px */
+    --frost-space-xl: 2rem;      /* 32px */
+    --frost-space-2xl: 3rem;     /* 48px */
+
+    /* ===== TYPOGRAPHY ===== */
+    --frost-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --frost-font-size-xs: 0.75rem;    /* 12px */
+    --frost-font-size-sm: 0.875rem;   /* 14px */
+    --frost-font-size-base: 1rem;     /* 16px */
+    --frost-font-size-lg: 1.125rem;   /* 18px */
+    --frost-font-size-xl: 1.25rem;    /* 20px */
+    --frost-font-size-2xl: 1.5rem;    /* 24px */
+    --frost-font-size-3xl: 1.875rem;  /* 30px */
+    --frost-font-size-4xl: 2.25rem;   /* 36px */
+
+    /* ===== BORDER RADIUS ===== */
+    --frost-radius-sm: 0.25rem;   /* 4px */
+    --frost-radius-md: 0.375rem;  /* 6px */
+    --frost-radius-lg: 0.5rem;    /* 8px */
+    --frost-radius-xl: 0.75rem;   /* 12px */
+    --frost-radius-full: 9999px;
+
+    /* ===== SHADOWS ===== */
+    --frost-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --frost-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --frost-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --frost-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+
+    /* ===== TRANSITIONS ===== */
+    --frost-transition-fast: 0.15s ease-in-out;
+    --frost-transition-base: 0.2s ease-in-out;
+    --frost-transition-slow: 0.3s ease-in-out;
+}
+
+/* ===== BASE HTML STYLES ===== */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    line-height: 1.5;
+    font-family: var(--frost-font-family);
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--frost-white-color);
+    color: var(--frost-dark-color);
+    font-size: var(--frost-font-size-base);
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}

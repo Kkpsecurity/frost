@@ -1,0 +1,166 @@
+/**
+ * ============================================================================
+ * FROST - BOOTSTRAP OVERRIDES
+ * ============================================================================
+ *
+ * Custom overrides for Bootstrap components using Frost theme colors
+ */
+
+/* ===== HEADER & NAVIGATION OVERRIDES ===== */
+.navbar {
+    padding: 0 !important;
+}
+
+.navbar-brand {
+    color: var(--frost-white-color) !important;
+}
+
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 10px 16px !important;
+    border-radius: var(--frost-radius-md);
+    transition: all 0.2s ease-in-out;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-nav .nav-link.active {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.navbar-toggler {
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25) !important;
+}
+
+.dropdown-menu {
+    background: #ffffff;
+    border: none;
+    border-radius: var(--frost-radius-lg);
+    box-shadow: var(--frost-shadow-xl);
+    margin-top: 8px;
+    padding: 8px;
+}
+
+.dropdown-item {
+    color: var(--frost-dark-color);
+    padding: 10px 16px;
+    border-radius: var(--frost-radius-md);
+    transition: all 0.2s ease-in-out;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: var(--frost-light-color);
+    color: var(--frost-primary-color);
+}
+
+/* ===== BUTTON OVERRIDES ===== */
+.btn-primary {
+    background-color: var(--frost-primary-color);
+    border-color: var(--frost-primary-color);
+    color: var(--frost-white-color);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--frost-secondary-color);
+    border-color: var(--frost-secondary-color);
+    color: var(--frost-white-color);
+}
+
+.btn-info {
+    background-color: var(--frost-info-color);
+    border-color: var(--frost-info-color);
+    color: var(--frost-white-color);
+}
+
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active {
+    background-color: #1296b8;
+    border-color: #1296b8;
+    color: var(--frost-white-color);
+}
+
+/* ===== ACCORDION OVERRIDES ===== */
+.accordion-button {
+    background-color: var(--frost-light-color);
+    color: var(--frost-primary-color);
+    font-weight: 600;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: var(--frost-info-color);
+    color: var(--frost-white-color);
+}
+
+.accordion-button:focus {
+    border-color: var(--frost-info-color);
+    box-shadow: 0 0 0 0.25rem rgba(23, 170, 201, 0.25);
+}
+
+/* ===== CARD OVERRIDES ===== */
+.card {
+    border: 1px solid var(--frost-light-primary-color);
+    border-radius: var(--frost-radius-lg);
+    box-shadow: var(--frost-shadow-sm);
+}
+
+.card-header {
+    background-color: var(--frost-light-color);
+    border-bottom: 1px solid var(--frost-light-primary-color);
+}
+
+/* ===== FORM OVERRIDES ===== */
+.form-control {
+    border-color: var(--frost-light-primary-color);
+    border-radius: var(--frost-radius-md);
+}
+
+.form-control:focus {
+    border-color: var(--frost-info-color);
+    box-shadow: 0 0 0 0.2rem rgba(23, 170, 201, 0.25);
+}
+
+/* ===== BADGE OVERRIDES ===== */
+.badge.bg-light {
+    background-color: var(--frost-highlight-color) !important;
+    color: var(--frost-primary-color) !important;
+}
+
+/* ===== ALERT OVERRIDES ===== */
+.alert-info {
+    background-color: rgba(23, 170, 201, 0.1);
+    border-color: var(--frost-info-color);
+    color: #0c5460;
+}
+
+.alert-success {
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: var(--frost-success-color);
+    color: #0f5132;
+}
+
+.alert-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: var(--frost-warning-color);
+    color: #664d03;
+}
+
+.alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: var(--frost-danger-color);
+    color: #721c24;
+}

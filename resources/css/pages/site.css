@@ -1,0 +1,410 @@
+/**
+ * ============================================================================
+ * FROST - SITE PAGE STYLES
+ * ============================================================================
+ *
+ * Styles specific to public-facing site pages
+ */
+
+/* ===== MAIN PAGE LAYOUT ===== */
+.main-page-content {
+    min-height: calc(100vh - var(--frost-header-height, 120px) - var(--frost-footer-height, 200px));
+    background: transparent;
+}
+
+.site-page-content {
+    width: 100%;
+    min-height: 100%;
+}
+
+/* Header and Footer Spacing */
+.header-one {
+    background: var(--frost-white-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0 !important;
+    z-index: 1000;
+}
+
+.footer-1 {
+    background: var(--frost-primary-color);
+    color: var(--frost-white-color);
+    margin-top: auto;
+    padding: var(--frost-space-xl) 0 var(--frost-space-lg) 0;
+}
+
+/* ===== HOME PAGE STYLES ===== */
+.home-hero {
+    background: linear-gradient(135deg, var(--frost-primary-color) 0%, var(--frost-secondary-color) 50%, var(--frost-info-color) 100%);
+    color: var(--frost-white-color);
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+}
+
+.home-hero .text-primary {
+    color: var(--frost-highlight-color) !important;
+}
+
+.home-hero .btn-primary {
+    background: var(--frost-highlight-color);
+    border-color: var(--frost-highlight-color);
+    color: var(--frost-primary-color);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.home-hero .btn-primary:hover {
+    background: var(--frost-white-color);
+    border-color: var(--frost-white-color);
+    color: var(--frost-primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.home-hero .btn-outline-primary {
+    border-color: var(--frost-white-color);
+    color: var(--frost-white-color);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.home-hero .btn-outline-primary:hover {
+    background: var(--frost-white-color);
+    border-color: var(--frost-white-color);
+    color: var(--frost-primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.features {
+    background: var(--frost-light-color) !important;
+}
+
+.features .card {
+    transition: all 0.3s ease;
+    border: 0 !important;
+    box-shadow: 0 4px 15px rgba(33, 42, 62, 0.08) !important;
+}
+
+.features .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(33, 42, 62, 0.15) !important;
+}
+
+.features .text-primary {
+    color: var(--frost-primary-color) !important;
+}
+
+.features h2 {
+    color: var(--frost-primary-color);
+}
+
+.features h4 {
+    color: var(--frost-primary-color);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.features p {
+    color: var(--frost-base-color);
+    line-height: 1.6;
+}
+
+/* ===== FAQ PAGE STYLES ===== */
+.faqs-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-background {
+    background: linear-gradient(135deg, var(--frost-primary-color) 0%, var(--frost-secondary-color) 50%, var(--frost-dark-primary-color) 100%);
+    position: relative;
+    padding: 80px 0 60px 0;
+}
+
+.hero-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(254,222,89,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    opacity: 0.3;
+}
+
+.text-highlight {
+    color: var(--frost-highlight-color);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.text-white-75 {
+    color: var(--frost-light-primary-color) !important;
+}
+
+.hero-badge .badge {
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    background: var(--frost-highlight-color) !important;
+    color: var(--frost-primary-color) !important;
+}
+
+.hero-stats {
+    margin: 2rem 0;
+}
+
+.stat-item {
+    text-align: center;
+    color: var(--frost-white-color);
+    padding: 1.5rem;
+    background: rgba(57, 72, 103, 0.3);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(254, 222, 89, 0.2);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: rgba(57, 72, 103, 0.5);
+    border-color: var(--frost-highlight-color);
+    transform: translateY(-2px);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--frost-highlight-color);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-top: 0.5rem;
+    color: var(--frost-light-primary-color);
+}
+
+.btn-outline-light {
+    border-color: var(--frost-highlight-color);
+    color: var(--frost-highlight-color);
+    background: transparent;
+    padding: 12px 30px;
+    font-weight: 600;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+    background: var(--frost-highlight-color);
+    border-color: var(--frost-highlight-color);
+    color: var(--frost-primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+/* FAQ Content Styles */
+.faqs-content {
+    background: var(--frost-white-color);
+    padding: 40px 0;
+}
+
+.faqs-content .accordion-button {
+    font-weight: 600;
+    color: #212a3e !important;
+    background: #ffffff !important;
+    border: 2px solid #e0e6ed;
+    padding: 1.25rem 1.5rem;
+    font-size: 1.1rem;
+    border-radius: 8px !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.faqs-content .accordion-button:hover {
+    background: #f8f9fa !important;
+    color: #212a3e !important;
+    border-color: #17aac9;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.faqs-content .accordion-button:not(.collapsed) {
+    color: #ffffff !important;
+    background: #17aac9 !important;
+    border-color: #17aac9;
+    box-shadow: 0 4px 12px rgba(23,170,201,0.3);
+}
+
+.faqs-content .accordion-button:focus {
+    z-index: 3;
+    border-color: var(--frost-info-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(23, 170, 201, 0.25);
+}
+
+.faqs-content .accordion-button::after {
+    color: #212a3e !important;
+    opacity: 1;
+    font-weight: bold;
+}
+
+.faqs-content .accordion-button:not(.collapsed)::after {
+    color: #ffffff !important;
+    opacity: 1;
+}
+
+.faqs-content .accordion-item {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(33, 42, 62, 0.12);
+    border: 2px solid #e0e6ed;
+    background: #ffffff;
+    margin-bottom: 1.5rem;
+}
+
+.faqs-content .accordion-body {
+    background: #ffffff !important;
+    padding: 2rem;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #2c3e50 !important;
+    border-top: 2px solid #e0e6ed;
+}
+
+.faqs-content .card {
+    border: 1px solid var(--frost-light-primary-color);
+    box-shadow: 0 4px 16px rgba(33, 42, 62, 0.08);
+    border-radius: 8px;
+}
+
+.faqs-content .card-body {
+    background: var(--frost-white-color);
+}
+
+.faqs-content .card h3 {
+    color: var(--frost-primary-color);
+}
+
+.faqs-content .btn-primary {
+    background: var(--frost-info-color);
+    border-color: var(--frost-info-color);
+    color: var(--frost-white-color);
+    font-weight: 600;
+    padding: 12px 30px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.faqs-content .btn-primary:hover {
+    background: var(--frost-primary-color);
+    border-color: var(--frost-primary-color);
+    transform: translateY(-1px);
+}
+
+.contact-method {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.contact-method h5 {
+    color: var(--frost-primary-color);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.contact-method p {
+    font-weight: 600;
+    color: var(--frost-info-color);
+    font-size: 1.1rem;
+}
+
+.contact-method i {
+    color: var(--frost-info-color) !important;
+}
+
+.contact-method small {
+    color: var(--frost-base-color);
+}
+
+/* FAQ Responsive Design */
+@media (max-width: 768px) {
+    .hero-background {
+        padding: 60px 0 40px 0;
+    }
+
+    .hero-stats .col-md-4 {
+        margin-bottom: 1rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+}
+
+/* ===== BLOG PAGE STYLES ===== */
+.blog-hero {
+    background: linear-gradient(135deg, var(--frost-primary-color), var(--frost-secondary-color));
+    color: var(--frost-white-color);
+    padding: var(--frost-space-2xl) 0;
+}
+
+.blog-content {
+    background: var(--frost-white-color);
+    padding: var(--frost-space-2xl) 0;
+}
+
+.blog-article {
+    background: var(--frost-white-color);
+    border-radius: var(--frost-radius-lg);
+    box-shadow: var(--frost-shadow-md);
+    padding: var(--frost-space-xl);
+    margin-bottom: var(--frost-space-xl);
+}
+
+.blog-meta {
+    color: var(--frost-base-color);
+    font-size: var(--frost-font-size-sm);
+    margin-bottom: var(--frost-space-md);
+}
+
+/* ===== CONTACT PAGE STYLES ===== */
+.contact-hero {
+    background: linear-gradient(135deg, var(--frost-info-color), var(--frost-primary-color));
+    color: var(--frost-white-color);
+    padding: var(--frost-space-2xl) 0;
+}
+
+.contact-form {
+    background: var(--frost-white-color);
+    border-radius: var(--frost-radius-lg);
+    box-shadow: var(--frost-shadow-lg);
+    padding: var(--frost-space-xl);
+}
+
+.contact-info {
+    background: var(--frost-light-color);
+    border-radius: var(--frost-radius-lg);
+    padding: var(--frost-space-xl);
+}
+
+.contact-method {
+    text-align: center;
+    padding: var(--frost-space-lg);
+    border-radius: var(--frost-radius-md);
+    transition: all var(--frost-transition-base);
+}
+
+.contact-method:hover {
+    background: var(--frost-white-color);
+    box-shadow: var(--frost-shadow-md);
+    transform: translateY(-2px);
+}

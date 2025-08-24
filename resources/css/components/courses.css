@@ -1,7 +1,7 @@
 /* Course Cards Styling - Enhanced Product Feature Layout */
 
 .course-card {
-    background: var(--primary-800);
+    background: var(--frost-primary-color);
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease-in-out;
@@ -10,7 +10,7 @@
     display: flex;
     flex-direction: column;
     min-height: 520px;
-    border: 1px solid var(--primary-700);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     /* Add margin to prevent ribbon cutoff */
     margin-top: 25px;
     margin-right: 15px;
@@ -20,6 +20,7 @@
     transform: translateY(-8px);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
     border-color: var(--accent-theme);
+    background: var(--frost-dark-primary-color);
 }
 
 .course-badge {
@@ -43,7 +44,7 @@
     text-align: center;
     position: relative;
     padding: 30px 30px 20px;
-    background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-600) 100%);
+    background: var(--frost-primary-color);
 }
 
 .course-icon {
@@ -101,13 +102,13 @@
 .course-title {
     font-size: 22px;
     font-weight: 700;
-    color: white;
+    color: var(--frost-highlight-color);
     margin-bottom: 15px;
     line-height: 1.3;
 }
 
 .course-description {
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     font-size: 14px;
     line-height: 1.6;
     margin-bottom: 20px;
@@ -119,7 +120,7 @@
 }
 
 .course-features h6 {
-    color: white;
+    color: var(--frost-highlight-color);
     font-weight: 600;
     margin-bottom: 12px;
     font-size: 14px;
@@ -133,7 +134,7 @@
 
 .feature-list li {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     margin-bottom: 6px;
     display: flex;
     align-items: flex-start;
@@ -157,7 +158,7 @@
 
 .course-meta span {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     font-weight: 500;
 }
 
@@ -168,7 +169,7 @@
 .course-footer {
     padding: 25px 30px;
     border-top: 1px solid var(--primary-600);
-    background: var(--primary-700);
+    background: var(--frost-primary-color);
     margin-top: auto;
 }
 
@@ -186,7 +187,7 @@
 
 .price-note {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     font-weight: 500;
 }
 

@@ -13,13 +13,16 @@
 
     @auth()
         <span class="user-profile text-white mr-2" style="margin-right: 10px;">Hello, {{ Auth::user()->fname }}!</span>
-            @impersonating($guard = null)
-                <a href="{{ route('impersonate.account.leave') }}">
-                    <button class="btn btn-sm btn-danger m-1" data-toggle="tooltip" data-placement="top" title="Leave Impersonation">
-                        <i class="fas fa-user-secret"></i> <span class="button-text">Leave Impersonation</span>
-                    </button>
-                </a>
-            @endImpersonating
+
+        @impersonating($guard = null)
+            <a href="{{ route('impersonate.account.leave') }}">
+                <button class="btn btn-sm btn-danger m-1" data-toggle="tooltip" data-placement="top"
+                    title="Leave Impersonation">
+                    <i class="fas fa-user-secret"></i> <span class="button-text">Leave Impersonation</span>
+                </button>
+            </a>
+        @endImpersonating
+
         <a href="{{ url('account') }}" class="btn-primary acircle m-1">
             <i class="fa fa-user"></i>
         </a>

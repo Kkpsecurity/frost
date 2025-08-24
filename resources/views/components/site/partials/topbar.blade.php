@@ -12,7 +12,7 @@
                 </div>
             </div>
             <div class="col-md-7 col-sm-7 col-12 p-0">
-                 <x-site.partials.top_right_nav />
+                <x-site.partials.top_right_nav />
             </div>
         </div>
     </div>

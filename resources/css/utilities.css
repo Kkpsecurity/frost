@@ -1,0 +1,90 @@
+/**
+ * ============================================================================
+ * FROST - UTILITY CLASSES
+ * ============================================================================
+ *
+ * Reusable utility classes using Frost theme colors
+ * Spacing, colors, typography, and layout utilities
+ */
+
+/* ===== SPACING UTILITIES ===== */
+.m-0 { margin: 0 !important; }
+.m-1 { margin: var(--frost-space-xs) !important; }
+.m-2 { margin: var(--frost-space-sm) !important; }
+.m-3 { margin: var(--frost-space-md) !important; }
+.m-4 { margin: var(--frost-space-lg) !important; }
+.m-5 { margin: var(--frost-space-xl) !important; }
+
+.p-0 { padding: 0 !important; }
+.p-1 { padding: var(--frost-space-xs) !important; }
+.p-2 { padding: var(--frost-space-sm) !important; }
+.p-3 { padding: var(--frost-space-md) !important; }
+.p-4 { padding: var(--frost-space-lg) !important; }
+.p-5 { padding: var(--frost-space-xl) !important; }
+
+/* ===== TEXT UTILITIES ===== */
+.text-primary { color: var(--frost-primary-color) !important; }
+.text-secondary { color: var(--frost-secondary-color) !important; }
+.text-info { color: var(--frost-info-color) !important; }
+.text-success { color: var(--frost-success-color) !important; }
+.text-warning { color: var(--frost-warning-color) !important; }
+.text-danger { color: var(--frost-danger-color) !important; }
+.text-white { color: var(--frost-white-color) !important; }
+.text-muted { color: var(--frost-base-color) !important; }
+
+/* ===== BACKGROUND UTILITIES ===== */
+.bg-primary { background-color: var(--frost-primary-color) !important; }
+.bg-secondary { background-color: var(--frost-secondary-color) !important; }
+.bg-info { background-color: var(--frost-info-color) !important; }
+.bg-success { background-color: var(--frost-success-color) !important; }
+.bg-warning { background-color: var(--frost-warning-color) !important; }
+.bg-danger { background-color: var(--frost-danger-color) !important; }
+.bg-light { background-color: var(--frost-light-color) !important; }
+.bg-white { background-color: var(--frost-white-color) !important; }
+
+/* ===== FROST-PREFIXED BACKGROUND UTILITIES ===== */
+.frost-primary-bg { background-color: var(--frost-primary-color) !important; }
+.frost-secondary-bg { background-color: var(--frost-secondary-color) !important; }
+.frost-info-bg { background-color: var(--frost-info-color) !important; }
+.frost-success-bg { background-color: var(--frost-success-color) !important; }
+.frost-warning-bg { background-color: var(--frost-warning-color) !important; }
+.frost-danger-bg { background-color: var(--frost-danger-color) !important; }
+.frost-light-bg { background-color: var(--frost-light-color) !important; }
+.frost-white-bg { background-color: var(--frost-white-color) !important; }
+
+/* ===== BORDER UTILITIES ===== */
+.border-radius-sm { border-radius: var(--frost-radius-sm) !important; }
+.border-radius-md { border-radius: var(--frost-radius-md) !important; }
+.border-radius-lg { border-radius: var(--frost-radius-lg) !important; }
+.border-radius-xl { border-radius: var(--frost-radius-xl) !important; }
+
+/* ===== SHADOW UTILITIES ===== */
+.shadow-sm { box-shadow: var(--frost-shadow-sm) !important; }
+.shadow-md { box-shadow: var(--frost-shadow-md) !important; }
+.shadow-lg { box-shadow: var(--frost-shadow-lg) !important; }
+.shadow-xl { box-shadow: var(--frost-shadow-xl) !important; }
+
+/* ===== DISPLAY UTILITIES ===== */
+.d-flex { display: flex !important; }
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+
+/* ===== FLEX UTILITIES ===== */
+.justify-content-center { justify-content: center !important; }
+.justify-content-between { justify-content: space-between !important; }
+.align-items-center { align-items: center !important; }
+.flex-column { flex-direction: column !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+
+/* ===== POSITION UTILITIES ===== */
+.position-relative { position: relative !important; }
+.position-absolute { position: absolute !important; }
+.position-fixed { position: fixed !important; }
+.position-sticky { position: sticky !important; }
+
+/* ===== FROST SPECIFIC UTILITIES ===== */
+.frost-transition { transition: all var(--frost-transition-base) !important; }
+.frost-hover:hover { transform: translateY(-2px); box-shadow: var(--frost-shadow-lg); }
+.frost-focus:focus { outline: 2px solid var(--frost-info-color); outline-offset: 2px; }

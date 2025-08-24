@@ -24,8 +24,15 @@ Two-tone gradient topbar with integrated old styles for proper display
     transition: var(--transition-base);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0;
+    margin: 0;
     min-height: var(--topbar-height);
     height: var(--topbar-height);
+}
+
+.topbar-area .container-fluid {
+    padding: 0;
+    margin: 0;
+    height: 100%;
 }
 
 .topbar-area .row {

@@ -1,0 +1,58 @@
+/**
+ * ============================================================================
+ * FROST - ADMIN PAGE STYLES
+ * ============================================================================
+ *
+ * Styles specific to admin interface pages
+ */
+
+/* Admin layout adjustments */
+.admin-content {
+    background: var(--frost-light-color);
+    min-height: calc(100vh - var(--frost-topbar-height));
+}
+
+.admin-header {
+    background: var(--frost-white-color);
+    border-bottom: 1px solid var(--frost-light-primary-color);
+    padding: var(--frost-space-md) 0;
+}
+
+.admin-sidebar {
+    background: var(--frost-primary-color);
+    color: var(--frost-white-color);
+    min-height: 100vh;
+}
+
+.admin-main {
+    padding: var(--frost-space-xl);
+}
+
+/* Admin cards */
+.admin-card {
+    background: var(--frost-white-color);
+    border-radius: var(--frost-radius-lg);
+    box-shadow: var(--frost-shadow-sm);
+    padding: var(--frost-space-xl);
+    margin-bottom: var(--frost-space-lg);
+}
+
+/* Admin tables */
+.admin-table {
+    background: var(--frost-white-color);
+    border-radius: var(--frost-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--frost-shadow-sm);
+}
+
+.admin-table th {
+    background: var(--frost-primary-color);
+    color: var(--frost-white-color);
+    padding: var(--frost-space-md);
+    font-weight: 600;
+}
+
+.admin-table td {
+    padding: var(--frost-space-md);
+    border-bottom: 1px solid var(--frost-light-primary-color);
+}

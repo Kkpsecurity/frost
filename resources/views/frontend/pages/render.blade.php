@@ -1,7 +1,7 @@
 {{-- Site Home Page - Uses Site Layout Component --}}
 {{-- Page data is now passed from the SitePageController --}}
 
-<x-site.layout :title="$content['title'] ?? 'Welcome to ' . config('app.name')">
+<x-site.site-wrapper :title="$content['title'] ?? 'Welcome to ' . config('app.name')">
     <x-slot:head>
         <meta name="description" content="{{ $content['description'] ?? 'Professional security training platform' }}">
         <meta name="keywords" content="{{ $content['keywords'] ?? 'security, training, certification' }}">
@@ -9,9 +9,9 @@
 
     <x-site.partials.header />
 
-    <div class="container-fluid m-0 p-0" style="min-height: 50vh;">
-        <x-site.pages.render :page="$content" />
-    </div>
+    <main class="main-page-content">
+        <x-site.render-panels :page="$content" />
+    </main>
 
     <x-site.partials.footer />
-</x-site.layout>
+</x-site.site-wrapper>

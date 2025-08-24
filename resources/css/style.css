@@ -3,39 +3,44 @@
  * FROST - MAIN STYLESHEET
  * ============================================================================
  *
- * Modular CSS Architecture for Professional Site Theme
- * All styles organized by component and functionality
+ * Centralized CSS architecture for Frost theme
+ * Organized structure with clear hierarchy and no duplicates
  */
 
-/* ===== ROOT COLOR SYSTEM ===== */
-@import url('base/root.css');
-
-/* ===== BASE STYLES ===== */
-@import url('base/html.css');
+/* ===== ROOT & BASE STYLES ===== */
+@import url('root.css');
 
 /* ===== LAYOUT COMPONENTS ===== */
 @import url('components/topbar.css');
 @import url('components/bottombar.css');
-@import url('components/loader.css');
-@import url('components/login-form.css');
-@import url('components/welcome-hero.css');
-@import url('components/scroll-up.css');
-@import url('components/welcome-hero.css');
-@import url('components/top-right-nav.css');
+@import url('components/header.css');
 @import url('components/footer.css');
-@import url('components/support-services.css');
+@import url('components/loader.css');
+@import url('components/scroll-up.css');
+
+/* ===== UI COMPONENTS ===== */
+@import url('components/welcome-hero.css');
 @import url('components/courses.css');
+@import url('components/support-services.css');
+@import url('components/login-form.css');
+@import url('components/top-right-nav.css');
 
 /* ===== PAGE SPECIFIC STYLES ===== */
 @import url('pages/auth.css');
 @import url('pages/dashboard.css');
+@import url('pages/admin.css');
+@import url('pages/site.css');
 
-/* ===== UTILITY CLASSES ===== */
-@import url('base/utilities.css');
+/* ===== UTILITIES ===== */
+@import url('utilities.css');
+
+/* ===== VENDOR OVERRIDES ===== */
+@import url('vendor/bootstrap-overrides.css');
+@import url('vendor/filepond.css');
 
 /**
  * ============================================================================
- * LAYOUT POSITIONING FIXES
+ * GLOBAL LAYOUT STYLES
  * ============================================================================
  */
 
@@ -43,25 +48,24 @@
 .main-content {
     position: relative;
     width: 100%;
-    min-height: 100vh;
+    min-height: calc(100vh - var(--frost-topbar-height) - var(--frost-bottombar-height));
+    padding-top: 0;
 }
 
-/* Ensure content appears below the sticky header */
-.main-content .container-fluid {
+/* Container adjustments */
+.container-fluid {
     position: relative;
     z-index: 1;
-    /* Remove margin - content should be flush with header */
-    margin-top: 0;
 }
 
-/* Fix for panels that might have absolute positioning */
-.welcome-login-area {
-    position: relative;
-    margin-top: 0;
-    padding-top: 2rem;
+/* Page transitions */
+.page-transition {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all var(--frost-transition-base);
 }
 
-/**
- * Main style.css serves as the central import hub
- * Individual component files keep styles organized and maintainable
- */
+.page-transition.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}

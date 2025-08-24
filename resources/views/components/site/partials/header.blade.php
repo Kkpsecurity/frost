@@ -1,4 +1,5 @@
 <header class="header-one">
-    <x-frontend.partials.topbar />
-    <x-frontend.partials.bottombar />
+    <x-site.partials.topbar />
+    <x-site.partials.bottombar />
+    <x-site.partials.navbar-toggler />
 </header>
