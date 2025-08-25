@@ -2,6 +2,24 @@
     @vite(['resources/css/components/getting-started.css'])
 @endsection
 
+ @php
+        $manifestPath = public_path('build/manifest.json');
+        $useVite = false;
+        if (file_exists($manifestPath)) {
+            $manifest = json_decode(file_get_contents($manifestPath), true);
+            if (is_array($manifest) && array_key_exists('resources/css/components/welcome-hero.css', $manifest)) {
+                $useVite = true;
+            }
+        }
+    @endphp
+
+@if($useVite)
+    @vite(['resources/css/components/welcome-hero.css'])
+@else
+    <link rel="stylesheet" href="{{ asset('css/components/getting-started.css') }}">
+@endif
+
+
 <div class="frost-secondary-bg py-5">
     <div class="container">
         <div class="row mb-5">

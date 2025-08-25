@@ -110,11 +110,19 @@
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth'
-                        });
+                    const href = this.getAttribute('href');
+                    // Only process valid selectors (not empty or just #)
+                    if (href && href !== '#' && href.length > 1) {
+                        try {
+                            const target = document.querySelector(href);
+                            if (target) {
+                                target.scrollIntoView({
+                                    behavior: 'smooth'
+                                });
+                            }
+                        } catch (error) {
+                            console.warn('Invalid selector:', href);
+                        }
                     }
                 });
             });
