@@ -25,6 +25,29 @@ Route::middleware(['admin'])->group(function () {
     // Dashboard (default admin route)
     Route::get('/', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
 
+    // Debug: admin auth status
+    Route::get('/status', function (\Illuminate\Http\Request $request) {
+        $userAdmin = $request->user('admin');
+        $userWeb = $request->user();
+
+        return response()->json([
+            'admin_guard_user' => $userAdmin ? ['id' => $userAdmin->id, 'email' => $userAdmin->email] : null,
+            'web_guard_user' => $userWeb ? ['id' => $userWeb->id, 'email' => $userWeb->email] : null,
+            'is_admin_guard_authenticated' => auth('admin')->check(),
+            'is_web_guard_authenticated' => auth('web')->check(),
+        ]);
+    })->name('status');
+
     // Logout
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
+
+// Load modular admin route files from routes/admin/*.php
+foreach (glob(base_path('routes/admin/*.php')) as $file) {
+    // Skip this file if present in the directory listing
+    if (basename($file) === 'admin.php') {
+        continue;
+    }
+
+    require $file;
+}

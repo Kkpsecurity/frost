@@ -21,8 +21,11 @@
     <!-- Bootstrap CSS (for compatibility) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    {{-- Our Professional Theme Styles --}}
-    @vite(['resources/css/style.css', 'resources/js/site.js'])
+    {{-- Core Theme Styles (Global) --}}
+    @vite(['resources/css/style.css'])
+
+    {{-- Panel-Specific CSS Section --}}
+    @yield('panel-css')
 
     <!-- Meta Data -->
     <meta name="description" content="{{ $description ?? 'Professional Security Training Platform' }}">

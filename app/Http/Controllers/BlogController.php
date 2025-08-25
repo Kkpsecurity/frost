@@ -19,7 +19,7 @@ class BlogController extends Controller
      */
     public function list()
     {
-        return view('blog.index');
+        return view('frontend.blog.index');
     }
 
     /**
@@ -30,7 +30,7 @@ class BlogController extends Controller
         // Map blog post slugs to their corresponding views
         $blogPosts = [
             'florida-gun-laws-2025' => [
-                'view' => 'blog.florida-gun-laws-2025',
+                'view' => 'frontend.blog.florida-gun-laws-2025',
                 'title' => 'Complete Guide to Florida Gun Laws 2025: What Every Gun Owner Should Know',
                 'meta_description' => 'Navigate Florida\'s complex gun laws with confidence. This comprehensive guide covers everything from purchasing requirements to concealed carry permits, recent legislative changes, and compliance requirements for 2025.',
                 'category' => 'Gun Laws & Regulations',
@@ -39,7 +39,7 @@ class BlogController extends Controller
                 'read_time' => '8 min read'
             ],
             'essential-firearms-safety' => [
-                'view' => 'blog.essential-firearms-safety',
+                'view' => 'frontend.blog.essential-firearms-safety',
                 'title' => 'Essential Firearms Safety: Building Fundamental Skills for Security Professionals',
                 'meta_description' => 'Master the four fundamental rules of firearm safety and advanced handling techniques essential for security professionals. Build lasting safety habits with professional training guidance.',
                 'category' => 'Weapons Training',
@@ -48,7 +48,7 @@ class BlogController extends Controller
                 'read_time' => '6 min read'
             ],
             'threat-assessment-techniques' => [
-                'view' => 'blog.threat-assessment-techniques',
+                'view' => 'frontend.blog.threat-assessment-techniques',
                 'title' => 'Advanced Threat Assessment Techniques for Security Officers',
                 'meta_description' => 'Learn professional threat assessment methodologies to identify and evaluate potential security risks effectively. Essential skills for modern security professionals.',
                 'category' => 'Security Tips',
@@ -57,7 +57,7 @@ class BlogController extends Controller
                 'read_time' => '5 min read'
             ],
             'security-license-renewal' => [
-                'view' => 'blog.security-license-renewal',
+                'view' => 'frontend.blog.security-license-renewal',
                 'title' => 'Security License Renewal: Complete Checklist for 2025',
                 'meta_description' => 'Stay compliant with updated renewal requirements for Class D and Class G security licenses in Florida. Complete checklist and timeline for 2025 renewals.',
                 'category' => 'Compliance & Licensing',
@@ -66,7 +66,7 @@ class BlogController extends Controller
                 'read_time' => '4 min read'
             ],
             'concealed-carry-florida' => [
-                'view' => 'blog.concealed-carry-florida',
+                'view' => 'frontend.blog.concealed-carry-florida',
                 'title' => 'Concealed Carry in Florida: Rights, Restrictions, and Responsibilities',
                 'meta_description' => 'Understand your rights and responsibilities as a concealed carry permit holder in Florida, including recent constitutional carry changes and legal requirements.',
                 'category' => 'Gun Laws & Regulations',
@@ -76,7 +76,7 @@ class BlogController extends Controller
             ],
             // Legacy blog posts from old system
             'security-training' => [
-                'view' => 'blog.security-training',
+                'view' => 'frontend.blog.security-training',
                 'title' => 'Comprehensive Security Training Programs in Florida',
                 'meta_description' => 'Learn about comprehensive security training programs available in Florida, including Class D and Class G license requirements.',
                 'category' => 'Security Training',
@@ -85,7 +85,7 @@ class BlogController extends Controller
                 'read_time' => '5 min read'
             ],
             'security-officer' => [
-                'view' => 'blog.security-officer',
+                'view' => 'frontend.blog.security-officer',
                 'title' => 'Security Officer Career Guide: Requirements and Opportunities',
                 'meta_description' => 'Complete guide to becoming a security officer in Florida, including licensing requirements, career opportunities, and professional development.',
                 'category' => 'Career Development',
@@ -94,7 +94,7 @@ class BlogController extends Controller
                 'read_time' => '6 min read'
             ],
             'ensuring-compliance' => [
-                'view' => 'blog.ensuring-compliance',
+                'view' => 'frontend.blog.ensuring-compliance',
                 'title' => 'Ensuring Compliance in Security Operations',
                 'meta_description' => 'Essential guide to maintaining compliance in security operations, understanding regulations, and avoiding common violations.',
                 'category' => 'Compliance & Licensing',
@@ -132,7 +132,7 @@ class BlogController extends Controller
 
         $categoryTitle = $categories[$category];
 
-        return view('blog.category', compact('category', 'categoryTitle'));
+        return view('frontend.blog.category', compact('category', 'categoryTitle'));
     }
 
     /**

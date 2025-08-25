@@ -31,6 +31,19 @@ Route::redirect('/', '/pages', 302);
 Route::match(['GET', 'POST'], '/pages/{page?}', [SitePageController::class, 'render'])
     ->name('pages');
 
+/**
+ * Student Classroom / React mount
+ */
+Route::prefix('classroom')->name('classroom.')->group(function () {
+    // Student dashboard (will mount React student app)
+    Route::get('/', [App\Http\Controllers\React\StudentPortalController::class, 'dashboard'])
+        ->name('dashboard');
+
+    // Legacy/portal routes used by the React app
+    Route::get('/portal/class/{course_auth_id}', [App\Http\Controllers\React\StudentPortalController::class, 'RunPortal'])
+        ->name('portal.class');
+});
+
 // Courses routes
 Route::get('/courses', [CoursesController::class, 'index'])
     ->name('courses.index');

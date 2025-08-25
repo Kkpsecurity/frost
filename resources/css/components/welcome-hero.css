@@ -1,209 +1,290 @@
 /*----------------------------------------*/
-/*  Hero Section - Beautiful Course Cards
+/*  Welcome Slider Area
 /*----------------------------------------*/
 
-.hero-section {
-    background: var(--frost-primary-color);
-    min-height: 100vh;
-    padding: 100px 0;
+.slider-area {
+    background: rgba(0, 0, 0, 0)
+        url('/assets/img/background/thomas-def-MfM3p2yn4Ew-unsplash-1-scaled.jpg')
+        no-repeat scroll center center / cover;
+    width: 100%;
+    min-height: 600px;
+    height: auto;
+    padding: 100px 0px;
+    position: relative;
+    z-index: 10;
+}
+
+.slider-area::after {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(7, 11, 41, 0.8);
+    content: "";
+    z-index: -1;
+}
+
+.slider-content {
+    overflow: hidden;
+    padding: 0px 0px;
+}
+
+.slider-content h2 {
+    font-size: 38px;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.slider-content p {
+    padding: 20px;
+    font-size: 18px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.slider-area .login-panel {
+    margin-top: 40px;
+    padding: 30px 30px;
+    width: 430px;
     position: relative;
     z-index: 1;
 }
 
-.hero-content {
-    text-align: left;
-    color: white;
+.slider-area .login-panel::before {
+    content: "";
+    position: absolute;
+    right: -30px;
+    top: -30px;
+    width: 60%;
+    height: 115%;
+    opacity: 0.8;
+    z-index: -1;
+    border-radius: 3px;
+    background: var(--frost-base-color);
 }
 
-.hero-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: white;
+.all-services {
+    overflow: hidden;
+    background: #1b2654;
+    border-radius: 0.25rem;
 }
 
-.hero-subtitle {
-    font-size: 1.25rem;
-    opacity: 0.9;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-/* Course Cards */
-.course-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 2rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    height: 100%;
-}
-
-.course-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.course-header {
+.well-services {
+    width: 100%;
+    margin: 1px;
     text-align: center;
-    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: transform 0.4s;
+    padding: 0.875rem 0 0.625rem;
+    z-index: 1;
 }
 
-.monitor-display {
-    width: 120px;
-    height: 80px;
-    background: #2c3e50;
-    border-radius: 8px;
-    margin: 0 auto;
+.main-wel {
+    width: 100%;
+    padding: 0.25rem 0 0;
     position: relative;
-    border: 3px solid #34495e;
+    z-index: 1;
+}
+
+.wel-img {
+    position: relative;
+    z-index: 1;
+    padding: 10px;
+}
+
+.main-wel .btn {
+    margin: 0 0.3125rem 0.3125rem;
+    padding: 0.525rem 1.05rem;
+    font-size: 0.775rem;
+    font-weight: 600;
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.5s;
+}
+
+.wel-content p {
+    margin-bottom: 0;
+    text-align: center;
+    width: 80%;
+    margin: 0 auto;
+    color: #999;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 0 0 0.625rem;
+}
+
+.wel-content h4 {
+    display: inline-block;
+    font-size: 1.2rem;
+    margin-bottom: 0;
+    color: var(--frost-light-color);
+    padding: 0 0 0.625rem;
+    font-weight: 600;
+}
+
+.wel-content h4 span {
+    color: var(--frost-info-color);
+    font-weight: 700;
+    padding-right: 0.625rem;
+}
+
+.well-services:hover .big-icon::after {
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 1;
+}
+
+.wel-content .price {
+    color: #999;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.well-services.first-item,
+.well-services.thired-item {
+    position: relative;
+    top: 3.75rem;
+}
+
+.account-profile-container {
+    height: 260px;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1;
 }
 
-.course-badge {
-    text-align: center;
-    color: white;
-}
-
-.badge-text {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    line-height: 1.2;
-}
-
-.class-text {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 900;
-    margin-top: 0.25rem;
-    color: var(--frost-highlight-color);
-}
-
-.course-body {
+.account-profile {
+    width: 100%;
+    height: 260px;
     text-align: center;
 }
 
-.course-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: white;
+.profile-detail h4 {
+    font-size: 24px;
+    color: var(--frost-white-color);
 }
 
-.course-description {
-    font-size: 0.9rem;
-    opacity: 0.8;
-    margin-bottom: 1rem;
-    color: rgba(255, 255, 255, 0.9);
+.profile-detail p {
+    font-size: 18px;
 }
 
-.course-price {
-    font-size: 1.5rem;
+.login-form-inner {
+    padding: 40px;
+    background: linear-gradient(145deg, #1f2a48, #2c365f);
+    min-height: 420px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    font-family: "Inter", "Roboto", sans-serif;
+    color: #f5f6fa;
+}
+
+.profile-detail h4 {
+    font-size: 26px;
     font-weight: 700;
-    color: var(--frost-highlight-color);
-    margin-bottom: 1.5rem;
+    margin-bottom: 10px;
+    color: #fff;
 }
 
-.course-actions .btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+.profile-detail p {
+    font-size: 15px;
+    color: #a5acc1;
+    margin-bottom: 25px;
+}
+
+.login-form-inner input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    background: #2b3355;
+    border: 1px solid #3f4970;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #f5f6fa;
+    transition: all 0.3s;
+}
+
+.login-form-inner input:focus {
+    outline: none;
+    border-color: #2f80ed;
+    box-shadow: 0 0 0 2px rgba(47,128,237,0.3);
+}
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background: #2f80ed;
+    border: none;
+    border-radius: 8px;
     font-weight: 600;
-    text-transform: uppercase;
-    border-radius: 5px;
-    margin: 0 0.25rem;
+    font-size: 16px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
-/* User Profile Card */
-.user-profile-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 2rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
-    height: fit-content;
+.login-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
 }
 
-.profile-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+
+.login-btn:hover {
+    background-color: transparent;
+    color: var(--frost-info-color);
+    transition: all 0.4s ease 0s;
 }
 
-.profile-avatar {
-    width: 80px;
-    height: 80px;
+.big-icon {
+    font-size: 60px;
+    display: inline-block;
+    line-height: 64px;
+    color: var(--frost-white-color);
+    position: relative;
+    z-index: 1;
+}
+
+.big-icon::after {
+    position: absolute;
+    content: "";
+    left: -25px;
+    top: -15px;
+    background: var(--frost-info-color);
+    z-index: -1;
+    width: 70px;
+    height: 70px;
+    opacity: 0.5;
     border-radius: 50%;
-    margin-bottom: 1rem;
-    overflow: hidden;
-    border: 3px solid rgba(255, 255, 255, 0.2);
+    transition: 0.5s;
+    box-shadow: 0 0 0 0 rgba(23, 170, 201, 0.5);
 }
 
-.avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.big-icon img {
+    width: 12rem;
+    height: 10rem;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
 }
 
-.profile-name {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: white;
-    margin-bottom: 0.5rem;
-}
-
-.profile-email {
-    font-size: 0.9rem;
-    opacity: 0.7;
-    color: rgba(255, 255, 255, 0.7);
-    margin: 0;
-}
-
-.login-form-container {
-    /* Login form styling will be handled by the form component */
-    width: 100%;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .hero-title {
-        font-size: 2rem;
+@media screen and (max-width: 380px) {
+    .slider-area {
+        padding: 50px 0px;
     }
 
-    .hero-subtitle {
-        font-size: 1rem;
+    .slider-content {
+        margin-top: -30px;
+        padding: 0px 0px;
     }
 
-    .course-card {
-        margin-bottom: 2rem;
+    .slider-content h2 {
+        font-size: 24px;
     }
 
-    .monitor-display {
-        width: 100px;
-        height: 65px;
-    }
-
-    .class-text {
-        font-size: 1.2rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .hero-section {
-        padding: 50px 0;
-    }
-
-    .hero-title {
-        font-size: 1.75rem;
-    }
-
-    .course-card {
-        padding: 1.5rem;
+    .slider-content p {
+        font-size: 14px;
     }
 }

@@ -1,3 +1,8 @@
+{{-- Panel-Specific CSS --}}
+@section('panel-css')
+    @vite(['resources/css/components/courses.css'])
+@endsection
+
 {{-- Course Schedules Panel --}}
 <div class="frost-secondary-bg py-5">
     <div class="container">

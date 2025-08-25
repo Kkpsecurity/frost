@@ -18,10 +18,7 @@
 @import url('components/loader.css');
 @import url('components/scroll-up.css');
 
-/* ===== UI COMPONENTS ===== */
-@import url('components/welcome-hero.css');
-@import url('components/courses.css');
-@import url('components/support-services.css');
+/* ===== UI COMPONENTS (Global Only) ===== */
 @import url('components/login-form.css');
 @import url('components/top-right-nav.css');
 
