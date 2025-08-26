@@ -1,0 +1,99 @@
+/**
+ * ============================================================================
+ * LOGIN FORM COMPONENT STYLES
+ * ============================================================================
+ * 
+ * Professional login form styling with golden inputs
+ * Matches target design specifications
+ */
+
+/* Login Form Container */
+.login-form {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Custom Login Input Styling */
+.login-input {
+    background-color: #f8e97a !important;
+    color: #333 !important;
+    border: none !important;
+    font-weight: 500;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.login-input:focus {
+    background-color: #f7e066 !important;
+    color: #333 !important;
+    box-shadow: 0 0 0 0.2rem rgba(248, 233, 122, 0.3) !important;
+    border: none !important;
+}
+
+.login-input::placeholder {
+    color: #666 !important;
+    opacity: 0.8;
+}
+
+/* Input Group Styling */
+.login-form .input-group-text {
+    background-color: #6c757d !important;
+    border: none !important;
+    padding: 12px;
+}
+
+/* Login Button Styling */
+.login-form .btn-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    font-weight: 600;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+}
+
+.login-form .btn-info:hover {
+    background-color: #138496;
+    border-color: #117a8b;
+    transform: translateY(-1px);
+}
+
+/* Checkbox Styling */
+.login-form .form-check-input:checked {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+/* Link Styling */
+.login-form a.text-info {
+    color: #17a2b8 !important;
+    font-weight: 500;
+}
+
+.login-form a.text-info:hover {
+    color: #138496 !important;
+    text-decoration: underline !important;
+}
+
+/* Form Labels */
+.login-form .form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* Error State */
+.login-input.is-invalid {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .login-form .input-group-text,
+    .login-input {
+        font-size: 14px;
+    }
+    
+    .login-form .btn {
+        font-size: 14px;
+        padding: 10px 18px;
+    }
+}

@@ -1,0 +1,172 @@
+/*
+============================================================================
+FROST - TOP RIGHT NAVIGATION STYLES
+============================================================================
+Styling for the right-side navigation buttons in the topbar
+*/
+
+.top_right_nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    height: 100%;
+    padding-right: 1rem;
+}
+
+/* Guest State Buttons */
+.top_right_nav .login-button,
+.top_right_nav .register-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition-base);
+    font-size: 0.875rem;
+}
+
+.top_right_nav .login-button {
+    background-color: var(--primary-button);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.top_right_nav .login-button:hover {
+    background-color: var(--primary-button-hover);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.top_right_nav .register-button {
+    background-color: var(--secondary-button);
+    color: #ffffff;
+    border: 1px solid var(--accent-theme);
+}
+
+.top_right_nav .register-button:hover {
+    background-color: var(--secondary-button-hover);
+    border-color: var(--highlight-theme);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.top_right_nav .button-text {
+    margin-left: 0.5rem;
+}
+
+/* Authenticated User Greeting */
+.top_right_nav .user-profile {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-right: 1rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Circular Action Buttons */
+.top_right_nav .acircle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    text-decoration: none;
+    transition: var(--transition-base);
+    font-size: 1rem;
+    margin: 0 0.25rem;
+}
+
+.top_right_nav .btn-primary.acircle {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.top_right_nav .btn-primary.acircle:hover {
+    background-color: var(--accent-theme);
+    border-color: var(--accent-theme);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.top_right_nav .btn-danger.acircle {
+    background-color: rgba(220, 53, 69, 0.8);
+    color: #ffffff;
+    border: 1px solid rgba(220, 53, 69, 0.9);
+}
+
+.top_right_nav .btn-danger.acircle:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* Impersonation Button */
+.top_right_nav .btn-danger {
+    background-color: #e74c3c;
+    color: #ffffff;
+    border: 1px solid #e74c3c;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--transition-base);
+}
+
+.top_right_nav .btn-danger:hover {
+    background-color: #c0392b;
+    border-color: #c0392b;
+    transform: translateY(-1px);
+}
+
+/* Form styling for logout */
+.top_right_nav form {
+    display: inline-block;
+    margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .top_right_nav {
+        padding-right: 0.5rem;
+        gap: 0.25rem;
+    }
+
+    .top_right_nav .button-text {
+        display: none;
+    }
+
+    .top_right_nav .login-button,
+    .top_right_nav .register-button {
+        padding: 0.5rem;
+        min-width: 40px;
+        justify-content: center;
+    }
+
+    .top_right_nav .user-profile {
+        font-size: 0.8rem;
+        margin-right: 0.5rem !important;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+
+    .top_right_nav .acircle {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .top_right_nav .user-profile {
+        display: none;
+    }
+}

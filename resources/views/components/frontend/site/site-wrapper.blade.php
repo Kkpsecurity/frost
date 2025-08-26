@@ -21,8 +21,11 @@
     <!-- Bootstrap CSS (for compatibility) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    {{-- Our Professional Theme Styles --}}
-    @vite(['resources/css/style.css', 'resources/js/site.js'])
+    {{-- Core Theme Styles (Global) --}}
+    @vite(['resources/css/style.css'])
+
+    {{-- Panel-Specific CSS Section --}}
+    @yield('panel-css')
 
     <!-- Meta Data -->
     <meta name="description" content="{{ $description ?? 'Professional Security Training Platform' }}">
@@ -107,11 +110,19 @@
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth'
-                        });
+                    const href = this.getAttribute('href');
+                    // Only process valid selectors (not empty or just #)
+                    if (href && href !== '#' && href.length > 1) {
+                        try {
+                            const target = document.querySelector(href);
+                            if (target) {
+                                target.scrollIntoView({
+                                    behavior: 'smooth'
+                                });
+                            }
+                        } catch (error) {
+                            console.warn('Invalid selector:', href);
+                        }
                     }
                 });
             });

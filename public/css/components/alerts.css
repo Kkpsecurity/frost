@@ -1,0 +1,355 @@
+/**
+ * Alert Utilities
+ * Utility classes and styles for alert components
+ */
+
+/* Alert positioning utilities */
+.alert-fixed-top {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.alert-fixed-bottom {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.alert-fixed-top-right {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.alert-fixed-top-left {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+/* Alert animations */
+.alert-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.alert-fade-out {
+    animation: fadeOut 0.3s ease-in-out;
+}
+
+.alert-slide-in-right {
+    animation: slideInRight 0.3s ease-in-out;
+}
+
+.alert-slide-out-right {
+    animation: slideOutRight 0.3s ease-in-out;
+}
+
+.alert-slide-in-left {
+    animation: slideInLeft 0.3s ease-in-out;
+}
+
+.alert-slide-out-left {
+    animation: slideOutLeft 0.3s ease-in-out;
+}
+
+.alert-slide-down {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+.alert-slide-up {
+    animation: slideUp 0.3s ease-in-out;
+}
+
+/* Alert size variations */
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.alert-lg {
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+}
+
+/* Alert with icons */
+.alert-with-icon {
+    padding-left: 3rem;
+    position: relative;
+}
+
+.alert-with-icon .alert-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+}
+
+/* Alert variants with enhanced styling */
+.alert-modern {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+.alert-success.alert-modern {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-danger.alert-modern {
+    background: rgba(220, 53, 69, 0.1);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning.alert-modern {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info.alert-modern {
+    background: rgba(23, 162, 184, 0.1);
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Alert with progress bar */
+.alert-with-progress {
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+.alert-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    transition: width 0.1s ease;
+}
+
+.alert-success .alert-progress {
+    background: #28a745;
+}
+
+.alert-danger .alert-progress {
+    background: #dc3545;
+}
+
+.alert-warning .alert-progress {
+    background: #ffc107;
+}
+
+.alert-info .alert-progress {
+    background: #17a2b8;
+}
+
+/* Alert action buttons */
+.alert-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.alert-actions .btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.alert-actions .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: inherit;
+}
+
+.alert-actions .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.75);
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+}
+
+.toast.alert-toast {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .alert-fixed-top,
+    .alert-fixed-bottom,
+    .alert-fixed-top-right,
+    .alert-fixed-top-left {
+        left: 10px;
+        right: 10px;
+        transform: none;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .toast-container {
+        left: 10px;
+        right: 10px;
+        max-width: none;
+    }
+    
+    .alert-actions {
+        flex-direction: column;
+    }
+    
+    .alert-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .alert-modern {
+        border: 2px solid;
+    }
+    
+    .alert-success.alert-modern {
+        border-color: #28a745;
+    }
+    
+    .alert-danger.alert-modern {
+        border-color: #dc3545;
+    }
+    
+    .alert-warning.alert-modern {
+        border-color: #ffc107;
+    }
+    
+    .alert-info.alert-modern {
+        border-color: #17a2b8;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .alert-fade-in,
+    .alert-fade-out,
+    .alert-slide-in-right,
+    .alert-slide-out-right,
+    .alert-slide-in-left,
+    .alert-slide-out-left,
+    .alert-slide-down,
+    .alert-slide-up {
+        animation: none;
+    }
+    
+    .alert-progress {
+        transition: none;
+    }
+}

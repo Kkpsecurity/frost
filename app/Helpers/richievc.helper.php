@@ -418,21 +418,35 @@ function GetPageConfigurations($page = null)
             'meta_description' => 'Discover our services and offerings.',
             'header' => 'Home Page',
             'content' => 'This is the home page content.',
-            'panels' => ['welcome-hero', 'getting-started']
+            'panels' => ['home.welcome-hero', 'home.getting-started']
         ],
         'about' => [
             'title' => 'About Us',
             'meta_description' => 'Learn more about our company.',
             'header' => 'About Our Company',
             'content' => 'This is the about page content.',
-            'panels' => ['about-hero', 'about-details']
+            'panels' => [] // No about panels exist yet
         ],
         'contact' => [
             'title' => 'Contact Us',
             'meta_description' => 'Get in touch with us.',
             'header' => 'Contact Information',
             'content' => 'This is the contact page content.',
-            'panels' => ['contact-hero', 'contact-google-map']
+            'panels' => [] // No contact panels exist yet
+        ],
+        'courses' => [
+            'title' => 'Our Courses',
+            'meta_description' => 'Explore our course offerings.',
+            'header' => 'Available Courses',
+            'content' => 'Browse our comprehensive course catalog.',
+            'panels' => ['courses.schedules', 'courses.course-status']
+        ],
+        'faqs' => [
+            'title' => 'Frequently Asked Questions',
+            'meta_description' => 'Find answers to common questions.',
+            'header' => 'FAQ',
+            'content' => 'Get answers to frequently asked questions.',
+            'panels' => ['faqs.faqs-hero', 'faqs.faqs']
         ],
         // Add more pages as needed
     ];

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Http\Controllers\Controller;
+use App\Models\Course;
 use App\Traits\PageMetaDataTrait;
+use App\Http\Controllers\Controller;
 
 class CoursesController extends Controller
 {
@@ -27,165 +28,313 @@ class CoursesController extends Controller
     }
 
     /**
+     * Display the courses list for purchase
+     */
+    public function list()
+    {
+        // Fetch active courses from database
+        $courses = Course::where('is_active', true)
+                        ->orderBy('title')
+                        ->get();
+
+        $content = [
+            'title' => 'Course List - ' . config('app.name'),
+            'description' => 'Browse and purchase our professional security training courses',
+            'keywords' => 'security courses, buy courses, training programs, certification courses',
+        ];
+
+        // Merge with meta data
+        $content = array_merge($content, self::renderPageMeta('courses-list'));
+
+        return view('frontend.courses.list', compact('content', 'courses'));
+    }
+
+    /**
      * Display a specific course
      */
-    public function show($slug)
+    public function show(Course $course)
     {
-        // Course data mapping - In a real application, this would come from a database
-        $courses = $this->getCourseData();
-
-        $course = collect($courses)->firstWhere('slug', $slug);
-
-        if (!$course) {
+        // Check if course is active
+        if (!$course->is_active) {
             abort(404, 'Course not found');
         }
 
+        // Get course units and lessons from database
+        $courseUnits = $course->GetCourseUnits();
+        $courseLessons = $course->GetLessons();
+
+        // Transform lessons into features list
+        $features = [];
+        if ($courseLessons->count() > 0) {
+            // Use actual lesson titles as features
+            foreach ($courseLessons->take(10) as $lesson) { // Limit to 10 for display
+                $features[] = $lesson->title;
+            }
+        }
+
+        // If no lessons, fall back to course-type-specific features
+        if (empty($features)) {
+            $features = $course->needs_range ? [
+                'Firearms Training & Certification',
+                'Legal Requirements & Regulations',
+                'Use of Force Protocols',
+                'Professional Responsibilities',
+                'Crisis De-escalation Techniques',
+                'Report Writing & Documentation',
+                'Emergency Response Procedures',
+                'State Exam Preparation',
+                'Hands-on Training Exercises',
+                'Certificate Upon Completion'
+            ] : [
+                'Surveillance Techniques',
+                'Professional Report Writing',
+                'Legal Boundaries & Ethics',
+                'Communication Skills',
+                'Emergency Procedures',
+                'State Certification',
+                'De-escalation Techniques',
+                'Professional Conduct Standards',
+                'Crisis Management',
+                'Certificate Upon Completion'
+            ];
+        }
+
+        // Add curriculum content descriptions for each course unit
+        $courseUnitsWithContent = $courseUnits->map(function ($unit) use ($course) {
+            $unit->curriculum_content = $this->getCurriculumContentForUnit($unit, $course);
+            return $unit;
+        });
+
+        // Transform Course model data to match the view expectations
+        $courseData = [
+            'id' => $course->id,
+            'title' => $course->title_long ?? $course->title,
+            'type' => $course->title ?? 'Security Training',
+            'badge' => $this->getCourseBadgeFromTitle($course->title),
+            'description' => $this->getCourseDescriptionFromTitle($course->title),
+            'fullDescription' => $this->getCourseFullDescriptionFromTitle($course->title),
+            'price' => $course->price,
+            'duration' => $course->total_minutes ? ceil($course->total_minutes / 60 / 8) . ' Days' : $this->getDefaultDurationFromTitle($course->title),
+            'format' => 'Hybrid (Online + In-Person)',
+            'level' => 'Entry Level',
+            'language' => 'English',
+            'certification' => 'State Approved',
+            'classSize' => '12 Students Max',
+            'studentsEnrolled' => '200+',
+            'icon' => $this->getCourseIconFromTitle($course->title),
+            'features' => $features, // Use real lesson data
+            'courseUnits' => $courseUnitsWithContent, // Add course units with curriculum content for display
+            'requirements' => $this->getCourseRequirementsFromTitle($course->title),
+            'popular' => false, // Could be determined by enrollment numbers in the future
+            'keywords' => 'security training, certification, professional development, ' . $this->getCourseKeywordsFromTitle($course->title)
+        ];
+
         $content = [
-            'title' => $course['title'] . ' - ' . config('app.name'),
-            'description' => $course['description'],
-            'keywords' => $course['keywords'] ?? 'security training, certification, professional development',
+            'title' => $courseData['title'] . ' - ' . config('app.name'),
+            'description' => $courseData['description'],
+            'keywords' => $courseData['keywords'],
         ];
 
         // Merge with meta data
         $content = array_merge($content, self::renderPageMeta('course-details'));
 
-        return view('frontend.courses.show', compact('content', 'course'));
+        return view('frontend.courses.show', compact('content'), ['course' => $courseData]);
     }
 
     /**
-     * Get course data - In production, this would be from database
+     * Display the course enrollment page
      */
-    private function getCourseData()
+    public function enroll(Course $course)
     {
-        return [
-            [
-                'id' => 1,
-                'slug' => 'class-d-security',
-                'title' => 'Class D Course - Armed Security License',
-                'type' => 'Armed Security Training',
-                'badge' => 'CLASS D',
-                'description' => 'Comprehensive training for armed security professionals with firearms certification. This course covers firearms safety, legal requirements, use of force protocols, and professional responsibilities for armed security officers.',
-                'fullDescription' => '<p>This comprehensive Class D training program is designed to prepare you for a successful career as an armed security professional. Our expert instructors bring decades of real-world experience in law enforcement and private security.</p>
-                    <p>The course combines theoretical knowledge with practical application, ensuring you understand not only what to do, but why and how to do it safely and legally. You\'ll learn critical skills including firearms safety, legal boundaries, crisis management, and professional communication.</p>
-                    <p>Upon successful completion, you\'ll receive a state-approved certificate that qualifies you to work as an armed security officer in Florida and many other states with reciprocal agreements.</p>',
-                'price' => 299.00,
-                'duration' => '5 Days',
-                'format' => 'Hybrid (Online + In-Person)',
-                'level' => 'Entry Level',
-                'language' => 'English',
-                'certification' => 'State Approved',
-                'classSize' => '12 Students Max',
-                'studentsEnrolled' => '200+',
-                'icon' => 'fas fa-shield-alt',
-                'features' => [
-                    'Firearms Training & Certification',
-                    'Legal Requirements & Regulations',
-                    'Use of Force Protocols',
-                    'Professional Responsibilities',
-                    'Crisis De-escalation Techniques',
-                    'Report Writing & Documentation',
-                    'Emergency Response Procedures',
-                    'State Exam Preparation',
-                    'Hands-on Training Exercises',
-                    'Certificate Upon Completion'
-                ],
-                'requirements' => [
-                    'Must be 21 years or older for armed security',
-                    'Valid government-issued photo ID required',
-                    'Pass comprehensive background check',
-                    'Physical and mental fitness requirements',
-                    'High school diploma or equivalent',
-                    'No disqualifying criminal history'
-                ],
-                'schedule' => [
-                    [
-                        'date' => 'March 15-19, 2025',
-                        'time' => '8:00 AM - 5:00 PM',
-                        'location' => 'Miami Training Center',
-                        'available' => true
-                    ],
-                    [
-                        'date' => 'April 12-16, 2025',
-                        'time' => '8:00 AM - 5:00 PM',
-                        'location' => 'Orlando Training Center',
-                        'available' => true
-                    ],
-                    [
-                        'date' => 'May 10-14, 2025',
-                        'time' => '8:00 AM - 5:00 PM',
-                        'location' => 'Tampa Training Center',
-                        'available' => false
-                    ]
-                ],
-                'popular' => false,
-                'detailUrl' => '/courses/class-d-security',
-                'enrollUrl' => '/enroll/class-d',
-                'keywords' => 'armed security, class d license, firearms training, security certification'
-            ],
-            [
-                'id' => 2,
-                'slug' => 'class-g-security',
-                'title' => 'Class G Course - Unarmed Security License',
-                'type' => 'Unarmed Security Training',
-                'badge' => 'CLASS G',
-                'description' => 'Essential training for unarmed security professionals and private investigators. Learn surveillance techniques, report writing, legal boundaries, and professional conduct standards.',
-                'fullDescription' => '<p>The Class G training program provides comprehensive preparation for unarmed security professionals and private investigators. This course is perfect for those seeking to enter the security industry or enhance their existing skills.</p>
-                    <p>Our curriculum covers essential topics including legal authority, surveillance techniques, emergency procedures, and professional communication. You\'ll gain practical experience through real-world scenarios and case studies.</p>
-                    <p>This certification opens doors to various career opportunities in corporate security, retail loss prevention, private investigation, and facility protection roles.</p>',
-                'price' => 199.00,
-                'duration' => '3 Days',
-                'format' => 'Hybrid (Online + In-Person)',
-                'level' => 'Entry Level',
-                'language' => 'English',
-                'certification' => 'State Approved',
-                'classSize' => '15 Students Max',
-                'studentsEnrolled' => '300+',
-                'icon' => 'fas fa-user-shield',
-                'features' => [
-                    'Surveillance Techniques',
-                    'Professional Report Writing',
-                    'Legal Boundaries & Ethics',
-                    'Communication Skills',
-                    'Emergency Procedures',
-                    'Access Control Systems',
-                    'Incident Management',
-                    'Customer Service Excellence',
-                    'State Certification Prep',
-                    'Career Placement Assistance'
-                ],
-                'requirements' => [
-                    'Must be 18 years or older',
-                    'Valid government-issued photo ID required',
-                    'Basic background check required',
-                    'High school diploma or equivalent preferred',
-                    'Ability to communicate effectively in English',
-                    'Physical ability to perform security duties'
-                ],
-                'schedule' => [
-                    [
-                        'date' => 'March 8-10, 2025',
-                        'time' => '9:00 AM - 5:00 PM',
-                        'location' => 'Miami Training Center',
-                        'available' => true
-                    ],
-                    [
-                        'date' => 'April 5-7, 2025',
-                        'time' => '9:00 AM - 5:00 PM',
-                        'location' => 'Jacksonville Training Center',
-                        'available' => true
-                    ],
-                    [
-                        'date' => 'May 3-5, 2025',
-                        'time' => '9:00 AM - 5:00 PM',
-                        'location' => 'Fort Lauderdale Training Center',
-                        'available' => true
-                    ]
-                ],
-                'popular' => true,
-                'detailUrl' => '/courses/class-g-security',
-                'enrollUrl' => '/enroll/class-g',
-                'keywords' => 'unarmed security, class g license, security training, private investigator'
-            ]
+        // Check if course is active
+        if (!$course->is_active) {
+            abort(404, 'Course not found');
+        }
+
+        // Check if user is already enrolled
+        if (auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id)) {
+            return redirect()->route('courses.show', $course->id)
+                           ->with('warning', 'You are already enrolled in this course.');
+        }
+
+        // Get course data similar to show method but focused on enrollment
+        $courseData = [
+            'id' => $course->id,
+            'title' => $course->title_long ?? $course->title,
+            'badge' => $this->getCourseBadgeFromTitle($course->title),
+            'description' => $this->getCourseDescriptionFromTitle($course->title),
+            'price' => $course->price,
+            'duration' => $course->total_minutes ? ceil($course->total_minutes / 60 / 8) . ' Days' : $this->getDefaultDurationFromTitle($course->title),
+            'icon' => $this->getCourseIconFromTitle($course->title),
+            'requirements' => $this->getCourseRequirementsFromTitle($course->title),
         ];
+
+        $content = [
+            'title' => 'Enroll in ' . $courseData['title'] . ' - ' . config('app.name'),
+            'description' => 'Complete your enrollment for ' . $courseData['title'],
+            'keywords' => 'course enrollment, security training registration, ' . $this->getCourseKeywordsFromTitle($course->title),
+        ];
+
+        // Merge with meta data
+        $content = array_merge($content, self::renderPageMeta('course-enrollment'));
+
+        return view('frontend.courses.enroll', compact('content'), ['course' => $courseData]);
+    }
+
+    /**
+     * Get course badge from title
+     */
+    private function getCourseBadgeFromTitle($title)
+    {
+        if (strpos($title, 'D40') !== false || strpos($title, "Class 'D'") !== false) {
+            return 'CLASS D';
+        } elseif (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return 'CLASS G';
+        }
+        return 'SECURITY COURSE';
+    }
+
+    /**
+     * Get course description from title
+     */
+    private function getCourseDescriptionFromTitle($title)
+    {
+        if (strpos($title, 'D40') !== false || strpos($title, "Class 'D'") !== false) {
+            return 'Comprehensive training for unarmed security professionals. This course covers legal requirements, professional conduct, observation techniques, and report writing for unarmed security officers.';
+        } elseif (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return 'Essential training for armed security professionals with firearms certification. Learn firearms safety, legal requirements, use of force protocols, and professional responsibilities for armed security officers.';
+        }
+        return 'Professional security training program designed to prepare you for a successful career in the security industry.';
+    }
+
+    /**
+     * Get course full description from title
+     */
+    private function getCourseFullDescriptionFromTitle($title)
+    {
+        if (strpos($title, 'D40') !== false || strpos($title, "Class 'D'") !== false) {
+            return '<p>This comprehensive Class D training program provides essential skills for unarmed security professionals. Our experienced instructors combine theoretical knowledge with practical application to ensure you\'re prepared for real-world scenarios.</p><p>You\'ll learn professional observation techniques, effective report writing, legal boundaries, and professional conduct standards. The course emphasizes communication skills, emergency procedures, and de-escalation techniques critical for success in the security field.</p><p>Upon completion, you\'ll receive state certification qualifying you to work as an unarmed security officer in Florida and reciprocal states.</p>';
+        } elseif (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return '<p>This comprehensive Class G training program is designed to prepare you for a successful career as an armed security professional. Our expert instructors bring decades of real-world experience in law enforcement and private security.</p><p>The course combines theoretical knowledge with practical application, ensuring you understand not only what to do, but why and how to do it safely and legally. You\'ll learn critical skills including firearms safety, legal boundaries, crisis management, and professional communication.</p><p>Upon successful completion, you\'ll receive a state-approved certificate that qualifies you to work as an armed security officer in Florida and many other states with reciprocal agreements.</p>';
+        }
+        return '<p>This professional security training program provides comprehensive education in security fundamentals, legal requirements, and practical skills needed for success in the security industry.</p>';
+    }
+
+    /**
+     * Get default duration from title
+     */
+    private function getDefaultDurationFromTitle($title)
+    {
+        if (strpos($title, 'D40') !== false || strpos($title, '40 Hour') !== false) {
+            if (strpos($title, '5 Days') !== false || strpos($title, 'Dy') !== false) {
+                return '5 Days';
+            } elseif (strpos($title, '10 Nights') !== false || strpos($title, 'Nt') !== false) {
+                return '10 Nights';
+            }
+            return '5 Days';
+        } elseif (strpos($title, 'G28') !== false || strpos($title, '28 Hour') !== false) {
+            return '3 Days';
+        }
+        return '3-5 Days';
+    }
+
+    /**
+     * Get course icon from title
+     */
+    private function getCourseIconFromTitle($title)
+    {
+        if (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return 'fas fa-shield-alt'; // Armed security icon
+        }
+        return 'fas fa-user-shield'; // Unarmed security icon
+    }
+
+    /**
+     * Get course requirements from title
+     */
+    private function getCourseRequirementsFromTitle($title)
+    {
+        if (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return [
+                'Must be 21 years or older for armed security',
+                'Valid government-issued photo ID required',
+                'Pass comprehensive background check',
+                'Physical and mental fitness requirements',
+                'High school diploma or equivalent',
+                'Clean criminal record required',
+                'Pass psychological evaluation',
+                'Complete firearms safety course'
+            ];
+        } else {
+            return [
+                'Must be 18 years or older',
+                'Valid government-issued photo ID required',
+                'Pass background check',
+                'High school diploma or equivalent',
+                'Good physical condition',
+                'Clean criminal record preferred'
+            ];
+        }
+    }
+
+    /**
+     * Get course keywords from title
+     */
+    private function getCourseKeywordsFromTitle($title)
+    {
+        if (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return 'armed security, Class G, firearms training';
+        } else {
+            return 'unarmed security, Class D, surveillance training';
+        }
+    }
+
+    /**
+     * Generate curriculum content description for a course unit
+     */
+    private function getCurriculumContentForUnit($unit, $course)
+    {
+        // Get the unit's admin title to determine content type
+        $adminTitle = $unit->admin_title ?? '';
+        $unitTitle = $unit->title ?? '';
+        $courseTitle = $course->title ?? '';
+
+        // Generate content based on course title and unit
+        if (strpos($courseTitle, 'G28') !== false || strpos($courseTitle, "Class 'G'") !== false) {
+            // Class G (Armed Security) curriculum content
+            if (strpos($adminTitle, 'G28-D1') !== false || strpos($unitTitle, 'Day 1') !== false) {
+                return 'Legal aspects of private security, officer roles, and firearms safety fundamentals for armed security personnel.';
+            } elseif (strpos($adminTitle, 'G28-D2') !== false || strpos($unitTitle, 'Day 2') !== false) {
+                return 'Advanced firearms training, use of force principles, and tactical decision-making in armed security situations.';
+            } elseif (strpos($adminTitle, 'G28-D3') !== false || strpos($unitTitle, 'Day 3') !== false) {
+                return 'Marksmanship qualification, weapon maintenance, and final certification preparation for armed security professionals.';
+            }
+        } else {
+            // Class D (Unarmed Security) curriculum content
+            if (strpos($adminTitle, 'D1') !== false || strpos($unitTitle, 'Day 1') !== false || strpos($unitTitle, 'Night 1') !== false) {
+                return 'Introduction to unarmed security fundamentals, legal requirements, and professional conduct standards.';
+            } elseif (strpos($adminTitle, 'D2') !== false || strpos($unitTitle, 'Day 2') !== false || strpos($unitTitle, 'Night 2') !== false) {
+                return 'Security officer conduct, communication systems, and professional responsibility standards in civilian environments.';
+            } elseif (strpos($adminTitle, 'D3') !== false || strpos($unitTitle, 'Day 3') !== false || strpos($unitTitle, 'Night 3') !== false) {
+                return 'Observation techniques, incident reporting, and emergency preparedness procedures for unarmed security personnel.';
+            } elseif (strpos($adminTitle, 'D4') !== false || strpos($unitTitle, 'Day 4') !== false || strpos($unitTitle, 'Night 4') !== false) {
+                return 'Advanced patrolling techniques, interviewing skills, and physical security assessment methodologies for professionals.';
+            } elseif (strpos($adminTitle, 'D5') !== false || strpos($unitTitle, 'Day 5') !== false || strpos($unitTitle, 'Night 5') !== false) {
+                return 'Safety awareness, crisis management, and final examination preparation for unarmed security certification.';
+            } elseif (strpos($adminTitle, 'N6') !== false || strpos($unitTitle, 'Night 6') !== false) {
+                return 'Access control systems, safeguarding information, and terrorism awareness for security personnel.';
+            } elseif (strpos($adminTitle, 'N7') !== false || strpos($unitTitle, 'Night 7') !== false) {
+                return 'Physical security principles, event security, and special assignments for professional security officers.';
+            } elseif (strpos($adminTitle, 'N8') !== false || strpos($unitTitle, 'Night 8') !== false) {
+                return 'Medical emergency response, first aid procedures, and crisis management protocols for security officers.';
+            } elseif (strpos($adminTitle, 'N9') !== false || strpos($unitTitle, 'Night 9') !== false) {
+                return 'Special issues in security, professional development, and advanced de-escalation techniques for officers.';
+            } elseif (strpos($adminTitle, 'N10') !== false || strpos($unitTitle, 'Night 10') !== false) {
+                return 'Final review, comprehensive examination preparation, and career development guidance for security professionals.';
+            }
+        }
+
+        // Default content if no specific match
+        return 'Comprehensive training module covering essential security concepts and practical application of professional standards.';
     }
 }

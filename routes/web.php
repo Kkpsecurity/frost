@@ -34,14 +34,21 @@ Route::match(['GET', 'POST'], '/pages/{page?}', [SitePageController::class, 'ren
 // Courses routes
 Route::get('/courses', [CoursesController::class, 'index'])
     ->name('courses.index');
+Route::get('/courses/list', [CoursesController::class, 'list'])
+    ->name('courses.list');
 Route::get('/courses/schedules', [ScheduleController::class, 'index'])
     ->name('courses.schedules');
-Route::get('/courses/{slug}', [CoursesController::class, 'show'])
+Route::get('/api/courses/schedule-data', [App\Http\Controllers\Web\Courses\CourseController::class, 'getScheduleData'])
+    ->name('courses.schedule.data');
+Route::get('/courses/{course}', [CoursesController::class, 'show'])
     ->name('courses.show');
+Route::get('/courses/enroll/{course}', [CoursesController::class, 'enroll'])
+    ->name('courses.enroll')
+    ->middleware('auth');
 
-// Course enrollment route
-Route::post('/enroll/{course}', [App\Http\Controllers\Web\EnrollmentController::class, 'AutoPayFlowPro'])
-    ->name('enroll')
+// Course enrollment processing route
+Route::post('/courses/enroll/{course}', [App\Http\Controllers\Web\EnrollmentController::class, 'AutoPayFlowPro'])
+    ->name('courses.enroll.process')
     ->middleware('auth');
 
 // Blog routes

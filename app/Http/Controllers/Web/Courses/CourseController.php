@@ -6,7 +6,7 @@ use App\Classes\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseDate;
-use App\RCache; 
+use App\RCache;
 use Carbon\Carbon;
 use App\Traits\PageMetaDataTrait;
 use Illuminate\Http\Request;
@@ -51,31 +51,82 @@ class CourseController extends Controller
     {
         // Retrieve all active courses and their associated events
         $activeCourses = RCache::Courses()->where('is_active', true);
-        
-        $allEvents = []; // To store formatted events for all courses    
-       
+
+        $allEvents = []; // To store formatted events for all courses
+
         foreach ($activeCourses as $course) {
             $eventsForThisCourse = MiscQueries::CalenderDates($course);
-        
+
             foreach ($eventsForThisCourse as $event) {
-               
+
                 $allEvents[] = [
                     'title' => $event->CalendarTitle(),
                     'start' => $event->StartsAt('YYYY-MM-DD HH:mm'),
                     'end'   => $event->EndsAt('YYYY-MM-DD HH:mm'),
                     #'start' => $start->format('Y-m-d H:i'), // format to date-only
                     #'end' => $end->format('Y-m-d H:i'),     // format to date-only
-                    'url'  => route('courses.detail', $course->id)  
+                    'url'  => route('courses.detail', $course->id)
                 ];
             }
         }
-        
-    
+
+
         $content = self::renderPageMeta('schedules');
-    
+
         return view('frontend.shop.schedules', compact('content', 'allEvents'));
     }
-    
+
+    /**
+     * Get course schedule data as JSON for AJAX requests
+     */
+    public function getScheduleData(Request $request)
+    {
+        // Get the course filter parameter if provided
+        $courseFilter = $request->get('course_filter');
+
+        // Retrieve all active courses and their associated events
+        $activeCourses = RCache::Courses()->where('is_active', true);
+
+        // If course filter is provided, filter the courses
+        if ($courseFilter) {
+            $activeCourses = $activeCourses->filter(function ($course) use ($courseFilter) {
+                // Map frontend filter values to course criteria
+                switch ($courseFilter) {
+                    case 'D40':
+                        return strpos(strtolower($course->title), 'd40') !== false ||
+                               strpos(strtolower($course->title), 'armed') !== false;
+                    case 'G28':
+                        return strpos(strtolower($course->title), 'g28') !== false ||
+                               strpos(strtolower($course->title), 'unarmed') !== false;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        $allEvents = []; // To store formatted events for all courses
+
+        foreach ($activeCourses as $course) {
+            $eventsForThisCourse = MiscQueries::CalenderDates($course);
+
+            foreach ($eventsForThisCourse as $event) {
+                $allEvents[] = [
+                    'title' => $event->CalendarTitle(),
+                    'start' => $event->StartsAt('YYYY-MM-DD HH:mm'),
+                    'end'   => $event->EndsAt('YYYY-MM-DD HH:mm'),
+                    'url'   => route('courses.detail', $course->id),
+                    'course_type' => strpos(strtolower($course->title), 'armed') !== false ? 'D40' : 'G28',
+                    'course_id' => $course->id,
+                    'course_title' => $course->title
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'events' => $allEvents
+        ]);
+    }
 
 
 }

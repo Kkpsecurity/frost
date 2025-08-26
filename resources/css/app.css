@@ -1,0 +1,45 @@
+/* Main Application CSS */
+@import './style.css';
+@import './root.css';
+@import './utilities.css';
+
+/* Enroll Button Styles */
+.enroll-button-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.enroll-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.enroll-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+.register-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+}
+
+.register-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.active-btn {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    border: none;
+}
+
+.active-btn:hover {
+    background: linear-gradient(135deg, #1e7e34, #155724);
+}
