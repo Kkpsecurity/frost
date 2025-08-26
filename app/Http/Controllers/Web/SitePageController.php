@@ -18,34 +18,8 @@ class SitePageController extends Controller
      */
     public function render(?string $page = 'home')
     {
-        // Define pages with panel configurations
-        $pages = [
-            'home' => [
-                'slug' => 'home',
-                'title' => 'Welcome to ' . config('app.name'),
-                'description' => 'Professional security training and certification courses',
-                'keywords' => 'security, training, certification, cyber security',
-                'type' => 'panels',
-                'panels' => ['home.welcome-hero', 'home.getting-started']
-            ],
-            'faqs' => [
-                'slug' => 'faqs',
-                'title' => 'Frequently Asked Questions - ' . config('app.name'),
-                'description' => 'Common questions about our security training programs',
-                'keywords' => 'faqs, questions, security training, help',
-                'type' => 'panels',
-                'panels' => ['faqs.faqs-hero', 'faqs.faqs']
-            ],
-            'contact' => [
-                'slug' => 'contact',
-                'title' => 'Contact Us - ' . config('app.name'),
-                'description' => 'Get in touch with our security training experts',
-                'keywords' => 'contact, support, help, security training',
-                'type' => 'panels',
-                'panels' => ['contact-hero']
-            ],
-            // Add more pages as needed
-        ];
+        // Define pages with panel configurations - get all pages
+        $pages = GetPageConfigurations();
 
         // Get the current page or default to home
         $currentPage = $page ?? 'home';

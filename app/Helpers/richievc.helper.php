@@ -274,7 +274,7 @@ if (!function_exists('randomDate')) {
 if (!function_exists('setPriorityIcon')) {
     function setPriorityIcon(string $priority): string
     {
-        return match($priority) {
+        return match ($priority) {
             'danger' => '<i class="fas fa-exclamation-triangle text-danger"></i> ',
             'warning' => '<i class="fas fa-exclamation text-warning"></i> ',
             'info' => '<i class="fas fa-info-circle text-info"></i> ',
@@ -293,7 +293,7 @@ if (!function_exists('addressBlock')) {
     function addressBlock(): string
     {
         // Use Laravel config or fallback to empty string if setting() function doesn't exist
-        $getSetting = function($key, $default = '') {
+        $getSetting = function ($key, $default = '') {
             if (function_exists('setting')) {
                 return setting($key, $default);
             }
@@ -408,4 +408,34 @@ if (!function_exists('featureEnabled')) {
     {
         return (bool) siteConfig("auth.{$feature}", $default);
     }
+}
+
+function GetPageConfigurations($page = null)
+{
+   $pages = [
+        'home' => [
+            'title' => 'Welcome Florida Online Security Training',
+            'meta_description' => 'Discover our services and offerings.',
+            'header' => 'Home Page',
+            'content' => 'This is the home page content.',
+            'panels' => ['welcome-hero', 'getting-started']
+        ],
+        'about' => [
+            'title' => 'About Us',
+            'meta_description' => 'Learn more about our company.',
+            'header' => 'About Our Company',
+            'content' => 'This is the about page content.',
+            'panels' => ['about-hero', 'about-details']
+        ],
+        'contact' => [
+            'title' => 'Contact Us',
+            'meta_description' => 'Get in touch with us.',
+            'header' => 'Contact Information',
+            'content' => 'This is the contact page content.',
+            'panels' => ['contact-hero', 'contact-google-map']
+        ],
+        // Add more pages as needed
+    ];
+
+    return $page ? $pages[$page] ?? null : $pages;
 }
