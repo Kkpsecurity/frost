@@ -6,6 +6,7 @@ use App\Traits\PageMetaDataTrait;
 use App\Http\Controllers\Controller; // Added the missing Controller import
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use App\Mail\ContactForm;
 
 class SitePageController extends Controller
@@ -40,9 +41,11 @@ class SitePageController extends Controller
     public function sendContactEmail(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required',
-            'email' => 'required|email',
-            'message' => 'required',
+            'name' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|max:20',
+            'subject' => 'nullable|max:255',
+            'message' => 'required|max:2000',
             'privacy_agree' => 'required|accepted'
         ], [
             'privacy_agree.required' => 'You must agree to the Privacy Policy to submit this form.',
@@ -50,12 +53,22 @@ class SitePageController extends Controller
         ]);
 
         try {
-            Mail::to('someemail@test.com')->send(new ContactForm($data));
-        } catch (\Exception $e) {
-            // Log the error or perform appropriate error handling
-            return response()->json(['error' => 'Failed to send email'], 500);
-        }
+            // Use site settings for email recipient
+            $recipientEmail = setting('contact_email', config('mail.from.address', 'contact@example.com'));
 
-        return response()->json(['success' => true]);
+            Mail::to($recipientEmail)->send(new ContactForm($data));
+
+            // Redirect back with success message
+            return redirect()->back()->with('success', 'Thank you for your message! We will get back to you soon.');
+
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('Contact form submission failed: ' . $e->getMessage());
+
+            // Redirect back with error message
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Sorry, there was an issue sending your message. Please try again or contact us directly.');
+        }
     }
 }

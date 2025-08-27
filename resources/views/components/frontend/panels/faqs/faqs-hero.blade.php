@@ -1,5 +1,5 @@
 {{-- FAQs Hero Section --}}
-<section class="faqs-hero py-5">
+<section class="faqs-hero py-3">
     <div class="hero-background">
         <div class="container text-center">
             <div class="hero-badge mb-3">

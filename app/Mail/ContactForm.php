@@ -31,8 +31,25 @@ class ContactForm extends Mailable
      */
     public function build()
     {
+        $subject = 'Contact Form Submission';
+
+        // Add subject prefix if provided
+        if (!empty($this->data['subject'])) {
+            $subjectOptions = [
+                'general' => 'General Inquiry',
+                'enrollment' => 'Course Enrollment',
+                'support' => 'Technical Support',
+                'licensing' => 'Licensing Questions',
+                'partnership' => 'Partnership Opportunities',
+                'other' => 'Other'
+            ];
+
+            $subjectText = $subjectOptions[$this->data['subject']] ?? ucfirst($this->data['subject']);
+            $subject = "Contact Form: {$subjectText}";
+        }
+
         return $this->from($this->data['email'], $this->data['name'])
-            ->subject('Contact Form Submission')
+            ->subject($subject)
             ->view('emails.contact-form')
             ->with('data', $this->data);
     }

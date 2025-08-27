@@ -27,18 +27,18 @@ $menuItems = [
             ],
             [
                 'label' => 'Why Security Training',
-                'url' => url('blog/security-training'),
-                'isActive' => $segment1 === 'blog' && $segment2 === 'security-training',
+                'url' => route('blog.show', 'threat-assessment-techniques'),
+                'isActive' => $segment1 === 'blog' && $segment2 === 'threat-assessment-techniques',
             ],
             [
                 'label' => 'Outline 5N-1.140 Security Officer',
-                'url' => url('blog/security-officer'),
-                'isActive' => $segment1 === 'blog' && $segment2 === 'security-officer',
+                'url' => route('blog.show', 'florida-gun-laws-2025'),
+                'isActive' => $segment1 === 'blog' && $segment2 === 'florida-gun-laws-2025',
             ],
             [
-                'label' => 'Ensuring Compliance ',
-                'url' => url('blog/ensuring-compliance'),
-                'isActive' => $segment1 === 'blog' && $segment2 === 'ensuring-compliance',
+                'label' => 'Ensuring Compliance',
+                'url' => route('blog.show', 'essential-firearms-safety'),
+                'isActive' => $segment1 === 'blog' && $segment2 === 'essential-firearms-safety',
             ],
         ],
     ],
@@ -72,7 +72,7 @@ $menuItems = [
 ];
 ?>
 
-<div class="header-area ">
+<div class="header-area">
     <div class="container-sm-fluid">
         <div class="row">
             <div class="col-lg-5 col-md-5 col-sm-6 order-1 order-md-1">
@@ -91,6 +91,12 @@ $menuItems = [
 
             <div class="col-lg-7 col-md-7 col-sm-6 order-2 order-md-2">
                 <nav class="navbar navbar-expand-lg">
+                    {{-- Mobile Toggle Button --}}
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-main"
+                        aria-controls="navbar-main" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="fa fa-bars"></span>
+                    </button>
+
                     <div class="collapse navbar-collapse" id="navbar-main">
                         <ul class="navbar-nav ms-auto mb-lg-0">
                             @auth

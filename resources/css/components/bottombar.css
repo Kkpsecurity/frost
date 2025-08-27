@@ -8,7 +8,7 @@
  */
 
 .header-area {
-    background: var(--primary-theme);
+    background: var(--primary-theme) !important;
     min-height: var(--botbar-height);
     box-shadow: var(--shadow-md);
     position: relative;
@@ -69,6 +69,7 @@
     background: rgba(255, 255, 255, 0.1);
     transition: var(--transition-base);
     display: none; /* Hide on desktop by default */
+    margin-left: auto; /* Push to right on mobile */
 }
 
 .header-area .navbar-toggler:hover {
@@ -78,6 +79,11 @@
 
 .header-area .navbar-toggler:focus {
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+
+.header-area .navbar-toggler .fa-bars {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.25rem;
 }
 
 .header-area .navbar-toggler-icon {
@@ -166,7 +172,7 @@
 /* Mobile Responsive */
 @media (max-width: 991px) {
     .header-area .navbar-toggler {
-        display: block; /* Show on mobile */
+        display: block !important; /* Show on mobile */
     }
 
     .header-area {

@@ -31,6 +31,10 @@ Route::redirect('/', '/pages', 302);
 Route::match(['GET', 'POST'], '/pages/{page?}', [SitePageController::class, 'render'])
     ->name('pages');
 
+// Contact form submission route
+Route::post('/contact/send', [SitePageController::class, 'sendContactEmail'])
+    ->name('contact.send');
+
 // Courses routes
 Route::get('/courses', [CoursesController::class, 'index'])
     ->name('courses.index');
@@ -62,9 +66,10 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::post('/subscribe', [BlogController::class, 'subscribe'])->name('subscribe');
     Route::get('/rss', [BlogController::class, 'rss'])->name('rss');
     Route::get('/sitemap', [BlogController::class, 'sitemap'])->name('sitemap');
-    Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
+    Route::get('/{blogPost:slug}', [BlogController::class, 'show'])->name('show');
+    Route::post('/{blogPost:slug}', [BlogController::class, 'show']); // For AJAX view increments
 });
 
 // Alternative blog routes for menu compatibility
 Route::get('/blogs/list', [BlogController::class, 'list'])->name('blogs.list');
-Route::get('/blogs/{slug}', [BlogController::class, 'show'])->name('blogs.show');
+Route::get('/blogs/{blogPost:slug}', [BlogController::class, 'show'])->name('blogs.show');

@@ -1,0 +1,289 @@
+/* 1.0 - General Styles */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--dark-primary-color) var(--light-gray-color);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif
+    overflow-y: scroll;
+    overflow-x: hidden;
+    color: var(--frost-dark-primary-color);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 1rem;
+    background-color: var(--base-color);
+    direction: ltr;
+}
+
+/* General scrollbar styles for both browsers */
+::-webkit-scrollbar {
+    width: 10px;
+    background-color: var(--frost-light-gray-color);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    background-color: var(--frost-dark-primary-color);
+}
+
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    background-color: var(--frost-primary-color);
+}
+
+::-moz-selection,
+::selection {
+    background-color: var(--frost-info-color);
+    color: var(--light-color);
+    text-shadow: none;
+}
+
+a {
+    text-decoration: none;
+    color: var(--frost-secondary-color);
+    transition: all 0.3s ease;
+}
+
+a:focus,
+a:hover,
+a:active {
+    outline: none;
+    color: var(--frost-complementary-primary-color);
+    text-decoration: none;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    transition: transform 0.2s ease-in-out;
+}
+
+img:hover {
+    transform: scale(1.05);
+}
+
+@media screen and (min-width: 1200px) {
+    img {
+        max-width: 80%;
+    }
+}
+
+p {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-nunito);
+    margin: 0;
+    margin-bottom: 15px;
+    color: var(--frost-dark-primary-color);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+h1 {
+    font-size: 3rem;
+    line-height: 3.125rem;
+}
+
+h2 {
+    font-size: 2.375rem;
+    line-height: 2.875rem;
+}
+
+h3 {
+    font-size: 1.875rem;
+    line-height: 2.375rem;
+}
+
+h4 {
+    font-size: 1.5rem;
+    line-height: 2.125rem;
+}
+
+h5 {
+    font-size: 1.25rem;
+    line-height: 1.875rem;
+}
+
+h6 {
+    font-size: 1rem;
+    line-height: 1.75rem;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul li {
+    margin-bottom: 0.5rem;
+}
+
+ul:not(.list-unstyled) {
+    padding-left: 1.5rem;
+}
+
+ul:not(.list-unstyled) ul {
+    padding-left: 1.5rem;
+}
+
+ul.list-unstyled ul {
+    padding: 20px 0 0 20px;
+}
+
+ul.fancy {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.fancy li {
+    position: relative;
+    margin: 0;
+    padding: 0 0 0 1.5em;
+    line-height: 1.5;
+}
+
+ul.fancy li:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.75em;
+    width: 0.5em;
+    height: 0.5em;
+    background-color: var(--frost-info-color);
+    border-radius: 50%;
+}
+
+.list-unstyled {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.scrollUp {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s, visibility 0.5s;
+}
+
+.scrollUp {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    bottom: 40px;
+    font-size: 20px;
+    line-height: 48px;
+    right: 30px;
+    width: 44px;
+    height: 44px;
+    background-color: var(--frost-info-color);
+    color: var(--frost-light-color);
+    border-radius: 3px;
+    -webkit-transition-duration: 500ms;
+    transition-duration: 500ms;
+    cursor: pointer;
+}
+
+.scrollUp:hover {
+    bottom: 45px;
+    transition-duration: 500ms;
+}
+
+.browserupgrade {
+    margin: 0.2em 0;
+    background-color: var(--frost-gray-color);
+    color: var(--frost-black-color);
+    padding: 0.2em 0;
+}
+
+.bg-color-secondary {
+    background-color: var(--frost-secondary-color);
+}
+
+.bg-color-primary {
+    background-color: var(--frost-primary-color);
+}
+
+.alert-primary {
+    background-color: var(--frost-primary-color);
+    color: var(--frost-white-color);
+}
+
+.alert-secondary {
+    background-color: var(--frost-secondary-color);
+    color: var(--frost-white-color);
+}
+
+.alert-success {
+    background-color: var(--frost-success-color);
+    color: var(--frost-dark-color);
+}
+
+.alert-danger {
+    background-color: var(--frost-danger-color);
+    color: var(--frost-white-color);
+}
+
+.alert-warning {
+    background-color: var(--frost-warning-color);
+    color: var(--frost-dark-color);
+}
+
+.alert-info {
+    background-color: var(--frost-info-color);
+    color: var(--frost-dark-color);
+}
+
+.alert-light {
+    background-color: var(--frost-light-color);
+    color: var(--frost-dark-color);
+}
+
+.alert-dark {
+    background-color: var(--frost-dark-color);
+    color: var(--frost-white-color);
+}
+
+.frost-primary-bg {
+    background-color: var(--frost-primary-color);
+}
+
+.frost-secondary-bg {
+    background-color: var(--frost-secondary-color);
+}
+
+div#preloader {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 99999;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    background-color: var(--frost-primary-color);
+    background-image: url("../img/logo/preloader.gif");
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+

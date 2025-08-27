@@ -425,14 +425,14 @@ function GetPageConfigurations($page = null)
             'meta_description' => 'Learn more about our company.',
             'header' => 'About Our Company',
             'content' => 'This is the about page content.',
-            'panels' => [] // No about panels exist yet
+            'panels' => ['about.about'] // Add our about panel
         ],
         'contact' => [
             'title' => 'Contact Us',
-            'meta_description' => 'Get in touch with us.',
+            'meta_description' => 'Get in touch with our security training experts. Find contact information, send us a message, and get answers to your questions.',
             'header' => 'Contact Information',
-            'content' => 'This is the contact page content.',
-            'panels' => [] // No contact panels exist yet
+            'content' => 'Contact our team for information about security training programs, enrollment, and support.',
+            'panels' => ['contact.contact-hero', 'contact.contact']
         ],
         'courses' => [
             'title' => 'Our Courses',

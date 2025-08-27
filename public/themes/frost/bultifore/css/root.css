@@ -1,0 +1,44 @@
+
+:root {
+    /* Main Theme Colors */
+    --frost-primary-color: #212a3e;
+    --frost-secondary-color: #394867;
+    --frost-base-color: #9ba4b5;
+    --frost-highlight-color: #fede59;
+
+    --frost-light-primary-color: #d6d9e2;
+    --frost-dark-primary-color: #04061b;
+    --frost-complementary-primary-color: #bbbb1a;
+
+    --frost-success-color: #6cbf88;
+    --frost-danger-color: #f44336;
+    --frost-warning-color: #d4a71f;
+    --frost-info-color: #17aac9;
+    --frost-light-color: #f8f9fa;
+
+    --frost-dark-color: #343a40;
+    --frost-dark-hover-color: #456381;
+    --frost-login-btn-color: #1ba8c6;
+    --frost-login-btn-hover-color: #2c7aff;
+
+    --frost-white-color: #ffffff;
+    --frost-black-color: #000000;
+    --frost-gray-color: #b8b8b8;
+    --frost-light-gray-color: #d3d3d3;
+    --frost-contrast-color: #ffffff;
+
+    /* Additional Highlight Colors */
+    --frost-accent-color-1: #e9734d;
+    --frost-accent-color-2: #6dabca;
+    --frost-accent-color-3: #a982b0;
+    --frost-accent-color-4: #3d957e;
+
+    /* Define font variables */
+    --font-roboto: "Roboto", sans-serif;
+    --font-open-sans: "Open Sans", sans-serif;
+    --font-work-sans: "Work Sans", sans-serif;
+
+    /* Define heights */
+    --frost-topbar-height: 48px;
+    --frost-botbar-height: 100px;
+}

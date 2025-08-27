@@ -2,207 +2,171 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BlogPost;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BlogController extends Controller
 {
     /**
      * Display the main blog listing page
      */
-    public function index()
+    public function index(): View
     {
-        return view('blog.index');
+        $posts = BlogPost::published()
+            ->recent()
+            ->paginate(9); // 9 posts per page for 3x3 grid
+
+        return view('frontend.blog.index', compact('posts'));
     }
 
     /**
      * Display blog list page (alternative to index for menu routing)
      */
-    public function list()
+    public function list(): View
     {
-        return view('blog.index');
+        return $this->index();
     }
 
     /**
      * Display individual blog posts
      */
-    public function show($slug)
+    public function show(Request $request, BlogPost $blogPost)
     {
-        // Map blog post slugs to their corresponding views
-        $blogPosts = [
-            'florida-gun-laws-2025' => [
-                'view' => 'blog.florida-gun-laws-2025',
-                'title' => 'Complete Guide to Florida Gun Laws 2025: What Every Gun Owner Should Know',
-                'meta_description' => 'Navigate Florida\'s complex gun laws with confidence. This comprehensive guide covers everything from purchasing requirements to concealed carry permits, recent legislative changes, and compliance requirements for 2025.',
-                'category' => 'Gun Laws & Regulations',
-                'date' => 'August 15, 2025',
-                'author' => 'Security Law Expert',
-                'read_time' => '8 min read'
-            ],
-            'essential-firearms-safety' => [
-                'view' => 'blog.essential-firearms-safety',
-                'title' => 'Essential Firearms Safety: Building Fundamental Skills for Security Professionals',
-                'meta_description' => 'Master the four fundamental rules of firearm safety and advanced handling techniques essential for security professionals. Build lasting safety habits with professional training guidance.',
-                'category' => 'Weapons Training',
-                'date' => 'August 12, 2025',
-                'author' => 'Master Firearms Instructor',
-                'read_time' => '6 min read'
-            ],
-            'threat-assessment-techniques' => [
-                'view' => 'blog.threat-assessment-techniques',
-                'title' => 'Advanced Threat Assessment Techniques for Security Officers',
-                'meta_description' => 'Learn professional threat assessment methodologies to identify and evaluate potential security risks effectively. Essential skills for modern security professionals.',
-                'category' => 'Security Tips',
-                'date' => 'August 10, 2025',
-                'author' => 'Security Assessment Specialist',
-                'read_time' => '5 min read'
-            ],
-            'security-license-renewal' => [
-                'view' => 'blog.security-license-renewal',
-                'title' => 'Security License Renewal: Complete Checklist for 2025',
-                'meta_description' => 'Stay compliant with updated renewal requirements for Class D and Class G security licenses in Florida. Complete checklist and timeline for 2025 renewals.',
-                'category' => 'Compliance & Licensing',
-                'date' => 'August 8, 2025',
-                'author' => 'Licensing Compliance Expert',
-                'read_time' => '4 min read'
-            ],
-            'concealed-carry-florida' => [
-                'view' => 'blog.concealed-carry-florida',
-                'title' => 'Concealed Carry in Florida: Rights, Restrictions, and Responsibilities',
-                'meta_description' => 'Understand your rights and responsibilities as a concealed carry permit holder in Florida, including recent constitutional carry changes and legal requirements.',
-                'category' => 'Gun Laws & Regulations',
-                'date' => 'August 5, 2025',
-                'author' => 'Gun Rights Attorney',
-                'read_time' => '7 min read'
-            ],
-            // Legacy blog posts from old system
-            'security-training' => [
-                'view' => 'blog.security-training',
-                'title' => 'Comprehensive Security Training Programs in Florida',
-                'meta_description' => 'Learn about comprehensive security training programs available in Florida, including Class D and Class G license requirements.',
-                'category' => 'Security Training',
-                'date' => 'August 1, 2025',
-                'author' => 'Training Specialist',
-                'read_time' => '5 min read'
-            ],
-            'security-officer' => [
-                'view' => 'blog.security-officer',
-                'title' => 'Security Officer Career Guide: Requirements and Opportunities',
-                'meta_description' => 'Complete guide to becoming a security officer in Florida, including licensing requirements, career opportunities, and professional development.',
-                'category' => 'Career Development',
-                'date' => 'July 28, 2025',
-                'author' => 'Career Advisor',
-                'read_time' => '6 min read'
-            ],
-            'ensuring-compliance' => [
-                'view' => 'blog.ensuring-compliance',
-                'title' => 'Ensuring Compliance in Security Operations',
-                'meta_description' => 'Essential guide to maintaining compliance in security operations, understanding regulations, and avoiding common violations.',
-                'category' => 'Compliance & Licensing',
-                'date' => 'July 25, 2025',
-                'author' => 'Compliance Expert',
-                'read_time' => '4 min read'
-            ]
-        ];
-
-        // Check if the blog post exists
-        if (!isset($blogPosts[$slug])) {
+        // Ensure the post is published
+        if (!$blogPost->is_published) {
             abort(404);
         }
 
-        $post = $blogPosts[$slug];
-
-        return view($post['view'], compact('post'));
-    }
-
-    /**
-     * Display blog posts by category
-     */
-    public function category($category)
-    {
-        $categories = [
-            'gun-laws' => 'Gun Laws & Regulations',
-            'weapons-training' => 'Weapons Training',
-            'security-tips' => 'Security Tips',
-            'compliance' => 'Compliance & Licensing'
-        ];
-
-        if (!isset($categories[$category])) {
-            abort(404);
+        // Handle AJAX view increment
+        if ($request->ajax() && $request->has('increment_views')) {
+            $blogPost->incrementViews();
+            return response()->json(['status' => 'success']);
         }
 
-        $categoryTitle = $categories[$category];
+        // Increment view count for regular page loads
+        if (!$request->ajax()) {
+            $blogPost->incrementViews();
+        }
 
-        return view('blog.category', compact('category', 'categoryTitle'));
-    }
+        // Get related posts
+        $relatedPosts = BlogPost::published()
+            ->where('category', $blogPost->category)
+            ->where('id', '!=', $blogPost->id)
+            ->recent(3)
+            ->get();
 
-    /**
-     * Handle newsletter subscription
-     */
-    public function subscribe(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email|max:255'
-        ]);
+        // Get categories for sidebar
+        $categories = BlogPost::published()
+            ->pluck('category')
+            ->filter()
+            ->unique()
+            ->values();
 
-        // Here you would typically save the email to your newsletter database
-        // and/or send it to your email marketing service
-
-        // For now, we'll just return a success response
-        return response()->json([
-            'success' => true,
-            'message' => 'Thank you for subscribing! You\'ll receive updates on security training and gun law changes.'
-        ]);
+        return view('frontend.blog.show', compact('blogPost', 'relatedPosts', 'categories'))
+            ->with('post', $blogPost); // Also pass as 'post' for template consistency
     }
 
     /**
      * Search blog posts
      */
-    public function search(Request $request)
+    public function search(Request $request): View
     {
-        $query = $request->input('q');
+        $query = $request->get('q', '');
 
-        if (empty($query)) {
-            return redirect()->route('blog.index');
-        }
+        $posts = BlogPost::published()
+            ->when($query, function ($queryBuilder) use ($query) {
+                $queryBuilder->where(function ($q) use ($query) {
+                    $q->where('title', 'ILIKE', "%{$query}%")
+                      ->orWhere('content', 'ILIKE', "%{$query}%")
+                      ->orWhere('excerpt', 'ILIKE', "%{$query}%");
+                });
+            })
+            ->recent()
+            ->paginate(10);
 
-        // Here you would implement actual search functionality
-        // For now, return the search results view with the query
-        return view('blog.search', compact('query'));
+        return view('frontend.blog.search', compact('posts', 'query'));
     }
 
     /**
-     * Display blog archive by date
+     * Display posts by category
      */
-    public function archive($year, $month = null)
+    public function category(string $category): View
     {
-        // Here you would implement archive functionality
-        return view('blog.archive', compact('year', 'month'));
+        $posts = BlogPost::published()
+            ->byCategory($category)
+            ->recent()
+            ->paginate(10);
+
+        return view('frontend.blog.category', compact('posts', 'category'));
     }
 
     /**
      * Display posts by tag
      */
-    public function tag($tag)
+    public function tag(string $tag): View
     {
-        // Here you would implement tag functionality
-        return view('blog.tag', compact('tag'));
+        $posts = BlogPost::published()
+            ->whereJsonContains('tags', $tag)
+            ->recent()
+            ->paginate(10);
+
+        return view('frontend.blog.tag', compact('posts', 'tag'));
     }
 
     /**
-     * RSS feed for blog posts
+     * Archive posts by year and month
+     */
+    public function archive(int $year, ?int $month = null): View
+    {
+        $posts = BlogPost::published()
+            ->whereYear('published_at', $year)
+            ->when($month, function ($query) use ($month) {
+                $query->whereMonth('published_at', $month);
+            })
+            ->recent()
+            ->paginate(10);
+
+        return view('frontend.blog.archive', compact('posts', 'year', 'month'));
+    }
+
+    /**
+     * Subscribe to blog newsletter
+     */
+    public function subscribe(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        // Here you would typically save to a newsletter table or send to a service
+        // For now, just return a success response
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully subscribed to our newsletter!'
+        ]);
+    }
+
+    /**
+     * Generate RSS feed
      */
     public function rss()
     {
-        // Here you would generate RSS feed
-        return response()->view('blog.rss')->header('Content-Type', 'application/rss+xml');
+        $posts = BlogPost::published()->recent(20)->get();
+
+        return response()->view('frontend.blog.rss', compact('posts'))
+            ->header('Content-Type', 'application/rss+xml; charset=UTF-8');
     }
 
     /**
-     * Sitemap for blog posts
+     * Generate sitemap for blog posts
      */
     public function sitemap()
     {
-        // Here you would generate sitemap
-        return response()->view('blog.sitemap')->header('Content-Type', 'application/xml');
+        $posts = BlogPost::published()->get();
+
+        return response()->view('frontend.blog.sitemap', compact('posts'))
+            ->header('Content-Type', 'application/xml; charset=UTF-8');
     }
 }
