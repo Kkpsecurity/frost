@@ -26,6 +26,7 @@
 
     {{-- Panel-Specific CSS Section --}}
     @yield('panel-css')
+    @stack('component-styles')
 
     <!-- Meta Data -->
     <meta name="description" content="{{ $description ?? 'Professional Security Training Platform' }}">

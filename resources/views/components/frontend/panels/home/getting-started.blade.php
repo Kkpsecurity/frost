@@ -1,23 +1,17 @@
-@section('panel-css')
+@push('component-styles')
     @vite(['resources/css/components/getting-started.css'])
-@endsection
+@endpush
 
  @php
         $manifestPath = public_path('build/manifest.json');
         $useVite = false;
         if (file_exists($manifestPath)) {
             $manifest = json_decode(file_get_contents($manifestPath), true);
-            if (is_array($manifest) && array_key_exists('resources/css/components/welcome-hero.css', $manifest)) {
+            if (is_array($manifest) && array_key_exists('resources/css/components/getting-started.css', $manifest)) {
                 $useVite = true;
             }
         }
     @endphp
-
-@if($useVite)
-    @vite(['resources/css/components/welcome-hero.css'])
-@else
-    <link rel="stylesheet" href="{{ asset('css/components/getting-started.css') }}">
-@endif
 
 
 <div class="frost-secondary-bg py-5">
@@ -36,6 +30,7 @@
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     const servicesData = [{
             icon: "fas fa-user-shield", // FontAwesome icon class for User Shield
             title: "Live Class",
@@ -77,6 +72,11 @@
     // Step 2: Loop over the data and generate the HTML
     const servicesContainer = document.getElementById("servicesContainer");
 
+    if (!servicesContainer) {
+        console.error('Services container not found!');
+        return;
+    }
+
     servicesData.forEach(service => {
         const serviceDiv = document.createElement('div');
         serviceDiv.className = 'col-md-6 col-sm-12 mb-4';
@@ -98,4 +98,7 @@
         // Step 3: Append the generated HTML to the DOM
         servicesContainer.appendChild(serviceDiv);
     });
+
+    console.log('Getting Started component loaded successfully');
+});
 </script>

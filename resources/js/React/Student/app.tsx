@@ -50,7 +50,13 @@ export { queryClient, StudentErrorBoundary };
 // DOM mounting logic for student components
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🎓 StudentEntry: DOM loaded, looking for container...");
+    console.log("🔍 Current URL:", window.location.href);
+    console.log("🔍 Current pathname:", window.location.pathname);
+
     const container = document.getElementById("student-dashboard-container");
+    console.log("🔍 Container found:", !!container);
+    console.log("🔍 Container element:", container);
+    
     if (container) {
         console.log("✅ Found student container, mounting StudentEntry...");
         const root = createRoot(container);
@@ -58,6 +64,10 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("✅ StudentEntry mounted successfully");
     } else {
         console.log("⚠️ No student container found");
+        console.log("🔍 Available elements with 'container' in id:");
+        const allContainers = document.querySelectorAll('[id*="container"]');
+        allContainers.forEach((el) => console.log("  - Found:", el.id, el));
+        
         // Try again after a short delay in case the DOM isn't fully ready
         setTimeout(() => {
             const delayedContainer = document.getElementById(
@@ -70,6 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("✅ StudentEntry mounted successfully (delayed)");
             } else {
                 console.error("❌ Could not find student-dashboard-container");
+                console.log("🔍 All elements with id attribute:");
+                const allElements = document.querySelectorAll("[id]");
+                allElements.forEach((el) => console.log("  - ID:", el.id));
             }
         }, 1000);
     }

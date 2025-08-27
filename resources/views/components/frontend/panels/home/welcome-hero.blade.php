@@ -18,7 +18,7 @@
         'The Florida Class D Security License course provides in-depth training on essential aspects of security operations, including legal guidelines, emergency response procedures, communication skills, and ethical conduct. Our expert instructors deliver engaging lessons that equip students with the knowledge and skills required to excel as security professionals.';
 @endphp
 
-@section('panel-css')
+@push('component-styles')
     @php
         $manifestPath = public_path('build/manifest.json');
         $useVite = false;
@@ -30,12 +30,59 @@
         }
     @endphp
 
-    @if($useVite)
+    @if ($useVite)
         @vite(['resources/css/components/welcome-hero.css'])
     @else
         <link rel="stylesheet" href="{{ asset('css/components/welcome-hero.css') }}">
     @endif
-@endsection
+
+    {{-- Custom Title Styling --}}
+    <style>
+        .slider-content h2 {
+            color: #f1c40f !important; /* Yellowish color */
+            font-weight: 700 !important; /* Bold */
+            font-size: 2.5rem !important; /* Larger size */
+            margin-bottom: 0.5rem !important; /* Reduced spacing below title */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Subtle shadow for readability */
+            line-height: 1.2 !important; /* Better line height */
+        }
+
+        .slider-content p {
+            color: #ecf0f1 !important; /* Light gray for subtitle */
+            font-size: 1.1rem !important; /* Slightly larger subtitle */
+            margin-bottom: 1.25rem !important; /* Reduced spacing below subtitle */
+            font-weight: 400 !important; /* Normal weight */
+            line-height: 1.4 !important; /* Better readability */
+        }
+
+        .slider-content {
+            padding-top: 2rem; /* Add some top padding */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .slider-content h2 {
+                font-size: 2rem !important;
+                margin-bottom: 0.2rem !important;
+            }
+
+            .slider-content p {
+                font-size: 1.2rem !important;
+                margin-bottom: 4rem !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .slider-content h2 {
+                font-size: 1.75rem !important;
+            }
+
+            .slider-content p {
+                font-size: 0.95rem !important;
+            }
+        }
+    </style>
+@endpush
 
 <div class="slider-area">
     <div class="container">
@@ -53,7 +100,8 @@
                                     <div class="main-wel">
                                         <div class="wel-img">
                                             <div class="big-icon">
-                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-d.png', 'media')" alt="Class D Security">
+                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-d.png', 'media')"
+                                                    alt="Class D Security">
                                             </div>
                                         </div>
                                         <div class="wel-content">
@@ -61,8 +109,9 @@
                                             <p>{{ $courseDInfo }}</p>
                                         </div>
                                         <div class="text-center">
-                                            <a href="{{ url('/courses/detail/1') }}" class="btn btn-primary">More Detail</a>
-                                            {!! App\Helpers\Helpers::EnrollButton( $courseD ) !!}
+                                            <a href="{{ url('/courses/detail/1') }}" class="btn btn-primary">More
+                                                Detail</a>
+                                            {!! App\Helpers\Helpers::EnrollButton($courseD) !!}
                                         </div>
                                     </div>
                                 </div>
@@ -76,7 +125,8 @@
                                     <div class="main-wel">
                                         <div class="wel-img">
                                             <div class="big-icon">
-                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-g.png', 'media')" alt="Class G Security">
+                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-g.png', 'media')"
+                                                    alt="Class G Security">
                                             </div>
                                         </div>
                                         <div class="wel-content">
@@ -84,8 +134,9 @@
                                             <p>{{ $courseGInfo }}</p>
                                         </div>
                                         <div class="text-center">
-                                            <a href="{{ url('/courses/detail/2') }}" class="btn btn-primary">More Detail</a>
-                                            {!! App\Helpers\Helpers::EnrollButton( $courseG ) !!}
+                                            <a href="{{ url('/courses/detail/2') }}" class="btn btn-primary">More
+                                                Detail</a>
+                                            {!! App\Helpers\Helpers::EnrollButton($courseG) !!}
                                         </div>
                                     </div>
                                 </div>
@@ -102,11 +153,8 @@
                         <div class="account-profile-container">
                             <div class="account-profile">
                                 <div class="profile-detail text-center">
-                                    <h4>Student Login</h4>
-                                    <p class="text-white-50">Access your courses and training materials</p>
-
                                     <!-- Login form will be rendered here -->
-                                     <x-frontend.panels.accounts.quick-profile :user="Auth::user()" />
+                                    <x-frontend.panels.accounts.quick-profile :user="Auth::user()" />
                                 </div>
                             </div>
                         </div>
