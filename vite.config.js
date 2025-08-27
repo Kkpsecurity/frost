@@ -28,9 +28,19 @@ export default defineConfig({
 
                 // CSS files (consolidated structure)
                 "resources/css/style.css", // Main stylesheet with all imports
-                // Individual component CSS that is referenced directly from Blade
-                "resources/css/components/welcome-hero.css",
+                "resources/css/app.css", // App-specific styles
+                "resources/css/admin.css", // Admin styles
 
+                // Component CSS files
+                "resources/css/components/welcome-hero.css",
+                "resources/css/components/blog.css",
+                "resources/css/components/courses.css",
+                "resources/css/components/getting-started.css",
+                "resources/css/components/alerts.css",
+                "resources/css/components/footer.css",
+                "resources/css/components/header.css",
+                "resources/css/components/topbar.css",
+                "resources/css/components/loader.css",
             ],
             refresh: true,
         }),
@@ -41,10 +51,10 @@ export default defineConfig({
     // Dev server config: bind to the local site hostname so @vite/client shares origin
     // If local TLS certs exist under ./certs, enable HTTPS + wss HMR; otherwise fall back to HTTP + ws.
     server: (() => {
-        const host = 'frost.test';
+        const host = "frost.test";
         const port = 5173;
-        const keyPath = 'certs/frost.test-key.pem';
-        const certPath = 'certs/frost.test.pem';
+        const keyPath = "certs/frost.test-key.pem";
+        const certPath = "certs/frost.test.pem";
         const useHttps = fs.existsSync(keyPath) && fs.existsSync(certPath);
 
         const base = {
@@ -52,19 +62,21 @@ export default defineConfig({
             port,
             strictPort: true,
             hmr: {
-                protocol: useHttps ? 'wss' : 'ws',
+                protocol: useHttps ? "wss" : "ws",
                 host,
                 port,
             },
-            origin: `${useHttps ? 'https' : 'http'}://${host}:${port}`,
+            origin: `${useHttps ? "https" : "http"}://${host}:${port}`,
             // Allow cross-origin requests from the app host and include credentials
             cors: {
-                origin: `${useHttps ? 'https' : 'http'}://${host}`,
+                origin: `${useHttps ? "https" : "http"}://${host}`,
                 credentials: true,
             },
             headers: {
-                'Access-Control-Allow-Origin': `${useHttps ? 'https' : 'http'}://${host}`,
-                'Access-Control-Allow-Credentials': 'true',
+                "Access-Control-Allow-Origin": `${
+                    useHttps ? "https" : "http"
+                }://${host}`,
+                "Access-Control-Allow-Credentials": "true",
             },
         };
 
@@ -77,7 +89,10 @@ export default defineConfig({
             } catch (e) {
                 // If certs cannot be read for any reason, ensure we still return a valid config and log to console
                 // eslint-disable-next-line no-console
-                console.warn('vite.config: failed to read TLS certs, falling back to HTTP', e && e.message);
+                console.warn(
+                    "vite.config: failed to read TLS certs, falling back to HTTP",
+                    e && e.message
+                );
             }
         }
 

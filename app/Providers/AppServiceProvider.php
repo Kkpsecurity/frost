@@ -26,6 +26,19 @@ class AppServiceProvider extends ServiceProvider
         // Register component namespaces
         Blade::componentNamespace('App\\View\\Components\\Admin', 'admin');
 
+        // Register custom Blade directives
+        Blade::directive('mediaUrl', function ($expression) {
+            return "<?php echo App\Helpers\MediaHelper::url($expression); ?>";
+        });
+
+        Blade::directive('blogImage', function ($expression) {
+            return "<?php echo App\Helpers\MediaHelper::blogImage($expression); ?>";
+        });
+
+        Blade::directive('logo', function ($expression) {
+            return "<?php echo App\Helpers\MediaHelper::logo($expression); ?>";
+        });
+
         // Load AdminLTE settings from database and merge with config
         $this->loadAdminLteSettings();
 

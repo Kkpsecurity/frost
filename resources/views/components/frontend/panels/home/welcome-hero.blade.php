@@ -6,8 +6,6 @@
 
     $welcomeTitle = 'Welcome to The Security Training Group';
     $welcomeSubtitle = 'Florida Security License and Armed Statewide Firearms Class G License';
-    $classDIcon = asset('assets/img/icon/online-course-icon-class-d.png');
-    $classGIcon = asset('assets/img/icon/online-course-icon-class-g.png');
     $courseDTitle = $courseD ? $courseD->full_title : 'Florida Class D Security License Course';
     $courseDInfo = 'Comprehensive online training program. Flexible schedule.';
     $courseDPrice = $courseD ? '$' . number_format($courseD->price, 2) . ' USD' : '$125.00  USD';
@@ -55,7 +53,7 @@
                                     <div class="main-wel">
                                         <div class="wel-img">
                                             <div class="big-icon">
-                                                <img src="{{ $classDIcon }}" alt="Class D Security">
+                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-d.png', 'media')" alt="Class D Security">
                                             </div>
                                         </div>
                                         <div class="wel-content">
@@ -78,7 +76,7 @@
                                     <div class="main-wel">
                                         <div class="wel-img">
                                             <div class="big-icon">
-                                                <img src="{{ $classGIcon }}" alt="Class G Security">
+                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-g.png', 'media')" alt="Class G Security">
                                             </div>
                                         </div>
                                         <div class="wel-content">
