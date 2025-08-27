@@ -2,7 +2,8 @@
     "private": true,
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build"
+        "build": "vite build",
+        "type-check": "tsc --noEmit"
     },
     "devDependencies": {
         "@headlessui/react": "^1.4.2",

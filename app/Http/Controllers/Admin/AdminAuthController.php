@@ -42,6 +42,11 @@ class AdminAuthController extends Controller
                 ]);
             }
 
+            // Persist web guard session as well so middleware that checks the web
+            // guard doesn't redirect back to the login page. Use login() to
+            // ensure the session cookie is properly set.
+            Auth::guard('web')->login($user);
+
             $request->session()->regenerate();
             return redirect()->intended(route('admin.dashboard'));
         }
@@ -56,7 +61,9 @@ class AdminAuthController extends Controller
      */
     public function logout(Request $request)
     {
+        // Logout from both admin and web guards to clear session state
         Auth::guard('admin')->logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

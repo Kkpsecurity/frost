@@ -16,7 +16,11 @@ class AdminGuestMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::guard('admin')->check()) {
+        // Only redirect guests away from admin login if BOTH admin and web
+        // guards are authenticated. If only the admin guard is set but the
+        // web guard is not, allow the request to continue so the login
+        // process can establish both guards and avoid redirect loops.
+        if (Auth::guard('admin')->check() && Auth::guard('web')->check()) {
             return redirect()->route('admin.dashboard');
         }
 
