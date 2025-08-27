@@ -46,7 +46,7 @@ class Helpers
 
         return view(
                     'frontend.shop.partials.enroll_buttons.enroll',
-                    [ 'route' => route( 'enroll', $Course ) ]
+            ['route' => route('courses.enroll', $Course)]
                )->render();
 
     }

@@ -63,9 +63,19 @@ Route::get('/courses/enroll/{course}', [CoursesController::class, 'enroll'])
     ->name('courses.enroll')
     ->middleware('auth');
 
+// Legacy route alias for backwards compatibility
+Route::get('/enroll/{course}', [CoursesController::class, 'enroll'])
+    ->name('enroll')
+    ->middleware('auth');
+
 // Course enrollment processing route
 Route::post('/courses/enroll/{course}', [App\Http\Controllers\Web\EnrollmentController::class, 'AutoPayFlowPro'])
     ->name('courses.enroll.process')
+    ->middleware('auth');
+
+// Legacy enrollment processing route
+Route::post('/enroll/{course}', [App\Http\Controllers\Web\EnrollmentController::class, 'AutoPayFlowPro'])
+    ->name('enroll.process')
     ->middleware('auth');
 
 // Blog routes
