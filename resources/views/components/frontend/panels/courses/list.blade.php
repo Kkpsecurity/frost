@@ -1,6 +1,10 @@
 {{-- Courses Panel - Product-style listing for security training courses --}}
 @props(['courses' => collect()])
 
+@push('component-styles')
+    <link rel="stylesheet" href="{{ asset('css/components/courses.css') }}">
+@endpush
+
 <div class="frost-secondary-bg py-5">
     <div class="container courses-container">
         <div class="row mb-5">

@@ -129,7 +129,7 @@
                                                 <p class="post-excerpt">{{ $post->excerpt_or_truncated_content }}</p>
                                                 <div class="post-footer">
                                                     <div class="post-tags">
-                                                        @if($post->tags)
+                                                        @if($post->tags && is_array($post->tags))
                                                             @foreach(array_slice($post->tags, 0, 2) as $tag)
                                                                 <span class="tag">{{ $tag }}</span>
                                                             @endforeach

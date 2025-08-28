@@ -1,8 +1,9 @@
-{{-- Courses List Page --}}
-<x-frontend.site.site-wrapper :title="$content['title'] ?? 'Course List'">
+{{-- Course Detail Page - Universal for all course types --}}
+<x-frontend.site.site-wrapper :title="($course['title'] ?? 'Course Details') . ' | KKP Security Training'">
     <x-slot:head>
-        <meta name="description" content="{{ $content['description'] ?? 'Browse and purchase our professional security training courses' }}">
-        <meta name="keywords" content="{{ $content['keywords'] ?? 'security courses, buy courses, training programs, certification courses' }}">
+        <meta name="description" content="{{ $course['description'] ?? 'Professional security training course details and enrollment information' }}">
+        <meta name="keywords" content="{{ implode(', ', $course['keywords'] ?? ['security training', 'professional certification', 'course details']) }}">
+        <link rel="stylesheet" href="{{ asset('css/components/course-details.css') }}">
     </x-slot:head>
 
     <x-frontend.site.partials.header />

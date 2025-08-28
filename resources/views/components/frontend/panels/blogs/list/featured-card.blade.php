@@ -2,11 +2,47 @@
 @props(['post'])
 
 <div class="card border-0 shadow-lg h-100 blog-featured-card" style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; transition: transform 0.3s ease;">
-    @if($post->featured_image)
+    @php
+        $imageUrl = null;
+        $hasImage = false;
+        
+        // Check if post has featured_image and if file exists
+        if ($post->featured_image) {
+            // Handle different path formats
+            $imagePath = $post->featured_image;
+            
+            // If path doesn't start with /, add it
+            if (!str_starts_with($imagePath, '/')) {
+                $imagePath = '/' . $imagePath;
+            }
+            
+            // Check if file exists in public directory
+            if (file_exists(public_path($imagePath))) {
+                $imageUrl = asset($imagePath);
+                $hasImage = true;
+            }
+        }
+        
+        // Default image if none exists or file not found
+        if (!$hasImage) {
+            $imageUrl = asset('images/Security-Page-1.jpg');
+            $hasImage = true; // We have a default image
+        }
+    @endphp
+
     <div class="card-img-top-wrapper" style="height: 200px; overflow: hidden; border-radius: 15px 15px 0 0;">
-        <img src="{{ $post->featured_image }}" alt="{{ $post->title }}" class="w-100 h-100" style="object-fit: cover;">
+        @if($imageUrl && $hasImage)
+            <img src="{{ $imageUrl }}" alt="{{ $post->title }}" class="w-100 h-100" style="object-fit: cover;">
+        @else
+            {{-- Fallback placeholder --}}
+            <div class="d-flex align-items-center justify-content-center w-100 h-100 bg-light" style="background: linear-gradient(135deg, #f8f9fa, #e9ecef);">
+                <div class="text-center text-muted">
+                    <i class="fas fa-image fa-3x mb-2" style="opacity: 0.3;"></i>
+                    <div>No Image Available</div>
+                </div>
+            </div>
+        @endif
     </div>
-    @endif
 
     <div class="card-body p-4">
         {{-- Category Badge --}}

@@ -16,31 +16,21 @@ $menuItems = [
         'isActive' => $segment1 === 'courses',
         'subMenu' => [
             [
-                'label' => 'Courses',
+                'label' => 'Course List',
                 'url' => url('courses/list'),
                 'isActive' => $segment1 === 'courses' && $segment2 === 'list',
             ],
             [
-                'label' => 'Schedules',
+                'label' => 'Training Schedules',
                 'url' => url('courses/schedules'),
                 'isActive' => $segment1 === 'courses' && $segment2 === 'schedules',
             ],
-            [
-                'label' => 'Why Security Training',
-                'url' => route('blog.show', 'threat-assessment-techniques'),
-                'isActive' => $segment1 === 'blog' && $segment2 === 'threat-assessment-techniques',
-            ],
-            [
-                'label' => 'Outline 5N-1.140 Security Officer',
-                'url' => route('blog.show', 'florida-gun-laws-2025'),
-                'isActive' => $segment1 === 'blog' && $segment2 === 'florida-gun-laws-2025',
-            ],
-            [
-                'label' => 'Ensuring Compliance',
-                'url' => route('blog.show', 'essential-firearms-safety'),
-                'isActive' => $segment1 === 'blog' && $segment2 === 'essential-firearms-safety',
-            ],
         ],
+    ],
+    [
+        'label' => 'Knowledge Base',
+        'url' => url('blog'),
+        'isActive' => $segment1 === 'blog',
     ],
     [
         'label' => 'Student',

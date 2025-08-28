@@ -17,7 +17,20 @@ class BlogController extends Controller
             ->recent()
             ->paginate(9); // 9 posts per page for 3x3 grid
 
-        return view('frontend.blog.index', compact('posts'));
+        // Get categories for sidebar
+        $categories = BlogPost::published()
+            ->pluck('category')
+            ->filter()
+            ->unique()
+            ->values();
+
+        // Dynamic page content
+        $pageData = [
+            'title' => config('app.blog_title', 'Security Training & Legal Insights'),
+            'description' => config('app.blog_description', 'Expert guidance on security training, firearms regulations, and professional development for security professionals'),
+        ];
+
+        return view('frontend.blog.index', compact('posts', 'categories', 'pageData'));
     }
 
     /**
