@@ -1,172 +1,243 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
+import {
+    Menu,
+    X,
+    Bell,
+    Search,
+    Home,
+    BookOpen,
+    Calendar,
+    ClipboardList,
+    MessageSquare,
+    Settings,
+    LogOut,
+} from "lucide-react";
 
-const StudentDataLayer = () => {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        console.log('🎓 StudentDataLayer mounted successfully');
-        console.log('📍 Current URL:', window.location.pathname);
-        console.log('📍 Current container:', document.getElementById("student-dashboard-container"));
-        setMounted(true);
-    }, []);
-
-    if (!mounted) {
-        return (
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-12 text-center p-4">
-                        <i className="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                        <p className="mt-2 text-primary"><strong>Student Portal Initializing...</strong></p>
-                        <small className="text-muted">StudentDataLayer is mounting</small>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
+// Minimal in-file UI atoms so this runs standalone in preview.
+function IconButton({
+    title,
+    onClick,
+    children,
+}: {
+    title?: string;
+    onClick?: () => void;
+    children: React.ReactNode;
+}) {
     return (
-        <div className="container-fluid student-dashboard">
-            <div className="row mb-4">
-                <div className="col-12">
-                    <div className="alert alert-success">
-                        <i className="fas fa-graduation-cap mr-2"></i>
-                        <strong>🎓 Student Portal Dashboard Active!</strong>
-                        <br />
-                        <small>✅ Component mounted at: {new Date().toLocaleTimeString()}</small>
-                        <br />
-                        <small>📍 Route: {window.location.pathname}</small>
-                    </div>
-                </div>
-            </div>
-
-            {/* Student Dashboard Stats */}
-            <div className="row mb-4">
-                <div className="col-lg-3 col-md-6">
-                    <div className="small-box bg-primary">
-                        <div className="inner">
-                            <h3>📚</h3>
-                            <p>My Courses</p>
-                        </div>
-                        <div className="icon">
-                            <i className="fas fa-book-open"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-lg-3 col-md-6">
-                    <div className="small-box bg-success">
-                        <div className="inner">
-                            <h3>📈</h3>
-                            <p>Progress</p>
-                        </div>
-                        <div className="icon">
-                            <i className="fas fa-chart-line"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-lg-3 col-md-6">
-                    <div className="small-box bg-info">
-                        <div className="inner">
-                            <h3>📅</h3>
-                            <p>Schedule</p>
-                        </div>
-                        <div className="icon">
-                            <i className="fas fa-calendar-alt"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-lg-3 col-md-6">
-                    <div className="small-box bg-warning">
-                        <div className="inner">
-                            <h3>🎯</h3>
-                            <p>Assignments</p>
-                        </div>
-                        <div className="icon">
-                            <i className="fas fa-tasks"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Quick Access */}
-            <div className="row mb-4">
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="card-title">
-                                <i className="fas fa-play mr-2"></i>
-                                Current Lessons
-                            </h3>
-                        </div>
-                        <div className="card-body">
-                            <p><strong>No active lessons at the moment</strong></p>
-                            <p className="text-muted">Your upcoming lessons will appear here</p>
-                            <button className="btn btn-primary">
-                                <i className="fas fa-search mr-1"></i>
-                                Browse Courses
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="card-title">
-                                <i className="fas fa-trophy mr-2"></i>
-                                Recent Activity
-                            </h3>
-                        </div>
-                        <div className="card-body">
-                            <p><strong>Welcome to your student portal!</strong></p>
-                            <p className="text-muted">Your learning activity will be tracked here</p>
-                            <button className="btn btn-success">
-                                <i className="fas fa-play mr-1"></i>
-                                Start Learning
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Foundation Test */}
-            <div className="row">
-                <div className="col-12">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="card-title">
-                                <i className="fas fa-cogs mr-2"></i>
-                                Student Portal Foundation
-                            </h3>
-                        </div>
-                        <div className="card-body">
-                            <p><strong>✅ React Component:</strong> Successfully mounted and rendering</p>
-                            <p><strong>✅ Container:</strong> Found and attached to DOM</p>
-                            <p><strong>✅ Route Detection:</strong> {window.location.pathname}</p>
-                            <p><strong>✅ Student Portal:</strong> Frontend foundation ready</p>
-                            <hr />
-                            <button
-                                className="btn btn-primary mr-2"
-                                onClick={() => alert('Student portal interaction working!')}
-                            >
-                                <i className="fas fa-play mr-1"></i>
-                                Test Interaction
-                            </button>
-                            <button
-                                className="btn btn-info"
-                                onClick={() => console.log('Student portal console test')}
-                            >
-                                <i className="fas fa-terminal mr-1"></i>
-                                Test Console
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <button
+            title={title}
+            onClick={onClick}
+            className="inline-flex items-center justify-center rounded-2xl px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+            {children}
+        </button>
     );
 }
 
-export default StudentDataLayer;
+function ToolbarDivider() {
+    return <div className="mx-2 h-6 w-px bg-gray-200 dark:bg-gray-700" />;
+}
+
+const navItems = [
+    { icon: <Home className="h-5 w-5" />, label: "Overview" },
+    { icon: <BookOpen className="h-5 w-5" />, label: "Courses" },
+    { icon: <Calendar className="h-5 w-5" />, label: "Schedule" },
+    { icon: <ClipboardList className="h-5 w-5" />, label: "Assignments" },
+    { icon: <MessageSquare className="h-5 w-5" />, label: "Messages" },
+    { icon: <Settings className="h-5 w-5" />, label: "Settings" },
+];
+
+export default function StudentDashboard() {
+    const [mounted, setMounted] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [active, setActive] = useState("Overview");
+    const [query, setQuery] = useState("");
+
+    useEffect(() => {
+        console.log("🎓 StudentDashboard: Mounted");
+        setMounted(true);
+        console.log("🔧 Initializing student data layer...");
+        return () => {
+            console.log("🛑 StudentDashboard: Unmounted");
+            setMounted(false);
+        };
+    }, []);
+
+    // keyboard: toggle sidebar with `[` and focus search with "/"
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "[") setSidebarOpen((s) => !s);
+            if (e.key === "/") {
+                e.preventDefault();
+                const el = document.getElementById("global-search");
+                if (el) (el as HTMLInputElement).focus();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, []);
+
+    const filtered = useMemo(
+        () =>
+            navItems.filter((n) =>
+                n.label.toLowerCase().includes(query.toLowerCase())
+            ),
+        [query]
+    );
+
+    return (
+        <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50">
+            {/* Top Toolbar */}
+            <header className="sticky top-0 z-40 border-b border-gray-200/70 dark:border-gray-800/80 backdrop-blur bg-white/75 dark:bg-gray-950/60">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex h-14 items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <IconButton
+                                title="Toggle sidebar"
+                                onClick={() => setSidebarOpen((s) => !s)}
+                            >
+                                {sidebarOpen ? (
+                                    <X className="h-5 w-5" />
+                                ) : (
+                                    <Menu className="h-5 w-5" />
+                                )}
+                            </IconButton>
+                            <div className="text-sm font-medium text-gray-500">
+                                Student
+                            </div>
+                            <div className="text-sm">/</div>
+                            <h1 className="text-sm font-semibold">{active}</h1>
+                        </div>
+
+                        <div className="flex items-center">
+                            <div className="relative hidden sm:block">
+                                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    id="global-search"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Search… (/ to focus)"
+                                    className="w-64 rounded-2xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-blue-500/40 dark:bg-gray-900 dark:border-gray-800"
+                                />
+                            </div>
+
+                            <ToolbarDivider />
+                            <IconButton title="Notifications">
+                                <Bell className="h-5 w-5" />
+                            </IconButton>
+                            <ToolbarDivider />
+                            <button className="rounded-2xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 active:scale-[.99]">
+                                New Note
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-12 gap-4 py-4">
+                    {/* Sidebar */}
+                    <aside
+                        className={`${
+                            sidebarOpen
+                                ? "col-span-12 md:col-span-3"
+                                : "hidden md:block md:col-span-2"
+                        }`}
+                    >
+                        <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+                            <nav className="space-y-1">
+                                {(query ? filtered : navItems).map((item) => (
+                                    <button
+                                        key={item.label}
+                                        onClick={() => setActive(item.label)}
+                                        className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                                            active === item.label
+                                                ? "bg-gray-100 dark:bg-gray-800 font-semibold"
+                                                : ""
+                                        }`}
+                                        aria-current={
+                                            active === item.label
+                                                ? "page"
+                                                : undefined
+                                        }
+                                    >
+                                        {item.icon}
+                                        <span>{item.label}</span>
+                                    </button>
+                                ))}
+                            </nav>
+
+                            <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-800">
+                                <button className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                                    <LogOut className="h-4 w-4" /> Sign out
+                                </button>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Content */}
+                    <main
+                        className={`${
+                            sidebarOpen
+                                ? "col-span-12 md:col-span-9"
+                                : "col-span-12 md:col-span-10"
+                        }`}
+                    >
+                        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+                            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-lg font-semibold">
+                                    {active}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:hover:bg-gray-800">
+                                        Filter
+                                    </button>
+                                    <button className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:hover:bg-gray-800">
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                                    <div className="text-sm text-gray-500">
+                                        Data Layer
+                                    </div>
+                                    <div className="text-2xl font-semibold">
+                                        {mounted ? "Mounted" : "Not Ready"}
+                                    </div>
+                                </div>
+                                <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                                    <div className="text-sm text-gray-500">
+                                        Active Section
+                                    </div>
+                                    <div className="text-2xl font-semibold">
+                                        {active}
+                                    </div>
+                                </div>
+                                <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                                    <div className="text-sm text-gray-500">
+                                        Search
+                                    </div>
+                                    <div className="truncate text-2xl font-semibold">
+                                        {query || "—"}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:border-gray-700">
+                                This is your main content area. Swap this with
+                                tables, charts, or lesson views.
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <footer className="mx-auto max-w-7xl px-4 pb-6 pt-2 text-center text-xs text-gray-500 sm:px-6 lg:px-8">
+                Student Dashboard • Sidebar ( [ ] ) • Focus Search ( / )
+            </footer>
+        </div>
+    );
+}
