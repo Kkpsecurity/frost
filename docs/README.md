@@ -1,261 +1,50 @@
-# React Context-Based Architecture
+# Florida Online Security Training
 
-This document explains the new React pattern implemented for the Instructor Portal, featuring context-based state management with cached settings.
+## Overview
 
-## Architecture Overview
+Florida Online Security Training provides comprehensive online courses and certifications for individuals pursuing careers in the Florida security industry. The platform features a user-friendly interface and a variety of courses to help secure Florida security licenses and specialize in areas such as unarmed security, armed security, and private investigation.
 
-The application follows a layered architecture:
+## Key Features
 
-```
-InstructorApp (Entry Point)
-├── QueryClientProvider (TanStack Query)
-├── SettingsProvider (Context + Cache)
-├── ErrorBoundary
-└── InstructorDataLayer (UI Components)
-    └── Child Components (using context hooks)
-```
+- **Variety of Courses:** Florida Security License, Armed Security Training, Unarmed Security Training, Private Investigation Training, and Continuing Education.
+- **Interactive Learning:** Multimedia content and interactive quizzes to enhance retention.
+- **Expert Instructors:** Guidance and support from experienced professionals.
+- **Career Placement Assistance:** Help for graduates seeking security industry opportunities.
 
-## Key Components
+## Online Training Requirements
 
-### 1. Entry Point (`InstructorApp.tsx`)
+- Live instruction from Florida-based facilities with real-time participation.
+- Secure online instruction and testing via SSL/TLS.
+- Student identity verification and daily attendance tracking.
+- Single device login restriction and security question engagement.
+- Minimum reading time requirements and student-instructor interaction opportunities.
+- Recorded instruction for missed class hours and randomized question tests.
 
-The main entry point that sets up:
-- React Query Client with global defaults
-- Settings Context Provider with configurable cache time
-- Error boundaries and loading states
-- Development tools (React Query Devtools)
+## Record Retention
 
-```tsx
-<InstructorApp 
-  instructorId="123"
-  debug={true}
-  cacheTime={15 * 60 * 1000} // 15 minutes
-/>
-```
+- Detailed records of class schedules, course materials, student logs, and training certificates.
+- Digital and/or original paper records retained for immediate departmental access.
 
-### 2. Settings Context (`SettingsContext.tsx`)
+## Firearms Training Outline
 
-Provides cached application settings with:
-- **15-minute default cache** (configurable)
-- **Automatic stale detection**
-- **Cache management functions**
-- **Error handling**
-- **Loading states**
+- **Initial Qualification & Requalification:** 28 hours of range and classroom training for initial qualification; annual requalification required.
+- **Instructor-led Sessions:** In-person or live online classroom training focusing on firearm safety, handling, and legal considerations.
+- **Instructor Recordkeeping:** Maintenance of training, attendance, and test records per state and federal requirements.
 
-#### Available Hooks:
+## Program Specifics
 
-```tsx
-// Get all settings (use sparingly)
-const { config, settings, user, app, isLoading, isError } = useSettings();
+- **Security Officer & Firearms Courses:** Class D Security License and Class G Statewide Firearms Course, including online classroom and in-person range training.
+- **Refund & Cancellation Policy:** Terms for enrollment, payment, refund eligibility, and course completion timeframe.
 
-// Get specific sections (recommended - better performance)
-const { config } = useAppConfig();
-const { settings } = useAppSettings();  
-const { user } = useUser();
-const { app } = useAppInfo();
+## STG Partnerships
 
-// Cache management
-const { lastFetched, isStale, refetch, clearCache } = useCacheStatus();
-```
+- Collaboration with approved K Partners for range training, ensuring compliance with Florida Statutes and a comprehensive training experience.
 
-### 3. Data Layer (`InstructorDataLayer.tsx`)
+## Licensing Information
 
-The main UI component that:
-- Uses context hooks for data
-- Displays cache status indicators
-- Provides refresh functionality
-- Shows loading/error states
+- Links to Florida Class 'G' Security Officer License requirements and application procedures, ensuring candidates are informed about eligibility and training.
 
-### 4. Child Components
+## Final Notes
 
-Any component can access settings using the context hooks:
+This README offers an overview of Florida Online Security Training's offerings, requirements, record-keeping, firearms training, and partnerships, providing a clear understanding of the project's objectives and standards.
 
-```tsx
-import { useAppConfig, useUser } from '../Context/SettingsContext';
-
-const MyComponent = () => {
-  const { config } = useAppConfig();
-  const { user } = useUser();
-  
-  return (
-    <div>
-      <h1>{config?.adminlte?.title}</h1>
-      <p>Welcome, {user?.name}!</p>
-    </div>
-  );
-};
-```
-
-## Cache Management
-
-### Cache Behavior
-- **Cache Duration**: 15 minutes by default (configurable)
-- **Stale Detection**: Automatic based on last fetch timestamp
-- **Background Refetch**: No automatic background updates
-- **Manual Control**: Refresh and clear cache functions available
-
-### Cache Status Indicators
-- 🟢 **Fresh**: Data is within cache time
-- 🟡 **Stale**: Data is older than cache time
-- 🔄 **Loading**: Currently fetching new data
-
-### API Configuration
-The cache uses TanStack Query with these settings:
-- `staleTime`: Matches cache time (15 minutes default)
-- `gcTime`: Double the cache time (30 minutes default)  
-- `refetchOnWindowFocus`: false
-- `refetchOnMount`: false (if fresh data exists)
-
-## Benefits
-
-### 1. Performance
-- **Reduced API Calls**: Settings cached for 15 minutes
-- **Selective Re-renders**: Components only re-render when their specific data changes
-- **Lazy Loading**: Components loaded on-demand
-
-### 2. Developer Experience
-- **TypeScript Support**: Full type safety
-- **Debug Tools**: React Query Devtools in development
-- **Error Boundaries**: Graceful error handling
-- **Cache Visibility**: Clear cache status indicators
-
-### 3. Maintainability
-- **Separation of Concerns**: Clear boundaries between layers
-- **Reusable Hooks**: Context hooks can be used anywhere
-- **Configurable**: Cache time and debug modes configurable
-- **Testable**: Each layer can be tested independently
-
-## Usage Examples
-
-### Basic Component
-```tsx
-import React from 'react';
-import { useAppConfig, useUser } from '../Context/SettingsContext';
-
-const Dashboard = () => {
-  const { config, isLoading } = useAppConfig();
-  const { user } = useUser();
-  
-  if (isLoading) return <div>Loading...</div>;
-  
-  return (
-    <div>
-      <h1>{config?.adminlte?.title}</h1>
-      <p>Welcome back, {user?.name}!</p>
-    </div>
-  );
-};
-```
-
-### Cache Management
-```tsx
-import React from 'react';
-import { useCacheStatus } from '../Context/SettingsContext';
-
-const CacheControls = () => {
-  const { isStale, lastFetched, refetch, clearCache } = useCacheStatus();
-  
-  return (
-    <div>
-      <span className={`badge ${isStale ? 'badge-warning' : 'badge-success'}`}>
-        {isStale ? 'Stale' : 'Fresh'}
-      </span>
-      <button onClick={refetch}>Refresh</button>
-      <button onClick={clearCache}>Clear Cache</button>
-      <small>Last updated: {lastFetched?.toLocaleString()}</small>
-    </div>
-  );
-};
-```
-
-### Error Handling
-```tsx
-import React from 'react';
-import { useSettings } from '../Context/SettingsContext';
-
-const DataComponent = () => {
-  const { config, isLoading, isError, error } = useSettings();
-  
-  if (isLoading) return <div>Loading...</div>;
-  
-  if (isError) {
-    return (
-      <div className="alert alert-danger">
-        Error: {error?.message}
-        <button onClick={() => window.location.reload()}>
-          Retry
-        </button>
-      </div>
-    );
-  }
-  
-  return <div>{/* Your component */}</div>;
-};
-```
-
-## Configuration
-
-### Environment Variables
-```typescript
-// Development mode enables:
-// - Console logging
-// - React Query Devtools
-// - Debug components
-const isDev = process.env.NODE_ENV === 'development';
-```
-
-### Container Data Attributes
-```html
-<div 
-  id="instructor-dashboard-container"
-  data-instructor-id="123"
-  data-debug="true"
-  data-cache-time="900000"
-></div>
-```
-
-## Migration Guide
-
-### From Direct Hook Usage
-```tsx
-// Old pattern
-const { data, isLoading, error } = useLaravelAdminHook();
-
-// New pattern  
-const { config, isLoading, isError } = useAppConfig();
-```
-
-### From Prop Drilling
-```tsx
-// Old pattern - passing data through props
-<ParentComponent data={data}>
-  <ChildComponent data={data} />
-</ParentComponent>
-
-// New pattern - using context
-<ParentComponent>
-  <ChildComponent /> {/* Gets data from context */}
-</ParentComponent>
-```
-
-## Best Practices
-
-1. **Use Specific Hooks**: Prefer `useAppConfig()` over `useSettings()` for better performance
-2. **Handle Loading States**: Always check `isLoading` before rendering data
-3. **Error Boundaries**: Wrap components in error boundaries for graceful failures
-4. **Cache Awareness**: Show cache status to users when appropriate
-5. **Development Tools**: Use React Query Devtools to monitor cache behavior
-
-## File Structure
-
-```
-resources/js/React/Instructor/
-├── InstructorApp.tsx           # Entry point with providers
-├── Context/
-│   └── SettingsContext.tsx    # Settings context and hooks
-├── InstructorDataLayer.tsx     # Main UI component  
-├── Components/
-│   └── ExampleSettingsConsumer.tsx # Usage example
-├── app.tsx                     # DOM mounting logic
-└── README.md                   # This documentation
-```

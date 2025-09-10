@@ -23,6 +23,7 @@ export default defineConfig({
 
                 // React Components (proper path)
                 "resources/js/React/Components/UploadModalManager.tsx",
+
                 // Instructor entry
                 "resources/js/React/Instructor/instructorEntry.tsx",
 

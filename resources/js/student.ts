@@ -38,15 +38,14 @@ console.log('  - isLessonViewer():', RouteCheckers.isLessonViewer());
 const isStudentRoute = RouteCheckers.isClassroomRoute() || RouteCheckers.isStudentOffline() || RouteCheckers.isLessonViewer();
 
 // Force load for debugging - remove this later
-const forceLoad = window.location.pathname === '/classroom' || 
-                  window.location.pathname === '/classroom/' ||
-                  window.location.pathname.startsWith('/classroom/');
+const forceLoad =
+    window.location.pathname === "/classroom" ||
+    window.location.pathname === "/classroom/" ||
+    window.location.pathname.startsWith("/classroom/");
 
-console.log('✅ isStudentRoute() result:', isStudentRoute);
-console.log("🔧 forceLoad result:", forceLoad);
-
-// FORCE LOADING FOR DEBUGGING - This will always load the component
-console.log("🎓 FORCE LOADING Student React components for debugging...");
+if (window.location.pathname === "/classroom") {
+    console.log("🎓 Detected /classroom route - will load student components");
+}
 
 // Dynamic import to avoid loading student components on non-student pages
 import("./React/Student/app")

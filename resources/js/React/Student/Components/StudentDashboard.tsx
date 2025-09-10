@@ -36,17 +36,11 @@ const StudentDashboard: React.FC = () => {
     const { data: stats, isLoading: statsLoading } = useQuery({
         queryKey: queryKeys.student.stats(),
         queryFn: async (): Promise<StudentStats> => {
-            // Mock data for now - replace with actual API call
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve({
-                        enrolledCourses: 5,
-                        completedLessons: 34,
-                        assignmentsDue: 3,
-                        hoursLearned: 127
-                    });
-                }, 1000);
-            });
+            const response = await fetch("/classroom/api/stats");
+            if (!response.ok) {
+                throw new Error("Failed to fetch student stats");
+            }
+            return response.json();
         },
     });
 
@@ -54,74 +48,28 @@ const StudentDashboard: React.FC = () => {
     const { data: recentLessons, isLoading: lessonsLoading } = useQuery({
         queryKey: queryKeys.student.recentLessons(),
         queryFn: async (): Promise<RecentLesson[]> => {
-            // Mock data for now - replace with actual API call
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve([
-                        {
-                            id: 1,
-                            title: "Introduction to Calculus",
-                            course: "Advanced Mathematics",
-                            progress: 85,
-                            duration: "45 min",
-                            lastAccessed: "2 hours ago"
-                        },
-                        {
-                            id: 2,
-                            title: "Chemical Bonding",
-                            course: "Organic Chemistry",
-                            progress: 60,
-                            duration: "38 min",
-                            lastAccessed: "1 day ago"
-                        },
-                        {
-                            id: 3,
-                            title: "Newton's Laws",
-                            course: "Physics Fundamentals",
-                            progress: 100,
-                            duration: "52 min",
-                            lastAccessed: "3 days ago"
-                        }
-                    ]);
-                }, 800);
-            });
+            const response = await fetch("/classroom/api/recent-lessons");
+            if (!response.ok) {
+                throw new Error("Failed to fetch recent lessons");
+            }
+            return response.json();
         },
     });
 
     // Fetch upcoming assignments
-    const { data: upcomingAssignments, isLoading: assignmentsLoading } = useQuery({
-        queryKey: queryKeys.student.upcomingAssignments(),
-        queryFn: async (): Promise<UpcomingAssignment[]> => {
-            // Mock data for now - replace with actual API call
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve([
-                        {
-                            id: 1,
-                            title: "Derivative Calculations",
-                            course: "Advanced Mathematics",
-                            dueDate: "Tomorrow",
-                            type: "assignment"
-                        },
-                        {
-                            id: 2,
-                            title: "Molecular Structure Quiz",
-                            course: "Organic Chemistry",
-                            dueDate: "In 3 days",
-                            type: "quiz"
-                        },
-                        {
-                            id: 3,
-                            title: "Lab Report - Motion Analysis",
-                            course: "Physics Fundamentals",
-                            dueDate: "Next week",
-                            type: "project"
-                        }
-                    ]);
-                }, 600);
-            });
-        },
-    });
+    const { data: upcomingAssignments, isLoading: assignmentsLoading } =
+        useQuery({
+            queryKey: queryKeys.student.upcomingAssignments(),
+            queryFn: async (): Promise<UpcomingAssignment[]> => {
+                const response = await fetch(
+                    "/classroom/api/upcoming-assignments"
+                );
+                if (!response.ok) {
+                    throw new Error("Failed to fetch upcoming assignments");
+                }
+                return response.json();
+            },
+        });
 
     const getAssignmentTypeColor = (type: string) => {
         switch (type) {

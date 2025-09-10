@@ -13,7 +13,7 @@
     {{-- Breadcrumbs Area --}}
     <x-frontend.ui.breadcrumbs />
 
-    <x-frontend.panels.blogs.show :post="$post" />
+    <x-frontend.panels.blogs.details.show :post="$post" />
 
     <x-frontend.site.partials.footer />
 

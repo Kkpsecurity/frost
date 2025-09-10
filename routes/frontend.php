@@ -23,7 +23,12 @@ require __DIR__ . '/auth.routes.php';
 require __DIR__ . '/frontend/student.php';
 
 /**
- * Courses Section Routes  
+ * Classroom Section Routes
+ */
+require __DIR__ . '/classroom.php';
+
+/**
+ * Courses Section Routes
  */
 require __DIR__ . '/frontend/courses.php';
 

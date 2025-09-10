@@ -12,7 +12,11 @@ use App\Models\CourseAuth;
 
 trait CourseAuthsTrait
 {
-
+    // Basic relationship for all course authorizations
+    public function courseAuths()
+    {
+        return $this->hasMany(CourseAuth::class, 'user_id');
+    }
 
     public function ActiveCourseAuths()
     {
@@ -27,20 +31,19 @@ trait CourseAuthsTrait
     }
 
 
-    public function InactiveCourseAuths()
+    // Method name matches what the service expects
+    public function InActiveCourseAuths()
     {
-
         return $this->hasMany(CourseAuth::class, 'user_id')
-            ->whereNotIn('id', $this->ActiveCourseAuths->pluck('id')->toArray());
+            ->whereNotIn('id', $this->ActiveCourseAuths()->pluck('id')->toArray());
     }
 
 
     public function IsEnrolled(Course|int $Course_or_id): bool
     {
-
         return in_array(
             (is_int($Course_or_id) ? $Course_or_id : $Course_or_id->id),
-            $this->ActiveCourseAuths->pluck('course_id')->toArray()
+            $this->ActiveCourseAuths()->pluck('course_id')->toArray()
         );
     }
 }

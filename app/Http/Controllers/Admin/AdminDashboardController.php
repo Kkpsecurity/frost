@@ -7,12 +7,12 @@ use Illuminate\Http\Request;
 use App\Traits\PageMetaDataTrait;
 
 use stdClass;
+use App\Models\User;
+use App\RCache as RCache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
-use App\RCache as RCache;
-use App\Models\User;
 
 
 /*

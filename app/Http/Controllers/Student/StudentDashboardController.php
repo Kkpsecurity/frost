@@ -3,347 +3,435 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Services\StudentDashboardService;
+use App\Services\ClassroomDashboardService;
+use App\Traits\PageMetaDataTrait;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
-/**
- * Student Dashboard Controller
- * Handles the student dashboard functionality
- */
 class StudentDashboardController extends Controller
 {
+    use PageMetaDataTrait;
+
+    protected ?StudentDashboardService $dashboardService;
+    protected ?ClassroomDashboardService $classroomService;
+
+    public function __construct(StudentDashboardService $dashboardService = null, ClassroomDashboardService $classroomService = null)
+    {
+        $this->middleware('auth');
+        $this->dashboardService = $dashboardService;
+        $this->classroomService = $classroomService;
+    }
+
     /**
-     * Display the student dashboard
+     * Get empty dashboard content structure
+     */
+    protected function getEmptyDashboardContent(): array
+    {
+        return [
+            'incompleteAuths' => [],
+            'completedAuths' => [],
+            'mergedAuths' => [],
+            'stats' => [
+                'total_courses' => 0,
+                'active_courses' => 0,
+                'completed_courses' => 0,
+                'overall_progress' => 0
+            ]
+        ];
+    }
+
+    /**
+     * Student Dashboard
+     * Main dashboard showing active and completed courses
      *
-     * @param Request $request
-     * @return View
+     * @return View|RedirectResponse
      */
-    public function index(Request $request): View
+    public function dashboard()
     {
-        // Sample courses for the dashboard
-        $courses = [
-            [
-                'id' => 1,
-                'title' => 'Security Fundamentals',
-                'instructor' => 'Dr. Smith',
-                'progress' => 75,
-                'lessons_completed' => 12,
-                'total_lessons' => 16,
-                'next_lesson' => 'Network Security Basics',
-                'next_lesson_date' => '2024-01-15 10:00:00',
-                'status' => 'active',
-                'image' => '/images/courses/security-fundamentals.jpg'
-            ],
-            [
-                'id' => 2,
-                'title' => 'Advanced Cyber Defense',
-                'instructor' => 'Prof. Johnson',
-                'progress' => 45,
-                'lessons_completed' => 9,
-                'total_lessons' => 20,
-                'next_lesson' => 'Incident Response Planning',
-                'next_lesson_date' => '2024-01-16 14:00:00',
-                'status' => 'active',
-                'image' => '/images/courses/cyber-defense.jpg'
-            ],
-            [
-                'id' => 3,
-                'title' => 'Penetration Testing',
-                'instructor' => 'Mr. Davis',
-                'progress' => 100,
-                'lessons_completed' => 18,
-                'total_lessons' => 18,
-                'next_lesson' => null,
-                'next_lesson_date' => null,
-                'status' => 'completed',
-                'image' => '/images/courses/pen-testing.jpg'
-            ]
-        ];
+        try {
+            Log::info("StudentDashboardController: Dashboard accessed", [
+                'user_id' => Auth::id()
+            ]);
 
-        // Sample lessons for current course
-        $lessons = [
-            [
-                'id' => 1,
-                'title' => 'Introduction to Cybersecurity',
-                'type' => 'video',
-                'duration' => '45 min',
-                'status' => 'completed',
-                'progress' => 100,
-                'date' => '2024-01-08'
-            ],
-            [
-                'id' => 2,
-                'title' => 'Threat Landscape Overview',
-                'type' => 'video',
-                'duration' => '60 min',
-                'status' => 'completed',
-                'progress' => 100,
-                'date' => '2024-01-09'
-            ],
-            [
-                'id' => 3,
-                'title' => 'Risk Assessment Fundamentals',
-                'type' => 'interactive',
-                'duration' => '30 min',
-                'status' => 'completed',
-                'progress' => 100,
-                'date' => '2024-01-10'
-            ],
-            [
-                'id' => 4,
-                'title' => 'Network Security Basics',
-                'type' => 'video',
-                'duration' => '90 min',
-                'status' => 'current',
-                'progress' => 60,
-                'date' => '2024-01-15'
-            ],
-            [
-                'id' => 5,
-                'title' => 'Firewall Configuration',
-                'type' => 'lab',
-                'duration' => '120 min',
-                'status' => 'locked',
-                'progress' => 0,
-                'date' => '2024-01-17'
-            ]
-        ];
+            if (!Auth::check()) {
+                Log::warning("StudentDashboardController: Unauthenticated access");
+                return redirect()->route('login');
+            }
 
-        // Sample assignments
-        $assignments = [
-            [
-                'id' => 1,
-                'title' => 'Security Policy Analysis',
-                'course' => 'Security Fundamentals',
-                'due_date' => '2024-01-20',
-                'status' => 'pending',
-                'type' => 'essay',
-                'points' => 100
-            ],
-            [
-                'id' => 2,
-                'title' => 'Vulnerability Assessment Report',
-                'course' => 'Advanced Cyber Defense',
-                'due_date' => '2024-01-25',
-                'status' => 'in_progress',
-                'type' => 'report',
-                'points' => 150
-            ],
-            [
-                'id' => 3,
-                'title' => 'Network Security Lab',
-                'course' => 'Security Fundamentals',
-                'due_date' => '2024-01-18',
-                'status' => 'submitted',
-                'type' => 'lab',
-                'points' => 75,
-                'grade' => 'A-'
-            ]
-        ];
+            // Create services for current user if not injected
+            $user = Auth::user();
+            Log::info("StudentDashboardController: User debug", [
+                'user_exists' => !is_null($user),
+                'user_id' => $user?->id,
+                'user_class' => $user ? get_class($user) : 'null'
+            ]);
 
-        // Sample recent activity
-        $recentActivity = [
-            [
-                'type' => 'lesson_completed',
-                'title' => 'Completed: Risk Assessment Fundamentals',
-                'course' => 'Security Fundamentals',
-                'time' => '2 hours ago',
-                'icon' => 'fa-check-circle',
-                'color' => 'success'
-            ],
-            [
-                'type' => 'assignment_submitted',
-                'title' => 'Submitted: Network Security Lab',
-                'course' => 'Security Fundamentals',
-                'time' => '1 day ago',
-                'icon' => 'fa-upload',
-                'color' => 'info'
-            ],
-            [
-                'type' => 'grade_received',
-                'title' => 'Grade received: A- for Security Policy Quiz',
-                'course' => 'Security Fundamentals',
-                'time' => '2 days ago',
-                'icon' => 'fa-star',
-                'color' => 'warning'
-            ],
-            [
-                'type' => 'message',
-                'title' => 'New message from Dr. Smith',
-                'course' => 'Security Fundamentals',
-                'time' => '3 days ago',
-                'icon' => 'fa-envelope',
-                'color' => 'primary'
-            ]
-        ];
+            $service = $this->dashboardService ?: new StudentDashboardService($user);
 
-        // Dashboard stats
-        $stats = [
-            'courses_enrolled' => count(array_filter($courses, fn($c) => $c['status'] === 'active')),
-            'courses_completed' => count(array_filter($courses, fn($c) => $c['status'] === 'completed')),
-            'total_lessons' => array_sum(array_column($courses, 'lessons_completed')),
-            'assignments_pending' => count(array_filter($assignments, fn($a) => $a['status'] === 'pending')),
-            'current_gpa' => 3.85,
-            'total_points' => 2450
-        ];
+            try {
+                // Get classroom data for dashboard
+                $classroomData = $service->getClassData();
+                $dashboardData = $classroomData; // For backwards compatibility
+            } catch (Exception $e) {
+                Log::error("StudentDashboardController: Dashboard data error", [
+                    'user_id' => Auth::id(),
+                    'error' => $e->getMessage()
+                ]);
+                $dashboardData = $this->getEmptyDashboardContent();
+            }
 
-        return view('dashboards.student.index', compact(
-            'courses',
-            'lessons',
-            'assignments',
-            'recentActivity',
-            'stats'
-        ));
+            // Prepare content for view with validation
+            $content = array_merge([
+                'incompleteAuths' => $dashboardData['incompleteAuths'] ?? [],
+                'completedAuths' => $dashboardData['completedAuths'] ?? [],
+                'MergedCourseAuths' => $dashboardData['mergedAuths'] ?? [], // Legacy key name for compatibility
+                'stats' => $dashboardData['stats'] ?? [
+                    'total_courses' => 0,
+                    'active_courses' => 0,
+                    'completed_courses' => 0,
+                    'overall_progress' => 0
+                ],
+            ], $this->renderPageMeta('index'));
+
+            Log::info("StudentDashboardController: Rendering dashboard", [
+                'user_id' => Auth::id(),
+                'stats' => $dashboardData['stats'] ?? []
+            ]);
+
+            return view('frontend.students.dashboard', compact('content'));
+
+        } catch (Exception $e) {
+            Log::error("StudentDashboardController: Fatal error", [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return view('frontend.students.dashboard', [
+                'content' => array_merge(
+                    $this->getEmptyDashboardContent(),
+                    $this->renderPageMeta('index')
+                )
+            ]);
+        }
     }
 
     /**
-     * Get course progress (API endpoint)
+     * Debug endpoint to test array structure
      */
-    public function getCourseProgress(Request $request, $courseId)
+    public function debug()
     {
-        // Mock data - replace with actual database queries
-        $progress = [
-            'course_id' => $courseId,
-            'overall_progress' => 75,
-            'lessons_completed' => 12,
-            'total_lessons' => 16,
-            'time_spent' => '24 hours',
-            'last_accessed' => '2 hours ago',
-            'next_lesson' => [
-                'id' => 13,
-                'title' => 'Network Security Basics',
-                'estimated_time' => '90 min'
-            ]
-        ];
+        try {
+            $user = Auth::user();
 
-        return response()->json($progress);
+            if (!$user) {
+                return response()->json([
+                    'error' => 'User not authenticated',
+                    'auth_check' => Auth::check(),
+                    'auth_id' => Auth::id()
+                ]);
+            }
+
+            // Get student and classroom services
+            $studentService = new StudentDashboardService($user);
+            $classroomService = new ClassroomDashboardService($user);
+
+            $classroomData = $classroomService->getClassroomData();
+            $studentCourseAuths = $studentService->getCourseAuths();
+
+            // ARRAY 1: Classroom Data (instructors + courseDates) - Add sample school data
+            $classroomDataArray = [
+                'instructors' => !empty($classroomData['instructors']) ? $classroomData['instructors'] : [
+                    [
+                        'id' => 67,
+                        'name' => 'Dr. Sarah Johnson',
+                        'email' => 'sarah.johnson@security.edu',
+                        'phone' => '+1-555-0123',
+                        'bio' => 'Certified security expert with 15 years experience in cybersecurity training.',
+                        'certifications' => ['CISSP', 'CISM', 'CEH'],
+                        'profile_image' => '/images/instructors/sarah-johnson.jpg',
+                        'specialties' => ['Network Security', 'Incident Response', 'Risk Management'],
+                        'rating' => 4.8,
+                        'total_courses' => 45,
+                        'years_experience' => 15
+                    ],
+                    [
+                        'id' => 68,
+                        'name' => 'Prof. Michael Chen',
+                        'email' => 'michael.chen@security.edu',
+                        'phone' => '+1-555-0124',
+                        'bio' => 'Former FBI cybercrime investigator, now teaching digital forensics.',
+                        'certifications' => ['GCIH', 'GCFA', 'CISSP'],
+                        'profile_image' => '/images/instructors/michael-chen.jpg',
+                        'specialties' => ['Digital Forensics', 'Malware Analysis', 'Threat Intelligence'],
+                        'rating' => 4.9,
+                        'total_courses' => 32,
+                        'years_experience' => 20
+                    ]
+                ],
+                'courseDates' => !empty($classroomData['courseDates']) ? $classroomData['courseDates'] : [
+                    [
+                        'id' => 123,
+                        'course_id' => 45,
+                        'instructor_id' => 67,
+                        'start_date' => '2025-09-15',
+                        'end_date' => '2025-09-20',
+                        'start_time' => '09:00:00',
+                        'end_time' => '17:00:00',
+                        'timezone' => 'America/New_York',
+                        'location' => 'Online Classroom A',
+                        'status' => 'active',
+                        'max_students' => 25,
+                        'current_enrollment' => 18,
+                        'meeting_link' => 'https://zoom.us/j/123456789',
+                        'course_title' => 'Advanced Network Security',
+                        'created_at' => '2025-08-01T10:00:00Z',
+                        'updated_at' => '2025-09-10T14:30:00Z'
+                    ],
+                    [
+                        'id' => 124,
+                        'course_id' => 46,
+                        'instructor_id' => 68,
+                        'start_date' => '2025-10-01',
+                        'end_date' => '2025-10-05',
+                        'start_time' => '10:00:00',
+                        'end_time' => '16:00:00',
+                        'timezone' => 'America/New_York',
+                        'location' => 'Digital Forensics Lab',
+                        'status' => 'scheduled',
+                        'max_students' => 15,
+                        'current_enrollment' => 8,
+                        'meeting_link' => 'https://zoom.us/j/987654321',
+                        'course_title' => 'Digital Forensics Fundamentals',
+                        'created_at' => '2025-08-15T14:00:00Z',
+                        'updated_at' => '2025-09-10T16:00:00Z'
+                    ]
+                ]
+            ];
+
+            // ARRAY 2: Student Data (student + courseAuth) - Use service method for complete user data
+            $studentData = [
+                'student' => $studentService->getStudentData(),
+                'courseAuth' => $studentCourseAuths
+            ];
+
+            // Return the correct 2-array structure with school data
+            return response()->json([
+                'classroomData' => $classroomDataArray,
+                'studentData' => $studentData,
+                'debug_info' => [
+                    'data_source' => !empty($studentCourseAuths) ? 'database' : 'sample_data',
+                    'student_service_structure' => array_keys($studentData),
+                    'classroom_service_structure' => array_keys($classroomData),
+                    'has_course_data' => !empty($studentCourseAuths),
+                    'has_instructor_data' => !empty($classroomData['instructors']),
+                    'has_course_dates' => !empty($classroomData['courseDates'])
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Exception occurred',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ], 500);
+        }
     }
 
     /**
-     * Update lesson progress
+     * Debug endpoint for classroom data only
      */
-    public function updateLessonProgress(Request $request, $lessonId)
+    public function debugClass()
     {
-        $request->validate([
-            'progress' => 'required|numeric|min:0|max:100',
-            'time_spent' => 'sometimes|numeric|min:0'
-        ]);
+        try {
+            $user = Auth::user();
 
-        // In a real app, update the lesson progress in the database
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Progress updated successfully',
-            'progress' => $request->progress
-        ]);
+            if (!$user) {
+                return response()->json([
+                    'error' => 'User not authenticated'
+                ]);
+            }
+
+            $studentService = new StudentDashboardService($user);
+            $classroomService = new ClassroomDashboardService($user);
+
+            $studentDataFromService = $studentService->getStudentData();
+            $courseAuths = $studentService->getCourseAuths();
+            $classroomData = $classroomService->getClassroomData();
+
+            // Classroom Data (instructors + courseDates)
+            $classroomDataArray = [
+                'instructors' => $classroomData['instructors'] ?? [],
+                'courseDates' => $classroomData['courseDates'] ?? []
+            ];
+
+            return response()->json($classroomDataArray);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Exception occurred',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Get assignments for student
+     * Debug endpoint for student data only
      */
-    public function getAssignments(Request $request)
+    public function debugStudent()
     {
-        $status = $request->get('status', 'all');
-        $course = $request->get('course');
+        try {
+            $user = Auth::user();
 
-        // Mock assignments - replace with actual database query
-        $assignments = [
-            [
-                'id' => 1,
-                'title' => 'Security Policy Analysis',
-                'course' => 'Security Fundamentals',
-                'due_date' => '2024-01-20',
-                'status' => 'pending',
-                'description' => 'Analyze the provided security policy document and identify strengths and weaknesses.'
-            ],
-            [
-                'id' => 2,
-                'title' => 'Vulnerability Assessment',
-                'course' => 'Advanced Cyber Defense',
-                'due_date' => '2024-01-25',
-                'status' => 'in_progress',
-                'description' => 'Conduct a comprehensive vulnerability assessment on the provided network.'
-            ]
-        ];
+            if (!$user) {
+                return response()->json([
+                    'error' => 'User not authenticated'
+                ]);
+            }
 
-        return response()->json([
-            'success' => true,
-            'assignments' => $assignments
-        ]);
+            $service = new StudentDashboardService($user);
+            $courseAuths = $service->getCourseAuths();
+
+            // Student Data (student + courseAuth) - Use service method for complete user data
+            $studentData = [
+                'student' => $service->getStudentData(),
+                'courseAuth' => $courseAuths
+            ];
+
+            return response()->json($studentData);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Exception occurred',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Submit assignment
+     * API endpoint for React - Student Statistics
+     * Matches React StudentStats interface
      */
-    public function submitAssignment(Request $request, $assignmentId)
+    public function getStudentStats()
     {
-        $request->validate([
-            'file' => 'required|file|max:10240', // 10MB max
-            'comments' => 'sometimes|string|max:1000'
-        ]);
+        try {
+            $user = Auth::user();
 
-        // In a real app, handle file upload and save submission
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Assignment submitted successfully',
-            'submission_id' => rand(1000, 9999)
-        ]);
+            if (!$user) {
+                return response()->json([
+                    'error' => 'User not authenticated'
+                ], 401);
+            }
+
+            $service = new StudentDashboardService($user);
+            $courseAuths = $service->getCourseAuths();
+
+            // Transform debug data into React-expected format
+            $stats = [
+                'enrolledCourses' => count($courseAuths),
+                'completedLessons' => 0, // TODO: Calculate from actual lessons
+                'assignmentsDue' => 0,   // TODO: Calculate from actual assignments
+                'hoursLearned' => 0      // TODO: Calculate from actual progress
+            ];
+
+            return response()->json($stats);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch student stats: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Get student activity feed
+     * API endpoint for React - Recent Lessons
+     * Matches React RecentLesson[] interface
      */
-    public function getActivityFeed(Request $request)
+    public function getRecentLessons()
     {
-        $limit = $request->get('limit', 10);
+        try {
+            $user = Auth::user();
 
-        // Mock activity data - replace with actual database query
-        $activities = [
-            [
-                'id' => 1,
-                'type' => 'lesson_completed',
-                'title' => 'Risk Assessment Fundamentals',
-                'description' => 'Completed lesson with 95% score',
-                'course' => 'Security Fundamentals',
-                'timestamp' => '2024-01-14 14:30:00',
-                'points' => 50
-            ],
-            [
-                'id' => 2,
-                'type' => 'assignment_graded',
-                'title' => 'Network Security Lab',
-                'description' => 'Received grade: A-',
-                'course' => 'Security Fundamentals',
-                'timestamp' => '2024-01-13 09:15:00',
-                'points' => 75
-            ]
-        ];
+            if (!$user) {
+                return response()->json([
+                    'error' => 'User not authenticated'
+                ], 401);
+            }
 
-        return response()->json([
-            'success' => true,
-            'activities' => array_slice($activities, 0, $limit)
-        ]);
+            // TODO: Replace with actual lesson data from services
+            $recentLessons = [
+                [
+                    'id' => 1,
+                    'title' => 'Network Security Fundamentals',
+                    'course' => 'Advanced Network Security',
+                    'progress' => 85,
+                    'duration' => '45 min',
+                    'lastAccessed' => '2 hours ago'
+                ],
+                [
+                    'id' => 2,
+                    'title' => 'Digital Evidence Collection',
+                    'course' => 'Digital Forensics Fundamentals',
+                    'progress' => 60,
+                    'duration' => '38 min',
+                    'lastAccessed' => '1 day ago'
+                ]
+            ];
+
+            return response()->json($recentLessons);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch recent lessons: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Get dashboard statistics
+     * API endpoint for React - Upcoming Assignments
+     * Matches React UpcomingAssignment[] interface
      */
-    public function getStats(Request $request)
+    public function getUpcomingAssignments()
     {
-        // Mock stats - replace with actual database queries
-        $stats = [
-            'courses_active' => 2,
-            'courses_completed' => 1,
-            'lessons_completed' => 21,
-            'assignments_pending' => 2,
-            'assignments_submitted' => 8,
-            'total_points' => 2450,
-            'current_gpa' => 3.85,
-            'study_streak' => 12,
-            'total_study_time' => '48 hours'
-        ];
+        try {
+            $user = Auth::user();
 
-        return response()->json($stats);
+            if (!$user) {
+                return response()->json([
+                    'error' => 'User not authenticated'
+                ], 401);
+            }
+
+            // TODO: Replace with actual assignment data from services
+            $upcomingAssignments = [
+                [
+                    'id' => 1,
+                    'title' => 'Network Security Assessment',
+                    'course' => 'Advanced Network Security',
+                    'dueDate' => '2025-09-15',
+                    'type' => 'assignment'
+                ],
+                [
+                    'id' => 2,
+                    'title' => 'Digital Forensics Quiz',
+                    'course' => 'Digital Forensics Fundamentals',
+                    'dueDate' => '2025-09-18',
+                    'type' => 'quiz'
+                ]
+            ];
+
+            return response()->json($upcomingAssignments);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch upcoming assignments: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
