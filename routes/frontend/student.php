@@ -21,7 +21,29 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
         ->name('classroom.dashboard');
 
-    // Debug route for testing array structure
+
+    /**
+     * Student Polling Route
+     */
+    Route::get('/classroom/student/data', [StudentDashboardController::class, 'getStudentData'])
+        ->name('classroom.student.data');
+
+
+
+
+
+
+    /**
+     * Classroom Polling Route
+     */
+    Route::get('/classroom/class/data', [StudentDashboardController::class, 'getClassData'])
+        ->name('classroom.class.data');
+
+
+
+    /**
+     * DEBUG ROUTES - to be removed in production
+     */
     Route::get('/classroom/debug', [StudentDashboardController::class, 'debug'])
         ->name('classroom.debug');
 
@@ -32,18 +54,5 @@ Route::middleware(['auth'])->group(function () {
     // Debug route for student data only
     Route::get('/classroom/debug/student', [StudentDashboardController::class, 'debugStudent'])
         ->name('classroom.debug.student');
-
-    // React API endpoints matching the React query structure
-    Route::get('/classroom/api/stats', [StudentDashboardController::class, 'getStudentStats'])
-        ->name('classroom.api.stats');
-
-    Route::get('/classroom/api/recent-lessons', [StudentDashboardController::class, 'getRecentLessons'])
-        ->name('classroom.api.recent-lessons');
-
-    Route::get('/classroom/api/upcoming-assignments', [StudentDashboardController::class, 'getUpcomingAssignments'])
-        ->name('classroom.api.upcoming-assignments');
-
-    // Redirect dashboard to classroom for consistency
-    Route::redirect('/dashboard', '/classroom', 302);
 
 });

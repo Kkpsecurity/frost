@@ -20,14 +20,6 @@ import { RouteCheckers, logRouteInfo } from "./React/utils/routeUtils";
 // Log route info for debugging
 logRouteInfo();
 
-/**
- * Load student-specific React components based on current route
- * This prevents loading unnecessary components on non-student pages
- */
-console.log('🎓 Checking route for Student Portal...');
-console.log('📍 Current pathname:', window.location.pathname);
-console.log('📍 Route segments:', window.location.pathname.split("/").filter(segment => segment !== ""));
-
 // Debug individual route checkers
 console.log('🔍 Debugging route checkers:');
 console.log('  - isClassroomRoute():', RouteCheckers.isClassroomRoute());

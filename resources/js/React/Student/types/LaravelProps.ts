@@ -1,0 +1,198 @@
+/**
+ * TypeScript types that match Laravel dashboard data structure
+ * This ensures type safety between Laravel backend and React frontend
+ */
+
+export interface Student {
+    id: number;
+    fname: string;
+    lname: string;
+    email: string;
+    // Add other student fields as needed
+}
+
+export interface CourseAuth {
+    id: number;
+    course_id: number;
+    user_id: number;
+    status: string;
+    progress: number;
+    created_at: string;
+    updated_at: string;
+    course?: {
+        id: number;
+        title: string;
+        description?: string;
+        slug: string;
+    };
+}
+
+export interface Instructor {
+    id: number;
+    fname: string;
+    lname: string;
+    email: string;
+    // Add other instructor fields as needed
+}
+
+export interface CourseDate {
+    id: number;
+    course_id: number;
+    start_date: string;
+    end_date: string;
+    session_date?: string;
+    // Add other course date fields as needed
+}
+
+/**
+ * Student-specific dashboard data (from student-props element)
+ */
+export interface StudentDashboardData {
+    student: Student | null;
+    course_auths: CourseAuth[];
+}
+
+/**
+ * Class-specific dashboard data (from class-props element)  
+ */
+export interface ClassDashboardData {
+    instructor: Instructor | null;
+    course_dates: CourseDate[];
+}
+
+/**
+ * Combined props data structure from the blade template
+ */
+export interface LaravelPropsData {
+    courseAuthId: string | null;
+    studentData: StudentDashboardData | null;
+    classData: ClassDashboardData | null;
+}
+
+/**
+ * Validation functions to ensure Laravel data matches expected structure
+ */
+export class LaravelPropsValidator {
+    static validateStudent(student: any): student is Student {
+        return (
+            student &&
+            typeof student.id === 'number' &&
+            typeof student.fname === 'string' &&
+            typeof student.lname === 'string' &&
+            typeof student.email === 'string'
+        );
+    }
+
+    static validateCourseAuth(auth: any): auth is CourseAuth {
+        return (
+            auth &&
+            typeof auth.id === 'number' &&
+            typeof auth.course_id === 'number' &&
+            typeof auth.user_id === 'number' &&
+            typeof auth.status === 'string' &&
+            typeof auth.progress === 'number' &&
+            typeof auth.created_at === 'string' &&
+            typeof auth.updated_at === 'string'
+        );
+    }
+
+    static validateInstructor(instructor: any): instructor is Instructor {
+        return (
+            instructor &&
+            typeof instructor.id === 'number' &&
+            typeof instructor.fname === 'string' &&
+            typeof instructor.lname === 'string' &&
+            typeof instructor.email === 'string'
+        );
+    }
+
+    static validateCourseDate(courseDate: any): courseDate is CourseDate {
+        return (
+            courseDate &&
+            typeof courseDate.id === 'number' &&
+            typeof courseDate.course_id === 'number' &&
+            typeof courseDate.start_date === 'string' &&
+            typeof courseDate.end_date === 'string'
+        );
+    }
+
+    static validateStudentDashboardData(data: any): data is StudentDashboardData {
+        if (!data) {
+            console.error('❌ Student dashboard data is null or undefined');
+            return false;
+        }
+
+        // Validate student (can be null)
+        if (data.student && !this.validateStudent(data.student)) {
+            console.error('❌ Invalid student data:', data.student);
+            return false;
+        }
+
+        // Validate course_auths array
+        if (!Array.isArray(data.course_auths)) {
+            console.error('❌ course_auths is not an array:', data.course_auths);
+            return false;
+        }
+
+        // Validate each course auth if array is not empty
+        for (const auth of data.course_auths) {
+            if (!this.validateCourseAuth(auth)) {
+                console.error('❌ Invalid course auth:', auth);
+                return false;
+            }
+        }
+
+        console.log('✅ Student dashboard data validation passed');
+        return true;
+    }
+
+    static validateClassDashboardData(data: any): data is ClassDashboardData {
+        if (!data) {
+            console.error('❌ Class dashboard data is null or undefined');
+            return false;
+        }
+
+        // Validate instructor (can be null)
+        if (data.instructor && !this.validateInstructor(data.instructor)) {
+            console.error('❌ Invalid instructor data:', data.instructor);
+            return false;
+        }
+
+        // Validate course_dates array
+        if (!Array.isArray(data.course_dates)) {
+            console.error('❌ course_dates is not an array:', data.course_dates);
+            return false;
+        }
+
+        // Validate each course date if array is not empty
+        for (const courseDate of data.course_dates) {
+            if (!this.validateCourseDate(courseDate)) {
+                console.error('❌ Invalid course date:', courseDate);
+                return false;
+            }
+        }
+
+        console.log('✅ Class dashboard data validation passed');
+        return true;
+    }
+
+    /**
+     * Create safe default student dashboard data
+     */
+    static getDefaultStudentData(): StudentDashboardData {
+        return {
+            student: null,
+            course_auths: []
+        };
+    }
+
+    /**
+     * Create safe default class dashboard data
+     */
+    static getDefaultClassData(): ClassDashboardData {
+        return {
+            instructor: null,
+            course_dates: []
+        };
+    }
+}

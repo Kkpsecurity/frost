@@ -32,90 +32,55 @@ class StudentDashboardController extends Controller
     protected function getEmptyDashboardContent(): array
     {
         return [
-            'incompleteAuths' => [],
-            'completedAuths' => [],
-            'mergedAuths' => [],
-            'stats' => [
-                'total_courses' => 0,
-                'active_courses' => 0,
-                'completed_courses' => 0,
-                'overall_progress' => 0
-            ]
+            'student' => null,
+            'courseAuths' => []
         ];
     }
 
     /**
-     * Student Dashboard
-     * Main dashboard showing active and completed courses
+     * Student Dashboard - Shows purchased courses in table format
+     * Similar to screenshot: Date, Course Name, Last Access, View Course button
      *
      * @return View|RedirectResponse
      */
     public function dashboard()
     {
         try {
-            Log::info("StudentDashboardController: Dashboard accessed", [
-                'user_id' => Auth::id()
-            ]);
-
             if (!Auth::check()) {
                 Log::warning("StudentDashboardController: Unauthenticated access");
                 return redirect()->route('login');
             }
 
-            // Create services for current user if not injected
             $user = Auth::user();
-            Log::info("StudentDashboardController: User debug", [
-                'user_exists' => !is_null($user),
-                'user_id' => $user?->id,
-                'user_class' => $user ? get_class($user) : 'null'
-            ]);
+            $studentService = new StudentDashboardService($user);
 
-            $service = $this->dashboardService ?: new StudentDashboardService($user);
+            // Get user's course authorizations (purchased courses)
+            $courseAuths = $studentService->getCourseAuths();
 
-            try {
-                // Get classroom data for dashboard
-                $classroomData = $service->getClassData();
-                $dashboardData = $classroomData; // For backwards compatibility
-            } catch (Exception $e) {
-                Log::error("StudentDashboardController: Dashboard data error", [
-                    'user_id' => Auth::id(),
-                    'error' => $e->getMessage()
-                ]);
-                $dashboardData = $this->getEmptyDashboardContent();
-            }
+            // Prepare data for React props - matching the dashboard screenshot format
+            $content = [
+                'student' => $user,
+                'course_auths' => $courseAuths ?? [],
 
-            // Prepare content for view with validation
-            $content = array_merge([
-                'incompleteAuths' => $dashboardData['incompleteAuths'] ?? [],
-                'completedAuths' => $dashboardData['completedAuths'] ?? [],
-                'MergedCourseAuths' => $dashboardData['mergedAuths'] ?? [], // Legacy key name for compatibility
-                'stats' => $dashboardData['stats'] ?? [
-                    'total_courses' => 0,
-                    'active_courses' => 0,
-                    'completed_courses' => 0,
-                    'overall_progress' => 0
-                ],
-            ], $this->renderPageMeta('index'));
+            ];
 
-            Log::info("StudentDashboardController: Rendering dashboard", [
-                'user_id' => Auth::id(),
-                'stats' => $dashboardData['stats'] ?? []
-            ]);
+            // Also pass course_auth_id for backward compatibility
+            $course_auth_id = !empty($courseAuths) ? $courseAuths[0]['id'] ?? null : null;
 
-            return view('frontend.students.dashboard', compact('content'));
+            return view('frontend.students.dashboard', compact('content', 'course_auth_id'));
 
         } catch (Exception $e) {
-            Log::error("StudentDashboardController: Fatal error", [
+                        Log::error("StudentDashboardController: Dashboard error", [
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
 
             return view('frontend.students.dashboard', [
-                'content' => array_merge(
-                    $this->getEmptyDashboardContent(),
-                    $this->renderPageMeta('index')
-                )
+                'content' => [
+                    'student' => null,
+                    'course_auths' => [],
+                    'course_dates' => []
+                ]
             ]);
         }
     }
@@ -314,123 +279,155 @@ class StudentDashboardController extends Controller
         }
     }
 
+
+
+    // ===================================================================
+    // POLLING API ENDPOINTS - For React Component Data Sync
+    // ===================================================================
+
     /**
-     * API endpoint for React - Student Statistics
-     * Matches React StudentStats interface
+     * API Endpoint: Student Data
+     * Matches student-dashboard-data structure in blade template
+     * Route: GET /api/student/data
      */
-    public function getStudentStats()
+    public function getStudentData()
     {
         try {
             $user = Auth::user();
 
             if (!$user) {
                 return response()->json([
-                    'error' => 'User not authenticated'
+                    'error' => 'User not authenticated',
+                    'student' => null,
+                    'course_auths' => []
                 ], 401);
             }
 
-            $service = new StudentDashboardService($user);
-            $courseAuths = $service->getCourseAuths();
+            // Get student service
+            $studentService = new StudentDashboardService($user);
 
-            // Transform debug data into React-expected format
-            $stats = [
-                'enrolledCourses' => count($courseAuths),
-                'completedLessons' => 0, // TODO: Calculate from actual lessons
-                'assignmentsDue' => 0,   // TODO: Calculate from actual assignments
-                'hoursLearned' => 0      // TODO: Calculate from actual progress
+            // Get student data (matches Student interface in TypeScript)
+            $studentData = $studentService->getStudentData();
+
+            // Get course authorizations (matches CourseAuth[] interface)
+            $courseAuths = $studentService->getCourseAuths();
+
+            // Format response to match TypeScript StudentDashboardData interface
+            $response = [
+                'student' => $studentData ? [
+                    'id' => $studentData['id'] ?? $user->id,
+                    'fname' => $studentData['fname'] ?? $user->fname ?? 'Unknown',
+                    'lname' => $studentData['lname'] ?? $user->lname ?? 'User',
+                    'email' => $studentData['email'] ?? $user->email,
+                ] : null,
+                'course_auths' => array_map(function ($auth) {
+                    return [
+                        'id' => $auth['id'] ?? 0,
+                        'course_id' => $auth['course_id'] ?? 0,
+                        'user_id' => $auth['user_id'] ?? 0,
+                        'status' => $auth['status'] ?? 'enrolled',
+                        'progress' => $auth['progress'] ?? 0,
+                        'created_at' => $auth['created_at'] ?? now()->toISOString(),
+                        'updated_at' => $auth['updated_at'] ?? now()->toISOString(),
+                        'course' => isset($auth['course']) ? [
+                            'id' => $auth['course']['id'] ?? 0,
+                            'title' => $auth['course']['title'] ?? 'Unknown Course',
+                            'description' => $auth['course']['description'] ?? null,
+                            'slug' => $auth['course']['slug'] ?? 'unknown',
+                        ] : null
+                    ];
+                }, $courseAuths ?? [])
             ];
 
-            return response()->json($stats);
+            Log::info("StudentDashboardController: Student data API called", [
+                'user_id' => $user->id,
+                'student_data_exists' => !is_null($studentData),
+                'course_auths_count' => count($courseAuths ?? [])
+            ]);
+
+            return response()->json($response);
 
         } catch (Exception $e) {
+            Log::error("StudentDashboardController: Student data API error", [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
-                'error' => 'Failed to fetch student stats: ' . $e->getMessage()
+                'error' => 'Failed to fetch student data: ' . $e->getMessage(),
+                'student' => null,
+                'course_auths' => []
             ], 500);
         }
     }
 
     /**
-     * API endpoint for React - Recent Lessons
-     * Matches React RecentLesson[] interface
+     * API Endpoint: Class Data  
+     * Matches class-dashboard-data structure in blade template
+     * Route: GET /api/classroom/data
      */
-    public function getRecentLessons()
+    public function getClassData()
     {
         try {
             $user = Auth::user();
 
             if (!$user) {
                 return response()->json([
-                    'error' => 'User not authenticated'
+                    'error' => 'User not authenticated',
+                    'instructor' => null,
+                    'course_dates' => []
                 ], 401);
             }
 
-            // TODO: Replace with actual lesson data from services
-            $recentLessons = [
-                [
-                    'id' => 1,
-                    'title' => 'Network Security Fundamentals',
-                    'course' => 'Advanced Network Security',
-                    'progress' => 85,
-                    'duration' => '45 min',
-                    'lastAccessed' => '2 hours ago'
-                ],
-                [
-                    'id' => 2,
-                    'title' => 'Digital Evidence Collection',
-                    'course' => 'Digital Forensics Fundamentals',
-                    'progress' => 60,
-                    'duration' => '38 min',
-                    'lastAccessed' => '1 day ago'
-                ]
+            // Get classroom service
+            $classroomService = new ClassroomDashboardService($user);
+
+            // Get classroom data
+            $classroomData = $classroomService->getClassroomData();
+
+            // Extract instructor from instructors array (take first instructor)
+            $instructors = $classroomData['instructors'] ?? [];
+            $instructor = !empty($instructors) ? $instructors[0] : null;
+
+            // Format response to match TypeScript ClassDashboardData interface
+            $response = [
+                'instructor' => $instructor ? [
+                    'id' => $instructor['id'] ?? 0,
+                    'fname' => $instructor['fname'] ?? $instructor['name'] ?? 'Unknown',
+                    'lname' => $instructor['lname'] ?? 'Instructor',
+                    'email' => $instructor['email'] ?? 'unknown@example.com',
+                ] : null,
+                'course_dates' => array_map(function ($date) {
+                    return [
+                        'id' => $date['id'] ?? 0,
+                        'course_id' => $date['course_id'] ?? 0,
+                        'start_date' => $date['start_date'] ?? now()->toDateString(),
+                        'end_date' => $date['end_date'] ?? now()->toDateString(),
+                        'session_date' => $date['session_date'] ?? null,
+                    ];
+                }, $classroomData['courseDates'] ?? [])
             ];
 
-            return response()->json($recentLessons);
+            Log::info("StudentDashboardController: Class data API called", [
+                'user_id' => $user->id,
+                'instructor_exists' => !is_null($instructor),
+                'course_dates_count' => count($classroomData['courseDates'] ?? [])
+            ]);
+
+            return response()->json($response);
 
         } catch (Exception $e) {
+            Log::error("StudentDashboardController: Class data API error", [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
-                'error' => 'Failed to fetch recent lessons: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * API endpoint for React - Upcoming Assignments
-     * Matches React UpcomingAssignment[] interface
-     */
-    public function getUpcomingAssignments()
-    {
-        try {
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json([
-                    'error' => 'User not authenticated'
-                ], 401);
-            }
-
-            // TODO: Replace with actual assignment data from services
-            $upcomingAssignments = [
-                [
-                    'id' => 1,
-                    'title' => 'Network Security Assessment',
-                    'course' => 'Advanced Network Security',
-                    'dueDate' => '2025-09-15',
-                    'type' => 'assignment'
-                ],
-                [
-                    'id' => 2,
-                    'title' => 'Digital Forensics Quiz',
-                    'course' => 'Digital Forensics Fundamentals',
-                    'dueDate' => '2025-09-18',
-                    'type' => 'quiz'
-                ]
-            ];
-
-            return response()->json($upcomingAssignments);
-
-        } catch (Exception $e) {
-            return response()->json([
-                'error' => 'Failed to fetch upcoming assignments: ' . $e->getMessage()
+                'error' => 'Failed to fetch class data: ' . $e->getMessage(),
+                'instructor' => null,
+                'course_dates' => []
             ], 500);
         }
     }

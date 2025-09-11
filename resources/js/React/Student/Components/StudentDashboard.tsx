@@ -1,288 +1,534 @@
 /**
- * Student Classroom Dashboard Component
- * Displays the main dashboard for students in classroom/ route
+ * Student Dashboard Component - Baseline UI with Loading Rules
+ * Implements OFFLINE/ONLINE status detection based on courseDates presence
+ * Uses only existing DataLayer outputs, no synthesized fields
  */
 
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from "../../utils/queryConfig";
+import React from "react";
+import {
+    StudentDashboardData,
+    ClassDashboardData,
+} from "../types/LaravelProps";
 
-interface StudentStats {
-    enrolledCourses: number;
-    completedLessons: number;
-    assignmentsDue: number;
-    hoursLearned: number;
+interface StudentDashboardProps {
+    studentData: StudentDashboardData;
+    classData: ClassDashboardData;
 }
 
-interface RecentLesson {
-    id: number;
-    title: string;
-    course: string;
-    progress: number;
-    duration: string;
-    lastAccessed: string;
-}
+const StudentDashboard: React.FC<StudentDashboardProps> = ({
+    studentData,
+    classData,
+}) => {
+    console.log("🎓 StudentDashboard: Component rendering with Laravel data:");
+    console.log("   Student data:", studentData);
+    console.log("   Class data:", classData);
 
-interface UpcomingAssignment {
-    id: number;
-    title: string;
-    course: string;
-    dueDate: string;
-    type: 'quiz' | 'assignment' | 'project';
-}
+    const { student, course_auths } = studentData;
+    const { instructor, course_dates } = classData;
 
-const StudentDashboard: React.FC = () => {
-    // Fetch student statistics
-    const { data: stats, isLoading: statsLoading } = useQuery({
-        queryKey: queryKeys.student.stats(),
-        queryFn: async (): Promise<StudentStats> => {
-            const response = await fetch("/classroom/api/stats");
-            if (!response.ok) {
-                throw new Error("Failed to fetch student stats");
-            }
-            return response.json();
-        },
-    });
+    // Status detection: derive OFFLINE/ONLINE from courseDates presence only
+    const isClassroomOnline = course_dates && course_dates.length > 0;
+    const classroomStatus = isClassroomOnline ? "ONLINE" : "OFFLINE";
 
-    // Fetch recent lessons
-    const { data: recentLessons, isLoading: lessonsLoading } = useQuery({
-        queryKey: queryKeys.student.recentLessons(),
-        queryFn: async (): Promise<RecentLesson[]> => {
-            const response = await fetch("/classroom/api/recent-lessons");
-            if (!response.ok) {
-                throw new Error("Failed to fetch recent lessons");
-            }
-            return response.json();
-        },
-    });
-
-    // Fetch upcoming assignments
-    const { data: upcomingAssignments, isLoading: assignmentsLoading } =
-        useQuery({
-            queryKey: queryKeys.student.upcomingAssignments(),
-            queryFn: async (): Promise<UpcomingAssignment[]> => {
-                const response = await fetch(
-                    "/classroom/api/upcoming-assignments"
-                );
-                if (!response.ok) {
-                    throw new Error("Failed to fetch upcoming assignments");
-                }
-                return response.json();
-            },
-        });
-
-    const getAssignmentTypeColor = (type: string) => {
-        switch (type) {
-            case 'quiz': return 'bg-blue-100 text-blue-800';
-            case 'assignment': return 'bg-green-100 text-green-800';
-            case 'project': return 'bg-purple-100 text-purple-800';
-            default: return 'bg-gray-100 text-gray-800';
-        }
-    };
-
-    if (statsLoading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
+    console.log("🔍 Classroom Status Detection:");
+    console.log("   course_dates length:", course_dates?.length || 0);
+    console.log("   Detected status:", classroomStatus);
 
     return (
-        <div className="student-dashboard p-6 bg-gray-50 min-h-screen">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                    Welcome to Your Classroom
-                </h1>
-                <p className="text-gray-600">
-                    Continue your learning journey and track your progress.
-                </p>
-            </div>
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Enrolled Courses</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.enrolledCourses || 0}</p>
-                        </div>
-                    </div>
+        <div className="d-flex h-100" style={{ minHeight: "100vh", marginTop: "20px" }}>
+            {/* Left Sidebar */}
+            <div className="bg-light border-end" style={{ width: "250px", minHeight: "100vh" }}>
+                <div className="p-3 border-bottom">
+                    <h6 className="mb-0">Navigation</h6>
                 </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-green-100 text-green-600">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Completed Lessons</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.completedLessons || 0}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-orange-100 text-orange-600">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Assignments Due</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.assignmentsDue || 0}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center">
-                        <div className="p-3 rounded-full bg-purple-100 text-purple-600">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Hours Learned</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats?.hoursLearned || 0}</p>
-                        </div>
-                    </div>
+                <div className="p-3">
+                    <ul className="nav nav-pills flex-column">
+                        <li className="nav-item mb-2">
+                            <a className="nav-link active" href="#">
+                                <i className="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        {course_auths && course_auths.length > 0 && (
+                            <li className="nav-item mb-2">
+                                <a className="nav-link" href="#">
+                                    <i className="fas fa-book me-2"></i>
+                                    My Courses ({course_auths.length})
+                                </a>
+                            </li>
+                        )}
+                        {isClassroomOnline && (
+                            <li className="nav-item mb-2">
+                                <a className="nav-link" href="#">
+                                    <i className="fas fa-video me-2"></i>
+                                    Live Classroom
+                                </a>
+                            </li>
+                        )}
+                    </ul>
                 </div>
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Recent Lessons */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Continue Learning</h2>
-
-                    {lessonsLoading ? (
-                        <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            {/* Main Content Area */}
+            <div className="flex-grow-1 d-flex flex-column">
+                {/* Title Bar */}
+                <div className="bg-white border-bottom p-3">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 className="mb-1">
+                                🎓 Student Dashboard
+                                {student && ` - ${student.fname} ${student.lname}`}
+                            </h4>
+                            <small className="text-muted">
+                                Classroom Status: 
+                                <span className={`badge ms-1 ${isClassroomOnline ? 'bg-success' : 'bg-secondary'}`}>
+                                    {classroomStatus}
+                                </span>
+                                {student && ` • ${student.email}`}
+                            </small>
                         </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {recentLessons?.map((lesson) => (
-                                <div key={lesson.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-semibold text-gray-800">{lesson.title}</h3>
-                                        <span className="text-sm text-gray-500">{lesson.duration}</span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-3">{lesson.course}</p>
-
-                                    {/* Progress Bar */}
-                                    <div className="mb-3">
-                                        <div className="flex justify-between text-sm text-gray-600 mb-1">
-                                            <span>Progress</span>
-                                            <span>{lesson.progress}%</span>
-                                        </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className="bg-blue-600 h-2 rounded-full"
-                                                style={{ width: `${lesson.progress}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs text-gray-500">Last accessed {lesson.lastAccessed}</span>
-                                        <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
-                                            {lesson.progress === 100 ? 'Review' : 'Continue'}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                        <div>
+                            <button className="btn btn-outline-secondary btn-sm me-2">
+                                <i className="fas fa-sync-alt me-1"></i>
+                                Refresh
+                            </button>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                {/* Upcoming Assignments */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Upcoming Assignments</h2>
+                {/* Main Content */}
+                <div className="flex-grow-1 p-4" style={{ backgroundColor: "#f8f9fa" }}>
+                    {isClassroomOnline ? (
+                        /* ONLINE: Show current classroom view */
+                        <div className="row">
+                            <div className="col-12 mb-4">
+                                <div className="card border-success">
+                                    <div className="card-header bg-success text-white">
+                                        <h5 className="mb-0">
+                                            <i className="fas fa-video me-2"></i>
+                                            Live Classroom Session
+                                        </h5>
+                                    </div>
+                                    <div className="card-body">
+                                        <p className="text-success mb-3">
+                                            <i className="fas fa-circle me-2"></i>
+                                            Classroom is currently ONLINE
+                                        </p>
+                                        
+                                        {instructor && (
+                                            <div className="mb-3">
+                                                <strong>Instructor:</strong> {instructor.fname} {instructor.lname}
+                                                <br />
+                                                <small className="text-muted">{instructor.email}</small>
+                                            </div>
+                                        )}
 
-                    {assignmentsLoading ? (
-                        <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {upcomingAssignments?.map((assignment) => (
-                                <div key={assignment.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-800 mb-1">{assignment.title}</h3>
-                                            <p className="text-sm text-gray-600 mb-2">{assignment.course}</p>
-                                            <div className="flex items-center space-x-2">
-                                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getAssignmentTypeColor(assignment.type)}`}>
-                                                    {assignment.type}
-                                                </span>
-                                                <span className="text-sm text-gray-500">Due: {assignment.dueDate}</span>
+                                        <div className="mb-3">
+                                            <strong>Scheduled Sessions:</strong>
+                                            <div className="mt-2">
+                                                {course_dates.map((date, index) => (
+                                                    <div key={index} className="border rounded p-2 mb-2 bg-light">
+                                                        <div className="d-flex justify-content-between">
+                                                            <span>
+                                                                <i className="fas fa-calendar me-2"></i>
+                                                                {new Date(date.start_time).toLocaleDateString()}
+                                                            </span>
+                                                            <span>
+                                                                {new Date(date.start_time).toLocaleTimeString()} - 
+                                                                {new Date(date.end_time).toLocaleTimeString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
-                                        <button className="ml-4 px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors">
-                                            Start
+
+                                        <button className="btn btn-success">
+                                            <i className="fas fa-play me-2"></i>
+                                            Join Classroom
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                            </div>
+                        </div>
+                    ) : (
+                        /* OFFLINE: Show offline state + student/course-auth summary */
+                        <div className="row">
+                            <div className="col-12 mb-4">
+                                <div className="card border-secondary">
+                                    <div className="card-header bg-secondary text-white">
+                                        <h5 className="mb-0">
+                                            <i className="fas fa-moon me-2"></i>
+                                            Classroom Offline
+                                        </h5>
+                                    </div>
+                                    <div className="card-body text-center py-4">
+                                        <div className="mb-3">
+                                            <i className="fas fa-power-off fa-3x text-muted"></i>
+                                        </div>
+                                        <h5 className="text-muted mb-3">No Active Classroom Sessions</h5>
+                                        <p className="text-muted mb-4">
+                                            There are currently no scheduled classroom sessions. 
+                                            Check back later or review your purchased courses below.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Student & Course Authorization Summary */}
+                    <div className="row">
+                        <div className="col-md-6 mb-4">
+                            <div className="card">
+                                <div className="card-header">
+                                    <h6 className="mb-0">
+                                        <i className="fas fa-user me-2"></i>
+                                        Student Information
+                                    </h6>
+                                </div>
+                                <div className="card-body">
+                                    {student ? (
+                                        <div>
+                                            <p><strong>Name:</strong> {student.fname} {student.lname}</p>
+                                            <p><strong>Email:</strong> {student.email}</p>
+                                            <p><strong>ID:</strong> {student.id}</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted">No student data available</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-md-6 mb-4">
+                            <div className="card">
+                                <div className="card-header">
+                                    <h6 className="mb-0">
+                                        <i className="fas fa-graduation-cap me-2"></i>
+                                        Course Access Summary
+                                    </h6>
+                                </div>
+                                <div className="card-body">
+                                    <p><strong>Total Authorized Courses:</strong> {course_auths.length}</p>
+                                    {course_auths.length > 0 ? (
+                                        <div className="mt-3">
+                                            <small className="text-muted">Recent Purchases:</small>
+                                            {course_auths.slice(0, 3).map((auth, index) => (
+                                                <div key={auth.id} className="border-bottom py-2">
+                                                    <div className="d-flex justify-content-between">
+                                                        <span className="small">
+                                                            {auth.course?.title || `Course ${auth.course_id}`}
+                                                        </span>
+                                                        <span className="small text-muted">
+                                                            {auth.created_at ? 
+                                                                new Date(auth.created_at).toLocaleDateString() : 
+                                                                'N/A'
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {course_auths.length > 3 && (
+                                                <small className="text-muted">
+                                                    ...and {course_auths.length - 3} more
+                                                </small>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted small mt-2">No course authorizations found</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Debug Info - Development Only */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <div className="row">
+                            <div className="col-12">
+                                <div className="card border-info">
+                                    <div className="card-header bg-info text-white">
+                                        <h6 className="mb-0">
+                                            🔍 DataLayer Debug Info
+                                        </h6>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="row">
+                                            <div className="col-md-6">
+                                                <strong>Status Detection:</strong> {classroomStatus}
+                                                <br />
+                                                <strong>Course Dates:</strong> {course_dates?.length || 0} found
+                                                <br />
+                                                <strong>Student Data:</strong> {student ? "✅ Loaded" : "❌ Missing"}
+                                                <br />
+                                                <strong>Course Auths:</strong> {course_auths.length} found
+                                            </div>
+                                            <div className="col-md-6">
+                                                <strong>Instructor Data:</strong> {instructor ? "✅ Loaded" : "❌ Missing"}
+                                                <br />
+                                                <strong>Data Source:</strong> Laravel Props (script tag)
+                                                <br />
+                                                <strong>Classroom Online:</strong> {isClassroomOnline ? "Yes" : "No"}
+                                                <br />
+                                                <strong>Loading Rules:</strong> courseDates presence only
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <button className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Browse Courses</h3>
-                    <p className="text-sm text-gray-600">Explore available courses</p>
-                </button>
-
-                <button className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center">
-                    <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-800 mb-2">My Progress</h3>
-                    <p className="text-sm text-gray-600">View detailed progress reports</p>
-                </button>
-
-                <button className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center">
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Schedule</h3>
-                    <p className="text-sm text-gray-600">View class schedule and events</p>
-                </button>
-
-                <button className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow text-center">
-                    <div className="w-12 h-12 bg-orange-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Get Help</h3>
-                    <p className="text-sm text-gray-600">Contact support or get assistance</p>
-                </button>
             </div>
         </div>
     );
 };
 
 export default StudentDashboard;
+//                 <div className="p-3 border-bottom">
+//                     <h6 className="mb-0">Navigation</h6>
+//                 </div>
+//                 <div className="p-3">
+//                     <ul className="nav nav-pills flex-column">
+//                         <li className="nav-item mb-2">
+//                             <a className="nav-link active" href="#">
+//                                 <i className="fas fa-tachometer-alt me-2"></i>
+//                                 Dashboard
+//                             </a>
+//                         </li>
+//                         {course_auths && course_auths.length > 0 && (
+//                             <li className="nav-item mb-2">
+//                                 <a className="nav-link" href="#">
+//                                     <i className="fas fa-book me-2"></i>
+//                                     My Courses ({course_auths.length})
+//                                 </a>
+//                             </li>
+//                         )}
+//                         {isClassroomOnline && (
+//                             <li className="nav-item mb-2">
+//                                 <a className="nav-link" href="#">
+//                                     <i className="fas fa-video me-2"></i>
+//                                     Live Classroom
+//                                 </a>
+//                             </li>
+//                         )}
+//                     </ul>
+//                 </div>
+//             </div>
+
+//             {/* Main Content Area */}
+//             <div className="flex-grow-1 d-flex flex-column">
+//                 {/* Title Bar */}
+//                 <div className="bg-white border-bottom p-3">
+//                     <div className="d-flex justify-content-between align-items-center">
+//                         <div>
+//                             <h4 className="mb-1">
+//                                 🎓 Student Dashboard
+//                                 {student && ` - ${student.fname} ${student.lname}`}
+//                             </h4>
+//                             <small className="text-muted">
+//                                 Classroom Status:
+//                                 <span className={`badge ms-1 ${isClassroomOnline ? 'bg-success' : 'bg-secondary'}`}>
+//                                     {classroomStatus}
+//                                 </span>
+//                                 {student && ` • ${student.email}`}
+//                             </small>
+//                         </div>
+//                         <div>
+//                             <button className="btn btn-outline-secondary btn-sm me-2">
+//                                 <i className="fas fa-sync-alt me-1"></i>
+//                                 Refresh
+//                             </button>
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 {/* Main Content */}
+//                 <div className="flex-grow-1 p-4" style={{ backgroundColor: "#f8f9fa" }}>
+//                     {isClassroomOnline ? (
+//                         /* ONLINE: Show current classroom view */
+//                         <div className="row">
+//                             <div className="col-12 mb-4">
+//                                 <div className="card border-success">
+//                                     <div className="card-header bg-success text-white">
+//                                         <h5 className="mb-0">
+//                                             <i className="fas fa-video me-2"></i>
+//                                             Live Classroom Session
+//                                         </h5>
+//                                     </div>
+//                                     <div className="card-body">
+//                                         <p className="text-success mb-3">
+//                                             <i className="fas fa-circle me-2"></i>
+//                                             Classroom is currently ONLINE
+//                                         </p>
+
+//                                         {instructor && (
+//                                             <div className="mb-3">
+//                                                 <strong>Instructor:</strong> {instructor.fname} {instructor.lname}
+//                                                 <br />
+//                                                 <small className="text-muted">{instructor.email}</small>
+//                                             </div>
+//                                         )}
+
+//                                         <div className="mb-3">
+//                                             <strong>Scheduled Sessions:</strong>
+//                                             <div className="mt-2">
+//                                                 {course_dates.map((date, index) => (
+//                                                     <div key={index} className="border rounded p-2 mb-2 bg-light">
+//                                                         <div className="d-flex justify-content-between">
+//                                                             <span>
+//                                                                 <i className="fas fa-calendar me-2"></i>
+//                                                                 {new Date(date.start_time).toLocaleDateString()}
+//                                                             </span>
+//                                                             <span>
+//                                                                 {new Date(date.start_time).toLocaleTimeString()} -
+//                                                                 {new Date(date.end_time).toLocaleTimeString()}
+//                                                             </span>
+//                                                         </div>
+//                                                     </div>
+//                                                 ))}
+//                                             </div>
+//                                         </div>
+
+//                                         <button className="btn btn-success">
+//                                             <i className="fas fa-play me-2"></i>
+//                                             Join Classroom
+//                                         </button>
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     ) : (
+//                         /* OFFLINE: Show offline state + student/course-auth summary */
+//                         <div className="row">
+//                             <div className="col-12 mb-4">
+//                                 <div className="card border-secondary">
+//                                     <div className="card-header bg-secondary text-white">
+//                                         <h5 className="mb-0">
+//                                             <i className="fas fa-moon me-2"></i>
+//                                             Classroom Offline
+//                                         </h5>
+//                                     </div>
+//                                     <div className="card-body text-center py-4">
+//                                         <div className="mb-3">
+//                                             <i className="fas fa-power-off fa-3x text-muted"></i>
+//                                         </div>
+//                                         <h5 className="text-muted mb-3">No Active Classroom Sessions</h5>
+//                                         <p className="text-muted mb-4">
+//                                             There are currently no scheduled classroom sessions.
+//                                             Check back later or review your purchased courses below.
+//                                         </p>
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     )}
+
+//                     {/* Student & Course Authorization Summary */}
+//                     <div className="row">
+//                         <div className="col-md-6 mb-4">
+//                             <div className="card">
+//                                 <div className="card-header">
+//                                     <h6 className="mb-0">
+//                                         <i className="fas fa-user me-2"></i>
+//                                         Student Information
+//                                     </h6>
+//                                 </div>
+//                                 <div className="card-body">
+//                                     {student ? (
+//                                         <div>
+//                                             <p><strong>Name:</strong> {student.fname} {student.lname}</p>
+//                                             <p><strong>Email:</strong> {student.email}</p>
+//                                             <p><strong>ID:</strong> {student.id}</p>
+//                                         </div>
+//                                     ) : (
+//                                         <p className="text-muted">No student data available</p>
+//                                     )}
+//                                 </div>
+//                             </div>
+//                         </div>
+
+//                         <div className="col-md-6 mb-4">
+//                             <div className="card">
+//                                 <div className="card-header">
+//                                     <h6 className="mb-0">
+//                                         <i className="fas fa-graduation-cap me-2"></i>
+//                                         Course Access Summary
+//                                     </h6>
+//                                 </div>
+//                                 <div className="card-body">
+//                                     <p><strong>Total Authorized Courses:</strong> {course_auths.length}</p>
+//                                     {course_auths.length > 0 ? (
+//                                         <div className="mt-3">
+//                                             <small className="text-muted">Recent Purchases:</small>
+//                                             {course_auths.slice(0, 3).map((auth, index) => (
+//                                                 <div key={auth.id} className="border-bottom py-2">
+//                                                     <div className="d-flex justify-content-between">
+//                                                         <span className="small">
+//                                                             {auth.course?.title || `Course ${auth.course_id}`}
+//                                                         </span>
+//                                                         <span className="small text-muted">
+//                                                             {auth.created_at ?
+//                                                                 new Date(auth.created_at).toLocaleDateString() :
+//                                                                 'N/A'
+//                                                             }
+//                                                         </span>
+//                                                     </div>
+//                                                 </div>
+//                                             ))}
+//                                             {course_auths.length > 3 && (
+//                                                 <small className="text-muted">
+//                                                     ...and {course_auths.length - 3} more
+//                                                 </small>
+//                                             )}
+//                                         </div>
+//                                     ) : (
+//                                         <p className="text-muted small mt-2">No course authorizations found</p>
+//                                     )}
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     </div>
+
+//                     {/* Debug Info - Development Only */}
+//                     {process.env.NODE_ENV === 'development' && (
+//                         <div className="row">
+//                             <div className="col-12">
+//                                 <div className="card border-info">
+//                                     <div className="card-header bg-info text-white">
+//                                         <h6 className="mb-0">
+//                                             🔍 DataLayer Debug Info
+//                                         </h6>
+//                                     </div>
+//                                     <div className="card-body">
+//                                         <div className="row">
+//                                             <div className="col-md-6">
+//                                                 <strong>Status Detection:</strong> {classroomStatus}
+//                                                 <br />
+//                                                 <strong>Course Dates:</strong> {course_dates?.length || 0} found
+//                                                 <br />
+//                                                 <strong>Student Data:</strong> {student ? "✅ Loaded" : "❌ Missing"}
+//                                                 <br />
+//                                                 <strong>Course Auths:</strong> {course_auths.length} found
+//                                             </div>
+//                                             <div className="col-md-6">
+//                                                 <strong>Instructor Data:</strong> {instructor ? "✅ Loaded" : "❌ Missing"}
+//                                                 <br />
+//                                                 <strong>Data Source:</strong> Laravel Props (script tag)
+//                                                 <br />
+//                                                 <strong>Classroom Online:</strong> {isClassroomOnline ? "Yes" : "No"}
+//                                                 <br />
+//                                                 <strong>Loading Rules:</strong> courseDates presence only
+//                                             </div>
+//                                         </div>
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     )}
+//                         </div>
+//                     </div>
+//                 </div>
+//             </div>
+//         </div>
