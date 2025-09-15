@@ -13,6 +13,14 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+
+        // Auto-create classrooms daily at 07:00 AM ET
+        $schedule->command('classrooms:auto-create-today')
+            ->dailyAt('07:00')
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/classroom-auto-create.log'));
     }
 
     /**

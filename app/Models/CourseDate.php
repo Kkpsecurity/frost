@@ -42,6 +42,8 @@ class CourseDate extends Model
         'course_unit_id'    => 'integer',
         'starts_at'         => 'timestamp',
         'ends_at'           => 'timestamp',
+        'classroom_created_at' => 'timestamp',
+        'classroom_metadata' => 'array',
 
     ];
 
@@ -66,6 +68,11 @@ class CourseDate extends Model
     public function StudentUnits()
     {
         return $this->hasMany(StudentUnit::class, 'course_date_id');
+    }
+
+    public function Classroom()
+    {
+        return $this->hasOne(Classroom::class, 'course_date_id');
     }
 
 
