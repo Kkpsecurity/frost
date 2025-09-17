@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             CoursesTableSeeder::class,
             CourseUnitsTableSeeder::class,      // depends on courses
             CourseUnitLessonsTableSeeder::class, // depends on course_units
+            CourseDatesSeeder::class,           // course dates data
         ]);
 
         // Seed exam questions (depends on course_unit_lessons, lessons, and exam_question_spec)

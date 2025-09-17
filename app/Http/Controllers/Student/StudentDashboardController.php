@@ -57,15 +57,25 @@ class StudentDashboardController extends Controller
             // Get user's course authorizations (purchased courses)
             $courseAuths = $studentService->getCourseAuths();
 
+            // Convert Collection to Array for JSON serialization
+            $courseAuthsArray = $courseAuths->toArray();
+
+            Log::info("StudentDashboardController: Course auths data", [
+                'user_id' => $user->id,
+                'course_auths_count' => $courseAuths->count(),
+                'course_auths_array_count' => count($courseAuthsArray),
+                'first_auth_id' => $courseAuths->first()?->id ?? 'none',
+                'course_auths_type' => get_class($courseAuths)
+            ]);
+
             // Prepare data for React props - matching the dashboard screenshot format
             $content = [
                 'student' => $user,
-                'course_auths' => $courseAuths ?? [],
-
+                'course_auths' => $courseAuthsArray,
             ];
 
             // Also pass course_auth_id for backward compatibility
-            $course_auth_id = !empty($courseAuths) ? $courseAuths[0]['id'] ?? null : null;
+            $course_auth_id = !empty($courseAuthsArray) ? $courseAuthsArray[0]['id'] ?? null : null;
 
             return view('frontend.students.dashboard', compact('content', 'course_auth_id'));
 
@@ -79,7 +89,6 @@ class StudentDashboardController extends Controller
                 'content' => [
                     'student' => null,
                     'course_auths' => [],
-                    'course_dates' => []
                 ]
             ]);
         }
@@ -247,7 +256,7 @@ class StudentDashboardController extends Controller
     }
 
     /**
-     * Debug endpoint for student data only
+     * Debug endpoint for student data only - SIMPLIFIED VERSION FOR TESTING
      */
     public function debugStudent()
     {
@@ -256,25 +265,58 @@ class StudentDashboardController extends Controller
 
             if (!$user) {
                 return response()->json([
-                    'error' => 'User not authenticated'
+                    'error' => 'User not authenticated',
+                    'user_id' => Auth::id(),
+                    'auth_check' => Auth::check()
                 ]);
             }
 
+            // Test 1: Direct CourseAuth query
+            $directCourseAuths = \App\Models\CourseAuth::where('user_id', $user->id)->get();
+
+            // Test 2: Via User relationship
+            $relationshipCourseAuths = $user->courseAuths()->get();
+
+            // Test 3: Via Service
             $service = new StudentDashboardService($user);
-            $courseAuths = $service->getCourseAuths();
+            $serviceCourseAuths = $service->getCourseAuths();
 
-            // Student Data (student + courseAuth) - Use service method for complete user data
-            $studentData = [
-                'student' => $service->getStudentData(),
-                'courseAuth' => $courseAuths
-            ];
+            // Convert service collection to array for JSON
+            $serviceArray = $serviceCourseAuths->toArray();
 
-            return response()->json($studentData);
+            return response()->json([
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'test_1_direct_query' => [
+                    'count' => $directCourseAuths->count(),
+                    'ids' => $directCourseAuths->pluck('id')->toArray(),
+                    'course_ids' => $directCourseAuths->pluck('course_id')->toArray(),
+                    'first_record' => $directCourseAuths->first() ? [
+                        'id' => $directCourseAuths->first()->id,
+                        'course_id' => $directCourseAuths->first()->course_id,
+                        'user_id' => $directCourseAuths->first()->user_id,
+                        'created_at' => $directCourseAuths->first()->created_at,
+                    ] : null
+                ],
+                'test_2_relationship' => [
+                    'count' => $relationshipCourseAuths->count(),
+                    'ids' => $relationshipCourseAuths->pluck('id')->toArray(),
+                    'course_ids' => $relationshipCourseAuths->pluck('course_id')->toArray(),
+                ],
+                'test_3_service' => [
+                    'count' => $serviceCourseAuths->count(),
+                    'ids' => $serviceCourseAuths->pluck('id')->toArray(),
+                    'array_count' => count($serviceArray),
+                    'is_collection' => $serviceCourseAuths instanceof \Illuminate\Support\Collection,
+                    'service_array' => $serviceArray
+                ]
+            ]);
 
         } catch (Exception $e) {
             return response()->json([
                 'error' => 'Exception occurred',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
@@ -363,7 +405,7 @@ class StudentDashboardController extends Controller
     }
 
     /**
-     * API Endpoint: Class Data  
+     * API Endpoint: Class Data
      * Matches class-dashboard-data structure in blade template
      * Route: GET /api/classroom/data
      */

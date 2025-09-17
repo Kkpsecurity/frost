@@ -4,8 +4,11 @@ const path = require('path');
 console.log('📦 Starting asset update process...');
 
 // Read the manifest file
-const manifestPath = path.join(__dirname, 'public/build/manifest.json');
-const dashboardPath = path.join(__dirname, 'resources/views/frontend/students/dashboard.blade.php');
+const manifestPath = path.join(__dirname, "../public/build/manifest.json");
+const dashboardPath = path.join(
+    __dirname,
+    "../resources/views/frontend/students/dashboard.blade.php"
+);
 
 try {
     // Check if manifest exists

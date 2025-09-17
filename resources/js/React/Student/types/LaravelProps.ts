@@ -15,10 +15,21 @@ export interface CourseAuth {
     id: number;
     course_id: number;
     user_id: number;
-    status: string;
-    progress: number;
-    created_at: string;
-    updated_at: string;
+    created_at: string | number;
+    updated_at: string | number;
+    agreed_at?: string | number | null;
+    completed_at?: string | number | null;
+    is_passed: boolean;
+    start_date?: string | null;
+    expire_date?: string | null;
+    disabled_at?: string | number | null;
+    disabled_reason?: string | null;
+    submitted_at?: string | number | null;
+    submitted_by?: number | null;
+    dol_tracking?: string | null;
+    exam_admin_id?: number | null;
+    range_date_id?: number | null;
+    id_override: boolean;
     course?: {
         id: number;
         title: string;
@@ -53,7 +64,7 @@ export interface StudentDashboardData {
 }
 
 /**
- * Class-specific dashboard data (from class-props element)  
+ * Class-specific dashboard data (from class-props element)
  */
 export interface ClassDashboardData {
     instructor: Instructor | null;
@@ -86,13 +97,15 @@ export class LaravelPropsValidator {
     static validateCourseAuth(auth: any): auth is CourseAuth {
         return (
             auth &&
-            typeof auth.id === 'number' &&
-            typeof auth.course_id === 'number' &&
-            typeof auth.user_id === 'number' &&
-            typeof auth.status === 'string' &&
-            typeof auth.progress === 'number' &&
-            typeof auth.created_at === 'string' &&
-            typeof auth.updated_at === 'string'
+            typeof auth.id === "number" &&
+            typeof auth.course_id === "number" &&
+            typeof auth.user_id === "number" &&
+            typeof auth.is_passed === "boolean" &&
+            typeof auth.id_override === "boolean" &&
+            (typeof auth.created_at === "string" ||
+                typeof auth.created_at === "number") &&
+            (typeof auth.updated_at === "string" ||
+                typeof auth.updated_at === "number")
         );
     }
 

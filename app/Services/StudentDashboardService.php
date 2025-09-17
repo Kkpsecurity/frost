@@ -27,7 +27,7 @@ class StudentDashboardService
         $this->user = $user;
         $this->classroomService = new ClassroomDashboardService($user);
 
-     
+
     }
 
     /**
@@ -109,34 +109,84 @@ class StudentDashboardService
 
     /**
      * Get merged course authorizations (active + completed) as a simple collection
-     * This is student-specific data focused on their course progress
+     * SIMPLIFIED VERSION: Just get ALL course auths for now to get data flowing
+     * INCLUDES course relationship data for table display
      */
     public function getCourseAuths(): Collection
     {
         if (!$this->user) {
+            Log::warning('StudentDashboardService: No user provided to getCourseAuths');
             return collect();
         }
 
         try {
+            Log::info('StudentDashboardService: Starting getCourseAuths (SIMPLIFIED)', [
+                'user_id' => $this->user->id,
+                'user_email' => $this->user->email
+            ]);
 
+            // SIMPLIFIED APPROACH: Just get ALL course auths for this user
+            // Start with NO relationships to see if that's the issue
+            $allCourseAuths = $this->user->courseAuths()->get();
 
-            // Check if user has required methods
-            if (!$this->user || !method_exists($this->user, 'ActiveCourseAuths')) {
-                Log::warning('StudentDashboardService: User missing required relationships');
-                return collect();
+            Log::info('StudentDashboardService: Basic courseAuths query result', [
+                'count' => $allCourseAuths->count(),
+                'raw_sql' => $this->user->courseAuths()->toSql(),
+                'bindings' => $this->user->courseAuths()->getBindings()
+            ]);
+
+            // If basic query works, try adding course relationship
+            if ($allCourseAuths->count() > 0) {
+                Log::info('StudentDashboardService: Basic query worked, trying with course relationship');
+                $allCourseAuths = $this->user->courseAuths()
+                    ->with('course')
+                    ->get();
+
+                Log::info('StudentDashboardService: With course relationship', [
+                    'count' => $allCourseAuths->count(),
+                    'first_has_course' => $allCourseAuths->first()?->course !== null
+                ]);
             }
 
-            $activeCourseAuths = $this->user->ActiveCourseAuths()->get();
+            Log::info('StudentDashboardService: ALL course auths for user', [
+                'user_id' => $this->user->id,
+                'total_course_auths' => $allCourseAuths->count(),
+                'course_auth_ids' => $allCourseAuths->pluck('id')->toArray(),
+                'course_ids' => $allCourseAuths->pluck('course_id')->toArray(),
+                'first_auth_sample' => $allCourseAuths->first() ? [
+                    'id' => $allCourseAuths->first()->id,
+                    'course_id' => $allCourseAuths->first()->course_id,
+                    'user_id' => $allCourseAuths->first()->user_id,
+                    'expire_date' => $allCourseAuths->first()->expire_date,
+                    'completed_at' => $allCourseAuths->first()->completed_at,
+                    'disabled_at' => $allCourseAuths->first()->disabled_at,
+                    'has_course' => $allCourseAuths->first()->course !== null,
+                    'course_title' => $allCourseAuths->first()->course?->title ?? 'No Course',
+                ] : 'NO AUTHS FOUND'
+            ]);
 
-            $completedCourseAuths = $this->user->InActiveCourseAuths()
-                ->whereNotNull('completed_at')
-                ->get();
+            // If we have course auths, log details about each one
+            if ($allCourseAuths->count() > 0) {
+                foreach ($allCourseAuths as $index => $auth) {
+                    Log::info("StudentDashboardService: CourseAuth #{$index}", [
+                        'auth_id' => $auth->id,
+                        'course_id' => $auth->course_id,
+                        'course_title' => $auth->course?->title ?? 'NO COURSE LOADED',
+                        'has_course_relation' => $auth->course !== null,
+                        'expire_date' => $auth->expire_date,
+                        'completed_at' => $auth->completed_at,
+                        'disabled_at' => $auth->disabled_at,
+                    ]);
+                }
+            }
 
-            return $activeCourseAuths->concat($completedCourseAuths)->values();
+            return $allCourseAuths;
+
         } catch (Exception $e) {
             Log::error('StudentDashboardService: Error getting course auths', [
                 'user_id' => $this->user?->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return collect();
         }

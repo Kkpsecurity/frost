@@ -25,7 +25,7 @@ export default defineConfig({
                 "resources/js/React/Components/UploadModalManager.tsx",
 
                 // Instructor entry
-                "resources/js/React/Instructor/instructorEntry.tsx",
+                "resources/js/React/Instructor/app.tsx",
 
                 // CSS files (consolidated structure)
                 "resources/css/style.css", // Main stylesheet with all imports

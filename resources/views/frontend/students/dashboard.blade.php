@@ -10,7 +10,7 @@
         $course_auth_id = $course_auth_id ?? null;
     @endphp
 
-    <main class="main-page-content">
+    <main class="main-page-content frost-secondary-bg">
         <div class="container-fluid gap-0 p-0" style="min-height: 60vh; padding-top: 90px;">
             {{-- React App Mount Point --}}
             <div id="student-dashboard-container" style="min-height:60vh;"></div>
@@ -23,6 +23,12 @@
                     'course_auth_id' => $course_auth_id ?? null
                 ]) !!}
             </script>
+
+            {{-- Class Props (empty for student dashboard, but prevents console errors) --}}
+            <div id="class-props" class-dashboard-data='{!! json_encode([
+                "instructor" => null,
+                "course_dates" => []
+            ]) !!}'></div>
 
         </div>
     </main>

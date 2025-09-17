@@ -35,7 +35,15 @@ trait CourseAuthsTrait
     public function InActiveCourseAuths()
     {
         return $this->hasMany(CourseAuth::class, 'user_id')
-            ->whereNotIn('id', $this->ActiveCourseAuths()->pluck('id')->toArray());
+            ->where(function ($query) {
+                $query->where(function ($subQuery) {
+                    // Expired courses
+                    $subQuery->whereNotNull('expire_date')
+                        ->where('expire_date', '<=', Carbon::now());
+                })
+                    ->orWhereNotNull('completed_at')
+                    ->orWhereNotNull('disabled_at');
+            });
     }
 
 

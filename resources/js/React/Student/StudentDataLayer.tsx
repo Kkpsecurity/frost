@@ -15,7 +15,7 @@ const StudentDataLayer: React.FC = () => {
         console.log("🎓 StudentDataLayer: Component rendering...");
         console.log("🎓 StudentDataLayer: Initializing data layer");
 
-        // Read Laravel props from DOM - for student dashboard we only need student data
+        // Read Laravel props from DOM - no fallbacks, real data only
         const studentPropsData = LaravelPropsReader.readStudentProps();
 
         console.log(
@@ -23,32 +23,16 @@ const StudentDataLayer: React.FC = () => {
             studentPropsData
         );
 
-        if (studentPropsData) {
-            setStudentData(studentPropsData);
-        } else {
-            // Use fallback defaults
-            setStudentData(LaravelPropsReader.getSafeStudentData());
-        }
+        // Set student data (can be null if no real data)
+        setStudentData(studentPropsData);
 
-        // Try to read classroom data from Laravel props, fallback to empty if not available
+        // Try to read classroom data from Laravel props
         const classPropsData = LaravelPropsReader.readClassProps();
 
-        if (classPropsData) {
-            console.log(
-                "🎓 StudentDataLayer: Class props data:",
-                classPropsData
-            );
-            setClassData(classPropsData);
-        } else {
-            // Set default empty class data (OFFLINE state)
-            console.log(
-                "🎓 StudentDataLayer: No class data available, setting OFFLINE state"
-            );
-            setClassData({
-                instructor: null,
-                course_dates: [],
-            });
-        }
+        console.log("🎓 StudentDataLayer: Class props data:", classPropsData);
+
+        // Set class data (can be null if no real data)
+        setClassData(classPropsData);
         setIsLoading(false);
         setMounted(true);
 
@@ -70,22 +54,49 @@ const StudentDataLayer: React.FC = () => {
         );
     }
 
+    // No student data from Laravel - authentication or data issue
     if (!studentData) {
         return (
             <div className="alert alert-warning m-4" role="alert">
                 <h4 className="alert-heading">Data Loading Issue</h4>
                 <p>
-                    Unable to load student dashboard data from Laravel props.
-                    Please refresh the page.
+                    Unable to load student dashboard data. Please refresh the
+                    page or contact support.
                 </p>
             </div>
         );
     }
 
+    // No student object in the data - authentication issue
+    if (!studentData.student) {
+        return (
+            <div className="alert alert-danger m-4" role="alert">
+                <h4 className="alert-heading">Authentication Required</h4>
+                <p>Please log in to access your student dashboard.</p>
+            </div>
+        );
+    }
+
+    // Debug the course_auths data before passing to component
+    console.log("🎓 StudentDataLayer: About to render StudentDashboard");
+    console.log(
+        "🎓 StudentDataLayer: studentData.course_auths:",
+        studentData.course_auths
+    );
+    console.log(
+        "🎓 StudentDataLayer: course_auths type:",
+        typeof studentData.course_auths
+    );
+    console.log(
+        "🎓 StudentDataLayer: course_auths length:",
+        studentData.course_auths?.length
+    );
+
+    // Student exists - render dashboard (will handle empty course_auths internally)
     return (
         <StudentDashboard
-            studentData={studentData}
-            classData={classData || { instructor: null, course_dates: [] }}
+            student={studentData.student}
+            courseAuths={studentData.course_auths || []}
         />
     );
 };

@@ -9,48 +9,96 @@ use App\Http\Controllers\Admin\Instructors\InstructorDashboardController;
  */
 
 Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group(function () {
-    // Instructor dashboard view (default to offline mode)
-    Route::get('/', function () {
-        return view('dashboards.instructor.offline');
-    })->name('dashboard');
 
-    // Offline Mode Dashboard (Bulletin Board)
-    Route::get('/offline', function () {
-        return view('dashboards.instructor.offline');
-    })->name('offline');
+    // =====================================================
+    // INSTRUCTOR ROOT - Dashboard & Main Interface
+    // =====================================================
 
-    // Online Class Mode Dashboard
-    Route::get('/online', function () {
-        return view('dashboards.instructor.online');
-    })->name('online');
+    // Main instructor dashboard (building board style)
+    Route::get('/', [InstructorDashboardController::class, 'dashboard'])
+        ->name('dashboard');
 
-    // Validation endpoint used by React data layer
+    // Session validation for React components
     Route::get('/validate', [InstructorDashboardController::class, 'validateInstructorSession'])
         ->name('validate');
 
-    // API endpoints for data used in the instructor dashboard
-    Route::get('/api/bulletin-board', [InstructorDashboardController::class, 'getBulletinBoardData'])
-        ->name('api.bulletin-board');
+    // =====================================================
+    // CLASSROOM INTERFACE - Live Class Management
+    // =====================================================
 
-    Route::get('/data/classroom', [InstructorDashboardController::class, 'getClassroomData'])
-        ->name('data.classroom');
+    Route::prefix('classroom')->name('classroom.')->group(function () {
+        // Offline Mode Dashboard (Bulletin Board)
+        Route::get('/offline', function () {
+            return view('dashboards.instructor.offline');
+        })->name('offline');
 
-    Route::get('/data/students', [InstructorDashboardController::class, 'getStudentsData'])
-        ->name('data.students');
+        // Online Class Mode Dashboard (Live Class Interface)
+        Route::get('/online', function () {
+            return view('dashboards.instructor.online');
+        })->name('online');
 
-    // New API endpoints for enhanced dashboard
-    Route::get('/api/stats', [InstructorDashboardController::class, 'getStats'])
-        ->name('api.stats');
+        // Classroom management actions
+        Route::post('/take-over', [InstructorDashboardController::class, 'takeOverClass'])
+            ->name('take-over');
 
-    Route::get('/api/lessons', [InstructorDashboardController::class, 'getTodayLessons'])
-        ->name('api.lessons');
+        Route::post('/assist', [InstructorDashboardController::class, 'assistClass'])
+            ->name('assist');
 
-    Route::get('/api/chat-messages', [InstructorDashboardController::class, 'getChatMessages'])
-        ->name('api.chat');
+        // Chat functionality for live classes
+        Route::get('/chat-messages', [InstructorDashboardController::class, 'getChatMessages'])
+            ->name('chat.messages');
 
-    Route::post('/api/send-message', [InstructorDashboardController::class, 'sendMessage'])
-        ->name('api.send-message');
+        Route::post('/send-message', [InstructorDashboardController::class, 'sendMessage'])
+            ->name('chat.send');
+    });
 
-    Route::get('/api/online-students', [InstructorDashboardController::class, 'getOnlineStudents'])
-        ->name('api.online-students');
+    // =====================================================
+    // DATA ENDPOINTS - Active Data Fetching for Dashboard
+    // =====================================================
+
+    Route::prefix('data')->name('data.')->group(function () {
+        // Today's lessons data
+        Route::get('/lessons/today', [InstructorDashboardController::class, 'getTodayLessons'])
+            ->name('lessons.today');
+
+        // Upcoming lessons data
+        Route::get('/lessons/upcoming', [InstructorDashboardController::class, 'getUpcomingLessons'])
+            ->name('lessons.upcoming');
+
+        // Previous lessons data
+        Route::get('/lessons/previous', [InstructorDashboardController::class, 'getPreviousLessons'])
+            ->name('lessons.previous');
+
+        // Class overview statistics
+        Route::get('/stats/overview', [InstructorDashboardController::class, 'getStats'])
+            ->name('stats.overview');
+
+        // Student data for active classes
+        Route::get('/students/active', [InstructorDashboardController::class, 'getOnlineStudents'])
+            ->name('students.active');
+
+        // Classroom data and status
+        Route::get('/classroom/status', [InstructorDashboardController::class, 'getClassroomData'])
+            ->name('classroom.status');
+
+        // Students enrolled in courses
+        Route::get('/students/enrolled', [InstructorDashboardController::class, 'getStudentsData'])
+            ->name('students.enrolled');
+
+        // Bulletin board data (when no active classes)
+        Route::get('/bulletin-board', [InstructorDashboardController::class, 'getBulletinBoardData'])
+            ->name('bulletin-board');
+
+        // Completed courses data (InstUnits that have been completed)
+        Route::get('/completed-courses', [InstructorDashboardController::class, 'getCompletedCourses'])
+            ->name('completed-courses');
+
+        // Recent activity data
+        Route::get('/activity/recent', [InstructorDashboardController::class, 'getRecentActivity'])
+            ->name('activity.recent');
+
+        // Notifications data
+        Route::get('/notifications/unread', [InstructorDashboardController::class, 'getUnreadNotifications'])
+            ->name('notifications.unread');
+    });
 });

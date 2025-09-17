@@ -110,4 +110,109 @@ class InstructorDashboardController extends Controller
 
         return response()->json($bulletinData);
     }
+
+    /**
+     * Get statistics for instructor dashboard
+     */
+    public function getStats()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $stats = $this->dashboardService->getInstructorStats();
+
+        return response()->json($stats);
+    }
+
+    /**
+     * Get today's lessons for instructor dashboard
+     */
+    public function getTodayLessons()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $lessons = $this->courseDatesService->getTodaysLessons();
+
+        return response()->json($lessons);
+    }
+
+    /**
+     * Get chat messages for instructor dashboard
+     */
+    public function getChatMessages()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // For now, return empty array - implement when chat system is ready
+        return response()->json([
+            'messages' => [],
+            'total' => 0,
+            'metadata' => [
+                'generated_at' => now()->toISOString(),
+                'view_type' => 'chat_messages'
+            ]
+        ]);
+    }
+
+    /**
+     * Send a message (placeholder implementation)
+     */
+    public function sendMessage()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Placeholder implementation
+        return response()->json([
+            'success' => true,
+            'message' => 'Message sending functionality not yet implemented',
+            'timestamp' => now()->toISOString()
+        ]);
+    }
+
+    /**
+     * Get online students for instructor dashboard
+     */
+    public function getOnlineStudents()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $onlineStudents = $this->studentService->getOnlineStudentsForInstructor();
+
+        return response()->json($onlineStudents);
+    }
+
+    /**
+     * Get completed courses data (InstUnits that have been completed)
+     */
+    public function getCompletedCourses()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $completedInstUnits = $this->dashboardService->getCompletedInstUnits();
+
+        return response()->json($completedInstUnits);
+    }
 }

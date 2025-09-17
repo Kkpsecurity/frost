@@ -1,9 +1,11 @@
 import React from "react";
-import { 
-    SchoolDashboardTitleBarProps 
-} from "../types/props/classroom.props";
+import { SchoolDashboardTitleBarProps } from "../types/props/classroom.props";
 
-const SchoolDashboardTitleBar = ({ title, subtitle, icon }: SchoolDashboardTitleBarProps) => {
+const SchoolDashboardTitleBar = ({
+    title,
+    subtitle,
+    icon,
+}: SchoolDashboardTitleBarProps) => {
     return (
         <div
             className="section-title"
@@ -12,8 +14,6 @@ const SchoolDashboardTitleBar = ({ title, subtitle, icon }: SchoolDashboardTitle
                     "linear-gradient(135deg, var(--frost-primary-color), var(--frost-secondary-color))",
                 color: "white",
                 padding: "20px 30px",
-                borderRadius: "12px",
-                marginBottom: "30px",
                 boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
             }}
         >

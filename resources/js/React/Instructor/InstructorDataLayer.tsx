@@ -64,30 +64,6 @@ const InstructorDataLayer: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-            <div className="row">
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header">Laravel Config</div>
-                        <div className="card-body">
-                            <pre style={{ whiteSpace: "pre-wrap" }}>
-                                {JSON.stringify(config, null, 2)}
-                            </pre>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="col-md-6">
-                    <div className="card">
-                        <div className="card-header">Instructor Validation</div>
-                        <div className="card-body">
-                            <pre style={{ whiteSpace: "pre-wrap" }}>
-                                {JSON.stringify(validation, null, 2)}
-                            </pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };

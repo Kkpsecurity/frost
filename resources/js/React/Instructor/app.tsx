@@ -1,10 +1,10 @@
 // instructorEntry.tsx
 import React, { ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import EntryErrorBoundary from "./ErrorBoundry/EntryErrorBoundry";
-import InstructorDataLayer from "./InstructorDataLayer";
+import InstructorDashboard from "./Components/InstructorDashboard";
 
 // Direct import instead of lazy loading for testing
 
@@ -34,12 +34,7 @@ const queryClient = new QueryClient({
 export const InstructorAppWrapper: React.FC<{ children: ReactNode }> = ({
     children,
 }) => (
-    <QueryClientProvider client={queryClient}>
-        {children}
-        {process.env.NODE_ENV === "development" && (
-            <ReactQueryDevtools initialIsOpen={false} />
-        )}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 );
 
 /**
@@ -49,7 +44,7 @@ export const InstructorAppWrapper: React.FC<{ children: ReactNode }> = ({
 export const InstructorEntry: React.FC = () => (
     <InstructorAppWrapper>
         <EntryErrorBoundary>
-            <InstructorDataLayer />
+            <InstructorDashboard />
         </EntryErrorBoundary>
     </InstructorAppWrapper>
 );
@@ -81,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "✅ Found instructor container (delayed), mounting InstructorEntry..."
                 );
                 const root = createRoot(delayedContainer);
-                root.render(<InstructorDataLayer />);
+                root.render(<InstructorEntry />);
                 console.log(
                     "✅ InstructorEntry mounted successfully (delayed)"
                 );

@@ -8,7 +8,7 @@ const SchoolNavBar: React.FC<SchoolNavBarProps> = ({
     courseDates,
 }) => {
     return (
-        <nav className="mb-4 p-3">
+        <nav className="mb-4">
             <div
                 className="nav nav-tabs"
                 id="nav-tab"

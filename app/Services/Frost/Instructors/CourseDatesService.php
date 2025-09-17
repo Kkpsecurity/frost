@@ -150,6 +150,84 @@ class CourseDatesService
     }
 
     /**
+     * Get today's lessons for instructor dashboard
+     *
+     * @return array
+     */
+    public function getTodaysLessons(): array
+    {
+        $today = now()->format('Y-m-d');
+
+        $todaysCourseDates = DB::table('course_dates')
+            ->whereDate('starts_at', $today)
+            ->where('is_active', true)
+            ->orderBy('starts_at', 'asc')
+            ->get();
+
+        if ($todaysCourseDates->isEmpty()) {
+            return [
+                'lessons' => [],
+                'message' => "No courses scheduled for today ({$today})",
+                'has_lessons' => false,
+                'metadata' => [
+                    'date' => $today,
+                    'count' => 0,
+                    'generated_at' => now()->toISOString()
+                ]
+            ];
+        }
+
+        $formattedLessons = $todaysCourseDates->map(function ($courseDate) {
+            // Get course and course unit details
+            $courseUnit = DB::table('course_units')->find($courseDate->course_unit_id);
+            $course = $courseUnit ? DB::table('courses')->find($courseUnit->course_id) : null;
+
+            // Get student count for this course
+            $studentCount = DB::table('course_auths')
+                ->where('course_id', $course->id ?? 0)
+                ->where('is_active', true)
+                ->count();
+
+            // Determine status based on current time
+            $now = now();
+            $startTime = Carbon::parse($courseDate->starts_at);
+            $endTime = Carbon::parse($courseDate->ends_at);
+
+            $status = 'scheduled';
+            if ($now->between($startTime, $endTime)) {
+                $status = 'in-progress';
+            } elseif ($now->gt($endTime)) {
+                $status = 'completed';
+            }
+
+            return [
+                'id' => $courseDate->id,
+                'time' => $startTime->format('h:i A'),
+                'duration' => $startTime->diffForHumans($endTime, true),
+                'course_name' => $course->title ?? 'Unknown Course',
+                'course_code' => $course->title ?? 'N/A',
+                'lesson_name' => $courseUnit->title ?? 'Unknown Lesson',
+                'module' => 'Module ' . ($courseUnit->sequence ?? 'N/A'),
+                'student_count' => $studentCount,
+                'status' => $status,
+                'starts_at' => $courseDate->starts_at,
+                'ends_at' => $courseDate->ends_at
+            ];
+        })->toArray();
+
+        return [
+            'lessons' => $formattedLessons,
+            'message' => count($formattedLessons) . ' lessons scheduled for today',
+            'has_lessons' => true,
+            'metadata' => [
+                'date' => $today,
+                'count' => count($formattedLessons),
+                'generated_at' => now()->toISOString()
+            ]
+        ];
+    }
+
+    /**
      * Get course dates for a specific date range
      *
      * @param Carbon $startDate
