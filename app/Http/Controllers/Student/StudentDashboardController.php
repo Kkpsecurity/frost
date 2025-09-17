@@ -38,6 +38,130 @@ class StudentDashboardController extends Controller
     }
 
     /**
+     * Enter classroom for a specific course
+     * Validates CourseAuth and redirects to classroom interface
+     *
+     * @param int $courseAuth CourseAuth ID
+     * @return View|RedirectResponse
+     */
+    public function enterClassroom($courseAuth)
+    {
+        try {
+            if (!Auth::check()) {
+                Log::warning("StudentDashboardController: Unauthenticated classroom access attempt");
+                return redirect()->route('login');
+            }
+
+            $user = Auth::user();
+
+            // Find and validate CourseAuth belongs to current user
+            $courseAuthModel = \App\Models\CourseAuth::where('id', $courseAuth)
+                ->where('user_id', $user->id)
+                ->with(['Course'])
+                ->first();
+
+            if (!$courseAuthModel) {
+                Log::warning("StudentDashboardController: Invalid course auth access", [
+                    'user_id' => $user->id,
+                    'course_auth_id' => $courseAuth
+                ]);
+
+                return redirect()->route('classroom.dashboard')
+                    ->with('error', 'Course not found or access denied.');
+            }
+
+            // Validate course access (course is active, student is enrolled)
+            if (!$this->validateCourseAccess($courseAuthModel)) {
+                return redirect()->route('classroom.dashboard')
+                    ->with('error', 'Course is not available at this time.');
+            }
+
+            // Get lesson data for classroom sidebar
+            $lessonData = $this->dashboardService->getClassroomLessons($courseAuthModel);
+
+            // Prepare classroom data
+            $classroomData = [
+                'student' => $user,
+                'course_auth' => $courseAuthModel,
+                'course' => $courseAuthModel->Course,
+                'lessons' => $lessonData['lessons'],
+                'modality' => $lessonData['modality'],
+                'current_day_only' => $lessonData['current_day_only'],
+            ];
+
+            Log::info("StudentDashboardController: Student entering classroom", [
+                'user_id' => $user->id,
+                'course_auth_id' => $courseAuth,
+                'course_id' => $courseAuthModel->course_id,
+                'course_title' => $courseAuthModel->Course->title ?? 'Unknown Course'
+            ]);
+
+            // Render classroom interface
+            return view('frontend.students.classroom', compact('classroomData'));
+
+        } catch (Exception $e) {
+            Log::error("StudentDashboardController: Classroom entry error", [
+                'user_id' => Auth::id(),
+                'course_auth_id' => $courseAuth,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('classroom.dashboard')
+                ->with('error', 'Unable to enter classroom. Please try again.');
+        }
+    }
+
+    /**
+     * Validate if student can access the course classroom
+     *
+     * @param \App\Models\CourseAuth $courseAuth
+     * @return bool
+     */
+    protected function validateCourseAccess($courseAuth): bool
+    {
+        // Check if course exists and is active
+        if (!$courseAuth->Course || !$courseAuth->Course->is_active) {
+            Log::info("Course access denied: Course not active", [
+                'course_auth_id' => $courseAuth->id,
+                'course_id' => $courseAuth->course_id
+            ]);
+            return false;
+        }
+
+        // Check if student's enrollment is active
+        if (!$courseAuth->is_active) {
+            Log::info("Course access denied: Enrollment not active", [
+                'course_auth_id' => $courseAuth->id,
+                'user_id' => $courseAuth->user_id
+            ]);
+            return false;
+        }
+
+        // Check if course has started (if start_date is set)
+        if ($courseAuth->start_date && now()->lt($courseAuth->start_date)) {
+            Log::info("Course access denied: Course not started", [
+                'course_auth_id' => $courseAuth->id,
+                'start_date' => $courseAuth->start_date,
+                'current_time' => now()
+            ]);
+            return false;
+        }
+
+        // Check if course is completed
+        if ($courseAuth->completed_at) {
+            Log::info("Course access: Course completed, allowing review access", [
+                'course_auth_id' => $courseAuth->id,
+                'completed_at' => $courseAuth->completed_at
+            ]);
+            // Allow access for review even if completed
+            return true;
+        }
+
+        return true;
+    }
+
+    /**
      * Student Dashboard - Shows purchased courses in table format
      * Similar to screenshot: Date, Course Name, Last Access, View Course button
      *
@@ -45,6 +169,7 @@ class StudentDashboardController extends Controller
      */
     public function dashboard()
     {
+
         try {
             if (!Auth::check()) {
                 Log::warning("StudentDashboardController: Unauthenticated access");
@@ -93,6 +218,11 @@ class StudentDashboardController extends Controller
             ]);
         }
     }
+
+    // ===================================================================
+    // DEBUGS - For React Component Data Sync
+    // ===================================================================
+
 
     /**
      * Debug endpoint to test array structure
@@ -330,7 +460,11 @@ class StudentDashboardController extends Controller
     /**
      * API Endpoint: Student Data
      * Matches student-dashboard-data structure in blade template
-     * Route: GET /api/student/data
+     * student,
+     * course_auths,
+     * student_units,
+     * students_unit_lessons
+     * Route: GET /classroom/student/data
      */
     public function getStudentData()
     {
@@ -407,7 +541,14 @@ class StudentDashboardController extends Controller
     /**
      * API Endpoint: Class Data
      * Matches class-dashboard-data structure in blade template
-     * Route: GET /api/classroom/data
+     * instructor,
+     * courses
+     * lessons
+     * course_dates
+     * course_units
+     * course_unit_lessons
+     *
+     * Route: GET /classroom/data
      */
     public function getClassData()
     {
@@ -470,6 +611,48 @@ class StudentDashboardController extends Controller
                 'error' => 'Failed to fetch class data: ' . $e->getMessage(),
                 'instructor' => null,
                 'course_dates' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Test endpoint to check lesson data for a specific course auth
+     */
+    public function testLessonData($courseAuth)
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Not authenticated'], 401);
+        }
+
+        try {
+            $user = Auth::user();
+            $courseAuthModel = \App\Models\CourseAuth::where('id', $courseAuth)
+                ->where('user_id', $user->id)
+                ->with(['Course'])
+                ->first();
+
+            if (!$courseAuthModel) {
+                return response()->json(['error' => 'Course auth not found'], 404);
+            }
+
+            // Test lesson data
+            $lessonData = $this->dashboardService->getClassroomLessons($courseAuthModel);
+
+            return response()->json([
+                'course_auth_id' => $courseAuth,
+                'course_title' => $courseAuthModel->Course->title,
+                'lesson_data' => $lessonData,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error("StudentDashboardController: Test lesson data error", [
+                'course_auth_id' => $courseAuth,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to get lesson data',
+                'message' => $e->getMessage()
             ], 500);
         }
     }

@@ -21,6 +21,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
         ->name('classroom.dashboard');
 
+    // Enter classroom for specific course
+    Route::get('/classroom/enter/{courseAuth}', [StudentDashboardController::class, 'enterClassroom'])
+        ->name('classroom.enter');
 
     /**
      * Student Polling Route
@@ -54,5 +57,9 @@ Route::middleware(['auth'])->group(function () {
     // Debug route for student data only
     Route::get('/classroom/debug/student', [StudentDashboardController::class, 'debugStudent'])
         ->name('classroom.debug.student');
+
+    // Test route for lesson data
+    Route::get('/classroom/test/lessons/{courseAuth}', [StudentDashboardController::class, 'testLessonData'])
+        ->name('classroom.test.lessons');
 
 });

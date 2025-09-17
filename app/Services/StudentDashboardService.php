@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Casts\JSONCast;
-use App\Models\User;
-use App\Services\ClassroomDashboardService;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Collection;
 use Exception;
+use App\Models\User;
+use App\Casts\JSONCast;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use App\Services\ClassroomDashboardService;
 
 /**
  * Student Dashboard Service
@@ -189,6 +189,155 @@ class StudentDashboardService
                 'trace' => $e->getTraceAsString()
             ]);
             return collect();
+        }
+    }
+
+    /**
+     * Get classroom lesson data for sidebar display
+     * Returns lessons based on course type (online vs offline)
+     */
+    public function getClassroomLessons($courseAuth): array
+    {
+        if (!$courseAuth || !$courseAuth->course) {
+            return [
+                'lessons' => collect(),
+                'modality' => 'unknown',
+                'current_day_only' => false,
+            ];
+        }
+
+        try {
+            $course = $courseAuth->course;
+
+            // Get all course units and their lessons
+            $courseUnits = $course->GetCourseUnits();
+            $allLessons = collect();
+
+            foreach ($courseUnits as $unit) {
+                $unitLessons = $unit->GetLessons();
+                foreach ($unitLessons as $lesson) {
+                    $allLessons->push([
+                        'id' => $lesson->id,
+                        'title' => $lesson->title,
+                        'unit_id' => $unit->id,
+                        'unit_title' => $unit->title,
+                        'unit_ordering' => $unit->ordering,
+                        'credit_minutes' => $lesson->credit_minutes,
+                        'video_seconds' => $lesson->video_seconds,
+                    ]);
+                }
+            }
+
+            // Sort lessons by unit ordering
+            $sortedLessons = $allLessons->sortBy('unit_ordering');
+
+            // Determine modality (default to offline if we can't determine)
+            $modality = $this->determineCourseModality($courseAuth);
+            $currentDayOnly = ($modality === 'online');
+
+            // For online courses, filter to current day lessons
+            if ($currentDayOnly) {
+                $sortedLessons = $this->filterCurrentDayLessons($sortedLessons, $courseAuth);
+            }
+
+            Log::info('StudentDashboardService: Generated classroom lessons', [
+                'course_id' => $course->id,
+                'course_title' => $course->title,
+                'total_units' => $courseUnits->count(),
+                'total_lessons' => $allLessons->count(),
+                'filtered_lessons' => $sortedLessons->count(),
+                'modality' => $modality,
+                'current_day_only' => $currentDayOnly,
+            ]);
+
+            return [
+                'lessons' => $sortedLessons,
+                'modality' => $modality,
+                'current_day_only' => $currentDayOnly,
+            ];
+
+        } catch (Exception $e) {
+            Log::error('StudentDashboardService: Error getting classroom lessons', [
+                'course_auth_id' => $courseAuth->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'lessons' => collect(),
+                'modality' => 'unknown',
+                'current_day_only' => false,
+            ];
+        }
+    }
+
+    /**
+     * Determine course modality (online vs offline)
+     */
+    private function determineCourseModality($courseAuth): string
+    {
+        try {
+            // Check if there are any classrooms scheduled for this course
+            // that are marked as online
+            $hasOnlineClassrooms = \App\Models\Classroom::whereHas('courseDate', function ($query) use ($courseAuth) {
+                $query->whereHas('courseUnit', function ($subQuery) use ($courseAuth) {
+                    $subQuery->where('course_id', $courseAuth->course_id);
+                });
+            })
+                ->where('modality', 'online')
+                ->exists();
+
+            if ($hasOnlineClassrooms) {
+                return 'online';
+            }
+
+            // Check for in-person classrooms
+            $hasInPersonClassrooms = \App\Models\Classroom::whereHas('courseDate', function ($query) use ($courseAuth) {
+                $query->whereHas('courseUnit', function ($subQuery) use ($courseAuth) {
+                    $subQuery->where('course_id', $courseAuth->course_id);
+                });
+            })
+                ->where('modality', 'in_person')
+                ->exists();
+
+            if ($hasInPersonClassrooms) {
+                return 'in_person';
+            }
+
+            // Default to offline if no classrooms are defined
+            return 'offline';
+
+        } catch (Exception $e) {
+            Log::error('StudentDashboardService: Error determining course modality', [
+                'course_auth_id' => $courseAuth->id,
+                'error' => $e->getMessage(),
+            ]);
+            return 'offline';
+        }
+    }
+
+    /**
+     * Filter lessons to current day only (for online courses)
+     */
+    private function filterCurrentDayLessons($lessons, $courseAuth): Collection
+    {
+        try {
+            // For now, return all lessons since we don't have the logic
+            // to determine which lessons are for "today"
+            // This would require course date scheduling logic
+
+            // TODO: Add logic to filter based on course schedule
+            // - Get today's course dates
+            // - Find which lessons are scheduled for today
+            // - Return only those lessons
+
+            return $lessons;
+
+        } catch (Exception $e) {
+            Log::error('StudentDashboardService: Error filtering current day lessons', [
+                'course_auth_id' => $courseAuth->id,
+                'error' => $e->getMessage(),
+            ]);
+            return $lessons;
         }
     }
 

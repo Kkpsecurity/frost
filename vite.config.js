@@ -27,6 +27,10 @@ export default defineConfig({
                 // Instructor entry
                 "resources/js/React/Instructor/app.tsx",
 
+                // Student entries
+                "resources/js/React/Student/app.tsx",
+                "resources/js/React/Student/classroom.tsx",
+
                 // CSS files (consolidated structure)
                 "resources/css/style.css", // Main stylesheet with all imports
                 "resources/css/app.css", // App-specific styles
