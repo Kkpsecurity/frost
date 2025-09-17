@@ -224,4 +224,147 @@ class InstructorDashboardService
             ]
         ];
     }
+
+    /**
+     * Get recent activity for instructor dashboard
+     *
+     * @return array
+     */
+    public function getRecentActivity(): array
+    {
+        try {
+            // Get recent InstUnit activity (instructor sessions started/completed)
+            $recentInstActivity = DB::table('inst_unit')
+                ->join('course_dates', 'inst_unit.course_date_id', '=', 'course_dates.id')
+                ->join('course_units', 'course_dates.course_unit_id', '=', 'course_units.id')
+                ->join('courses', 'course_units.course_id', '=', 'courses.id')
+                ->leftJoin('users as created_by', 'inst_unit.created_by', '=', 'created_by.id')
+                ->leftJoin('users as completed_by', 'inst_unit.completed_by', '=', 'completed_by.id')
+                ->where('inst_unit.created_at', '>=', now()->subDays(7))
+                ->select([
+                    'inst_unit.id',
+                    'inst_unit.created_at',
+                    'inst_unit.completed_at',
+                    'courses.title as course_name',
+                    'course_units.title as unit_name',
+                    'course_dates.starts_at',
+                    'course_dates.ends_at',
+                    'created_by.name as instructor_name',
+                    'completed_by.name as completed_by_name'
+                ])
+                ->orderBy('inst_unit.created_at', 'desc')
+                ->limit(20)
+                ->get();
+
+            // Get recent StudentUnit activity (student enrollments/activity)
+            $recentStudentActivity = DB::table('student_unit')
+                ->join('inst_unit', 'student_unit.inst_unit_id', '=', 'inst_unit.id')
+                ->join('course_dates', 'inst_unit.course_date_id', '=', 'course_dates.id')
+                ->join('course_units', 'course_dates.course_unit_id', '=', 'course_units.id')
+                ->join('courses', 'course_units.course_id', '=', 'courses.id')
+                ->leftJoin('users', 'student_unit.user_id', '=', 'users.id')
+                ->where('student_unit.created_at', '>=', now()->subDays(7))
+                ->select([
+                    'student_unit.id',
+                    'student_unit.created_at',
+                    'student_unit.completed_at',
+                    'courses.title as course_name',
+                    'course_units.title as unit_name',
+                    'users.name as student_name',
+                    'course_dates.starts_at'
+                ])
+                ->orderBy('student_unit.created_at', 'desc')
+                ->limit(15)
+                ->get();
+
+            // Combine and format activities
+            $activities = collect();
+
+            // Format instructor activities
+            foreach ($recentInstActivity as $activity) {
+                $activities->push([
+                    'id' => 'inst_' . $activity->id,
+                    'type' => 'instructor_activity',
+                    'action' => $activity->completed_at ? 'completed_class' : 'started_class',
+                    'title' => $activity->completed_at 
+                        ? 'Class Completed'
+                        : 'Class Started',
+                    'message' => ($activity->instructor_name ?? 'Instructor') . ' ' . 
+                                ($activity->completed_at ? 'completed' : 'started') . ' ' .
+                                $activity->course_name . ' - ' . $activity->unit_name,
+                    'course_name' => $activity->course_name,
+                    'unit_name' => $activity->unit_name,
+                    'actor' => $activity->instructor_name ?? 'Unknown Instructor',
+                    'timestamp' => $activity->completed_at ?? $activity->created_at,
+                    'date' => Carbon::parse($activity->completed_at ?? $activity->created_at)->format('M j, Y g:i A'),
+                    'relative_time' => Carbon::parse($activity->completed_at ?? $activity->created_at)->diffForHumans(),
+                    'icon' => $activity->completed_at ? 'fas fa-check-circle' : 'fas fa-play-circle',
+                    'color' => $activity->completed_at ? 'success' : 'primary'
+                ]);
+            }
+
+            // Format student activities
+            foreach ($recentStudentActivity as $activity) {
+                $activities->push([
+                    'id' => 'student_' . $activity->id,
+                    'type' => 'student_activity',
+                    'action' => $activity->completed_at ? 'completed_unit' : 'enrolled',
+                    'title' => $activity->completed_at ? 'Unit Completed' : 'Student Enrolled',
+                    'message' => ($activity->student_name ?? 'Student') . ' ' . 
+                                ($activity->completed_at ? 'completed' : 'enrolled in') . ' ' .
+                                $activity->course_name . ' - ' . $activity->unit_name,
+                    'course_name' => $activity->course_name,
+                    'unit_name' => $activity->unit_name,
+                    'actor' => $activity->student_name ?? 'Unknown Student',
+                    'timestamp' => $activity->completed_at ?? $activity->created_at,
+                    'date' => Carbon::parse($activity->completed_at ?? $activity->created_at)->format('M j, Y g:i A'),
+                    'relative_time' => Carbon::parse($activity->completed_at ?? $activity->created_at)->diffForHumans(),
+                    'icon' => $activity->completed_at ? 'fas fa-user-check' : 'fas fa-user-plus',
+                    'color' => $activity->completed_at ? 'success' : 'info'
+                ]);
+            }
+
+            // Sort all activities by timestamp and limit
+            $sortedActivities = $activities->sortByDesc('timestamp')->take(25)->values()->toArray();
+
+            if (empty($sortedActivities)) {
+                return [
+                    'activities' => [],
+                    'message' => 'No recent activity found in the past 7 days',
+                    'has_activity' => false,
+                    'metadata' => [
+                        'date_range' => now()->subDays(7)->format('Y-m-d') . ' to ' . now()->format('Y-m-d'),
+                        'count' => 0,
+                        'generated_at' => now()->toISOString()
+                    ]
+                ];
+            }
+
+            return [
+                'activities' => $sortedActivities,
+                'message' => count($sortedActivities) . ' recent activities in the past 7 days',
+                'has_activity' => true,
+                'metadata' => [
+                    'date_range' => now()->subDays(7)->format('Y-m-d') . ' to ' . now()->format('Y-m-d'),
+                    'count' => count($sortedActivities),
+                    'instructor_activities' => $recentInstActivity->count(),
+                    'student_activities' => $recentStudentActivity->count(),
+                    'generated_at' => now()->toISOString()
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching recent activity: ' . $e->getMessage());
+            return [
+                'activities' => [],
+                'message' => 'Error loading recent activity: ' . $e->getMessage(),
+                'has_activity' => false,
+                'metadata' => [
+                    'count' => 0,
+                    'generated_at' => now()->toISOString(),
+                    'error' => $e->getMessage()
+                ]
+            ];
+        }
+    }
 }

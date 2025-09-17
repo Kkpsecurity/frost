@@ -215,4 +215,115 @@ class InstructorDashboardController extends Controller
 
         return response()->json($completedInstUnits);
     }
+
+    /**
+     * Get upcoming lessons for instructor dashboard
+     */
+    public function getUpcomingLessons()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $upcomingLessons = $this->courseDatesService->getUpcomingLessons();
+
+        return response()->json($upcomingLessons);
+    }
+
+    /**
+     * Get previous lessons for instructor dashboard
+     */
+    public function getPreviousLessons()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $previousLessons = $this->courseDatesService->getPreviousLessons();
+
+        return response()->json($previousLessons);
+    }
+
+    /**
+     * Get recent activity for instructor dashboard
+     */
+    public function getRecentActivity()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $recentActivity = $this->dashboardService->getRecentActivity();
+
+        return response()->json($recentActivity);
+    }
+
+    /**
+     * Get unread notifications for instructor dashboard
+     */
+    public function getUnreadNotifications()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Placeholder implementation - will be enhanced with notification system
+        return response()->json([
+            'notifications' => [],
+            'unread_count' => 0,
+            'metadata' => [
+                'generated_at' => now()->toISOString(),
+                'view_type' => 'notifications',
+                'status' => 'placeholder'
+            ]
+        ]);
+    }
+
+    /**
+     * Take over a class (instructor action)
+     */
+    public function takeOverClass()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Placeholder implementation
+        return response()->json([
+            'success' => true,
+            'message' => 'Take over class functionality not yet implemented',
+            'action' => 'take_over',
+            'timestamp' => now()->toISOString()
+        ]);
+    }
+
+    /**
+     * Assist in a class (instructor action)
+     */
+    public function assistClass()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Placeholder implementation
+        return response()->json([
+            'success' => true,
+            'message' => 'Assist class functionality not yet implemented',
+            'action' => 'assist',
+            'timestamp' => now()->toISOString()
+        ]);
+    }
 }

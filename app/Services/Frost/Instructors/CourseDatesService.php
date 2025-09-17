@@ -228,6 +228,154 @@ class CourseDatesService
     }
 
     /**
+     * Get upcoming lessons for instructor dashboard
+     *
+     * @return array
+     */
+    public function getUpcomingLessons(): array
+    {
+        $now = now();
+        $nextWeek = now()->addWeek();
+
+        $upcomingCourseDates = DB::table('course_dates')
+            ->where('starts_at', '>', $now)
+            ->where('starts_at', '<=', $nextWeek)
+            ->where('is_active', true)
+            ->orderBy('starts_at', 'asc')
+            ->limit(10)
+            ->get();
+
+        if ($upcomingCourseDates->isEmpty()) {
+            return [
+                'lessons' => [],
+                'message' => 'No upcoming courses scheduled for the next week',
+                'has_lessons' => false,
+                'metadata' => [
+                    'date_range' => $now->format('Y-m-d') . ' to ' . $nextWeek->format('Y-m-d'),
+                    'count' => 0,
+                    'generated_at' => now()->toISOString()
+                ]
+            ];
+        }
+
+        $formattedLessons = $upcomingCourseDates->map(function ($courseDate) {
+            // Get course and course unit details
+            $courseUnit = DB::table('course_units')->find($courseDate->course_unit_id);
+            $course = $courseUnit ? DB::table('courses')->find($courseUnit->course_id) : null;
+
+            // Get student count for this course
+            $studentCount = DB::table('course_auths')
+                ->where('course_id', $course->id ?? 0)
+                ->where('is_active', true)
+                ->count();
+
+            $startTime = Carbon::parse($courseDate->starts_at);
+            $endTime = Carbon::parse($courseDate->ends_at);
+
+            return [
+                'id' => $courseDate->id,
+                'date' => $startTime->format('M j, Y'),
+                'time' => $startTime->format('h:i A'),
+                'duration' => $startTime->diffForHumans($endTime, true),
+                'course_name' => $course->title ?? 'Unknown Course',
+                'course_code' => $course->title ?? 'N/A',
+                'lesson_name' => $courseUnit->title ?? 'Unknown Lesson',
+                'module' => 'Module ' . ($courseUnit->sequence ?? 'N/A'),
+                'student_count' => $studentCount,
+                'status' => 'scheduled',
+                'starts_at' => $courseDate->starts_at,
+                'ends_at' => $courseDate->ends_at,
+                'days_until' => now()->diffInDays($startTime)
+            ];
+        })->toArray();
+
+        return [
+            'lessons' => $formattedLessons,
+            'message' => count($formattedLessons) . ' upcoming lessons in the next week',
+            'has_lessons' => true,
+            'metadata' => [
+                'date_range' => $now->format('Y-m-d') . ' to ' . $nextWeek->format('Y-m-d'),
+                'count' => count($formattedLessons),
+                'generated_at' => now()->toISOString()
+            ]
+        ];
+    }
+
+    /**
+     * Get previous lessons for instructor dashboard
+     *
+     * @return array
+     */
+    public function getPreviousLessons(): array
+    {
+        $now = now();
+        $lastWeek = now()->subWeek();
+
+        $previousCourseDates = DB::table('course_dates')
+            ->where('ends_at', '<', $now)
+            ->where('ends_at', '>=', $lastWeek)
+            ->where('is_active', true)
+            ->orderBy('ends_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        if ($previousCourseDates->isEmpty()) {
+            return [
+                'lessons' => [],
+                'message' => 'No completed courses in the past week',
+                'has_lessons' => false,
+                'metadata' => [
+                    'date_range' => $lastWeek->format('Y-m-d') . ' to ' . $now->format('Y-m-d'),
+                    'count' => 0,
+                    'generated_at' => now()->toISOString()
+                ]
+            ];
+        }
+
+        $formattedLessons = $previousCourseDates->map(function ($courseDate) {
+            // Get course and course unit details
+            $courseUnit = DB::table('course_units')->find($courseDate->course_unit_id);
+            $course = $courseUnit ? DB::table('courses')->find($courseUnit->course_id) : null;
+
+            // Get student count for this course
+            $studentCount = DB::table('course_auths')
+                ->where('course_id', $course->id ?? 0)
+                ->where('is_active', true)
+                ->count();
+
+            $startTime = Carbon::parse($courseDate->starts_at);
+            $endTime = Carbon::parse($courseDate->ends_at);
+
+            return [
+                'id' => $courseDate->id,
+                'date' => $endTime->format('M j, Y'),
+                'time' => $startTime->format('h:i A') . ' - ' . $endTime->format('h:i A'),
+                'duration' => $startTime->diffForHumans($endTime, true),
+                'course_name' => $course->title ?? 'Unknown Course',
+                'course_code' => $course->title ?? 'N/A',
+                'lesson_name' => $courseUnit->title ?? 'Unknown Lesson',
+                'module' => 'Module ' . ($courseUnit->sequence ?? 'N/A'),
+                'student_count' => $studentCount,
+                'status' => 'completed',
+                'starts_at' => $courseDate->starts_at,
+                'ends_at' => $courseDate->ends_at,
+                'days_ago' => $endTime->diffInDays(now())
+            ];
+        })->toArray();
+
+        return [
+            'lessons' => $formattedLessons,
+            'message' => count($formattedLessons) . ' lessons completed in the past week',
+            'has_lessons' => true,
+            'metadata' => [
+                'date_range' => $lastWeek->format('Y-m-d') . ' to ' . $now->format('Y-m-d'),
+                'count' => count($formattedLessons),
+                'generated_at' => now()->toISOString()
+            ]
+        ];
+    }
+
+    /**
      * Get course dates for a specific date range
      *
      * @param Carbon $startDate
