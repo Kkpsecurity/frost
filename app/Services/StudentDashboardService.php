@@ -127,18 +127,18 @@ class StudentDashboardService
 
             // SIMPLIFIED APPROACH: Just get ALL course auths for this user
             // Start with NO relationships to see if that's the issue
-            $allCourseAuths = $this->user->courseAuths()->get();
+            $allCourseAuths = $this->user->CourseAuths()->get();
 
             Log::info('StudentDashboardService: Basic courseAuths query result', [
                 'count' => $allCourseAuths->count(),
-                'raw_sql' => $this->user->courseAuths()->toSql(),
-                'bindings' => $this->user->courseAuths()->getBindings()
+                'raw_sql' => $this->user->CourseAuths()->toSql(),
+                'bindings' => $this->user->CourseAuths()->getBindings()
             ]);
 
             // If basic query works, try adding course relationship
             if ($allCourseAuths->count() > 0) {
                 Log::info('StudentDashboardService: Basic query worked, trying with course relationship');
-                $allCourseAuths = $this->user->courseAuths()
+                $allCourseAuths = $this->user->CourseAuths()
                     ->with('course')
                     ->get();
 
@@ -189,6 +189,140 @@ class StudentDashboardService
                 'trace' => $e->getTraceAsString()
             ]);
             return collect();
+        }
+    }
+
+    /**
+     * Get lessons for a specific course when courseDates is empty (self-paced mode)
+     * Uses CourseAuth -> Course -> CourseUnits -> Lessons pattern
+     *
+     * @param \App\Models\CourseAuth $courseAuth
+     * @return array
+     */
+    public function getLessonsForCourse($courseAuth): array
+    {
+        if (!$courseAuth || !$courseAuth->Course) {
+            return [
+                'lessons' => collect(),
+                'modality' => 'unknown',
+                'current_day_only' => false,
+            ];
+        }
+
+        try {
+            $course = $courseAuth->Course;
+
+            // Get all course units using proper model method
+            $courseUnits = $course->GetCourseUnits();
+            $allLessons = collect();
+
+            Log::info('StudentDashboardService: Getting lessons for course', [
+                'course_id' => $course->id,
+                'course_title' => $course->title,
+                'course_units_count' => $courseUnits->count(),
+                'course_auth_id' => $courseAuth->id,
+            ]);
+
+            foreach ($courseUnits as $unit) {
+                // Get lessons for this unit
+                $unitLessons = $unit->GetLessons();
+
+                Log::info('StudentDashboardService: Processing course unit', [
+                    'unit_id' => $unit->id,
+                    'unit_title' => $unit->title,
+                    'unit_ordering' => $unit->ordering,
+                    'lessons_count' => $unitLessons->count(),
+                ]);
+
+                foreach ($unitLessons as $lesson) {
+                    // Check if student has progress on this lesson
+                    $isCompleted = $this->isLessonCompleted($courseAuth, $unit, $lesson);
+
+                    $allLessons->push([
+                        'id' => $lesson->id,
+                        'title' => $lesson->title,
+                        'unit_id' => $unit->id,
+                        'unit_title' => $unit->title,
+                        'unit_ordering' => $unit->ordering,
+                        'credit_minutes' => $lesson->credit_minutes ?? 0,
+                        'video_seconds' => $lesson->video_seconds ?? 0,
+                        'is_completed' => $isCompleted,
+                    ]);
+                }
+            }
+
+            // Sort lessons by unit ordering, then by lesson ID
+            $sortedLessons = $allLessons->sortBy([
+                ['unit_ordering', 'asc'],
+                ['id', 'asc']
+            ]);
+
+            Log::info('StudentDashboardService: Lessons retrieved successfully', [
+                'course_id' => $course->id,
+                'total_units' => $courseUnits->count(),
+                'total_lessons' => $allLessons->count(),
+                'completed_lessons' => $allLessons->where('is_completed', true)->count(),
+            ]);
+
+            return [
+                'lessons' => $sortedLessons->values(), // Reset keys
+                'modality' => 'self_paced', // Indicate self-paced mode
+                'current_day_only' => false, // Show all lessons
+            ];
+
+        } catch (Exception $e) {
+            Log::error('StudentDashboardService: Error getting lessons for course', [
+                'course_auth_id' => $courseAuth->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'lessons' => collect(),
+                'modality' => 'unknown',
+                'current_day_only' => false,
+            ];
+        }
+    }
+
+    /**
+     * Check if a lesson is completed by the student
+     * Uses StudentUnit and StudentLesson models to determine completion
+     *
+     * @param \App\Models\CourseAuth $courseAuth
+     * @param \App\Models\CourseUnit $unit
+     * @param \App\Models\Lesson $lesson
+     * @return bool
+     */
+    private function isLessonCompleted($courseAuth, $unit, $lesson): bool
+    {
+        try {
+            // Get StudentUnit for this course auth and unit
+            $studentUnit = \App\Models\StudentUnit::where('course_auth_id', $courseAuth->id)
+                ->where('course_unit_id', $unit->id)
+                ->first();
+
+            if (!$studentUnit) {
+                return false; // No student unit = not started
+            }
+
+            // Check if there's a completed StudentLesson
+            $studentLesson = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
+                ->where('lesson_id', $lesson->id)
+                ->where('completed_at', '!=', null)
+                ->exists();
+
+            return $studentLesson;
+
+        } catch (Exception $e) {
+            Log::error('StudentDashboardService: Error checking lesson completion', [
+                'course_auth_id' => $courseAuth->id,
+                'unit_id' => $unit->id,
+                'lesson_id' => $lesson->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false; // Default to not completed on error
         }
     }
 

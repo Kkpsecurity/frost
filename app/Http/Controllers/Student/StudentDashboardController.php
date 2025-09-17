@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\StudentDashboardService;
 use App\Services\ClassroomDashboardService;
 use App\Traits\PageMetaDataTrait;
+use App\Models\CourseAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -41,10 +42,19 @@ class StudentDashboardController extends Controller
      * Student Dashboard - Shows purchased courses in table format
      * Similar to screenshot: Date, Course Name, Last Access, View Course button
      *
+     * @param int|null $id Course ID parameter (optional)
      * @return View|RedirectResponse
      */
-    public function dashboard()
+    public function dashboard($id = null)
     {
+        // Debug logging for route parameters
+        Log::info("StudentDashboardController: Dashboard method called", [
+            'id_parameter' => $id,
+            'id_type' => gettype($id),
+            'request_url' => request()->fullUrl(),
+            'route_name' => request()->route()?->getName()
+        ]);
+
         try {
             if (!Auth::check()) {
                 Log::warning("StudentDashboardController: Unauthenticated access");
@@ -57,6 +67,26 @@ class StudentDashboardController extends Controller
             // Get user's course authorizations (purchased courses)
             $courseAuths = $studentService->getCourseAuths();
 
+            // If specific course ID is provided, filter to that course only
+            if ($id) {
+                Log::info("StudentDashboardController: Filtering for specific course", [
+                    'user_id' => $user->id,
+                    'course_auth_id' => $id
+                ]);
+
+                $courseAuths = $courseAuths->where('id', $id);
+
+                if ($courseAuths->isEmpty()) {
+                    Log::warning("StudentDashboardController: Course not found or not authorized", [
+                        'user_id' => $user->id,
+                        'course_auth_id' => $id
+                    ]);
+
+                    // Redirect back to main dashboard if course not found
+                    return redirect()->route('classroom.dashboard');
+                }
+            }
+
             // Convert Collection to Array for JSON serialization
             $courseAuthsArray = $courseAuths->toArray();
 
@@ -68,14 +98,41 @@ class StudentDashboardController extends Controller
                 'course_auths_type' => get_class($courseAuths)
             ]);
 
+            // Get lesson data for courses when no scheduled classes exist
+            $lessonsData = [];
+            $classroomService = new ClassroomDashboardService($user);
+            $classroomData = $classroomService->getClassroomData();
+
+            if (empty($classroomData['courseDates']) && !empty($courseAuths)) {
+                Log::info('StudentDashboardController: Getting lessons for dashboard display', [
+                    'user_id' => $user->id,
+                    'course_auths_count' => $courseAuths->count()
+                ]);
+
+                foreach ($courseAuths as $courseAuth) {
+                    $lessons = $studentService->getLessonsForCourse($courseAuth);
+                    if (!empty($lessons['lessons']) && $lessons['lessons']->count() > 0) {
+                        $lessonsData[$courseAuth->id] = [
+                            'lessons' => $lessons['lessons']->toArray(),
+                            'modality' => $lessons['modality'],
+                            'current_day_only' => $lessons['current_day_only'],
+                            'course_title' => $courseAuth->Course->title ?? 'Unknown Course',
+                        ];
+                    }
+                }
+            }
+
             // Prepare data for React props - matching the dashboard screenshot format
             $content = [
                 'student' => $user,
                 'course_auths' => $courseAuthsArray,
+                'lessons' => $lessonsData,
+                'has_lessons' => !empty($lessonsData),
+                'selected_course_auth_id' => $id, // Pass the selected course ID
             ];
 
-            // Also pass course_auth_id for backward compatibility
-            $course_auth_id = !empty($courseAuthsArray) ? $courseAuthsArray[0]['id'] ?? null : null;
+            // Also pass course_auth_id for backward compatibility (use selected ID if available)
+            $course_auth_id = $id ?: (!empty($courseAuthsArray) ? $courseAuthsArray[0]['id'] ?? null : null);
 
             return view('frontend.students.dashboard', compact('content', 'course_auth_id'));
 
@@ -187,6 +244,34 @@ class StudentDashboardController extends Controller
                 ]
             ];
 
+            // LESSON LOGIC: When courseDates is empty, get lessons for self-paced learning
+            $lessonsData = [];
+            if (empty($classroomData['courseDates']) && !empty($studentCourseAuths)) {
+                Log::info('StudentDashboardController: courseDates empty, retrieving lessons for self-paced mode', [
+                    'user_id' => $user->id,
+                    'course_auths_count' => count($studentCourseAuths)
+                ]);
+
+                // Get lessons for each course auth
+                foreach ($studentCourseAuths as $courseAuth) {
+                    $lessons = $studentService->getLessonsForCourse($courseAuth);
+                    if (!empty($lessons['lessons']) && $lessons['lessons']->count() > 0) {
+                        $lessonsData[$courseAuth->id] = $lessons;
+
+                        Log::info('StudentDashboardController: Lessons found for course auth', [
+                            'course_auth_id' => $courseAuth->id,
+                            'course_title' => $courseAuth->Course->title ?? 'Unknown',
+                            'lessons_count' => $lessons['lessons']->count(),
+                            'modality' => $lessons['modality']
+                        ]);
+                    }
+                }
+            }
+
+            // Add lessons data to classroom array
+            $classroomDataArray['lessons'] = $lessonsData;
+            $classroomDataArray['has_lessons'] = !empty($lessonsData);
+
             // ARRAY 2: Student Data (student + courseAuth) - Use service method for complete user data
             $studentData = [
                 'student' => $studentService->getStudentData(),
@@ -275,7 +360,7 @@ class StudentDashboardController extends Controller
             $directCourseAuths = \App\Models\CourseAuth::where('user_id', $user->id)->get();
 
             // Test 2: Via User relationship
-            $relationshipCourseAuths = $user->courseAuths()->get();
+            $relationshipCourseAuths = CourseAuth::where('user_id', $user->id)->get();
 
             // Test 3: Via Service
             $service = new StudentDashboardService($user);

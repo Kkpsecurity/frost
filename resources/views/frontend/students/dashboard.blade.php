@@ -20,7 +20,9 @@
                 {!! json_encode([
                     'student' => isset($content['student']) ? $content['student'] : null,
                     'course_auths' => isset($content['course_auths']) ? $content['course_auths'] : [],
-                    'course_auth_id' => $course_auth_id ?? null
+                    'course_auth_id' => $course_auth_id ?? null,
+                    'lessons' => isset($content['lessons']) ? $content['lessons'] : [],
+                    'has_lessons' => isset($content['has_lessons']) ? $content['has_lessons'] : false
                 ]) !!}
             </script>
 

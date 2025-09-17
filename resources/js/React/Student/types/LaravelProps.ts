@@ -56,11 +56,43 @@ export interface CourseDate {
 }
 
 /**
+ * Lesson data structure from backend
+ */
+export interface LessonData {
+    id: number;
+    title: string;
+    description?: string;
+    order_column: number;
+    is_completed: boolean;
+    // Add other lesson fields as needed
+}
+
+/**
+ * Course lessons data keyed by courseAuth.id
+ */
+export interface CourseAuthLessons {
+    lessons: LessonData[];
+    modality: string;
+    current_day_only: boolean;
+    course_title: string;
+}
+
+/**
+ * Lessons data structure - keyed by courseAuth.id
+ */
+export interface LessonsData {
+    [courseAuthId: string]: CourseAuthLessons;
+}
+
+/**
  * Student-specific dashboard data (from student-props element)
  */
 export interface StudentDashboardData {
     student: Student | null;
     course_auths: CourseAuth[];
+    course_auth_id?: number | null;
+    lessons?: LessonsData;
+    has_lessons?: boolean;
 }
 
 /**

@@ -17,32 +17,8 @@ use Illuminate\Support\Facades\Route;
  */
 Route::middleware(['auth'])->group(function () {
 
-    // Main student classroom dashboard
-    Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
-        ->name('classroom.dashboard');
-
-
     /**
-     * Student Polling Route
-     */
-    Route::get('/classroom/student/data', [StudentDashboardController::class, 'getStudentData'])
-        ->name('classroom.student.data');
-
-
-
-
-
-
-    /**
-     * Classroom Polling Route
-     */
-    Route::get('/classroom/class/data', [StudentDashboardController::class, 'getClassData'])
-        ->name('classroom.class.data');
-
-
-
-    /**
-     * DEBUG ROUTES - to be removed in production
+     * DEBUG ROUTES - must come before parameterized routes
      */
     Route::get('/classroom/debug', [StudentDashboardController::class, 'debug'])
         ->name('classroom.debug');
@@ -54,5 +30,25 @@ Route::middleware(['auth'])->group(function () {
     // Debug route for student data only
     Route::get('/classroom/debug/student', [StudentDashboardController::class, 'debugStudent'])
         ->name('classroom.debug.student');
+
+    /**
+     * Student Polling Routes - must come before parameterized routes
+     */
+    Route::get('/classroom/student/data', [StudentDashboardController::class, 'getStudentData'])
+        ->name('classroom.student.data');
+
+    Route::get('/classroom/class/data', [StudentDashboardController::class, 'getClassData'])
+        ->name('classroom.class.data');
+
+    // Main student classroom dashboard
+    Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
+        ->name('classroom.dashboard');
+
+    // Student classroom with course ID - MUST come last
+    Route::get('/classroom/{id}', [StudentDashboardController::class, 'dashboard'])
+        ->where('id', '[0-9]+')  // Only match numeric IDs
+        ->name('classroom.course');
+
+
 
 });
