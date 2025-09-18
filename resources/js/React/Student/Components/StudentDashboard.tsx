@@ -454,7 +454,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         );
                     },
                     enableSorting: false,
-                });
+                })
         ],
         [courseAuths]
     );

@@ -12,7 +12,7 @@ export default defineConfig({
                 "resources/js/admin.ts",
                 "resources/js/instructor.ts",
                 "resources/js/support.ts",
-                // Temporarily commented out due to syntax error: "resources/js/student.ts",
+                "resources/js/student.ts",
 
                 // Laravel JavaScript modules
                 "resources/js/modules/filepond.js",
@@ -23,9 +23,6 @@ export default defineConfig({
 
                 // React Components (proper path)
                 "resources/js/React/Components/UploadModalManager.tsx",
-
-                // NEW: Classroom Demo Component for testing
-                "resources/js/React/Student/Components/ClassroomDemo.tsx",
 
                 // Instructor entry
                 "resources/js/React/Instructor/app.tsx",
