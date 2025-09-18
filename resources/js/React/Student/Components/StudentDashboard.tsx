@@ -325,129 +325,136 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 },
                 enableSorting: false,
             }),
-            columnHelper.display({
-                id: "actions",
-                header: () => (
-                    <div
-                        className="d-flex align-items-center justify-content-center"
-                        style={{ color: "#f1f5f9" }}
-                    >
-                        <i className="fas fa-cogs me-2"></i>
-                        Actions
-                    </div>
-                ),
-                cell: (info) => {
-                    const auth = info.row.original;
-
-                    // Handle course navigation
-                    const handleCourseAction = (
-                        action: "continue" | "start" | "review"
-                    ) => {
-                        console.log(`🎓 ${action} button clicked for course:`, {
-                            courseAuth: auth.id,
-                            courseId: auth.course_id,
-                            action: action,
-                        });
-
-                        // Navigate to course with specific courseAuth ID
-                        const targetUrl = `/classroom/${auth.id}`;
-                        console.log(`🎓 Navigating to: ${targetUrl}`);
-                        window.location.href = targetUrl;
-                    };
-
-                    return (
-                        <div className="text-center">
-                            {auth.start_date && !auth.completed_at && (
-                                <button
-                                    className="btn btn-primary btn-sm shadow-sm fw-bold px-3 py-2"
-                                    style={{
-                                        borderRadius: "8px",
-                                        background:
-                                            "linear-gradient(45deg, #007bff, #0056b3)",
-                                        border: "none",
-                                        transition: "all 0.3s ease",
-                                    }}
-                                    onClick={() =>
-                                        handleCourseAction("continue")
-                                    }
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform =
-                                            "translateY(-2px)";
-                                        e.currentTarget.style.boxShadow =
-                                            "0 6px 16px rgba(0,123,255,0.4)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform =
-                                            "translateY(0)";
-                                        e.currentTarget.style.boxShadow =
-                                            "0 2px 4px rgba(0,0,0,0.1)";
-                                    }}
-                                >
-                                    <i className="fas fa-play me-2"></i>
-                                    Continue
-                                </button>
-                            )}
-                            {!auth.start_date && (
-                                <button
-                                    className="btn btn-success btn-sm shadow-sm fw-bold px-3 py-2"
-                                    style={{
-                                        borderRadius: "8px",
-                                        background:
-                                            "linear-gradient(45deg, #28a745, #1e7e34)",
-                                        border: "none",
-                                        transition: "all 0.3s ease",
-                                    }}
-                                    onClick={() => handleCourseAction("start")}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform =
-                                            "translateY(-2px)";
-                                        e.currentTarget.style.boxShadow =
-                                            "0 6px 16px rgba(40,167,69,0.4)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform =
-                                            "translateY(0)";
-                                        e.currentTarget.style.boxShadow =
-                                            "0 2px 4px rgba(0,0,0,0.1)";
-                                    }}
-                                >
-                                    <i className="fas fa-rocket me-2"></i>
-                                    Start
-                                </button>
-                            )}
-                            {auth.completed_at && (
-                                <button
-                                    className="btn btn-info btn-sm shadow-sm fw-bold px-3 py-2"
-                                    style={{
-                                        borderRadius: "8px",
-                                        background:
-                                            "linear-gradient(45deg, #17a2b8, #117a8b)",
-                                        border: "none",
-                                        transition: "all 0.3s ease",
-                                    }}
-                                    onClick={() => handleCourseAction("review")}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform =
-                                            "translateY(-2px)";
-                                        e.currentTarget.style.boxShadow =
-                                            "0 6px 16px rgba(23,162,184,0.4)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform =
-                                            "translateY(0)";
-                                        e.currentTarget.style.boxShadow =
-                                            "0 2px 4px rgba(0,0,0,0.1)";
-                                    }}
-                                >
-                                    <i className="fas fa-eye me-2"></i>
-                                    Review
-                                </button>
-                            )}
+                columnHelper.display({
+                    id: "actions",
+                    header: () => (
+                        <div
+                            className="d-flex align-items-center justify-content-center"
+                            style={{ color: "#f1f5f9" }}
+                        >
+                            <i className="fas fa-cogs me-2"></i>
+                            Actions
                         </div>
-                    );
-                },
-                enableSorting: false,
-            }),
+                    ),
+                    cell: (info) => {
+                        const auth = info.row.original;
+
+                        // Handle course navigation
+                        const handleCourseAction = (
+                            action: "continue" | "start" | "review"
+                        ) => {
+                            console.log(
+                                `🎓 ${action} button clicked for course:`,
+                                {
+                                    courseAuth: auth.id,
+                                    courseId: auth.course_id,
+                                    action: action,
+                                }
+                            );
+
+                            // Navigate to course with specific courseAuth ID
+                            const targetUrl = `/classroom/${auth.id}`;
+                            console.log(`🎓 Navigating to: ${targetUrl}`);
+                            window.location.href = targetUrl;
+                        };
+
+                        return (
+                            <div className="text-center">
+                                {auth.start_date && !auth.completed_at && (
+                                    <button
+                                        className="btn btn-primary btn-sm shadow-sm fw-bold px-3 py-2"
+                                        style={{
+                                            borderRadius: "8px",
+                                            background:
+                                                "linear-gradient(45deg, #007bff, #0056b3)",
+                                            border: "none",
+                                            transition: "all 0.3s ease",
+                                        }}
+                                        onClick={() =>
+                                            handleCourseAction("continue")
+                                        }
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform =
+                                                "translateY(-2px)";
+                                            e.currentTarget.style.boxShadow =
+                                                "0 6px 16px rgba(0,123,255,0.4)";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform =
+                                                "translateY(0)";
+                                            e.currentTarget.style.boxShadow =
+                                                "0 2px 4px rgba(0,0,0,0.1)";
+                                        }}
+                                    >
+                                        <i className="fas fa-play me-2"></i>
+                                        Continue
+                                    </button>
+                                )}
+                                {!auth.start_date && (
+                                    <button
+                                        className="btn btn-success btn-sm shadow-sm fw-bold px-3 py-2"
+                                        style={{
+                                            borderRadius: "8px",
+                                            background:
+                                                "linear-gradient(45deg, #28a745, #1e7e34)",
+                                            border: "none",
+                                            transition: "all 0.3s ease",
+                                        }}
+                                        onClick={() =>
+                                            handleCourseAction("start")
+                                        }
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform =
+                                                "translateY(-2px)";
+                                            e.currentTarget.style.boxShadow =
+                                                "0 6px 16px rgba(40,167,69,0.4)";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform =
+                                                "translateY(0)";
+                                            e.currentTarget.style.boxShadow =
+                                                "0 2px 4px rgba(0,0,0,0.1)";
+                                        }}
+                                    >
+                                        <i className="fas fa-rocket me-2"></i>
+                                        Start
+                                    </button>
+                                )}
+                                {auth.completed_at && (
+                                    <button
+                                        className="btn btn-info btn-sm shadow-sm fw-bold px-3 py-2"
+                                        style={{
+                                            borderRadius: "8px",
+                                            background:
+                                                "linear-gradient(45deg, #17a2b8, #117a8b)",
+                                            border: "none",
+                                            transition: "all 0.3s ease",
+                                        }}
+                                        onClick={() =>
+                                            handleCourseAction("review")
+                                        }
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform =
+                                                "translateY(-2px)";
+                                            e.currentTarget.style.boxShadow =
+                                                "0 6px 16px rgba(23,162,184,0.4)";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform =
+                                                "translateY(0)";
+                                            e.currentTarget.style.boxShadow =
+                                                "0 2px 4px rgba(0,0,0,0.1)";
+                                        }}
+                                    >
+                                        <i className="fas fa-eye me-2"></i>
+                                        Review
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    },
+                    enableSorting: false,
+                });,
         ],
         [courseAuths]
     );
