@@ -1,23 +1,20 @@
 /**
  * Classroom Component Props
- * 
+ *
  * Following React Types & Interfaces Rules:
- * - type = single-dimension props or atomic aliases  
+ * - type = single-dimension props or atomic aliases
  * - interface = multi-field shapes (domain models)
  * - Props end with Props
  */
 
-import type { 
+import type {
     UserId,
-    StudentType, 
-    InstructorType, 
-    CourseAuthType 
+    StudentType,
+    InstructorType,
+    CourseAuthType,
 } from "../students.types";
 
-import type { 
-    CourseDateType,
-    ClassroomSessionShape
-} from "../classroom";
+import type { CourseDateType, ClassroomSessionShape } from "../classroom";
 
 // =============================================================================
 // COMPONENT PROPS (type)
@@ -28,6 +25,7 @@ export type SchoolDashboardProps = {
     instructor: InstructorType;
     courseAuths: CourseAuthType[];
     courseDates: CourseDateType[];
+    onBackToDashboard?: () => void;
 };
 
 export type SchoolDashboardTitleBarProps = {
@@ -35,6 +33,7 @@ export type SchoolDashboardTitleBarProps = {
     subtitle?: string;
     icon?: React.ReactNode;
     className?: string;
+    onBackToDashboard?: () => void;
 };
 
 export type SchoolNavBarProps = {

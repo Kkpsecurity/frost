@@ -46,7 +46,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
             name: `${student.fname} ${student.lname}`,
             fullname: `${student.fname} ${student.lname}`,
             is_active: true,
-            role_id: 5,
+            role_id: 5 as 5,
             use_gravatar: false,
             email_opt_in: false,
             created_at: new Date().toISOString(),
@@ -62,7 +62,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
             name: "Instructor Name",
             fullname: "Instructor Name",
             is_active: true,
-            role_id: 2,
+            role_id: 2 as 2, // Ensure role_id is typed as one of the allowed values
             use_gravatar: false,
             email_opt_in: false,
             created_at: new Date().toISOString(),
@@ -91,32 +91,25 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
             is_active: !selectedCourse.disabled_at,
             is_expired: false,
             is_failed: false,
+            created_at:
+                typeof selectedCourse.created_at === "string"
+                    ? selectedCourse.created_at
+                    : new Date(selectedCourse.created_at).toISOString(),
+            updated_at:
+                typeof selectedCourse.updated_at === "string"
+                    ? selectedCourse.updated_at
+                    : new Date(selectedCourse.updated_at).toISOString(),
         };
 
         return (
             <div className="classroom-container">
-                {/* Back to Dashboard Button */}
-                <div className="container-fluid mb-3">
-                    <div className="row">
-                        <div className="col-12">
-                            <button
-                                className="btn btn-outline-light me-3"
-                                onClick={handleBackToDashboard}
-                                style={{ borderRadius: "8px" }}
-                            >
-                                <i className="fas fa-arrow-left me-2"></i>
-                                Back to Dashboard
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* School Dashboard Component */}
+                {/* Classroom content will go here */}
                 <SchoolDashboard
                     student={studentForClassroom}
                     instructor={instructor}
-                    courseAuths={courseAuthForClassroom}
-                    courseDates={[]} // Empty for now, can add course dates later
+                    courseAuths={[courseAuthForClassroom]}
+                    courseDates={[]}
+                    onBackToDashboard={handleBackToDashboard}
                 />
             </div>
         );
