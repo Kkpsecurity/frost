@@ -325,7 +325,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 },
                 enableSorting: false,
             }),
-                columnHelper.display({
+            columnHelper.display({
                     id: "actions",
                     header: () => (
                         <div
@@ -454,7 +454,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         );
                     },
                     enableSorting: false,
-                });,
+                });
         ],
         [courseAuths]
     );
