@@ -19,7 +19,7 @@ export default defineConfig({
                 "resources/js/modules/site.js",
 
                 // Laravel JavaScript components
-                "resources/js/components/alert-manager.js",
+                "resources/js/alert-manager.js",
 
                 // React Components (proper path)
                 "resources/js/React/Components/UploadModalManager.tsx",
