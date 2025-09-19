@@ -1,17 +1,62 @@
 import React, { useState } from "react";
+import { LessonsData, LessonProgressData } from "../types/LaravelProps";
 
 const StudentSidebar = ({
     instructor,
     classroomStatus,
+    lessons,
+    hasLessons = false,
+    isOnline = false,
+    selectedCourseAuthId = null,
 }: {
     instructor: { fname: string; lname: string } | null;
     classroomStatus: string;
+    lessons?: LessonsData;
+    hasLessons?: boolean;
+    isOnline?: boolean;
+    selectedCourseAuthId?: number | null;
 }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const toggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
     };
+
+    const handleLessonClick = (lesson: LessonProgressData) => {
+        // TODO: Implement lesson navigation
+        console.log("Opening lesson:", lesson.title, "ID:", lesson.id);
+        // This would typically navigate to the lesson page or open a modal
+        // For now, we'll just log it
+    };
+
+    // Filter lessons to only show the selected course if in course dashboard
+    const filteredLessons = React.useMemo(() => {
+        if (!lessons || !hasLessons) return {};
+
+        // If we have a selected course auth ID, filter to only that course
+        if (selectedCourseAuthId) {
+            const courseAuthKey = selectedCourseAuthId.toString();
+            if (lessons[courseAuthKey]) {
+                return { [courseAuthKey]: lessons[courseAuthKey] };
+            }
+            return {}; // Selected course not found
+        }
+
+        // If no specific course selected, show all lessons
+        return lessons;
+    }, [lessons, selectedCourseAuthId, hasLessons]);
+
+    // Debug logging
+    console.log("🎯 StudentSidebar props:", {
+        hasLessons,
+        lessons,
+        lessonsKeys: lessons ? Object.keys(lessons) : [],
+        selectedCourseAuthId,
+        filteredLessons,
+        filteredLessonsKeys: Object.keys(filteredLessons),
+        isOnline,
+        classroomStatus,
+    });
     return (
         <div
             className="dashboard-side bg-dark"
@@ -91,28 +136,212 @@ const StudentSidebar = ({
                 </div>
             )}
 
-            {/* Collapsed state - show only icons */}
-            {isCollapsed && (
-                <div className="d-flex flex-column align-items-center py-3">
-                    <div
-                        className="text-center mb-3"
-                        title={`Instructor: ${instructor?.fname} ${instructor?.lname}`}
-                    >
-                        <i className="fas fa-chalkboard-teacher text-white fs-4"></i>
+            {/* Course Lessons Section - Dynamic Data */}
+            {!isCollapsed &&
+                hasLessons &&
+                Object.keys(filteredLessons).length > 0 && (
+                    <div className="border-top border-secondary">
+                        <div className="p-0">
+                            {/* Dynamic lessons from real course data */}
+                            {Object.entries(filteredLessons).map(
+                                ([courseAuthId, courseData]) => {
+                                    const lessonsToShow =
+                                        isOnline && courseData.current_day_only
+                                            ? courseData.lessons.filter(
+                                                  (lesson) =>
+                                                      lesson.is_completed ===
+                                                      false // Show incomplete lessons for current day
+                                              )
+                                            : courseData.lessons;
+
+                                    return (
+                                        <div key={courseAuthId}>
+                                            {/* Course Title Header */}
+                                            {Object.keys(filteredLessons)
+                                                .length > 1 && (
+                                                <div className="bg-dark p-2 border-bottom border-secondary">
+                                                    <small className="text-info fw-bold">
+                                                        <i className="fas fa-book me-1"></i>
+                                                        {
+                                                            courseData.course_title
+                                                        }
+                                                    </small>
+                                                </div>
+                                            )}
+
+                                            {/* Lessons List */}
+                                            {lessonsToShow.map(
+                                                (lesson, index) => (
+                                                    <div
+                                                        key={lesson.id}
+                                                        className={`lesson-item ${
+                                                            lesson.is_completed
+                                                                ? "bg-success bg-opacity-20"
+                                                                : "bg-secondary bg-opacity-20"
+                                                        } ${
+                                                            index <
+                                                            lessonsToShow.length -
+                                                                1
+                                                                ? "border-bottom border-secondary"
+                                                                : ""
+                                                        }`}
+                                                        style={{
+                                                            margin: "0",
+                                                            borderRadius: "0",
+                                                        }}
+                                                    >
+                                                        <div className="p-3">
+                                                            <div className="d-flex justify-content-between align-items-start">
+                                                                <div className="flex-grow-1">
+                                                                    <h6 className="mb-1 fw-bold text-white">
+                                                                        {
+                                                                            lesson.title
+                                                                        }
+                                                                    </h6>
+                                                                    <div className="d-flex flex-wrap gap-2">
+                                                                        <small className="text-muted">
+                                                                            Credit
+                                                                            Minutes:{" "}
+                                                                            {
+                                                                                lesson.credit_minutes
+                                                                            }
+                                                                        </small>
+                                                                        {lesson.video_seconds >
+                                                                            0 && (
+                                                                            <small className="text-muted">
+                                                                                •
+                                                                                Video:{" "}
+                                                                                {Math.round(
+                                                                                    lesson.video_seconds /
+                                                                                        60
+                                                                                )}
+                                                                                min
+                                                                            </small>
+                                                                        )}
+                                                                        <small className="text-muted">
+                                                                            •
+                                                                            Unit:{" "}
+                                                                            {
+                                                                                lesson.unit_title
+                                                                            }
+                                                                        </small>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="d-flex align-items-center gap-2">
+                                                                    {lesson.is_completed && (
+                                                                        <i className="fas fa-check-circle text-success"></i>
+                                                                    )}
+                                                                    <button
+                                                                        className={`btn btn-sm ms-2 ${
+                                                                            lesson.is_completed
+                                                                                ? "btn-outline-success"
+                                                                                : "btn-outline-info"
+                                                                        }`}
+                                                                        style={{
+                                                                            minWidth:
+                                                                                "60px",
+                                                                        }}
+                                                                        onClick={() =>
+                                                                            handleLessonClick(
+                                                                                lesson
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {lesson.is_completed
+                                                                            ? "Review"
+                                                                            : "Start"}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+                                    );
+                                }
+                            )}
+                        </div>
                     </div>
-                    <div
-                        className="text-center"
-                        title={`Status: ${
-                            classroomStatus === "active" ? "Active" : "Inactive"
-                        }`}
-                    >
-                        <i
-                            className={`fas fa-circle ${
-                                classroomStatus === "active"
-                                    ? "text-success"
-                                    : "text-secondary"
-                            }`}
-                        ></i>
+                )}
+
+            {/* Fallback: No Lessons Available */}
+            {!isCollapsed && !hasLessons && (
+                <div className="border-top border-secondary">
+                    <div className="p-4 text-center">
+                        <div className="text-muted">
+                            <i
+                                className="fas fa-book-open mb-2"
+                                style={{ fontSize: "2rem" }}
+                            ></i>
+                            <p className="mb-0">No lessons available</p>
+                            <small>
+                                Course content will appear here when available
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Collapsed state - show lesson initials from dynamic data */}
+            {isCollapsed &&
+                hasLessons &&
+                Object.keys(filteredLessons).length > 0 && (
+                    <div className="d-flex flex-column align-items-center py-2">
+                        {/* Dynamic lesson initials */}
+                        {Object.entries(filteredLessons).flatMap(
+                            ([courseAuthId, courseData]) => {
+                                const lessonsToShow =
+                                    isOnline && courseData.current_day_only
+                                        ? courseData.lessons.filter(
+                                              (lesson) =>
+                                                  lesson.is_completed === false
+                                          )
+                                        : courseData.lessons;
+
+                                return lessonsToShow.map((lesson, index) => (
+                                    <div
+                                        key={`${courseAuthId}-${lesson.id}`}
+                                        className={`lesson-initial ${
+                                            lesson.is_completed
+                                                ? "bg-success"
+                                                : "bg-secondary"
+                                        } text-white text-center ${
+                                            index < lessonsToShow.length - 1
+                                                ? "mb-1"
+                                                : ""
+                                        }`}
+                                        style={{
+                                            width: "32px",
+                                            height: "32px",
+                                            lineHeight: "32px",
+                                            fontSize: "14px",
+                                            fontWeight: "bold",
+                                            cursor: "pointer",
+                                        }}
+                                        title={`${lesson.title} (${
+                                            lesson.is_completed
+                                                ? "Completed"
+                                                : "Pending"
+                                        })`}
+                                        onClick={() =>
+                                            handleLessonClick(lesson)
+                                        }
+                                    >
+                                        {lesson.title.charAt(0).toUpperCase()}
+                                    </div>
+                                ));
+                            }
+                        )}
+                    </div>
+                )}
+
+            {/* Collapsed state - no lessons fallback */}
+            {isCollapsed && !hasLessons && (
+                <div className="d-flex flex-column align-items-center py-3">
+                    <div className="text-muted text-center">
+                        <i className="fas fa-book-open mb-2"></i>
+                        <small className="d-block">No lessons available</small>
                     </div>
                 </div>
             )}

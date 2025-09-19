@@ -73,6 +73,7 @@ const StudentDataLayer: React.FC = () => {
         "🎓 StudentDataLayer: studentData.course_auths:",
         studentData.course_auths
     );
+
     // Student exists - render dashboard (will handle empty course_auths internally)
     return (
         <StudentDashboard
@@ -80,6 +81,7 @@ const StudentDataLayer: React.FC = () => {
             courseAuths={studentData.course_auths || []}
             lessons={studentData.lessons}
             hasLessons={studentData.has_lessons || false}
+            selectedCourseAuthId={studentData.selected_course_auth_id || null}
         />
     );
 };

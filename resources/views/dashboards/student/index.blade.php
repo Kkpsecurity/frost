@@ -20,7 +20,7 @@
                             <small>{{ Auth::user()->last_login_at ? Auth::user()->last_login_at->format('M j, Y g:i A') : 'First time' }}</small>
                         </div>
                         <div class="dropdown">
-                            <button class="btn btn-outline-light btn-sm dropdown-toggle" 
+                            <button class="btn btn-outline-light btn-sm dropdown-toggle"
                                     data-toggle="dropdown">
                                 <i class="fas fa-user-circle"></i>
                             </button>
@@ -32,7 +32,7 @@
                                     <i class="fas fa-cog"></i> Settings
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" 
+                                <a class="dropdown-item" href="#"
                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="fas fa-sign-out-alt"></i> Logout
                                 </a>
@@ -66,7 +66,7 @@
                                     <small class="text-muted">{{ $currentCourse['code'] ?? 'SEC-101' }}</small>
                                     <div class="mt-2">
                                         <div class="progress" style="height: 6px;">
-                                            <div class="progress-bar bg-success" 
+                                            <div class="progress-bar bg-success"
                                                  style="width: {{ $currentCourse['progress'] ?? 45 }}%"></div>
                                         </div>
                                         <small class="text-muted">{{ $currentCourse['progress'] ?? 45 }}% complete • {{ $currentCourse['lessons_completed'] ?? 3 }}/{{ $currentCourse['total_lessons'] ?? 8 }} lessons</small>
@@ -78,7 +78,88 @@
                         {{-- Available Lessons --}}
                         <div class="lessons-list">
                             <div class="p-3 border-bottom">
-                                <h6 class="text-muted mb-2">AVAILABLE LESSONS</h6>
+                                <h6 class="text-muted mb-2">COURSE LESSONS</h6>
+                            </div>
+                            {{-- Sample lessons matching the screenshot style --}}
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Security Officer And Private Investigator Licensure</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 60</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom bg-success bg-opacity-10">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Definitions And Legal Concepts</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 180</small>
+                                    </div>
+                                    <button class="btn btn-outline-success btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Use Of Force</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 180</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Firearms Safety</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 60</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Firearms Familiarization</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 60</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Fundamentals Of Marksmanship</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 120</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Firearms Mechanics</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 120</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
+                            </div>
+                            <div class="lesson-item p-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Malfunctions</strong>
+                                        <br>
+                                        <small class="text-muted">Credit Minutes: 60</small>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm">View</button>
+                                </div>
                             </div>
                             @forelse($lessons ?? [] as $index => $lesson)
                                 <div class="lesson-item p-3 border-bottom {{ $lesson['status'] === 'current' ? 'bg-light' : '' }}">
@@ -108,7 +189,7 @@
                                             </div>
                                             @if($lesson['status'] === 'current' || $lesson['status'] === 'available')
                                                 <div class="mt-1">
-                                                    <a href="{{ $lesson['url'] ?? '#' }}" 
+                                                    <a href="{{ $lesson['url'] ?? '#' }}"
                                                        class="btn btn-sm btn-outline-primary">
                                                         {{ $lesson['status'] === 'current' ? 'Continue' : 'Start' }}
                                                     </a>
@@ -130,7 +211,7 @@
                             <h6 class="text-muted mb-2">RESOURCES</h6>
                             <div class="list-group list-group-flush">
                                 @forelse($resources ?? [] as $resource)
-                                    <a href="{{ $resource['url'] ?? '#' }}" 
+                                    <a href="{{ $resource['url'] ?? '#' }}"
                                        class="list-group-item list-group-item-action py-2 border-0">
                                         <i class="fas {{ $resource['icon'] ?? 'fa-file' }} text-info mr-2"></i>
                                         {{ $resource['title'] ?? 'Resource' }}
@@ -179,7 +260,7 @@
                                 <h3>{{ $overallProgress ?? '45' }}%</h3>
                                 <p class="mb-0">Overall Progress</p>
                                 <div class="progress mt-2 bg-white bg-opacity-25">
-                                    <div class="progress-bar bg-white" 
+                                    <div class="progress-bar bg-white"
                                          style="width: {{ $overallProgress ?? 45 }}%"></div>
                                 </div>
                             </div>
@@ -206,7 +287,7 @@
                                     <div class="current-activity">
                                         <h6>{{ $currentActivity['title'] ?? 'Introduction to Cybersecurity' }}</h6>
                                         <p class="text-muted mb-3">{{ $currentActivity['description'] ?? 'Learn the fundamentals of cybersecurity and best practices.' }}</p>
-                                        
+
                                         {{-- Activity Content --}}
                                         <div class="activity-content bg-light p-4 rounded">
                                             @if($currentActivity['type'] === 'video')
@@ -251,7 +332,7 @@
                                                 <small class="text-muted">{{ $currentActivity['progress'] ?? 30 }}%</small>
                                             </div>
                                             <div class="progress">
-                                                <div class="progress-bar bg-success" 
+                                                <div class="progress-bar bg-success"
                                                      style="width: {{ $currentActivity['progress'] ?? 30 }}%"></div>
                                             </div>
                                         </div>
@@ -348,57 +429,57 @@
         .title-bar {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .sticky-top {
             z-index: 1020;
         }
-        
+
         .lesson-item {
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        
+
         .lesson-item:hover {
             background-color: #f8f9fa !important;
         }
-        
+
         .lesson-status {
             min-width: 20px;
         }
-        
+
         .current-course {
             background: white;
             border-radius: 8px;
             padding: 15px;
             border: 2px solid #17a2b8;
         }
-        
+
         .activity-content {
             border-left: 4px solid #28a745;
         }
-        
+
         .assignment-item {
             transition: transform 0.2s ease;
         }
-        
+
         .assignment-item:hover {
             transform: translateX(5px);
         }
-        
+
         .bg-gradient-primary {
             background: linear-gradient(45deg, #007bff, #0056b3);
         }
-        
+
         .video-container {
             border-radius: 8px;
             overflow: hidden;
         }
-        
+
         @media (max-width: 768px) {
             .title-bar .col-md-6 {
                 text-align: center !important;
             }
-            
+
             .title-bar .d-flex {
                 justify-content: center !important;
             }
@@ -418,7 +499,7 @@
                     }
                 }
             });
-            
+
             // Handle activity interactions
             $('.btn-success, .btn-info, .btn-primary').on('click', function(e) {
                 if ($(this).attr('href') === undefined) {
@@ -427,7 +508,7 @@
                     console.log('Activity action triggered');
                 }
             });
-            
+
             // Auto-save progress periodically
             setInterval(function() {
                 // Save current progress to backend

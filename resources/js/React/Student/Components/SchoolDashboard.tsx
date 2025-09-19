@@ -11,7 +11,12 @@ const SchoolDashboard: React.FC<SchoolDashboardProps> = ({
     courseAuths,
     courseDates,
     onBackToDashboard,
+    lessons,
+    hasLessons = false,
 }) => {
+    // Get the selected course auth ID (when in course dashboard, there should be only one)
+    const selectedCourseAuthId =
+        courseAuths.length > 0 ? courseAuths[0].id : null;
     return (
         <div className="dashboard-content">
             <SchoolDashboardTitleBar
@@ -27,6 +32,10 @@ const SchoolDashboard: React.FC<SchoolDashboardProps> = ({
                     classroomStatus={
                         courseDates.length > 0 ? "active" : "inactive"
                     }
+                    lessons={lessons}
+                    hasLessons={hasLessons}
+                    isOnline={courseDates.length > 0}
+                    selectedCourseAuthId={selectedCourseAuthId}
                 />
                 <div className="flex-fill d-flex flex-column frost-secondary-bg">
                     {/* Navigation Tabs */}

@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 use Exception;
 
+use App\Classes\CourseAuthObj;
+use App\Classes\CourseUnitObj;
+
 /**
  * Student Dashboard Service
  *
@@ -193,15 +196,15 @@ class StudentDashboardService
     }
 
     /**
-     * Get lessons for a specific course when courseDates is empty (self-paced mode)
-     * Uses CourseAuth -> Course -> CourseUnits -> Lessons pattern
+     * Get lessons for a specific course using CourseAuthObj and CourseUnitObj helper classes
+     * REFACTORED: Now leverages existing business logic classes for better integration
      *
      * @param \App\Models\CourseAuth $courseAuth
      * @return array
      */
     public function getLessonsForCourse($courseAuth): array
     {
-        if (!$courseAuth || !$courseAuth->Course) {
+        if (!$courseAuth) {
             return [
                 'lessons' => collect(),
                 'modality' => 'unknown',
@@ -210,33 +213,38 @@ class StudentDashboardService
         }
 
         try {
-            $course = $courseAuth->Course;
-
-            // Get all course units using proper model method
-            $courseUnits = $course->GetCourseUnits();
+            // Use CourseAuthObj helper class for better business logic integration
+            $courseAuthObj = new CourseAuthObj($courseAuth);
+            $courseUnitObjs = $courseAuthObj->CourseUnitObjs();
             $allLessons = collect();
 
-            Log::info('StudentDashboardService: Getting lessons for course', [
-                'course_id' => $course->id,
-                'course_title' => $course->title,
-                'course_units_count' => $courseUnits->count(),
+            Log::info('StudentDashboardService: Getting lessons using CourseAuthObj', [
                 'course_auth_id' => $courseAuth->id,
+                'course_id' => $courseAuth->course_id,
+                'course_units_count' => $courseUnitObjs->count(),
             ]);
 
-            foreach ($courseUnits as $unit) {
-                // Get lessons for this unit
-                $unitLessons = $unit->GetLessons();
+            foreach ($courseUnitObjs as $courseUnitObj) {
+                $unit = $courseUnitObj->CourseUnit();
+                $unitLessons = $courseUnitObj->CourseUnitLessons();
 
-                Log::info('StudentDashboardService: Processing course unit', [
+                                Log::info('StudentDashboardService: Processing course unit with CourseUnitObj', [
                     'unit_id' => $unit->id,
                     'unit_title' => $unit->title,
                     'unit_ordering' => $unit->ordering,
-                    'lessons_count' => $unitLessons->count(),
+                    'course_unit_lessons_count' => $unitLessons->count(),
                 ]);
 
-                foreach ($unitLessons as $lesson) {
-                    // Check if student has progress on this lesson
-                    $isCompleted = $this->isLessonCompleted($courseAuth, $unit, $lesson);
+                foreach ($unitLessons as $courseUnitLesson) {
+                    $lesson = $courseUnitLesson->Lesson;
+
+                    if (!$lesson) {
+                        continue; // Skip if lesson is missing
+                    }
+
+                    // Get student units for this course auth and unit (uses existing helper method)
+                    $studentUnits = $courseUnitObj->StudentUnits($courseAuth);
+                    $isCompleted = $this->isLessonCompletedFromStudentUnits($studentUnits, $lesson);
 
                     $allLessons->push([
                         'id' => $lesson->id,
@@ -244,22 +252,24 @@ class StudentDashboardService
                         'unit_id' => $unit->id,
                         'unit_title' => $unit->title,
                         'unit_ordering' => $unit->ordering,
-                        'credit_minutes' => $lesson->credit_minutes ?? 0,
+                        'credit_minutes' => $courseUnitLesson->progress_minutes ?? $lesson->credit_minutes ?? 0,
                         'video_seconds' => $lesson->video_seconds ?? 0,
                         'is_completed' => $isCompleted,
+                        'ordering' => $courseUnitLesson->ordering ?? 0,
                     ]);
                 }
             }
 
-            // Sort lessons by unit ordering, then by lesson ID
+            // Sort lessons by unit ordering, then by lesson ordering
             $sortedLessons = $allLessons->sortBy([
                 ['unit_ordering', 'asc'],
+                ['ordering', 'asc'],
                 ['id', 'asc']
             ]);
 
-            Log::info('StudentDashboardService: Lessons retrieved successfully', [
-                'course_id' => $course->id,
-                'total_units' => $courseUnits->count(),
+            Log::info('StudentDashboardService: Lessons retrieved using helper classes', [
+                'course_auth_id' => $courseAuth->id,
+                'total_units' => $courseUnitObjs->count(),
                 'total_lessons' => $allLessons->count(),
                 'completed_lessons' => $allLessons->where('is_completed', true)->count(),
             ]);
@@ -271,7 +281,7 @@ class StudentDashboardService
             ];
 
         } catch (Exception $e) {
-            Log::error('StudentDashboardService: Error getting lessons for course', [
+            Log::error('StudentDashboardService: Error getting lessons with helper classes', [
                 'course_auth_id' => $courseAuth->id ?? 'unknown',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -319,6 +329,47 @@ class StudentDashboardService
                 'course_auth_id' => $courseAuth->id,
                 'unit_id' => $unit->id,
                 'lesson_id' => $lesson->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false; // Default to not completed on error
+        }
+    }
+
+    /**
+     * Check if a lesson is completed using existing StudentUnits collection
+     * This is more efficient than the individual isLessonCompleted method
+     * when working with CourseUnitObj helper classes
+     *
+     * @param \Illuminate\Support\Collection $studentUnits
+     * @param \App\Models\Lesson $lesson
+     * @return bool
+     */
+    private function isLessonCompletedFromStudentUnits($studentUnits, $lesson): bool
+    {
+        try {
+            if ($studentUnits->isEmpty()) {
+                return false; // No student units = not started
+            }
+
+            // Look through all student units for this lesson completion
+            foreach ($studentUnits as $studentUnit) {
+                $studentLesson = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
+                    ->where('lesson_id', $lesson->id)
+                    ->where('completed_at', '!=', null)
+                    ->exists();
+
+                if ($studentLesson) {
+                    return true; // Found completion in any student unit
+                }
+            }
+
+            return false; // No completion found
+
+        } catch (Exception $e) {
+            Log::error('StudentDashboardService: Error checking lesson completion from student units', [
+                'lesson_id' => $lesson->id,
+                'student_units_count' => $studentUnits->count(),
                 'error' => $e->getMessage(),
             ]);
 

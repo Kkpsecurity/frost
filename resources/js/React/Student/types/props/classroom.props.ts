@@ -26,6 +26,8 @@ export type SchoolDashboardProps = {
     courseAuths: CourseAuthType[];
     courseDates: CourseDateType[];
     onBackToDashboard?: () => void;
+    lessons?: import("../LaravelProps").LessonsData;
+    hasLessons?: boolean;
 };
 
 export type SchoolDashboardTitleBarProps = {

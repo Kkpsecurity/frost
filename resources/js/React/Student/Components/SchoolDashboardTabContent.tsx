@@ -1,7 +1,5 @@
 import React from "react";
-import { 
-    SchoolDashboardTabContentProps 
-} from "../types/props/classroom.props";
+import { SchoolDashboardTabContentProps } from "../types/props/classroom.props";
 
 const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
     student,
@@ -18,108 +16,313 @@ const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
             >
                 <div className="row">
                     {/* Course Details Section */}
-                    <div className="col-md-8">
-                        <div className="dashboard-card">
-                            <div className="dashboard-card-header">
-                                <h5 className="dashboard-card-title">
+                    <div className="col-md-6">
+                        <div
+                            className="card shadow-sm border-0 mb-4"
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, var(--frost-secondary-color), var(--frost-primary-color))",
+                                color: "white",
+                            }}
+                        >
+                            <div
+                                className="card-header border-0"
+                                style={{ background: "transparent" }}
+                            >
+                                <h5 className="mb-0 d-flex align-items-center">
+                                    <i
+                                        className="fas fa-graduation-cap me-2"
+                                        style={{
+                                            color: "var(--frost-highlight-color)",
+                                        }}
+                                    ></i>
                                     Course Details
                                 </h5>
-                                <div className="dashboard-card-icon success">
-                                    <i className="fas fa-graduation-cap"></i>
-                                </div>
                             </div>
-                            <div className="dashboard-card-body">
-                                <p className="text-success mb-3">
-                                    <i className="fas fa-circle me-2"></i>
-                                    Classroom is currently ONLINE
-                                </p>
-                                
-                                {/* Instructor Information */}
-                                {instructor && (
-                                    <div className="mb-3">
-                                        <strong>Instructor:</strong>{" "}
-                                        {instructor.fname} {instructor.lname}
-                                        <br />
-                                        <small className="text-muted">
-                                            {instructor.email}
-                                        </small>
+                            <div className="card-body">
+                                {courseAuths.length > 0 && (
+                                    <div className="course-details">
+                                        {/* Course Title */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Title:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {courseAuths[0].course?.title ||
+                                                    "Course Title"}
+                                            </div>
+                                        </div>
+
+                                        {/* Purchased Date */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Purchased Date:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {courseAuths[0].created_at
+                                                    ? new Date(
+                                                          courseAuths[0].created_at
+                                                      ).toLocaleDateString(
+                                                          "en-US",
+                                                          {
+                                                              month: "2-digit",
+                                                              day: "2-digit",
+                                                              year: "numeric",
+                                                          }
+                                                      ) +
+                                                      " " +
+                                                      new Date(
+                                                          courseAuths[0].created_at
+                                                      ).toLocaleTimeString(
+                                                          "en-US",
+                                                          {
+                                                              hour12: false,
+                                                              hour: "2-digit",
+                                                              minute: "2-digit",
+                                                              second: "2-digit",
+                                                          }
+                                                      )
+                                                    : "N/A"}
+                                            </div>
+                                        </div>
+
+                                        {/* Start Date */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Start Date:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {courseAuths[0].start_date
+                                                    ? new Date(
+                                                          courseAuths[0].start_date
+                                                      ).toLocaleDateString(
+                                                          "en-US",
+                                                          {
+                                                              month: "2-digit",
+                                                              day: "2-digit",
+                                                              year: "numeric",
+                                                          }
+                                                      ) + " 00:00:00"
+                                                    : "N/A"}
+                                            </div>
+                                        </div>
+
+                                        {/* Expires Date */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Expires Date:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {courseAuths[0].expire_date
+                                                    ? new Date(
+                                                          courseAuths[0].expire_date
+                                                      ).toLocaleDateString(
+                                                          "en-US",
+                                                          {
+                                                              month: "2-digit",
+                                                              day: "2-digit",
+                                                              year: "numeric",
+                                                          }
+                                                      )
+                                                    : "Open"}
+                                            </div>
+                                        </div>
+
+                                        {/* Completed Date */}
+                                        <div className="row mb-0">
+                                            <div className="col-4">
+                                                <strong>Completed Date:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {courseAuths[0].completed_at
+                                                    ? new Date(
+                                                          courseAuths[0].completed_at
+                                                      ).toLocaleDateString(
+                                                          "en-US",
+                                                          {
+                                                              month: "2-digit",
+                                                              day: "2-digit",
+                                                              year: "numeric",
+                                                          }
+                                                      )
+                                                    : "Pending"}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
-
-                                {/* Scheduled Sessions */}
-                                <div className="mb-3">
-                                    <strong>Scheduled Sessions:</strong>
-                                    <div className="mt-2">
-                                        {courseDates.map((date, index) => (
-                                            <div
-                                                key={date.id || index}
-                                                className="border rounded p-2 mb-2"
-                                                style={{
-                                                    backgroundColor: "#f8f9fa",
-                                                }}
-                                            >
-                                                <div className="d-flex justify-content-between">
-                                                    <span>
-                                                        <i className="fas fa-calendar me-2"></i>
-                                                        {new Date(
-                                                            date.start_date
-                                                        ).toLocaleDateString()}
-                                                    </span>
-                                                    <span>
-                                                        {new Date(
-                                                            date.start_date
-                                                        ).toLocaleTimeString()}{" "}
-                                                        -
-                                                        {new Date(
-                                                            date.end_date
-                                                        ).toLocaleTimeString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="dashboard-card-footer">
-                                <button className="btn btn-success">
-                                    <i className="fas fa-play me-2"></i>
-                                    Join Classroom Now
-                                </button>
                             </div>
                         </div>
                     </div>
 
                     {/* Student Info Section */}
-                    <div className="col-md-4">
-                        <div className="dashboard-card">
-                            <div className="dashboard-card-header">
-                                <h6 className="dashboard-card-title">
+                    <div className="col-md-6">
+                        <div
+                            className="card shadow-sm border-0 mb-4"
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, var(--frost-secondary-color), var(--frost-primary-color))",
+                                color: "white",
+                            }}
+                        >
+                            <div
+                                className="card-header border-0"
+                                style={{ background: "transparent" }}
+                            >
+                                <h5 className="mb-0 d-flex align-items-center">
+                                    <i
+                                        className="fas fa-user me-2"
+                                        style={{
+                                            color: "var(--frost-highlight-color)",
+                                        }}
+                                    ></i>
                                     Student Info
-                                </h6>
-                                <div className="dashboard-card-icon primary">
-                                    <i className="fas fa-user"></i>
-                                </div>
+                                </h5>
                             </div>
-                            <div className="dashboard-card-body">
+                            <div className="card-body">
                                 {student ? (
-                                    <div>
-                                        <p>
-                                            <strong>Name:</strong>{" "}
-                                            {student.fname} {student.lname}
-                                        </p>
-                                        <p>
-                                            <strong>Email:</strong>{" "}
-                                            {student.email}
-                                        </p>
-                                        <p>
-                                            <strong>ID:</strong> {student.id}
-                                        </p>
+                                    <div className="student-details">
+                                        {/* Name */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Name:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {student.fname} {student.lname}
+                                            </div>
+                                        </div>
+
+                                        {/* Email */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Email:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {student.email}
+                                            </div>
+                                        </div>
+
+                                        {/* Initials (derived from name) */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>initials:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {student.fname
+                                                    ?.charAt(0)
+                                                    ?.toUpperCase()}
+                                                {student.lname
+                                                    ?.charAt(0)
+                                                    ?.toUpperCase()}
+                                            </div>
+                                        </div>
+
+                                        {/* Date of Birth (placeholder - would need to be added to student data) */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>dob:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {/* Placeholder - this would come from student profile */}
+                                                1985-04-25
+                                            </div>
+                                        </div>
+
+                                        {/* Suffix (placeholder) */}
+                                        <div className="row mb-3">
+                                            <div className="col-4">
+                                                <strong>Suffix:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {/* Placeholder - this would come from student profile */}
+                                                -
+                                            </div>
+                                        </div>
+
+                                        {/* Phone (placeholder) */}
+                                        <div className="row mb-0">
+                                            <div className="col-4">
+                                                <strong>phone:</strong>
+                                            </div>
+                                            <div className="col-8 text-end">
+                                                {/* Placeholder - this would come from student profile */}
+                                                7272908016
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <p className="text-muted">
                                         No student data available
                                     </p>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Student Lessons Completed Section */}
+                <div className="row mt-4">
+                    <div className="col-12">
+                        <div
+                            className="card shadow-sm border-0"
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, var(--frost-secondary-color), var(--frost-primary-color))",
+                                color: "white",
+                            }}
+                        >
+                            <div
+                                className="card-header border-0"
+                                style={{ background: "transparent" }}
+                            >
+                                <h5 className="mb-0 d-flex align-items-center">
+                                    <i
+                                        className="fas fa-chart-line me-2"
+                                        style={{
+                                            color: "var(--frost-highlight-color)",
+                                        }}
+                                    ></i>
+                                    Student Lessons Completed
+                                </h5>
+                            </div>
+                            <div className="card-body">
+                                <div className="row">
+                                    <div className="col-6">
+                                        <strong>All lessons</strong>
+                                    </div>
+                                    <div className="col-6 text-end">
+                                        {/* Placeholder values - these would come from course progress data */}
+                                        <span className="badge bg-light text-dark px-3 py-2">
+                                            2 out of 14
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="mt-3">
+                                    <div
+                                        className="progress"
+                                        style={{
+                                            height: "8px",
+                                            background: "rgba(255,255,255,0.3)",
+                                        }}
+                                    >
+                                        <div
+                                            className="progress-bar"
+                                            role="progressbar"
+                                            style={{
+                                                width: `${(2 / 14) * 100}%`,
+                                                background:
+                                                    "var(--frost-highlight-color)",
+                                            }}
+                                            aria-valuenow={2}
+                                            aria-valuemin={0}
+                                            aria-valuemax={14}
+                                        ></div>
+                                    </div>
+                                    <small className="text-light mt-1 d-block">
+                                        {Math.round((2 / 14) * 100)}% Complete
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>

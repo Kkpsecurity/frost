@@ -56,23 +56,25 @@ export interface CourseDate {
 }
 
 /**
- * Lesson data structure from backend
+ * Lesson progress data from StudentDashboardService::getLessonsForCourse()
  */
-export interface LessonData {
+export interface LessonProgressData {
     id: number;
     title: string;
-    description?: string;
-    order_column: number;
+    unit_id: number;
+    unit_title: string;
+    unit_ordering: number;
+    credit_minutes: number;
+    video_seconds: number;
     is_completed: boolean;
-    // Add other lesson fields as needed
 }
 
 /**
- * Course lessons data keyed by courseAuth.id
+ * Course lessons data with metadata
  */
 export interface CourseAuthLessons {
-    lessons: LessonData[];
-    modality: string;
+    lessons: LessonProgressData[];
+    modality: string; // 'self_paced' | 'instructor_led' | 'unknown'
     current_day_only: boolean;
     course_title: string;
 }
@@ -91,6 +93,7 @@ export interface StudentDashboardData {
     student: Student | null;
     course_auths: CourseAuth[];
     course_auth_id?: number | null;
+    selected_course_auth_id?: number | null;
     lessons?: LessonsData;
     has_lessons?: boolean;
 }

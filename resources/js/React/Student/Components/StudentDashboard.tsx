@@ -10,6 +10,7 @@ interface StudentDashboardProps {
     courseAuths: CourseAuth[];
     lessons?: LessonsData;
     hasLessons?: boolean;
+    selectedCourseAuthId?: number | null;
 }
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({
@@ -17,6 +18,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
     courseAuths = [],
     lessons,
     hasLessons = false,
+    selectedCourseAuthId = null,
 }) => {
     // Use the custom hook for all dashboard logic
     const {
@@ -33,6 +35,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
         courseAuths,
         lessons,
         hasLessons,
+        selectedCourseAuthId,
     });
 
     // Render classroom dashboard when a course is selected
@@ -110,6 +113,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                     courseAuths={[courseAuthForClassroom]}
                     courseDates={[]}
                     onBackToDashboard={handleBackToDashboard}
+                    lessons={lessons}
+                    hasLessons={hasLessons}
                 />
             </div>
         );

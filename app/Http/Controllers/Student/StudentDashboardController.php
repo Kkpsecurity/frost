@@ -98,26 +98,41 @@ class StudentDashboardController extends Controller
                 'course_auths_type' => get_class($courseAuths)
             ]);
 
-            // Get lesson data for courses when no scheduled classes exist
+            // Get lesson data for ALL courses - both instructor-led and self-paced
             $lessonsData = [];
             $classroomService = new ClassroomDashboardService($user);
             $classroomData = $classroomService->getClassroomData();
 
-            if (empty($classroomData['courseDates']) && !empty($courseAuths)) {
+            // Always fetch lessons for student's courses
+            if (!empty($courseAuths)) {
                 Log::info('StudentDashboardController: Getting lessons for dashboard display', [
                     'user_id' => $user->id,
-                    'course_auths_count' => $courseAuths->count()
+                    'course_auths_count' => $courseAuths->count(),
+                    'has_course_dates' => !empty($classroomData['courseDates']),
+                    'course_dates_count' => count($classroomData['courseDates'] ?? [])
                 ]);
 
                 foreach ($courseAuths as $courseAuth) {
                     $lessons = $studentService->getLessonsForCourse($courseAuth);
                     if (!empty($lessons['lessons']) && $lessons['lessons']->count() > 0) {
+                        // Determine if this course has scheduled dates (instructor-led)
+                        $hasScheduledDates = !empty($classroomData['courseDates']) &&
+                            collect($classroomData['courseDates'])->contains('course_id', $courseAuth->course_id);
+
                         $lessonsData[$courseAuth->id] = [
                             'lessons' => $lessons['lessons']->toArray(),
-                            'modality' => $lessons['modality'],
-                            'current_day_only' => $lessons['current_day_only'],
+                            'modality' => $hasScheduledDates ? 'instructor_led' : 'self_paced',
+                            'current_day_only' => $hasScheduledDates, // Show only current day lessons for instructor-led
                             'course_title' => $courseAuth->Course->title ?? 'Unknown Course',
                         ];
+
+                        Log::info('StudentDashboardController: Added lessons for course', [
+                            'course_auth_id' => $courseAuth->id,
+                            'course_id' => $courseAuth->course_id,
+                            'course_title' => $courseAuth->Course->title ?? 'Unknown',
+                            'lessons_count' => $lessons['lessons']->count(),
+                            'modality' => $lessonsData[$courseAuth->id]['modality']
+                        ]);
                     }
                 }
             }
