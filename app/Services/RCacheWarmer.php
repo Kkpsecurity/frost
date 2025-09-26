@@ -43,7 +43,7 @@ class RCacheWarmer extends ServiceProvider
 
         foreach (self::$preload_models as $model_name) {
             if (! RCache::exists($model_name)) {
-                kkpdebug('RCacheWarmer', "Loading {$model_name}");
+                \kkpdebug('RCacheWarmer', "Loading {$model_name}");
                 RCache::LoadModelCache($model_name, false);
             } else if (RCache::IsStaticModel($model_name)) {
                 RCache::LoadModelCache($model_name, false);

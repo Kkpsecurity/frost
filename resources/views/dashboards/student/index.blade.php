@@ -55,7 +55,7 @@
                             My Courses & Lessons
                         </h5>
                     </div>
-                    <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                    <div class="card-body p-0 thin-scrollbar" style="max-height: 600px; overflow-y: auto;">
                         {{-- Current Course Progress --}}
                         @if(isset($currentCourse))
                             <div class="p-3 border-bottom bg-light">

@@ -52,13 +52,13 @@ class Order extends Model
         'discount_code_id'  => 'integer',
         'total_price'       => 'decimal:2',
 
-        'created_at'        => 'timestamp',
-        'updated_at'        => 'timestamp',
-        'completed_at'      => 'timestamp',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'completed_at' => 'datetime',
 
         'course_auth_id'    => 'integer',
 
-        'refunded_at'       => 'timestamp',
+        'refunded_at' => 'datetime',
         'refunded_by'       => 'integer',
 
     ];
@@ -136,6 +136,79 @@ class Order extends Model
     //
     // helpers
     //
+
+    /**
+     * Get order number attribute (formatted ID)
+     */
+    public function getOrderNumberAttribute(): string
+    {
+        return 'ORD-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Get order status based on timestamps
+     */
+    public function getStatusAttribute(): string
+    {
+        if ($this->refunded_at) {
+            return 'Cancelled';
+        }
+
+        if ($this->completed_at) {
+            return 'Completed';
+        }
+
+        return 'Processing';
+    }
+
+    /**
+     * Get total attribute (alias for total_price)
+     */
+    public function getTotalAttribute(): float
+    {
+        return (float) $this->total_price;
+    }
+
+    /**
+     * Get subtotal attribute (alias for course_price)
+     */
+    public function getSubtotalAttribute(): float
+    {
+        return (float) $this->course_price;
+    }
+
+    /**
+     * Get discount amount
+     */
+    public function getDiscountAmountAttribute(): float
+    {
+        if ($this->discount_code_id && $this->DiscountCode) {
+            $discountCode = $this->DiscountCode;
+            if ($discountCode->percent && $discountCode->percent > 0) {
+                return $this->course_price * ($discountCode->percent / 100);
+            } elseif ($discountCode->set_price && $discountCode->set_price > 0) {
+                return (float) $discountCode->set_price;
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * Get tax amount
+     */
+    public function getTaxAmountAttribute(): float
+    {
+        // For now, return 0 as tax calculation can be added later
+        return 0.0;
+    }
+
+    /**
+     * Get notes attribute (return empty string since field doesn't exist in database)
+     */
+    public function getNotesAttribute(): string
+    {
+        return '';
+    }
 
 
     public function GetPayment(): ?PaymentModel

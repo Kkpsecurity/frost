@@ -24,7 +24,7 @@ trait RCacheWarmerTrait
 
         if (! RCache::exists($cache_key) or $force_db_query) {
 
-            kkpdebug('RCacheWarmer', 'Loading Admins');
+            \kkpdebug('RCacheWarmer', 'Loading Admins');
 
             $user_ids = [];
 
@@ -47,7 +47,7 @@ trait RCacheWarmerTrait
     protected static function LoadCountries(): void
     {
         if (! RCache::exists('countries')) {
-            kkpdebug('RCacheWarmer', 'Loading Countries');
+            \kkpdebug('RCacheWarmer', 'Loading Countries');
             RCache::set('countries', RCache::Serialize(PgTk::toSimple(DB::select('SELECT * FROM sp_countries()'))));
         }
     }

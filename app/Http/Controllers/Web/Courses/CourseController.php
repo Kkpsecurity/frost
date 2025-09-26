@@ -65,7 +65,7 @@ class CourseController extends Controller
                     'end'   => $event->EndsAt('YYYY-MM-DD HH:mm'),
                     #'start' => $start->format('Y-m-d H:i'), // format to date-only
                     #'end' => $end->format('Y-m-d H:i'),     // format to date-only
-                    'url'  => route('courses.detail', $course->id)
+                    'url' => route('courses.show', $course->id)
                 ];
             }
         }
@@ -114,7 +114,7 @@ class CourseController extends Controller
                     'title' => $event->CalendarTitle(),
                     'start' => $event->StartsAt('YYYY-MM-DD HH:mm'),
                     'end'   => $event->EndsAt('YYYY-MM-DD HH:mm'),
-                    'url'   => route('courses.detail', $course->id),
+                    'url' => route('courses.show', $course->id),
                     'course_type' => strpos(strtolower($course->title), 'armed') !== false ? 'D40' : 'G28',
                     'course_id' => $course->id,
                     'course_title' => $course->title

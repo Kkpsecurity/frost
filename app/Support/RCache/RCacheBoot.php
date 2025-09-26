@@ -55,10 +55,10 @@ trait RCacheBoot
         //
 
         if (IsQueueWorker()) {
-            kkpdebug('RCacheRedis', 'Disabling ModelCaches');
+            \kkpdebug('RCacheRedis', 'Disabling ModelCaches');
             self::$_cache_models = false;
         } else {
-            kkpdebug('RCacheRedis', 'Enabling ModelCaches');
+            \kkpdebug('RCacheRedis', 'Enabling ModelCaches');
             self::$_cache_models = true;
         }
     }

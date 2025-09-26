@@ -32,12 +32,12 @@ trait RCacheBoot
 
         if ( IsQueueWorker() )
         {
-            \App\Helpers\kkpdebug('RCacheRedis', 'Disabling ModelCaches');
+            \kkpdebug('Disabling ModelCaches', 'RCacheRedis');
             self::$_cache_models = false;
         }
         else
         {
-            \App\Helpers\kkpdebug('RCacheRedis', 'Enabling ModelCaches');
+            \kkpdebug('Enabling ModelCaches', 'RCacheRedis');
             self::$_cache_models = true;
         }
 

@@ -29,8 +29,8 @@ class MiscQueries
     public static function CalenderDates( Course $Course ) : \Illuminate\Database\Eloquent\Collection
     {
 
-        return CourseDate::where( 'is_active', true )
-                         ->where( 'starts_at', '>=', date( 'Y-m-01' ) )
+    return CourseDate::// Remove is_active filter - show ALL CourseDate records
+      where('starts_at', '>=', date('Y-m-01'))
                        ->whereIn( 'course_unit_id', $Course->GetCourseUnits()->pluck( 'id' ) )
                        ->orderBy( 'starts_at' )
                            ->get();

@@ -14,6 +14,14 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
+        // Activate CourseDate records daily at 06:00 AM ET (before classroom creation)
+        $schedule->command('course:activate-dates')
+            ->dailyAt('06:00')
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/course-date-activation.log'));
+
         // Auto-create classrooms daily at 07:00 AM ET
         $schedule->command('classrooms:auto-create-today')
             ->dailyAt('07:00')
@@ -21,6 +29,15 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/classroom-auto-create.log'));
+
+        // Generate CourseDate records weekly on Sunday at 10:00 PM ET
+        // Generates dates for the upcoming 5 days (Mon-Fri) with cleanup
+        $schedule->command('course:generate-dates --days=5 --cleanup --cleanup-days=30')
+            ->weeklyOn(0, '22:00') // Sunday at 10:00 PM
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/course-date-generation.log'));
     }
 
     /**

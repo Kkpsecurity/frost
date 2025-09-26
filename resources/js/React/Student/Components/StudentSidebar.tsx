@@ -59,7 +59,7 @@ const StudentSidebar = ({
     });
     return (
         <div
-            className="dashboard-side bg-dark"
+            className="dashboard-side bg-dark thin-scrollbar"
             style={{
                 width: isCollapsed ? "60px" : "300px",
                 minHeight: "100%",

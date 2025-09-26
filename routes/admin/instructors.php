@@ -93,6 +93,14 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::get('/completed-courses', [InstructorDashboardController::class, 'getCompletedCourses'])
             ->name('completed-courses');
 
+        // Upcoming courses panel data (next 2 weeks overview)
+        Route::get('/upcoming-courses-panel', [InstructorDashboardController::class, 'getUpcomingCoursesPanel'])
+            ->name('upcoming-courses-panel');
+
+        // DEBUG: Today's lessons with full structure
+        Route::get('/debug/lessons/today', [InstructorDashboardController::class, 'debugTodayLessons'])
+            ->name('debug.lessons.today');
+
         // Recent activity data
         Route::get('/activity/recent', [InstructorDashboardController::class, 'getRecentActivity'])
             ->name('activity.recent');

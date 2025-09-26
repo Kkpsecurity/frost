@@ -14,12 +14,12 @@ trait RCacheModelTrait
         parent::boot();
 
         static::saved(function ( $Model ) {
-            kkpdebug( 'Observer', get_class($Model) . '::saved (RCacheModelTrait)' );
+            \kkpdebug('Observer', get_class($Model) . '::saved (RCacheModelTrait)');
             RCache::observer_saved( $Model );
         });
 
         static::deleted(function ( $Model ) {
-            kkpdebug( 'Observer', get_class($Model) . '::deleted (RCacheModelTrait)' );
+            \kkpdebug('Observer', get_class($Model) . '::deleted (RCacheModelTrait)');
             RCache::observer_deleted( $Model );
         });
 

@@ -30,7 +30,7 @@
                         Lessons & Resources
                     </h3>
                 </div>
-                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                <div class="card-body p-0 thin-scrollbar" style="max-height: 600px; overflow-y: auto;">
                     {{-- Current Lesson --}}
                     <div class="p-3 bg-light border-bottom">
                         <h6 class="text-muted mb-2">CURRENT LESSON</h6>
@@ -223,12 +223,12 @@
                     </h6>
                 </div>
                 <div class="card-body p-0">
-                    <div id="chat-messages" style="height: 250px; overflow-y: auto; padding: 15px;">
+                    <div id="chat-messages" class="thin-scrollbar" style="height: 250px; overflow-y: auto; padding: 15px;">
                         {{-- Sample Chat Message 1 --}}
                         <div class="chat-message mb-2">
                             <div class="d-flex">
                                 <div class="chat-avatar mr-2">
-                                    <img src="/images/default-avatar.png" 
+                                    <img src="/images/default-avatar.png"
                                          class="rounded-circle" width="32" height="32">
                                 </div>
                                 <div class="chat-content">
@@ -245,7 +245,7 @@
                         <div class="chat-message mb-2">
                             <div class="d-flex">
                                 <div class="chat-avatar mr-2">
-                                    <img src="/images/default-avatar.png" 
+                                    <img src="/images/default-avatar.png"
                                          class="rounded-circle" width="32" height="32">
                                 </div>
                                 <div class="chat-content">
@@ -262,7 +262,7 @@
                         <div class="chat-message mb-2">
                             <div class="d-flex">
                                 <div class="chat-avatar mr-2">
-                                    <img src="/images/default-avatar.png" 
+                                    <img src="/images/default-avatar.png"
                                          class="rounded-circle" width="32" height="32">
                                 </div>
                                 <div class="chat-content">
@@ -279,7 +279,7 @@
                         <div class="chat-message mb-2">
                             <div class="d-flex">
                                 <div class="chat-avatar mr-2">
-                                    <img src="/images/default-avatar.png" 
+                                    <img src="/images/default-avatar.png"
                                          class="rounded-circle" width="32" height="32">
                                 </div>
                                 <div class="chat-content">
@@ -316,13 +316,13 @@
                         <span class="badge badge-light ml-2">24</span>
                     </h3>
                 </div>
-                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                <div class="card-body p-0 thin-scrollbar" style="max-height: 600px; overflow-y: auto;">
                     @forelse($studentsInClass ?? [] as $student)
                         <div class="student-item p-3 border-bottom">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center">
                                     <div class="student-avatar mr-3">
-                                        <img src="{{ $student['avatar'] ?? '/images/default-avatar.png' }}" 
+                                        <img src="{{ $student['avatar'] ?? '/images/default-avatar.png' }}"
                                              class="rounded-circle" width="40" height="40">
                                         <div class="student-status {{ $student['status'] ?? 'online' }}"></div>
                                     </div>
@@ -338,7 +338,7 @@
                                 </div>
                                 <div class="student-actions">
                                     <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
                                                 data-toggle="dropdown">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
@@ -390,7 +390,7 @@
         .pulse-badge {
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -475,21 +475,21 @@
         $(document).ready(function() {
             // Auto-scroll chat to bottom
             $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
-            
+
             // Handle chat input
             $('.chat-input input').on('keypress', function(e) {
                 if (e.which === 13) {
                     sendChatMessage();
                 }
             });
-            
+
             $('.chat-input button').on('click', sendChatMessage);
         });
 
         function sendChatMessage() {
             const input = $('.chat-input input');
             const message = input.val().trim();
-            
+
             if (message) {
                 // Add message to chat (replace with AJAX call)
                 const chatHtml = `
@@ -508,7 +508,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 $('#chat-messages').append(chatHtml);
                 $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
                 input.val('');

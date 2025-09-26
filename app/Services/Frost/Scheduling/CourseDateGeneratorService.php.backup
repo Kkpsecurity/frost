@@ -1,0 +1,520 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Frost\Scheduling;
+
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use App\Models\Course;
+use App\Models\CourseDate;
+use App\Models\CourseUnit;
+
+/**
+ * Service for automatically generating CourseDate records
+ * Based on existing course schedule patterns
+ */
+class CourseDateGeneratorService
+{
+    /**
+     * Default configuration
+     */
+    private array $defaultConfig = [
+        'weekdays_only' => true,
+        'start_time' => '09:00',
+        'duration_hours' => 3,
+        'advance_days' => 5, // Generate 5 days ahead (weekdays only)
+        'skip_weekends' => true,
+        'skip_holidays' => true
+    ];
+
+    /**
+     * Get the active courses with course units
+     *
+     * @return Collection
+     */
+    private function getActiveCourses(): Collection
+    {
+        return Course::where('is_active', true)
+            ->whereHas('CourseUnits') // Only courses with units
+            ->get();
+    }
+
+    /**
+     * Get the next day number for a course type (global counter)
+     *
+     * @param Course $course
+     * @return int
+     */
+    private function getNextDayNumberForCourse(Course $course): int
+    {
+        // Count existing CourseDate records for this course to determine next day number
+        $existingCount = CourseDate::whereHas('courseUnit', function($query) use ($course) {
+            $query->where('course_id', $course->id);
+        })
+        ->where('is_active', true)
+        ->count();
+
+        return $existingCount + 1; // Next day number
+    }
+
+    /**
+     * Generate CourseDate records for the next period
+     *
+     * @param int|null $advanceDays How many days ahead to generate
+     * @return array Summary of generation results
+     */
+    public function generateWeeklyCourseDates(?int $advanceDays = null): array
+    {
+        $advanceDays = $advanceDays ?? $this->defaultConfig['advance_days'];
+        $startDate = now()->addDay(); // Start from tomorrow
+        $endDate = now()->addDays($advanceDays);
+
+        return $this->generateCourseDatesForRange($startDate, $endDate);
+    }
+
+    /**
+     * Generate CourseDate records for the next period
+     *
+     * @param int|null $advanceDays How many days ahead to generate
+     * @return array Summary of generation results
+     */
+    public function generateWeeklyCourseDates(?int $advanceDays = null): array
+    {
+        $advanceDays = $advanceDays ?? $this->defaultConfig['advance_days'];
+        $startDate = now()->addDay(); // Start from tomorrow
+        $endDate = now()->addDays($advanceDays);
+
+        return $this->generateCourseDatesForRange($startDate, $endDate);
+    }
+
+    /**
+     * Generate CourseDate records for a specific date range
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return array Summary of generation results
+     */
+    public function generateCourseDatesForRange(Carbon $startDate, Carbon $endDate): array
+    {
+        $results = [
+            'period' => [
+                'start' => $startDate->format('Y-m-d'),
+                'end' => $endDate->format('Y-m-d'),
+                'total_days' => $startDate->diffInDays($endDate) + 1
+            ],
+            'courses_processed' => 0,
+            'dates_created' => 0,
+            'dates_skipped' => 0,
+            'errors' => []
+        ];
+
+        try {
+            // Get active courses that should have regular schedules
+            $activeCourses = $this->getActiveCourses();
+            $results['courses_processed'] = $activeCourses->count();
+
+            Log::info('CourseDateGenerator: Starting generation', [
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+                'courses_count' => $activeCourses->count()
+            ]);
+
+            // Generate dates for each course
+            foreach ($activeCourses as $course) {
+                $courseResults = $this->generateCourseDatesForCourse($course, $startDate, $endDate);
+                $results['dates_created'] += $courseResults['created'];
+                $results['dates_skipped'] += $courseResults['skipped'];
+
+                if (!empty($courseResults['errors'])) {
+                    $results['errors'] = array_merge($results['errors'], $courseResults['errors']);
+                }
+            }
+
+            Log::info('CourseDateGenerator: Generation completed', $results);
+
+        } catch (\Exception $e) {
+            Log::error('CourseDateGenerator: Critical error during generation', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $results['errors'][] = 'Critical error: ' . $e->getMessage();
+        }
+
+        return $results;
+    }
+
+    /**
+     * Generate CourseDate records for a specific course over a date range
+     *
+     * @param Course $course
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return array
+     */
+    private function generateCourseDatesForCourse(Course $course, Carbon $startDate, Carbon $endDate): array
+    {
+        $results = [
+            'course_id' => $course->id,
+            'course_title' => $course->title,
+            'created' => 0,
+            'skipped' => 0,
+            'errors' => []
+        ];
+
+        try {
+            // Get course units in order for this course
+            $courseUnits = $course->GetCourseUnits()->sortBy('ordering')->values(); // Convert to indexed array
+
+            if ($courseUnits->isEmpty()) {
+                $results['errors'][] = "No CourseUnits found for course {$course->title}";
+                return $results;
+            }
+
+            // Get the next day number for this course type (global counter)
+            $dayNumber = $this->getNextDayNumberForCourse($course);
+            $currentDate = $startDate->copy();
+
+            while ($currentDate <= $endDate) {
+                // Check if this course should run on this specific date
+                if ($this->shouldGenerateForDate($currentDate) && $this->shouldCourseRunOnDate($course, $currentDate)) {
+                    // Get the course unit based on day number (cycle through them)
+                    $unitIndex = ($dayNumber - 1) % $courseUnits->count();
+                    $courseUnit = $courseUnits[$unitIndex];
+
+                    // Check if CourseDate already exists for this date/unit
+                    if ($this->courseDateExists($courseUnit, $currentDate)) {
+                        $results['skipped']++;
+                        Log::debug('CourseDateGenerator: Skipping existing date', [
+                            'course' => $course->title,
+                            'unit' => $courseUnit->title,
+                            'date' => $currentDate->format('Y-m-d')
+                        ]);
+                    }
+                    // Check if same course type already scheduled for this date
+                    elseif ($this->courseTypeConflictExists($course, $currentDate)) {
+                        $results['skipped']++;
+                        Log::info('CourseDateGenerator: Skipping due to course type conflict', [
+                            'course' => $course->title,
+                            'course_type' => $this->getCourseType($course),
+                            'date' => $currentDate->format('Y-m-d'),
+                            'reason' => 'Another course of same type already scheduled'
+                        ]);
+                    } else {
+                        // Create the CourseDate
+                        $courseDate = $this->createCourseDate($courseUnit, $currentDate);
+                        if ($courseDate) {
+                            $results['created']++;
+                            Log::info('CourseDateGenerator: Created CourseDate', [
+                                'id' => $courseDate->id,
+                                'course' => $course->title,
+                                'unit' => $courseUnit->title,
+                                'date' => $currentDate->format('Y-m-d'),
+                                'starts_at' => $courseDate->starts_at
+                            ]);
+                        } else {
+                            $results['errors'][] = "Failed to create CourseDate for {$course->title} on {$currentDate->format('Y-m-d')}";
+                        }
+                    }
+
+                    // Move to next day number for next course date
+                    $dayNumber++;
+                }
+
+                $currentDate->addDay();
+            }
+
+        } catch (\Exception $e) {
+            $results['errors'][] = "Error processing course {$course->title}: " . $e->getMessage();
+        }
+
+        return $results;
+    }
+
+    /**
+     * Create a CourseDate record for a specific CourseUnit and date
+     *
+     * @param CourseUnit $courseUnit
+     * @param Carbon $date
+     * @return CourseDate|null
+     */
+    private function createCourseDate(CourseUnit $courseUnit, Carbon $date): ?CourseDate
+    {
+        try {
+            // Calculate start and end times
+            $startTime = $date->copy()->setTimeFromTimeString($this->defaultConfig['start_time']);
+            $endTime = $startTime->copy()->addHours($this->defaultConfig['duration_hours']);
+
+            // Create the CourseDate record (inactive by default)
+            $courseDate = CourseDate::create([
+                'is_active' => false, // Default to inactive - will be activated on course day
+                'course_unit_id' => $courseUnit->id,
+                'starts_at' => $startTime,
+                'ends_at' => $endTime,
+                'classroom_created_at' => now()
+            ]);
+
+            return $courseDate;
+
+        } catch (\Exception $e) {
+            Log::error('CourseDateGenerator: Failed to create CourseDate', [
+                'course_unit_id' => $courseUnit->id,
+                'date' => $date->format('Y-m-d'),
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Check if a CourseDate already exists for the given unit and date
+     *
+     * @param CourseUnit $courseUnit
+     * @param Carbon $date
+     * @return bool
+     */
+    private function courseDateExists(CourseUnit $courseUnit, Carbon $date): bool
+    {
+        return CourseDate::where('course_unit_id', $courseUnit->id)
+            ->whereDate('starts_at', $date->format('Y-m-d'))
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    /**
+     * Check if a course of the same type already exists on this date
+     * Rule: Only one course of same type per day (D and G can coexist, but not two D's or two G's)
+     *
+     * @param Course $course
+     * @param Carbon $date
+     * @return bool
+     */
+    public function courseTypeConflictExists(Course $course, Carbon $date): bool
+    {
+        // Determine course type from course title
+        $courseType = $this->getCourseType($course);
+
+        // Find all CourseDate records for this date
+        $existingCourseDates = CourseDate::whereDate('starts_at', $date->format('Y-m-d'))
+            ->where('is_active', true)
+            ->with(['courseUnit.course'])
+            ->get();
+
+        // Check if any existing course has the same type
+        foreach ($existingCourseDates as $existingCourseDate) {
+            $existingCourse = $existingCourseDate->courseUnit->course;
+            $existingCourseType = $this->getCourseType($existingCourse);
+
+            if ($existingCourseType === $courseType) {
+                return true; // Conflict found - same type already scheduled
+            }
+        }
+
+        return false; // No conflict
+    }
+
+    /**
+     * Determine course type from course title
+     *
+     * @param Course $course
+     * @return string
+     */
+    public function getCourseType(Course $course): string
+    {
+        $title = strtoupper($course->title);
+
+        if (strpos($title, 'D40') !== false || strpos($title, 'CLASS D') !== false) {
+            return 'D'; // Armed/Class D
+        }
+
+        if (strpos($title, 'G28') !== false || strpos($title, 'CLASS G') !== false) {
+            return 'G'; // Unarmed/Class G
+        }
+
+        // Default fallback - treat as unique type
+        return 'UNKNOWN_' . $course->id;
+    }
+
+    /**
+     * Determine if a CourseDate should be generated for this date
+     *
+     * @param Carbon $date
+     * @return bool
+     */
+    private function shouldGenerateForDate(Carbon $date): bool
+    {
+        // Skip weekends if configured
+        if ($this->defaultConfig['skip_weekends'] && $date->isWeekend()) {
+            return false;
+        }
+
+        // Only generate for weekdays if configured
+        if ($this->defaultConfig['weekdays_only'] && $date->isWeekend()) {
+            return false;
+        }
+
+        // Skip holidays (simple implementation)
+        if ($this->defaultConfig['skip_holidays'] && $this->isHoliday($date)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if a date is a holiday
+     *
+     * @param Carbon $date
+     * @return bool
+     */
+    private function isHoliday(Carbon $date): bool
+    {
+        // Simple holiday detection - can be expanded
+        $holidays = [
+            '12-25', // Christmas
+            '01-01', // New Year's Day
+            '07-04', // Independence Day
+            '11-28', // Thanksgiving (approximate)
+        ];
+
+        $dateString = $date->format('m-d');
+        return in_array($dateString, $holidays);
+    }
+
+    /**
+     * Check if a specific course should run on a specific date
+     * Implements course-specific scheduling rules
+     *
+     * @param Course $course
+     * @param Carbon $date
+     * @return bool
+     */
+    private function shouldCourseRunOnDate(Course $course, Carbon $date): bool
+    {
+        $courseTitle = strtolower($course->title);
+
+        // Class D (Armed) courses - every day Monday-Friday
+        if (strpos($courseTitle, 'd40') !== false) {
+            return $date->isWeekday(); // Monday through Friday
+        }
+
+        // Class G (Unarmed) courses - every other week Monday-Wednesday
+        if (strpos($courseTitle, 'g28') !== false) {
+            // Only Monday, Tuesday, Wednesday
+            if (!in_array($date->dayOfWeek, [1, 2, 3])) { // 1=Monday, 2=Tuesday, 3=Wednesday
+                return false;
+            }
+
+            // Calculate weeks since epoch (Sept 22, 2025 = week 0)
+            $epochDate = Carbon::create(2025, 9, 22); // Monday Sept 22, 2025
+            $currentWeekStart = $date->copy()->startOfWeek();
+            $weeksDiff = $epochDate->diffInWeeks($currentWeekStart);
+
+            // G classes only on odd weeks (1, 3, 5...) - makes next week valid
+            return $weeksDiff % 2 !== 0; // Skip even weeks (this week is off-week)
+        }
+
+        // Default: run on all weekdays for other courses
+        return $date->isWeekday();
+    }
+
+    /**
+     * Get active courses that should have scheduled dates
+     *
+     * @return Collection
+     */
+    private function getActiveCourses(): Collection
+    {
+        return Course::where('is_active', true)
+            ->whereHas('CourseUnits') // Only courses with units
+            ->get();
+    }
+
+    /**
+     * Generate CourseDate records for a single date
+     *
+     * @param Carbon $date
+     * @return array
+     */
+    public function generateCourseDatesForDate(Carbon $date): array
+    {
+        return $this->generateCourseDatesForRange($date, $date);
+    }
+
+    /**
+     * Clean up old CourseDate records
+     *
+     * @param int $daysOld How many days old to consider "old"
+     * @return int Number of records cleaned up
+     */
+    public function cleanupOldCourseDates(int $daysOld = 30): int
+    {
+        $cutoffDate = now()->subDays($daysOld);
+
+        $count = CourseDate::where('ends_at', '<', $cutoffDate)
+            ->where('is_active', true)
+            ->whereDoesntHave('InstUnit') // Don't delete if it has an associated InstUnit
+            ->count();
+
+        CourseDate::where('ends_at', '<', $cutoffDate)
+            ->where('is_active', true)
+            ->whereDoesntHave('InstUnit')
+            ->update(['is_active' => false]);
+
+        Log::info('CourseDateGenerator: Cleaned up old CourseDate records', [
+            'count' => $count,
+            'cutoff_date' => $cutoffDate->format('Y-m-d')
+        ]);
+
+        return $count;
+    }
+
+    /**
+     * Get preview of what would be generated without actually creating
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return array
+     */
+    public function previewGeneration(Carbon $startDate, Carbon $endDate): array
+    {
+        $activeCourses = $this->getActiveCourses();
+        $preview = [
+            'period' => [
+                'start' => $startDate->format('Y-m-d'),
+                'end' => $endDate->format('Y-m-d'),
+                'total_days' => $startDate->diffInDays($endDate) + 1,
+                'weekdays' => 0
+            ],
+            'courses' => [],
+            'estimated_total' => 0
+        ];
+
+        // Count weekdays in range
+        $currentDate = $startDate->copy();
+        while ($currentDate <= $endDate) {
+            if ($this->shouldGenerateForDate($currentDate)) {
+                $preview['period']['weekdays']++;
+            }
+            $currentDate->addDay();
+        }
+
+        foreach ($activeCourses as $course) {
+            $courseUnits = $course->GetCourseUnits();
+            $estimatedDates = $preview['period']['weekdays'];
+
+            $preview['courses'][] = [
+                'id' => $course->id,
+                'title' => $course->title,
+                'units_count' => $courseUnits->count(),
+                'estimated_dates' => $estimatedDates
+            ];
+
+            $preview['estimated_total'] += $estimatedDates;
+        }
+
+        return $preview;
+    }
+}

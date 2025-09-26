@@ -132,6 +132,129 @@ class InstructorDashboardService
     }
 
     /**
+     * Get upcoming course dates for instructor dashboard panel
+     * Shows upcoming classes in next 14 days with summary information
+     *
+     * @return array
+     */
+    public function getUpcomingCoursesPanel(): array
+    {
+        try {
+            $startDate = now()->addDay(); // Tomorrow
+            $endDate = now()->addDays(14); // Next 2 weeks
+
+            // Get upcoming CourseDate records
+            $upcomingCourseDates = \App\Models\CourseDate::whereBetween('starts_at', [$startDate, $endDate])
+                ->where('is_active', true)
+                ->with(['courseUnit.course'])
+                ->orderBy('starts_at')
+                ->get();
+
+            $totalUpcoming = $upcomingCourseDates->count();
+
+            // Group by date for summary
+            $byDate = $upcomingCourseDates->groupBy(function ($courseDate) {
+                return \Carbon\Carbon::parse($courseDate->starts_at)->format('Y-m-d');
+            });
+
+            // Get upcoming dates summary
+            $upcomingDates = $byDate->map(function ($courseDatesForDate, $date) {
+                $formattedDate = \Carbon\Carbon::parse($date)->format('M j, Y (l)');
+                $courses = $courseDatesForDate->map(function ($courseDate) {
+                    return [
+                        'id' => $courseDate->id,
+                        'time' => \Carbon\Carbon::parse($courseDate->starts_at)->format('g:i A'),
+                        'course_name' => $courseDate->courseUnit->course->title ?? 'Unknown Course',
+                        'unit_title' => $courseDate->courseUnit->admin_title ?? 'Unknown Unit'
+                    ];
+                });
+
+                return [
+                    'date' => $date,
+                    'formatted_date' => $formattedDate,
+                    'course_count' => $courseDatesForDate->count(),
+                    'courses' => $courses->toArray()
+                ];
+            })->sortKeys()->values()->toArray();
+
+            // Get course type breakdown
+            $courseBreakdown = $upcomingCourseDates->groupBy(function ($courseDate) {
+                return $courseDate->courseUnit->course->title ?? 'Unknown';
+            })->map(function ($courseDates, $courseName) {
+                return [
+                    'course_name' => $courseName,
+                    'count' => $courseDates->count(),
+                    'next_class' => \Carbon\Carbon::parse($courseDates->first()->starts_at)->format('M j, g:i A')
+                ];
+            })->values()->toArray();
+
+            // Get stats for quick overview
+            $thisWeekCount = $upcomingCourseDates->filter(function ($courseDate) {
+                return \Carbon\Carbon::parse($courseDate->starts_at)->isCurrentWeek();
+            })->count();
+
+            $nextWeekCount = $upcomingCourseDates->filter(function ($courseDate) {
+                $courseStart = \Carbon\Carbon::parse($courseDate->starts_at);
+                return $courseStart->isNextWeek();
+            })->count();
+
+            return [
+                'upcoming_courses' => [
+                    'total_upcoming' => $totalUpcoming,
+                    'this_week_count' => $thisWeekCount,
+                    'next_week_count' => $nextWeekCount,
+                    'upcoming_dates' => $upcomingDates,
+                    'course_breakdown' => $courseBreakdown,
+                    'date_range' => [
+                        'start' => $startDate->format('Y-m-d'),
+                        'end' => $endDate->format('Y-m-d'),
+                        'formatted_range' => $startDate->format('M j') . ' - ' . $endDate->format('M j, Y')
+                    ]
+                ],
+                'summary' => [
+                    'message' => $totalUpcoming > 0
+                        ? "{$totalUpcoming} classes scheduled in next 2 weeks"
+                        : "No classes scheduled in next 2 weeks",
+                    'has_upcoming' => $totalUpcoming > 0,
+                    'needs_generation' => $totalUpcoming < 10 // Need more CourseDate records
+                ],
+                'metadata' => [
+                    'generated_at' => now()->toISOString(),
+                    'view_type' => 'upcoming_courses_panel'
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching upcoming courses panel: ' . $e->getMessage());
+
+            return [
+                'upcoming_courses' => [
+                    'total_upcoming' => 0,
+                    'this_week_count' => 0,
+                    'next_week_count' => 0,
+                    'upcoming_dates' => [],
+                    'course_breakdown' => [],
+                    'date_range' => [
+                        'start' => now()->addDay()->format('Y-m-d'),
+                        'end' => now()->addDays(14)->format('Y-m-d'),
+                        'formatted_range' => 'Error loading dates'
+                    ]
+                ],
+                'summary' => [
+                    'message' => 'Error loading upcoming courses: ' . $e->getMessage(),
+                    'has_upcoming' => false,
+                    'needs_generation' => true
+                ],
+                'metadata' => [
+                    'generated_at' => now()->toISOString(),
+                    'view_type' => 'upcoming_courses_panel',
+                    'error' => true
+                ]
+            ];
+        }
+    }
+
+    /**
      * Get completed InstUnits for instructor dashboard
      *
      * @return array

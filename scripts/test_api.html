@@ -1,0 +1,62 @@
+<!-- Test page to check if the instructor course data is now showing -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Instructor API</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <h1>Testing Instructor API</h1>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+
+            try {
+                resultDiv.innerHTML = '<p>Loading...</p>';
+
+                const response = await fetch("/admin/instructors/data/lessons/today", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.lessons && data.lessons.length > 0) {
+                    let html = '<h2>✅ Found ' + data.lessons.length + ' lesson(s):</h2>';
+                    data.lessons.forEach(lesson => {
+                        html += `
+                            <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                                <h3>${lesson.course_name}</h3>
+                                <p><strong>Lesson:</strong> ${lesson.lesson_name}</p>
+                                <p><strong>Time:</strong> ${lesson.time} (${lesson.duration})</p>
+                                <p><strong>Students:</strong> ${lesson.student_count}</p>
+                                <p><strong>Status:</strong> ${lesson.status}</p>
+                            </div>
+                        `;
+                    });
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<p>❌ No lessons found</p>';
+                }
+
+            } catch (err) {
+                resultDiv.innerHTML = '<p>❌ Error: ' + err.message + '</p>';
+                console.error('API Error:', err);
+            }
+        }
+
+        // Test immediately when page loads
+        testAPI();
+    </script>
+</body>
+</html>

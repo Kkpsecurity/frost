@@ -12,9 +12,18 @@ import {
     type InstructorDashboardProps,
     type CourseDate,
 } from "./Offline";
+import AssignmentHistoryTable from "./Offline/AssignmentHistoryTable";
 
 const InstructorDashboard: React.FC = () => {
-    const { courseDates: courses, loading, error } = useBulletinBoard();
+    const {
+        courseDates: courses,
+        assignmentHistory,
+        loading,
+        error,
+        refetch,
+        isPolling,
+        lastUpdated,
+    } = useBulletinBoard();
     const {
         completedCourses,
         loading: completedLoading,
@@ -47,6 +56,52 @@ const InstructorDashboard: React.FC = () => {
     return (
         <div className="container-fluid p-0">
             <DashboardHeader onAdminAction={handleAdminAction} />
+
+            {/* Polling Status Bar */}
+            <div
+                className="px-4 py-2"
+                style={{
+                    backgroundColor: "var(--frost-light-bg-color, #f8fafc)",
+                    borderBottom:
+                        "1px solid var(--frost-light-primary-color, #e2e8f0)",
+                }}
+            >
+                <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center">
+                        <span
+                            className={`badge me-2 ${
+                                isPolling ? "bg-success" : "bg-secondary"
+                            }`}
+                            style={{ fontSize: "0.7rem" }}
+                        >
+                            <i
+                                className={`fas ${
+                                    isPolling ? "fa-sync fa-spin" : "fa-pause"
+                                } me-1`}
+                            ></i>
+                            {isPolling ? "Live Updates" : "Paused"}
+                        </span>
+                        <small
+                            style={{
+                                color: "var(--frost-base-color, #6b7280)",
+                            }}
+                        >
+                            {lastUpdated
+                                ? `Last updated: ${lastUpdated.toLocaleTimeString()}`
+                                : "Loading..."}
+                        </small>
+                    </div>
+                    <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={refetch}
+                        disabled={loading}
+                    >
+                        <i className="fas fa-sync me-1"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
             <div className="p-4">
                 {courseCount === 0 ? (
                     <EmptyState />
@@ -58,22 +113,10 @@ const InstructorDashboard: React.FC = () => {
                 )}
             </div>
 
-            {/* Completed Courses Section */}
-            <h4
-                className="mb-3 d-flex align-items-center"
-                style={{
-                    color: "#efefef",
-                }}
-            >
-                <i
-                    className="fas fa-history mr-2"
-                    style={{
-                        color: "var(--frost-success-color, #10b981)",
-                    }}
-                ></i>
-                Recently Completed Courses
-            </h4>
-            <CompletedCoursesList courses={completedCourses} />
+            {/* Assignment History Section */}
+            <div className="px-4 mb-4">
+                <AssignmentHistoryTable data={assignmentHistory} />
+            </div>
         </div>
     );
 };

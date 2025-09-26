@@ -24,7 +24,7 @@
         <div class="dropdown-divider"></div>
 
         {{-- Content List --}}
-        <div id="{{ $item['id'] }}-list" style="max-height: 300px; overflow-y: auto;">
+        <div id="{{ $item['id'] }}-list" class="thin-scrollbar" style="max-height: 300px; overflow-y: auto;">
             <div class="text-center p-3">
                 <div class="loading-spinner"></div>
                 <div class="small text-muted mt-2">Loading...</div>

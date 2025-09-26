@@ -40,9 +40,9 @@ class CourseDate extends Model
         'id'                => 'integer',
         'is_active'         => 'boolean',
         'course_unit_id'    => 'integer',
-        'starts_at'         => 'timestamp',
-        'ends_at'           => 'timestamp',
-        'classroom_created_at' => 'timestamp',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'classroom_created_at' => 'datetime',
         'classroom_metadata' => 'array',
 
     ];

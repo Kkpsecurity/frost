@@ -201,6 +201,27 @@ class InstructorDashboardController extends Controller
     }
 
     /**
+     * DEBUG: Get today's lessons with detailed info
+     */
+    public function debugTodayLessons()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $lessons = $this->courseDatesService->getTodaysLessons();
+
+        return response()->json([
+            'debug_info' => 'Today\'s lessons with full structure',
+            'data' => $lessons,
+            'lessons_count' => count($lessons['lessons'] ?? []),
+            'sample_lesson' => $lessons['lessons'][0] ?? null
+        ]);
+    }
+
+    /**
      * Get completed courses data (InstUnits that have been completed)
      */
     public function getCompletedCourses()
@@ -214,5 +235,22 @@ class InstructorDashboardController extends Controller
         $completedInstUnits = $this->dashboardService->getCompletedInstUnits();
 
         return response()->json($completedInstUnits);
+    }
+
+    /**
+     * Get upcoming courses panel data for instructor dashboard
+     * Shows overview of courses scheduled in next 2 weeks
+     */
+    public function getUpcomingCoursesPanel()
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $upcomingCoursesPanel = $this->dashboardService->getUpcomingCoursesPanel();
+
+        return response()->json($upcomingCoursesPanel);
     }
 }

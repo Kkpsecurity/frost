@@ -181,15 +181,34 @@ class Course extends Model
      */
     public function getCourseType(): string
     {
-        if (str_contains(strtoupper($this->title), 'D COURSE') || str_contains(strtoupper($this->title), 'D-COURSE')) {
-            return 'D';
-        }
+        $upperTitle = strtoupper($this->title);
+        $upperTitleLong = strtoupper($this->title_long ?? '');
 
-        if (str_contains(strtoupper($this->title), 'G COURSE') || str_contains(strtoupper($this->title), 'G-COURSE')) {
+        // Check for G patterns first (more specific)
+        if (
+            str_contains($upperTitle, 'G28') ||
+            str_contains($upperTitle, 'G COURSE') ||
+            str_contains($upperTitle, 'G-COURSE') ||
+            str_contains($upperTitleLong, 'CLASS \'G\'') ||
+            str_contains($upperTitleLong, 'CLASS G') ||
+            preg_match('/\bG\b/', $upperTitle)
+        ) {
             return 'G';
         }
 
-        // Default fallback - check if title starts with D or G
+        // Check for D patterns
+        if (
+            str_contains($upperTitle, 'D40') ||
+            str_contains($upperTitle, 'D COURSE') ||
+            str_contains($upperTitle, 'D-COURSE') ||
+            str_contains($upperTitleLong, 'CLASS \'D\'') ||
+            str_contains($upperTitleLong, 'CLASS D') ||
+            preg_match('/\bD\b/', $upperTitle)
+        ) {
+            return 'D';
+        }
+
+        // Fallback - if title starts with D or G
         $firstChar = strtoupper(substr(trim($this->title), 0, 1));
         return in_array($firstChar, ['D', 'G']) ? $firstChar : 'D';
     }

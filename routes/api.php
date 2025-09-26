@@ -23,3 +23,20 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // ===================================================================
 
 use App\Http\Controllers\Student\StudentDashboardController;
+
+// ===================================================================
+// Admin API Routes
+// ===================================================================
+
+use App\Http\Controllers\Api\Admin\CourseDateGeneratorController;
+
+// CourseDate Generator Admin API (protected by admin middleware)
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::prefix('course-date-generator')->group(function () {
+        Route::post('/preview', [CourseDateGeneratorController::class, 'preview']);
+        Route::post('/generate', [CourseDateGeneratorController::class, 'generate']);
+        Route::post('/cleanup', [CourseDateGeneratorController::class, 'cleanup']);
+        Route::get('/status', [CourseDateGeneratorController::class, 'status']);
+        Route::post('/quick-generate', [CourseDateGeneratorController::class, 'quickGenerate']);
+    });
+});

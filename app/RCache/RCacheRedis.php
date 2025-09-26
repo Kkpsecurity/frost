@@ -104,7 +104,7 @@ trait RCacheRedis
     public static function exists( string $key ) : bool
     {
         self::$_redis_exists++;
-        \App\Helpers\kkpdebug('RCacheRedis', "EXISTS( '{$key}' )");
+        \kkpdebug("EXISTS( '{$key}' )", 'RCacheRedis');
         $redis = self::Redis();
         return $redis ? $redis->exists( $key ) : false;
     }
@@ -113,7 +113,7 @@ trait RCacheRedis
     public static function get( string $key ) : ?string
     {
         self::$_redis_reads++;
-        \App\Helpers\kkpdebug('RCacheRedis', "GET( '{$key}' )");
+        \kkpdebug("GET( '{$key}' )", 'RCacheRedis');
         return self::Redis()->get( $key );
     }
 
@@ -123,12 +123,12 @@ trait RCacheRedis
         self::$_redis_writes++;
         if ( is_null( $expire_seconds ) )
         {
-            \App\Helpers\kkpdebug('RCacheRedis', "SET( '{$key}', [value] )");
+            \kkpdebug("SET( '{$key}', [value] )", 'RCacheRedis');
             self::Redis()->set( $key, $val );
         }
         else
         {
-            \App\Helpers\kkpdebug('RCacheRedis', "SET( '{$key}', [value], 'EX', {$expire_seconds} )");
+            \kkpdebug("SET( '{$key}', [value], 'EX', {$expire_seconds} )", 'RCacheRedis');
             self::Redis()->set( $key, $val, 'EX', $expire_seconds );
         }
     }
@@ -137,7 +137,7 @@ trait RCacheRedis
     public static function setexp( string $key, int $expire_seconds ) : void
     {
         self::$_redis_writes++;
-        \App\Helpers\kkpdebug('RCacheRedis', "EXPIRE( '{$key}', {$expire_seconds} )");
+        \kkpdebug("EXPIRE( '{$key}', {$expire_seconds} )", 'RCacheRedis');
         self::Redis()->expire( $key, $expire_seconds );
     }
 
@@ -145,7 +145,7 @@ trait RCacheRedis
     public static function delete( string $key ) : void
     {
         self::$_redis_writes++;
-        \App\Helpers\kkpdebug('RCacheRedis', "DEL( '{$key}' )");
+        \kkpdebug("DEL( '{$key}' )", 'RCacheRedis');
         self::Redis()->del( $key );
     }
 
@@ -161,7 +161,7 @@ trait RCacheRedis
     public static function hexists( string $hkey, $id ) : bool
     {
         self::$_redis_exists++;
-        \App\Helpers\kkpdebug('RCacheRedis', "HEXISTS( '{$hkey}', '{$id}' )");
+        \kkpdebug("HEXISTS( '{$hkey}', '{$id}' )", 'RCacheRedis');
         $redis = self::Redis();
         return $redis ? $redis->hexists( $hkey, $id ) : false;
     }
@@ -170,7 +170,7 @@ trait RCacheRedis
     public static function hget( string $hkey, $id ) : ?string
     {
         self::$_redis_reads++;
-        \App\Helpers\kkpdebug('RCacheRedis', "HGET( '{$hkey}', '{$id}' )");
+        \kkpdebug("HGET( '{$hkey}', '{$id}' )", 'RCacheRedis');
         $redis = self::Redis();
         return $redis ? $redis->hget( $hkey, $id ) : null;
     }
@@ -179,7 +179,7 @@ trait RCacheRedis
     public static function hgetall( string $hkey ) : ?array
     {
         self::$_redis_reads++;
-        \App\Helpers\kkpdebug('RCacheRedis', "HGETALL( '{$hkey}' )");
+        \kkpdebug("HGETALL( '{$hkey}' )", 'RCacheRedis');
         $redis = self::Redis();
         return $redis ? $redis->hgetall( $hkey ) : [];
     }
@@ -188,7 +188,7 @@ trait RCacheRedis
     public static function hset( string $hkey, $id, $val ) : void
     {
         self::$_redis_writes++;
-        \App\Helpers\kkpdebug('RCacheRedis', "HSET( '{$hkey}', '{$id}', [value] )");
+        \kkpdebug("HSET( '{$hkey}', '{$id}', [value] )", 'RCacheRedis');
         $redis = self::Redis();
         if ($redis) {
             $redis->hset( $hkey, $id, $val );
@@ -199,7 +199,7 @@ trait RCacheRedis
     public static function hdel( string $hkey, $id ) : void
     {
         self::$_redis_writes++;
-        \App\Helpers\kkpdebug('RCacheRedis', "HDEL( '{$hkey}', '{$id}' )");
+        \kkpdebug("HDEL( '{$hkey}', '{$id}' )", 'RCacheRedis');
         self::Redis()->hdel( $hkey, $id );
     }
 

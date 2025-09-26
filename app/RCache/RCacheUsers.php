@@ -32,12 +32,12 @@ trait RCacheUsers
         if ( $record = self::get( self::UserCacheKey( $user_id ) ) )
         {
 
-            kkpdebug( 'RCacheDebug', "User( {$user_id} ) :: Returning from Redis");
+            \kkpdebug('RCacheDebug', "User( {$user_id} ) :: Returning from Redis");
             return User::hydrate([ self::Unserialize( $record ) ])[0];
 
         }
 
-        kkpdebug( 'RCacheDebug', "User( {$user_id} ) :: Searching DB");
+        \kkpdebug('RCacheDebug', "User( {$user_id} ) :: Searching DB");
 
         $User = User::findOrFail( $user_id );
 
@@ -91,12 +91,12 @@ trait RCacheUsers
 
         if ( self::$_ModelCaches->has( $cache_key ) )
         {
-            kkpdebug( 'RCacheDebug', 'Admins() :: Returning from ModelCaches' );
+            \kkpdebug('RCacheDebug', 'Admins() :: Returning from ModelCaches');
             return self::$_ModelCaches->get( 'Admins' );
         }
 
 
-        kkpdebug( 'RCacheDebug', 'Admins() :: Loading from Redis' );
+        \kkpdebug('RCacheDebug', 'Admins() :: Loading from Redis');
 
         $Admins = new Collection;
 
@@ -108,7 +108,7 @@ trait RCacheUsers
 
         if ( self::$_cache_models )
         {
-            kkpdebug( 'RCacheDebug', 'Admins() :: Caching Admins' );
+            \kkpdebug('RCacheDebug', 'Admins() :: Caching Admins');
             self::$_ModelCaches->put( $cache_key, $Admins );
         }
 

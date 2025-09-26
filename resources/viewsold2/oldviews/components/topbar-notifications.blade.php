@@ -11,7 +11,7 @@
         <div class="dropdown-divider"></div>
 
         {{-- Notifications List --}}
-        <div id="notifications-list" style="max-height: 300px; overflow-y: auto;">
+        <div id="notifications-list" class="thin-scrollbar" style="max-height: 300px; overflow-y: auto;">
             <div class="text-center p-3">
                 <div class="loading-spinner"></div>
                 <div class="small text-muted mt-2">Loading notifications...</div>
@@ -34,7 +34,7 @@
         <div class="dropdown-divider"></div>
 
         {{-- Messages List --}}
-        <div id="messages-list" style="max-height: 300px; overflow-y: auto;">
+        <div id="messages-list" class="thin-scrollbar" style="max-height: 300px; overflow-y: auto;">
             <div class="text-center p-3">
                 <div class="loading-spinner"></div>
                 <div class="small text-muted mt-2">Loading messages...</div>
