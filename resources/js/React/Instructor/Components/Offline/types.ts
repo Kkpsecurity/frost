@@ -23,6 +23,8 @@ export interface CourseDate {
     // WORKFLOW: CourseDate exists for scheduled class → Instructor takes control → InstUnit created
     inst_unit?: {
         id: number;
+        created_by: number; // User ID of instructor who started the class
+        assistant_id: number | null; // User ID of assigned assistant
         instructor: string | null; // Same as instructor_name (legacy compatibility)
         assistant: string | null; // Same as assistant_name (legacy compatibility)
         created_at: string; // When instructor took control of the class

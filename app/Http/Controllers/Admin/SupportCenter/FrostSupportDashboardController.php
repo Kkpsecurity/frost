@@ -1490,4 +1490,313 @@ class FrostSupportDashboardController extends Controller
 
         return 'in_progress';
     }
+
+    /**
+     * Get comprehensive student validation information for identity verification
+     */
+    public function getStudentValidations($studentId): JsonResponse
+    {
+        try {
+            $student = User::where('role_id', \App\Support\RoleManager::STUDENT_ID)
+                ->where('id', $studentId)
+                ->firstOrFail();
+
+            // Get all course authorizations for ID card validations (one per CourseAuth)
+            $courseAuths = \App\Models\CourseAuth::where('user_id', $studentId)
+                ->with([
+                    'Course',
+                    'StudentUnits.Validation', // For headshots
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $validationData = [];
+
+            foreach ($courseAuths as $courseAuth) {
+                // Get ID card validation (one per CourseAuth)
+                $idCardValidation = \App\Models\Validation::where('course_auth_id', $courseAuth->id)->first();
+
+                // Get ALL student units for this course auth (including failed ones)
+                // Query directly to ensure we get both passed AND failed units
+                $studentUnits = \App\Models\StudentUnit::where('course_auth_id', $courseAuth->id)
+                    ->with('Validation')
+                    ->orderBy('created_at', 'asc') // Show chronologically
+                    ->get();
+                $headshotValidations = [];
+
+                foreach ($studentUnits as $studentUnit) {
+                    $headshotValidation = $studentUnit->Validation;
+
+                    // Get additional context about this day
+                    $dayContext = $this->getStudentUnitContext($studentUnit);
+
+                    if ($headshotValidation) {
+                        $headshotValidations[] = [
+                            'id' => $headshotValidation->id,
+                            'student_unit_id' => $studentUnit->id,
+                            'course_date_id' => $studentUnit->course_date_id,
+                            'date' => $studentUnit->created_at ?
+                                \Carbon\Carbon::parse($studentUnit->created_at)->format('Y-m-d') : null,
+                            'day_name' => $studentUnit->created_at ?
+                                \Carbon\Carbon::parse($studentUnit->created_at)->format('l') : null,
+                            'status' => $this->getValidationStatus($headshotValidation),
+                            'photo_url' => $headshotValidation->URL() ?: $headshotValidation->URL(true),
+                            'has_photo' => (bool) $headshotValidation->URL(),
+                            'id_type' => $headshotValidation->id_type,
+                            'reject_reason' => $headshotValidation->reject_reason,
+                            // Add day context
+                            'unit_status' => $dayContext['status'],
+                            'unit_completed' => $studentUnit->unit_completed ?? false,
+                            'ejected_at' => $studentUnit->ejected_at ?
+                                \Carbon\Carbon::parse($studentUnit->ejected_at)->format('Y-m-d H:i') : null,
+                            'ejected_reason' => $studentUnit->ejected_for ?? null,
+                            'lesson_count' => $dayContext['lesson_count'],
+                            'completed_lessons' => $dayContext['completed_lessons'],
+                        ];
+                    } else {
+                        // Student unit exists but no headshot validation record
+                        $headshotValidations[] = [
+                            'id' => null,
+                            'student_unit_id' => $studentUnit->id,
+                            'course_date_id' => $studentUnit->course_date_id,
+                            'date' => $studentUnit->created_at ?
+                                \Carbon\Carbon::parse($studentUnit->created_at)->format('Y-m-d') : null,
+                            'day_name' => $studentUnit->created_at ?
+                                \Carbon\Carbon::parse($studentUnit->created_at)->format('l') : null,
+                            'status' => 'missing',
+                            'photo_url' => (new \App\Models\Validation())->URL(true), // Default image
+                            'has_photo' => false,
+                            'id_type' => null,
+                            'reject_reason' => null,
+                            // Add day context for failed days
+                            'unit_status' => $dayContext['status'],
+                            'unit_completed' => $studentUnit->unit_completed ?? false,
+                            'ejected_at' => $studentUnit->ejected_at ?
+                                \Carbon\Carbon::parse($studentUnit->ejected_at)->format('Y-m-d H:i') : null,
+                            'ejected_reason' => $studentUnit->ejected_for ?? null,
+                            'lesson_count' => $dayContext['lesson_count'],
+                            'completed_lessons' => $dayContext['completed_lessons'],
+                        ];
+                    }
+                }
+
+                $courseValidationData = [
+                    'course_auth_id' => $courseAuth->id,
+                    'course_title' => $courseAuth->Course->title ?? 'Unknown Course',
+                    'course_status' => $this->getCourseAuthStatus($courseAuth),
+                    'enrollment_date' => \Carbon\Carbon::parse($courseAuth->created_at)->format('Y-m-d'),
+
+                    // ID Card Validation (one per course enrollment)
+                    'id_card_validation' => $idCardValidation ? [
+                        'id' => $idCardValidation->id,
+                        'course_auth_id' => $courseAuth->id, // Add reference to course auth
+                        'status' => $this->getValidationStatus($idCardValidation),
+                        'photo_url' => $idCardValidation->URL() ?: $idCardValidation->URL(true),
+                        'has_photo' => (bool) $idCardValidation->URL(),
+                        'id_type' => $idCardValidation->id_type,
+                        'reject_reason' => $idCardValidation->reject_reason,
+                    ] : [
+                        'id' => null,
+                        'course_auth_id' => $courseAuth->id, // Add reference to course auth
+                        'status' => 'missing',
+                        'photo_url' => (new \App\Models\Validation())->URL(true), // Default image
+                        'has_photo' => false,
+                        'id_type' => null,
+                        'reject_reason' => null,
+                    ],
+
+                    // Headshot Validations (one per day/StudentUnit)
+                    'headshot_validations' => $headshotValidations,
+
+                    // Summary statistics
+                    'validation_summary' => [
+                        'total_days' => count($headshotValidations),
+                        'headshots_submitted' => count(array_filter($headshotValidations, function ($v) {
+                            return $v['has_photo'];
+                        })),
+                        'headshots_approved' => count(array_filter($headshotValidations, function ($v) {
+                            return $v['status'] === 'approved';
+                        })),
+                        'headshots_rejected' => count(array_filter($headshotValidations, function ($v) {
+                            return $v['status'] === 'rejected';
+                        })),
+                        'headshots_pending' => count(array_filter($headshotValidations, function ($v) {
+                            return $v['status'] === 'pending';
+                        })),
+                        'id_card_status' => $idCardValidation ? $this->getValidationStatus($idCardValidation) : 'missing',
+                    ]
+                ];
+
+                $validationData[] = $courseValidationData;
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'student' => [
+                        'id' => $student->id,
+                        'name' => $student->name,
+                        'email' => $student->email,
+                        'avatar' => $student->getAvatar('thumb'),
+                    ],
+                    'validations' => $validationData,
+                    'summary' => [
+                        'total_courses' => count($validationData),
+                        'id_cards_submitted' => count(array_filter($validationData, function ($v) {
+                            return $v['id_card_validation']['has_photo'];
+                        })),
+                        'total_headshots_required' => array_sum(array_column($validationData, 'validation_summary.total_days')),
+                        'total_headshots_submitted' => array_sum(array_column($validationData, 'validation_summary.headshots_submitted')),
+                    ]
+                ],
+                'timestamp' => now()->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading student validation data', [
+                'student_id' => $studentId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load student validation data',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get validation status based on the status field
+     */
+    private function getValidationStatus(\App\Models\Validation $validation): string
+    {
+        if ($validation->status > 0) {
+            return 'approved';
+        } elseif ($validation->status < 0) {
+            return 'rejected';
+        } elseif ($validation->status === 0) {
+            return 'pending';
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * Get additional context about a student unit (day performance)
+     */
+    private function getStudentUnitContext(\App\Models\StudentUnit $studentUnit): array
+    {
+        // Get lesson progress for this day
+        $studentLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)->get();
+        $completedLessons = $studentLessons->where('completed_at', '!=', null)->count();
+        $totalLessons = $studentLessons->count();
+
+        // Determine day status
+        $status = 'unknown';
+        if ($studentUnit->ejected_at) {
+            $status = 'ejected';
+        } elseif ($studentUnit->unit_completed) {
+            $status = 'completed';
+        } elseif ($totalLessons > 0 && $completedLessons > 0) {
+            $status = 'in_progress';
+        } elseif ($totalLessons > 0) {
+            $status = 'started';
+        } else {
+            $status = 'not_started';
+        }
+
+        return [
+            'status' => $status,
+            'lesson_count' => $totalLessons,
+            'completed_lessons' => $completedLessons,
+            'completion_percentage' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0,
+        ];
+    }
+
+    /**
+     * Approve a validation with optional ID type
+     */
+    public function approveValidation(Request $request, $validationId): JsonResponse
+    {
+        try {
+            $validation = \App\Models\Validation::findOrFail($validationId);
+
+            $request->validate([
+                'id_type' => 'nullable|string|max:64',
+                'note' => 'nullable|string|max:500',
+            ]);
+
+            // ID cards require an id_type
+            if ($validation->course_auth_id && !$request->id_type) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID Type is required for ID card validations'
+                ], 422);
+            }
+
+            $validation->Accept($request->id_type);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Validation approved successfully',
+                'data' => [
+                    'id' => $validation->id,
+                    'status' => $this->getValidationStatus($validation),
+                    'id_type' => $validation->id_type,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error approving validation', [
+                'validation_id' => $validationId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve validation',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject a validation with reason
+     */
+    public function rejectValidation(Request $request, $validationId): JsonResponse
+    {
+        try {
+            $validation = \App\Models\Validation::findOrFail($validationId);
+
+            $request->validate([
+                'reject_reason' => 'required|string|max:500',
+            ]);
+
+            $validation->Reject($request->reject_reason);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Validation rejected successfully',
+                'data' => [
+                    'id' => $validation->id,
+                    'status' => $this->getValidationStatus($validation),
+                    'reject_reason' => $validation->reject_reason,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error rejecting validation', [
+                'validation_id' => $validationId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject validation',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
 }

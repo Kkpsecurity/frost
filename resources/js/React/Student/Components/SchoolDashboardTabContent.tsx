@@ -1,5 +1,6 @@
 import React from "react";
 import { SchoolDashboardTabContentProps } from "../types/props/classroom.props";
+import VideoLessonTab from "./VideoLessonTab";
 
 const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
     student,
@@ -9,6 +10,7 @@ const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
 }) => {
     return (
         <div className="tab-content" id="nav-tabContent">
+            {/* Home Tab */}
             <div
                 className="tab-pane fade show active"
                 id="nav-home"
@@ -326,6 +328,20 @@ const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            {/* Video Lessons Tab */}
+            <div className="tab-pane fade" id="nav-videos" role="tabpanel">
+                <VideoLessonTab />
+            </div>{" "}
+            {/* Documents Tab */}
+            <div className="tab-pane fade" id="nav-documents" role="tabpanel">
+                <div className="text-center py-5">
+                    <i className="fas fa-file-pdf fa-3x text-muted mb-3"></i>
+                    <h5 className="text-muted">Documents Section</h5>
+                    <p className="text-muted">
+                        Course documents and materials will appear here.
+                    </p>
                 </div>
             </div>
         </div>

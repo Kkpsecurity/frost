@@ -28,6 +28,35 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/settings', [App\Http\Controllers\Student\ProfileController::class, 'updateSettings'])->name('account.settings.update');
 });
 
+/**
+ * Student Offline Session Tracking Routes
+ */
+Route::middleware('auth')->prefix('student/offline')->name('student.offline.')->group(function () {
+    // Session Management
+    Route::post('session/start/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'startSession'])
+        ->name('session.start');
+    Route::post('session/end/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'endSession'])
+        ->name('session.end');
+    Route::get('session/status/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'getSessionStatus'])
+        ->name('session.status');
+
+    // Activity Tracking
+    Route::post('track/lesson/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'trackLessonActivity'])
+        ->name('track.lesson');
+    Route::post('track/step/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'trackSessionStep'])
+        ->name('track.step');
+
+    // Analytics & Reporting
+    Route::get('summary/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'getSessionSummary'])
+        ->name('summary');
+    Route::get('activities/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'getRecentActivities'])
+        ->name('activities');
+
+    // Admin/Cleanup
+    Route::post('session/force-end/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'forceEndSessions'])
+        ->name('session.force-end');
+});
+
 // Temporary test route for debugging CourseDatesService
 Route::get('/test-service', function () {
     try {

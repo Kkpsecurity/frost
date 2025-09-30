@@ -6,9 +6,16 @@ import EmptyState from "./EmptyState";
 interface CoursesGridProps {
     courses: CourseDate[];
     onCourseSelect?: (course: CourseDate) => void;
+    onStartClass?: (course: CourseDate) => void;
+    onRefreshData?: () => void; // Add refresh callback
 }
 
-const CoursesGrid: React.FC<CoursesGridProps> = ({ courses, onCourseSelect }) => {
+const CoursesGrid: React.FC<CoursesGridProps> = ({
+    courses,
+    onCourseSelect,
+    onStartClass,
+    onRefreshData,
+}) => {
     if (courses.length === 0) {
         return (
             <EmptyState
@@ -26,6 +33,8 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({ courses, onCourseSelect }) =>
                     <CourseCard
                         course={course}
                         onCourseSelect={onCourseSelect}
+                        onStartClass={onStartClass}
+                        onRefreshData={onRefreshData}
                     />
                 </div>
             ))}

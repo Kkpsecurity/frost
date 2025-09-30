@@ -1,0 +1,17 @@
+[2025-09-30 12:19:51] [START] Starting staging deployment process
+[2025-09-30 12:19:53] [GIT] Git Branch: copilot/vscode1758901784978
+[2025-09-30 12:19:54] [GIT] Git Commit: c6d5558
+[2025-09-30 12:19:54] [GIT] Git Author: Kkpsecurity
+[2025-09-30 12:19:54] [DEPLOY] Starting file deployment to staging...
+[2025-09-30 12:19:55] [DEPLOY] Robocopy command: robocopy C:\laragon\www\frost \\atlas\webroot\frost-staging /E /PURGE /XD .git /XD node_modules /XD vendor /XD .vscode /XD storage/logs /XD storage/framework/cache /XD storage/framework/sessions /XD storage/framework/views /XF *.env* /XF *.log /XF deployment*.log /XF .phpunit.result.cache /R:3 /W:10 /MT:8
+[2025-09-30 12:19:55] [DEPLOY] Copying files to staging server...
+[2025-09-30 12:22:37] [START] Starting staging deployment process
+[2025-09-30 12:22:38] [GIT] Git Branch: copilot/vscode1758901784978
+[2025-09-30 12:22:38] [GIT] Git Commit: c6d5558
+[2025-09-30 12:22:38] [GIT] Git Author: Kkpsecurity
+[2025-09-30 12:22:38] [DEPLOY] Starting file deployment to staging...
+[2025-09-30 12:22:38] [DEPLOY] rsync not found, falling back to robocopy
+[2025-09-30 12:22:38] [DEPLOY] Robocopy command: robocopy C:\laragon\www\frost \\atlas\webroot\frost-staging /E /PURGE /XD .git /XD node_modules /XD vendor /XD .vscode /XD storage/logs /XD storage/framework/cache /XD storage/framework/sessions /XD storage/framework/views /XF *.env* /XF *.log /XF deployment*.log /XF .phpunit.result.cache /R:3 /W:10 /MT:8
+[2025-09-30 12:22:38] [DEPLOY] Copying files with robocopy...
+[2025-09-30 12:22:59] [DEPLOY] Files deployed successfully with robocopy
+[2025-09-30 12:22:59] [SUCCESS] Staging deployment completed successfully

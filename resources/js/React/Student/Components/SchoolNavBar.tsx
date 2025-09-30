@@ -64,6 +64,38 @@ const SchoolNavBar: React.FC<SchoolNavBarProps> = ({
                 .frost-nav-tabs .nav-link.active::before {
                     width: 100%;
                 }
+
+                /* Video Lesson Styles */
+                .lesson-item:hover {
+                    background: rgba(var(--frost-primary-rgb), 0.05);
+                    border-radius: var(--frost-radius-md);
+                }
+
+                .lesson-item .status-indicator {
+                    transition: all var(--frost-transition-base);
+                }
+
+                .lesson-item:hover .status-indicator {
+                    transform: scale(1.1);
+                }
+
+                .sidebar-card {
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    transition: all var(--frost-transition-base);
+                }
+
+                .sidebar-card:hover {
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+                }
+
+                .pool-status-card {
+                    transition: all var(--frost-transition-base);
+                }
+
+                .pool-status-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }
             `}</style>
 
             <div
@@ -100,8 +132,8 @@ const SchoolNavBar: React.FC<SchoolNavBarProps> = ({
                         fontWeight: "var(--font-weight-medium)",
                     }}
                 >
-                    <i className="fas fa-video me-2"></i>
-                    Videos
+                    <i className="fas fa-play-circle me-2"></i>
+                    Video Lessons
                 </button>
                 <button
                     className="nav-link"

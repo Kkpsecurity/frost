@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     DashboardHeader,
     LoadingState,
@@ -13,8 +13,16 @@ import {
     type CourseDate,
 } from "./Offline";
 import AssignmentHistoryTable from "./Offline/AssignmentHistoryTable";
+import ClassroomManager from "./ClassroomManager";
 
 const InstructorDashboard: React.FC = () => {
+    const [currentView, setCurrentView] = useState<"dashboard" | "classroom">(
+        "dashboard"
+    );
+    const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(
+        null
+    );
+
     const {
         courseDates: courses,
         assignmentHistory,
@@ -35,6 +43,17 @@ const InstructorDashboard: React.FC = () => {
         // TODO: Navigate to course management interface
     };
 
+    const handleStartClass = (courseDate: CourseDate) => {
+        console.log("Starting class:", courseDate);
+        setSelectedCourse(courseDate);
+        setCurrentView("classroom");
+    };
+
+    const handleExitClassroom = () => {
+        setCurrentView("dashboard");
+        setSelectedCourse(null);
+    };
+
     const handleAdminAction = () => {
         console.log("Admin action: Create new course schedule");
         // TODO: Open modal or navigate to course creation interface
@@ -43,6 +62,17 @@ const InstructorDashboard: React.FC = () => {
         );
     };
 
+    // Show classroom view when instructor starts a class
+    if (currentView === "classroom" && selectedCourse) {
+        return (
+            <ClassroomManager
+                initialCourse={selectedCourse}
+                onExitClassroom={handleExitClassroom}
+            />
+        );
+    }
+
+    // Show main dashboard
     if (loading) {
         return <LoadingState />;
     }
@@ -109,6 +139,8 @@ const InstructorDashboard: React.FC = () => {
                     <CoursesGrid
                         courses={courses}
                         onCourseSelect={handleCourseSelect}
+                        onStartClass={handleStartClass}
+                        onRefreshData={refetch}
                     />
                 )}
             </div>

@@ -25,336 +25,77 @@
 @endsection
 
 @section('content')
-    {{-- Quick Stats --}}
-    <div class="row mb-4">
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
-                <div class="inner">
-                    <h3>{{ $stats['open_tickets'] ?? '8' }}</h3>
-                    <p>Open Tickets</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-ticket-alt"></i>
-                </div>
-                <a href="#tickets-section" class="small-box-footer">
-                    View Details <i class="fas fa-arrow-circle-right"></i>
-                </a>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3>{{ $stats['resolved_today'] ?? '12' }}</h3>
-                    <p>Resolved Today</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <a href="#resolved-section" class="small-box-footer">
-                    View History <i class="fas fa-arrow-circle-right"></i>
-                </a>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-                <div class="inner">
-                    <h3>{{ $stats['pending_review'] ?? '5' }}</h3>
-                    <p>Pending Review</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <a href="#pending-section" class="small-box-footer">
-                    Review Now <i class="fas fa-arrow-circle-right"></i>
-                </a>
-            </div>
-        </div>
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-danger">
-                <div class="inner">
-                    <h3>{{ $stats['urgent_tickets'] ?? '2' }}</h3>
-                    <p>Urgent</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <a href="#urgent-section" class="small-box-footer">
-                    View Urgent <i class="fas fa-arrow-circle-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        {{-- Left Column - Active Tickets --}}
+    <div class="row justify-content-center">
+        {{-- Main Student Search Section --}}
         <div class="col-lg-8">
-            {{-- Active Tickets --}}
-            <div class="card" id="tickets-section">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-inbox"></i>
-                        Active Support Tickets
-                    </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus"></i> New Ticket
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover mb-0">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Student</th>
-                                    <th>Subject</th>
-                                    <th>Priority</th>
-                                    <th>Created</th>
-                                    <th>Status</th>
-                                    <th class="text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($activeTickets ?? [] as $ticket)
-                                    <tr>
-                                        <td>
-                                            <strong>#{{ $ticket['id'] ?? '001' }}</strong>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <strong>{{ $ticket['student_name'] ?? 'John Doe' }}</strong>
-                                                <br>
-                                                <small class="text-muted">{{ $ticket['student_email'] ?? 'john@example.com' }}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                {{ $ticket['subject'] ?? 'Login Issues' }}
-                                                <br>
-                                                <small class="text-muted">{{ $ticket['course'] ?? 'Security Fundamentals' }}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            @if(($ticket['priority'] ?? 'medium') === 'high')
-                                                <span class="badge badge-danger">High</span>
-                                            @elseif(($ticket['priority'] ?? 'medium') === 'medium')
-                                                <span class="badge badge-warning">Medium</span>
-                                            @else
-                                                <span class="badge badge-info">Low</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <small>{{ $ticket['created_at'] ?? '2 hours ago' }}</small>
-                                        </td>
-                                        <td>
-                                            @if(($ticket['status'] ?? 'open') === 'open')
-                                                <span class="badge badge-primary">Open</span>
-                                            @elseif(($ticket['status'] ?? 'open') === 'in_progress')
-                                                <span class="badge badge-warning">In Progress</span>
-                                            @else
-                                                <span class="badge badge-success">Resolved</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-right">
-                                            <div class="btn-group" role="group">
-                                                <button class="btn btn-sm btn-outline-primary" 
-                                                        title="View Details">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-success" 
-                                                        title="Reply">
-                                                    <i class="fas fa-reply"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger" 
-                                                        title="Close">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="text-center py-4">
-                                            <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
-                                            <p class="text-muted mb-0">No active tickets</p>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Quick Student Search --}}
+            {{-- Student Search Card --}}
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-search"></i>
-                        Student Quick Search
+                        How can I help you?
                     </h3>
+                    <p class="card-subtitle text-muted mb-0">Search for a student to get started</p>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-8">
-                            <div class="input-group">
-                                <input type="text" class="form-control" 
+                            <div class="input-group input-group-lg">
+                                <input type="text" id="student-search-input" class="form-control"
                                        placeholder="Search by name, email, or student ID...">
                                 <div class="input-group-append">
-                                    <button class="btn btn-primary" type="button">
+                                    <button class="btn btn-primary" type="button" id="search-students">
                                         <i class="fas fa-search"></i> Search
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <select class="form-control">
-                                <option>All Courses</option>
-                                <option>Security Fundamentals</option>
-                                <option>Advanced Security</option>
-                                <option>Cyber Defense</option>
+                            <select class="form-control form-control-lg" id="course-filter">
+                                <option value="">All Courses</option>
+                                <option value="security-fundamentals">Security Fundamentals</option>
+                                <option value="advanced-security">Advanced Security</option>
+                                <option value="cyber-defense">Cyber Defense</option>
                             </select>
                         </div>
                     </div>
-                    
+
                     {{-- Search Results --}}
-                    <div id="search-results" class="mt-3" style="display: none;">
+                    <div id="search-results" class="mt-4" style="display: none;">
+                        <hr>
+                        <h5 class="mb-3">
+                            <i class="fas fa-users text-muted"></i>
+                            Search Results
+                        </h5>
                         <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                            <table class="table table-hover">
+                                <thead class="thead-light">
                                     <tr>
                                         <th>Student</th>
-                                        <th>Course</th>
-                                        <th>Status</th>
-                                        <th>Last Login</th>
+                                        <th>Course Status</th>
+                                        <th>Class Status</th>
+                                        <th>Last Activity</th>
                                         <th class="text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="search-results-body">
                                     {{-- Results will be populated via JavaScript --}}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        {{-- Right Column - Quick Tools and Stats --}}
-        <div class="col-lg-4">
-            {{-- Quick Actions --}}
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-tools"></i>
-                        Quick Tools
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <a href="#" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="fas fa-user-plus text-success me-3"></i>
-                            <div>
-                                <strong>Create Student Account</strong>
-                                <br>
-                                <small class="text-muted">Add new student to system</small>
-                            </div>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="fas fa-key text-info me-3"></i>
-                            <div>
-                                <strong>Reset Password</strong>
-                                <br>
-                                <small class="text-muted">Generate password reset link</small>
-                            </div>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="fas fa-graduation-cap text-warning me-3"></i>
-                            <div>
-                                <strong>Course Access</strong>
-                                <br>
-                                <small class="text-muted">Grant or revoke course access</small>
-                            </div>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <i class="fas fa-file-alt text-primary me-3"></i>
-                            <div>
-                                <strong>Generate Report</strong>
-                                <br>
-                                <small class="text-muted">Create support activity report</small>
-                            </div>
-                        </a>
+                    {{-- Loading State --}}
+                    <div id="search-loading" class="text-center mt-4" style="display: none;">
+                        <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Searching students...</p>
                     </div>
-                </div>
-            </div>
 
-            {{-- Recent Activity --}}
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-clock"></i>
-                        Recent Activity
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        @forelse($recentActivity ?? [] as $activity)
-                            <div class="timeline-item">
-                                <i class="fas {{ $activity['icon'] ?? 'fa-info-circle' }} bg-{{ $activity['color'] ?? 'info' }}"></i>
-                                <div class="timeline-content">
-                                    <h6>{{ $activity['title'] ?? 'Activity' }}</h6>
-                                    <p class="mb-1">{{ $activity['description'] ?? 'No description available' }}</p>
-                                    <small class="text-muted">{{ $activity['time'] ?? '2 hours ago' }}</small>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="text-center py-3">
-                                <i class="fas fa-history fa-2x text-muted mb-2"></i>
-                                <p class="text-muted mb-0">No recent activity</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-
-            {{-- Support Metrics --}}
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-bar"></i>
-                        Today's Metrics
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="metric-item mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>Avg Response Time</span>
-                            <strong class="text-success">{{ $metrics['avg_response'] ?? '15 min' }}</strong>
-                        </div>
-                        <div class="progress mt-1" style="height: 4px;">
-                            <div class="progress-bar bg-success" style="width: 85%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-item mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>Resolution Rate</span>
-                            <strong class="text-info">{{ $metrics['resolution_rate'] ?? '92%' }}</strong>
-                        </div>
-                        <div class="progress mt-1" style="height: 4px;">
-                            <div class="progress-bar bg-info" style="width: 92%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-item mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>Customer Satisfaction</span>
-                            <strong class="text-warning">{{ $metrics['satisfaction'] ?? '4.8/5' }}</strong>
-                        </div>
-                        <div class="progress mt-1" style="height: 4px;">
-                            <div class="progress-bar bg-warning" style="width: 96%"></div>
-                        </div>
+                    {{-- No Results State --}}
+                    <div id="no-results" class="text-center mt-4" style="display: none;">
+                        <i class="fas fa-search fa-2x text-muted mb-3"></i>
+                        <h5 class="text-muted">No students found</h5>
+                        <p class="text-muted">Try adjusting your search terms or course filter.</p>
                     </div>
                 </div>
             </div>
@@ -364,52 +105,72 @@
 
 @section('css')
     <style>
-        .timeline {
-            position: relative;
-            padding-left: 30px;
-        }
-        .timeline-item {
-            position: relative;
-            padding-bottom: 15px;
-            margin-bottom: 15px;
-            border-left: 2px solid #e0e0e0;
-        }
-        .timeline-item:last-child {
-            border-left: none;
-        }
-        .timeline-item i {
-            position: absolute;
-            left: -45px;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 30px;
+        /* Main search card styling */
+        .card-header {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
             color: white;
-        }
-        .timeline-content {
-            padding-left: 15px;
-        }
-        .timeline-content h6 {
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-        .timeline-content p {
-            margin-bottom: 5px;
-            font-size: 0.85rem;
-        }
-        .metric-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .metric-item:last-child {
             border-bottom: none;
         }
-        .small-box .inner h3 {
-            font-size: 2rem;
+
+        .card-header .card-title {
+            color: white;
+            font-weight: 600;
         }
-        .btn-group .btn {
-            padding: 0.25rem 0.5rem;
+
+        .card-subtitle {
+            color: rgba(255, 255, 255, 0.8) !important;
+            font-size: 0.9rem;
+        }
+
+        /* Search input styling */
+        .input-group-lg .form-control {
+            font-size: 1.1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem 0 0 0.5rem;
+        }
+
+        .input-group-lg .btn {
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        /* Search results table */
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        /* Status badges */
+        .badge {
+            padding: 0.35em 0.65em;
+            font-size: 0.85em;
+        }
+
+        /* Loading and empty states */
+        #search-loading i,
+        #no-results i {
+            opacity: 0.6;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .col-md-8, .col-md-4 {
+                margin-bottom: 1rem;
+            }
+
+            .input-group-lg .form-control,
+            .input-group-lg .btn {
+                font-size: 1rem;
+            }
+        }
+
+        /* Card hover effect */
+        .card {
+            transition: box-shadow 0.15s ease-in-out;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
     </style>
 @endsection
@@ -417,39 +178,181 @@
 @section('js')
     <script>
         $(document).ready(function() {
-            // Student search functionality
+            let searchTimeout;
+
+            // Search button click handler
             $('#search-students').on('click', function() {
-                const query = $('#student-search-input').val();
-                if (query.length > 2) {
-                    // Perform search (replace with actual AJAX call)
-                    $('#search-results').show();
-                    console.log('Searching for:', query);
+                performSearch();
+            });
+
+            // Enter key handler for search input
+            $('#student-search-input').on('keypress', function(e) {
+                if (e.which === 13) {
+                    performSearch();
                 }
             });
 
-            // Auto-refresh ticket counts every 30 seconds
-            setInterval(function() {
-                // Refresh ticket counts (replace with actual AJAX call)
-                console.log('Refreshing ticket counts...');
-            }, 30000);
+            // Real-time search as user types (debounced)
+            $('#student-search-input').on('input', function() {
+                clearTimeout(searchTimeout);
+                const query = $(this).val().trim();
 
-            // Handle ticket actions
-            $('.table').on('click', '.btn-outline-primary', function() {
-                // View ticket details
-                console.log('Viewing ticket details...');
-            });
+                if (query.length === 0) {
+                    hideAllStates();
+                    return;
+                }
 
-            $('.table').on('click', '.btn-outline-success', function() {
-                // Reply to ticket
-                console.log('Replying to ticket...');
-            });
-
-            $('.table').on('click', '.btn-outline-danger', function() {
-                // Close ticket
-                if (confirm('Are you sure you want to close this ticket?')) {
-                    console.log('Closing ticket...');
+                if (query.length >= 2) {
+                    searchTimeout = setTimeout(function() {
+                        performSearch();
+                    }, 500);
                 }
             });
+
+            // Course filter change handler
+            $('#course-filter').on('change', function() {
+                const query = $('#student-search-input').val().trim();
+                if (query.length >= 2) {
+                    performSearch();
+                }
+            });
+
+            function performSearch() {
+                const query = $('#student-search-input').val().trim();
+                const courseFilter = $('#course-filter').val();
+
+                if (query.length < 2) {
+                    showNoResults();
+                    return;
+                }
+
+                showLoading();
+
+                // Make AJAX request to search endpoint
+                $.ajax({
+                    url: '/admin/support/api/search-students',
+                    method: 'POST',
+                    data: {
+                        query: query,
+                        course: courseFilter,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.length > 0) {
+                            displayResults(response.data);
+                        } else {
+                            showNoResults();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Search failed:', error);
+                        showNoResults();
+                    }
+                });
+            }
+
+            function displayResults(students) {
+                hideAllStates();
+
+                let html = '';
+                students.forEach(function(student) {
+                    html += `
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong>${student.name}</strong>
+                                    <br>
+                                    <small class="text-muted">${student.email}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-${getStatusColor(student.status)}">${getStatusText(student.status)}</span>
+                                <br>
+                                <small class="text-muted">${student.total_courses || 0} course(s)</small>
+                            </td>
+                            <td>
+                                <span class="badge badge-info">Not in Class</span>
+                            </td>
+                            <td>
+                                <small>${student.last_activity || 'Never'}</small>
+                            </td>
+                            <td class="text-right">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            onclick="viewStudent(${student.id})"
+                                            title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info"
+                                            onclick="resetPassword(${student.id})"
+                                            title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success"
+                                            onclick="messageStudent(${student.id})"
+                                            title="Send Message">
+                                        <i class="fas fa-envelope"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                $('#search-results-body').html(html);
+                $('#search-results').show();
+            }
+
+            function showLoading() {
+                hideAllStates();
+                $('#search-loading').show();
+            }
+
+            function showNoResults() {
+                hideAllStates();
+                $('#no-results').show();
+            }
+
+            function hideAllStates() {
+                $('#search-results, #search-loading, #no-results').hide();
+            }
+
+            function getStatusColor(status) {
+                switch(status) {
+                    case 'active': return 'success';
+                    case 'inactive': return 'secondary';
+                    case 'suspended': return 'danger';
+                    case 'completed': return 'info';
+                    default: return 'secondary';
+                }
+            }
+
+            function getStatusText(status) {
+                switch(status) {
+                    case 'active': return 'Active';
+                    case 'inactive': return 'Inactive';
+                    case 'suspended': return 'Suspended';
+                    case 'completed': return 'Completed';
+                    default: return 'Unknown';
+                }
+            }
+
+            // Action handlers
+            window.viewStudent = function(studentId) {
+                window.location.href = `/admin/students/${studentId}`;
+            };
+
+            window.resetPassword = function(studentId) {
+                if (confirm('Send password reset link to this student?')) {
+                    // Implement password reset functionality
+                    console.log('Resetting password for student:', studentId);
+                }
+            };
+
+            window.messageStudent = function(studentId) {
+                // Implement messaging functionality
+                console.log('Opening message dialog for student:', studentId);
+            };
         });
     </script>
 @endsection

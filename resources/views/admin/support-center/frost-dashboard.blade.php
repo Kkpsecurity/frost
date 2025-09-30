@@ -683,6 +683,201 @@
             font-size: 0.8rem;
             padding: 0.25rem 0.75rem;
         }
+
+        /* Validation Tab Specific Styles */
+        .student-validations-container {
+            padding: 1rem 0;
+        }
+
+        .course-validation-section {
+            border-bottom: 2px solid #e3e6f0;
+            padding-bottom: 2rem;
+        }
+
+        .course-validation-section:last-child {
+            border-bottom: none;
+        }
+
+        /* ID Card Validation Styles */
+        .id-card-photo-container {
+            position: relative;
+            display: inline-block;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 250px;
+        }
+
+        .id-card-photo {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .id-card-photo:hover {
+            transform: scale(1.02);
+        }
+
+        .photo-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(108, 117, 125, 0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* Headshot List Group Styles */
+        .headshot-photo-container-sm {
+            position: relative;
+            display: inline-block;
+            border-radius: 50%;
+            overflow: hidden;
+            width: 50px;
+            height: 50px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .headshot-photo-sm {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .headshot-photo-sm:hover {
+            transform: scale(1.1);
+        }
+
+        .photo-overlay-sm {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(108, 117, 125, 0.8);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .headshot-date-info {
+            line-height: 1.2;
+        }
+
+        .status-indicator {
+            text-align: center;
+        }
+
+        /* Status-based styling for list items */
+        .list-group-item.status-approved {
+            border-left: 4px solid #1cc88a;
+            background-color: rgba(28, 200, 138, 0.05);
+        }
+
+        .list-group-item.status-rejected {
+            border-left: 4px solid #e74a3b;
+            background-color: rgba(231, 74, 59, 0.05);
+        }
+
+        .list-group-item.status-pending {
+            border-left: 4px solid #f6c23e;
+            background-color: rgba(246, 194, 62, 0.05);
+        }
+
+        .list-group-item.status-missing {
+            border-left: 4px solid #6c757d;
+            background-color: rgba(108, 117, 125, 0.05);
+        }
+
+        /* Validation form styles */
+        .validation-actions {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fc;
+            border-radius: 8px;
+        }
+
+        .validation-actions-sm {
+            margin-top: 0.5rem;
+        }
+
+        .reject-form {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #fff3f3;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+        }
+
+        .validation-details {
+            font-size: 0.9rem;
+        }
+
+        /* Badge styling for validations */
+        .badge-group .badge {
+            margin-left: 0.25rem;
+        }
+
+        .badge-sm {
+            font-size: 0.75rem;
+            padding: 0.3em 0.6em;
+        }
+
+        .alert-sm {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        /* Modal image styling */
+        #imageModal .modal-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        /* Responsive adjustments for validations */
+        @media (max-width: 768px) {
+            .id-card-photo {
+                height: 120px;
+            }
+
+            .headshot-photo-container-sm {
+                width: 40px;
+                height: 40px;
+            }
+
+            .badge-group {
+                margin-top: 0.5rem;
+            }
+
+            .badge-group .badge {
+                display: block;
+                margin: 0.25rem 0;
+            }
+
+            .validation-actions .btn-group {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .validation-actions .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
     </style>
 @endsection
 
@@ -2643,25 +2838,533 @@ $(document).ready(function() {
             </div>
         `);
 
-        // TODO: Replace with actual AJAX call to backend
-        setTimeout(function() {
-            $('#student-validations').html(`
-                <div class="text-center">
-                    <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
-                    <h5>Student Validations</h5>
-                    <p class="text-muted">Validation checks, certifications, and verification status will be displayed here.</p>
-                    <div class="alert alert-success">
-                        <i class="fas fa-check"></i>
-                        This feature is being implemented. Coming soon!
+        // Make AJAX call to get validation data
+        $.ajax({
+            url: `/admin/frost-support/student/${studentId}/validations`,
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function(response) {
+                console.log('Validations loaded successfully:', response);
+                if (response.success && response.data) {
+                    displayStudentValidations(response.data);
+                } else {
+                    showValidationsError('No validation data available for this student.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading validations:', error);
+                console.error('Response:', xhr.responseText);
+                let errorMessage = 'Failed to load validation data';
+
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+
+                showValidationsError(errorMessage);
+            }
+        });
+    };
+
+    // Function to display validation data
+    function displayStudentValidations(data) {
+        const student = data.student;
+        const validations = data.validations;
+        const summary = data.summary;
+
+        let html = `
+            <div class="student-validations-container">
+                <!-- Student Header -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <img src="${student.avatar}" alt="${student.name}" class="rounded-circle mr-3" style="width: 50px; height: 50px;">
+                            <div>
+                                <h5 class="mb-1">${student.name}</h5>
+                                <small class="text-muted">${student.email}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-right">
+                        <div class="badge-group">
+                            <span class="badge badge-secondary">ID Cards: ${summary.id_cards_submitted}/${summary.total_courses}</span>
+                            <span class="badge badge-info">Headshots: ${summary.total_headshots_submitted}/${summary.total_headshots_required}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course Validation Sections -->
+                <div class="validation-courses">
+        `;
+
+        if (validations.length === 0) {
+            html += `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>No Enrollments Found</strong><br>
+                    This student has no course enrollments requiring validation.
+                </div>
+            `;
+        } else {
+            validations.forEach(function(courseValidation) {
+                html += generateCourseValidationSection(courseValidation);
+            });
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        $('#student-validations').html(html);
+    }
+
+    // Function to generate course validation section
+    function generateCourseValidationSection(courseValidation) {
+        const idCard = courseValidation.id_card_validation;
+        const headshots = courseValidation.headshot_validations;
+        const summary = courseValidation.validation_summary;
+
+        let html = `
+            <div class="course-validation-section mb-5">
+                <!-- Course Header -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-graduation-cap text-primary"></i>
+                        ${courseValidation.course_title}
+                    </h5>
+                    <div class="badge-group">
+                        <span class="badge ${getCourseStatusBadgeClass(courseValidation.course_status)}">${courseValidation.course_status}</span>
+                        <span class="badge badge-secondary">Enrolled: ${formatDate(courseValidation.enrollment_date)}</span>
+                    </div>
+                </div>
+
+                <!-- ID Card Validation - Card Format -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-id-card text-warning"></i>
+                            ID Card Verification (Course Auth: ${idCard.course_auth_id})
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="id-card-photo-container">
+                                    <img src="${idCard.photo_url}" alt="ID Card" class="id-card-photo"
+                                         onclick="showImageModal('${idCard.photo_url}', 'ID Card - ${courseValidation.course_title}')">
+                                    ${!idCard.has_photo ? '<div class="photo-overlay"><i class="fas fa-camera"></i><br>No Photo</div>' : ''}
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="validation-details">
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4">
+                                            <strong>Status:</strong><br>
+                                            ${getValidationStatusBadge(idCard.status, idCard.has_photo)}
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <strong>ID Type:</strong><br>
+                                            <span class="text-muted">${idCard.id_type || 'Not specified'}</span>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <strong>Has Photo:</strong><br>
+                                            <span class="${idCard.has_photo ? 'text-success' : 'text-danger'}">
+                                                <i class="fas fa-${idCard.has_photo ? 'check' : 'times'}"></i>
+                                                ${idCard.has_photo ? 'Yes' : 'No'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    ${idCard.reject_reason ? `
+                                        <div class="alert alert-danger alert-sm">
+                                            <strong>Rejection Reason:</strong> ${idCard.reject_reason}
+                                        </div>
+                                    ` : ''}
+
+                                    <!-- Validation Actions -->
+                                    ${idCard.has_photo && idCard.status === 'pending' ? `
+                                        <div class="validation-actions">
+                                            <form class="validation-form" data-validation-id="${idCard.id}" data-type="approve">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <select name="id_type" class="form-control form-control-sm" required>
+                                                            <option value="">Select ID Type</option>
+                                                            <option value="Drivers License">Driver's License</option>
+                                                            <option value="State Issued ID">State Issued ID</option>
+                                                            <option value="Student ID">Student ID</option>
+                                                            <option value="Military / Govt ID">Military / Govt ID</option>
+                                                            <option value="Passport">Passport</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button type="submit" class="btn btn-success">
+                                                                <i class="fas fa-check"></i> Approve
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger" onclick="showRejectForm(${idCard.id})">
+                                                                <i class="fas fa-times"></i> Reject
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                            <div class="reject-form" id="reject-form-${idCard.id}" style="display: none;">
+                                                <form class="validation-form mt-2" data-validation-id="${idCard.id}" data-type="reject">
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            <textarea name="reject_reason" class="form-control form-control-sm"
+                                                                      placeholder="Enter rejection reason..." required rows="2"></textarea>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                                <i class="fas fa-times"></i> Confirm Reject
+                                                            </button>
+                                                            <button type="button" class="btn btn-secondary btn-sm ml-1" onclick="hideRejectForm(${idCard.id})">
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Headshots - List Group Format -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-camera text-info"></i>
+                            Daily Headshot Verification
+                            <span class="badge badge-secondary ml-2">${summary.headshots_submitted}/${summary.total_days} submitted</span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+        `;
+
+        if (headshots.length === 0) {
+            html += `
+                        <div class="alert alert-info m-3">
+                            <i class="fas fa-info-circle"></i>
+                            No daily attendance records found for this course.
+                        </div>
+            `;
+        } else {
+            html += `<div class="list-group list-group-flush">`;
+
+            // Sort headshots by date
+            headshots.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            headshots.forEach(function(headshot) {
+                const statusClass = getValidationStatusClass(headshot.status);
+                const statusIcon = getValidationStatusIcon(headshot.status);
+
+                html += `
+                            <div class="list-group-item ${statusClass}">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        <div class="headshot-photo-container-sm">
+                                            <img src="${headshot.photo_url}" alt="Headshot ${headshot.date}"
+                                                 class="headshot-photo-sm"
+                                                 onclick="showImageModal('${headshot.photo_url}', 'Headshot - ${headshot.day_name} ${headshot.date}')">
+                                            ${!headshot.has_photo ? '<div class="photo-overlay-sm"><i class="fas fa-camera"></i></div>' : ''}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="headshot-date-info">
+                                            <div class="font-weight-bold">${headshot.day_name}</div>
+                                            <small class="text-muted">${formatDate(headshot.date)}</small>
+                                            <br><small class="text-info">Unit ID: ${headshot.student_unit_id}</small>
+                                            ${headshot.unit_status ? `
+                                                <br><small class="badge badge-sm ${getUnitStatusBadgeClass(headshot.unit_status)}">${headshot.unit_status}</small>
+                                            ` : ''}
+                                            ${headshot.lesson_count ? `
+                                                <br><small class="text-muted">${headshot.completed_lessons}/${headshot.lesson_count} lessons</small>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="status-indicator">
+                                            <i class="${statusIcon}"></i>
+                                            ${getValidationStatusBadge(headshot.status, headshot.has_photo)}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        ${headshot.reject_reason ? `
+                                            <div class="alert alert-danger alert-sm mb-2">
+                                                <strong>Rejected:</strong> ${headshot.reject_reason}
+                                            </div>
+                                        ` : ''}
+
+                                        ${headshot.ejected_at ? `
+                                            <div class="alert alert-warning alert-sm mb-2">
+                                                <strong>Ejected:</strong> ${headshot.ejected_at}<br>
+                                                <small>Reason: ${headshot.ejected_reason || 'Not specified'}</small>
+                                            </div>
+                                        ` : ''}
+
+                                        ${!headshot.unit_completed && !headshot.ejected_at && headshot.lesson_count > 0 ? `
+                                            <div class="alert alert-info alert-sm mb-2">
+                                                <strong>Day Status:</strong> ${headshot.unit_status}<br>
+                                                <small>Progress: ${headshot.completed_lessons}/${headshot.lesson_count} lessons completed</small>
+                                            </div>
+                                        ` : ''}
+
+                                        <!-- Headshot Validation Actions -->
+                                        ${headshot.has_photo && headshot.status === 'pending' ? `
+                                            <div class="validation-actions-sm">
+                                                <form class="validation-form d-inline" data-validation-id="${headshot.id}" data-type="approve">
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-check"></i> Approve
+                                                    </button>
+                                                </form>
+                                                <button type="button" class="btn btn-danger btn-sm ml-1" onclick="showRejectForm(${headshot.id})">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                                <div class="reject-form mt-2" id="reject-form-${headshot.id}" style="display: none;">
+                                                    <form class="validation-form" data-validation-id="${headshot.id}" data-type="reject">
+                                                        <div class="input-group input-group-sm">
+                                                            <textarea name="reject_reason" class="form-control"
+                                                                      placeholder="Enter rejection reason..." required rows="1"></textarea>
+                                                            <div class="input-group-append">
+                                                                <button type="submit" class="btn btn-danger">
+                                                                    <i class="fas fa-times"></i> Reject
+                                                                </button>
+                                                                <button type="button" class="btn btn-secondary" onclick="hideRejectForm(${headshot.id})">
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                `;
+            });
+
+            html += `</div>`;
+        }
+
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }    // Helper functions for validation display
+    function getValidationStatusBadge(status, hasPhoto) {
+        if (!hasPhoto) {
+            return '<span class="badge badge-secondary">No Photo</span>';
+        }
+
+        switch(status) {
+            case 'approved':
+                return '<span class="badge badge-success">Approved</span>';
+            case 'rejected':
+                return '<span class="badge badge-danger">Rejected</span>';
+            case 'pending':
+                return '<span class="badge badge-warning">Pending</span>';
+            default:
+                return '<span class="badge badge-secondary">Unknown</span>';
+        }
+    }
+
+    function getValidationStatusClass(status) {
+        switch(status) {
+            case 'approved': return 'status-approved';
+            case 'rejected': return 'status-rejected';
+            case 'pending': return 'status-pending';
+            case 'missing': return 'status-missing';
+            default: return 'status-unknown';
+        }
+    }
+
+    function getValidationStatusIcon(status) {
+        switch(status) {
+            case 'approved': return 'fas fa-check-circle text-success';
+            case 'rejected': return 'fas fa-times-circle text-danger';
+            case 'pending': return 'fas fa-clock text-warning';
+            case 'missing': return 'fas fa-question-circle text-muted';
+            default: return 'fas fa-question-circle text-muted';
+        }
+    }
+
+    function getCourseStatusBadgeClass(status) {
+        switch(status.toLowerCase()) {
+            case 'active': return 'badge-success';
+            case 'completed': return 'badge-primary';
+            case 'expired': return 'badge-danger';
+            case 'inactive': return 'badge-secondary';
+            default: return 'badge-secondary';
+        }
+    }
+
+    function getUnitStatusBadgeClass(status) {
+        switch(status.toLowerCase()) {
+            case 'completed': return 'badge-success';
+            case 'ejected': return 'badge-danger';
+            case 'in_progress': return 'badge-warning';
+            case 'started': return 'badge-info';
+            case 'not_started': return 'badge-secondary';
+            default: return 'badge-secondary';
+        }
+    }
+
+    // Function to show validation error
+    function showValidationsError(message) {
+        $('#student-validations').html(`
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Error Loading Validations</strong><br>
+                ${message}
+            </div>
+        `);
+    }
+
+    // Function to show image in modal
+    function showImageModal(imageUrl, title) {
+        // Create modal if it doesn't exist
+        if ($('#imageModal').length === 0) {
+            $('body').append(`
+                <div class="modal fade" id="imageModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Image Preview</h5>
+                                <button type="button" class="close" data-dismiss="modal">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img id="modalImage" src="" alt="" class="img-fluid">
+                            </div>
+                        </div>
                     </div>
                 </div>
             `);
-        }, 1000);
-    };
+        }
+
+        $('#imageModal .modal-title').text(title);
+        $('#modalImage').attr('src', imageUrl).attr('alt', title);
+        $('#imageModal').modal('show');
+    }
+
+    // Functions for validation forms
+    function showRejectForm(validationId) {
+        $(`#reject-form-${validationId}`).slideDown();
+    }
+
+    function hideRejectForm(validationId) {
+        $(`#reject-form-${validationId}`).slideUp();
+        $(`#reject-form-${validationId} textarea`).val('');
+    }
+
+    // Handle validation form submissions
+    $(document).on('submit', '.validation-form', function(e) {
+        e.preventDefault();
+
+        const $form = $(this);
+        const validationId = $form.data('validation-id');
+        const type = $form.data('type');
+        const $submitBtn = $form.find('button[type="submit"]');
+
+        // Disable submit button
+        $submitBtn.prop('disabled', true);
+        const originalText = $submitBtn.html();
+        $submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        // Prepare form data
+        const formData = {
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        if (type === 'approve') {
+            const idType = $form.find('select[name="id_type"]').val();
+            if (idType) {
+                formData.id_type = idType;
+            }
+        } else if (type === 'reject') {
+            formData.reject_reason = $form.find('textarea[name="reject_reason"]').val();
+        }
+
+        // Make AJAX request
+        $.ajax({
+            url: `/admin/frost-support/validation/${validationId}/${type}`,
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Show success message
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message);
+                    } else {
+                        alert(response.message);
+                    }
+
+                    // Reload validations to show updated status
+                    loadStudentValidations($('#student-details').data('student-id'));
+                } else {
+                    const errorMsg = response.message || 'Failed to process validation';
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error processing validation:', error);
+                const errorMessage = xhr.responseJSON?.message || 'Failed to process validation';
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMessage);
+                } else {
+                    alert(errorMessage);
+                }
+            },
+            complete: function() {
+                // Re-enable submit button
+                $submitBtn.prop('disabled', false);
+                $submitBtn.html(originalText);
+            }
+        });
+    });
 
     // Store student ID when student is selected for tab functionality
     window.setCurrentStudentId = function(studentId) {
         $('#student-details').data('student-id', studentId);
+    };
+
+    // Helper functions for validation display
+    window.formatDate = function(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    window.formatDateTime = function(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
     };
 
     // Also add the missing selectStudent function that got removed

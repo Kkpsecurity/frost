@@ -1,312 +1,278 @@
-import React from "react";
+import React, { useState } from "react";
 import { CourseDate } from "./types";
+import { classroomSessionAPI } from "../api/classroomSessionAPI";
 
 interface CourseCardProps {
     course: CourseDate;
     onCourseSelect?: (course: CourseDate) => void;
+    onStartClass?: (course: CourseDate) => void;
+    onRefreshData?: () => void; // Add refresh callback
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, onCourseSelect }) => {
+const CourseCard: React.FC<CourseCardProps> = ({
+    course,
+    onCourseSelect,
+    onStartClass,
+    onRefreshData,
+}) => {
+    const [isLoading, setIsLoading] = useState(false);
+
     const handleCardClick = () => {
         if (onCourseSelect) {
             onCourseSelect(course);
         }
     };
 
-    const handleButtonClick = (action: string, course: CourseDate) => {
+    const handleButtonClick = async (action: string, course: CourseDate) => {
         console.log(`Action: ${action} for course ${course.id}`);
-        // TODO: Implement actual button actions
+
         if (action === "start_class" || action === "take_control") {
-            // This action creates an InstUnit for the CourseDate
-            alert(`Taking control of scheduled class: ${course.course_name}`);
-            console.log(`Creating InstUnit for CourseDate ID: ${course.id}`);
-            // Call API to create InstUnit (instructor takes control)
+            setIsLoading(true);
+            try {
+                // Call API to create InstUnit
+                const response = await classroomSessionAPI.startSession(
+                    course.id
+                );
+
+                if (response.success) {
+                    console.log(
+                        "InstUnit created/found successfully:",
+                        response.data
+                    );
+
+                    // Update course object with InstUnit info if newly created
+                    if (response.data) {
+                        course.inst_unit = {
+                            id: response.data.inst_unit_id,
+                            created_by: response.data.instructor.id,
+                            created_at: response.data.created_at,
+                            assistant_id: response.data.assistant?.id || null,
+                        };
+                        course.instructor_name = response.data.instructor.name;
+                        course.assistant_name =
+                            response.data.assistant?.name || null;
+
+                        // Update class status to in_progress
+                        course.class_status = "in_progress";
+                    }
+
+                    // Call the parent callback to start classroom
+                    if (onStartClass) {
+                        onStartClass(course);
+                    } else {
+                        alert(`Class session started: ${course.course_name}`);
+                    }
+
+                    // Trigger data refresh to show updated status immediately
+                    if (onRefreshData) {
+                        setTimeout(() => onRefreshData(), 500); // Small delay to ensure backend is updated
+                    }
+                } else {
+                    alert(`Failed to start class session: ${response.message}`);
+                }
+            } catch (error: any) {
+                console.error("Error starting classroom session:", error);
+                alert(`Error starting class: ${error.message}`);
+            } finally {
+                setIsLoading(false);
+            }
         } else if (action === "assist") {
-            // Join existing InstUnit as assistant
             alert(`Assisting with: ${course.course_name}`);
             console.log(
                 `Joining InstUnit ID: ${course.inst_unit?.id} as assistant`
             );
-            // Call API to join as assistant
         } else if (action === "complete") {
-            // Mark InstUnit as completed
-            alert(`Completing class: ${course.course_name}`);
-            console.log(`Completing InstUnit ID: ${course.inst_unit?.id}`);
-            // Call API to mark InstUnit as completed
-        }
-    };
+            if (course.inst_unit?.id) {
+                setIsLoading(true);
+                try {
+                    const response = await classroomSessionAPI.completeSession(
+                        course.inst_unit.id
+                    );
 
-    const getButtonStyle = (action: string) => {
-        switch (action) {
-            case "start_class":
-            case "take_control":
-                return {
-                    className: "btn-primary",
-                    style: {
-                        backgroundColor: "var(--frost-primary-color, #3b82f6)",
-                    },
-                    icon: "fas fa-play me-1",
-                };
-            case "complete":
-                return {
-                    className: "btn-success",
-                    style: {
-                        backgroundColor: "var(--frost-success-color, #22c55e)",
-                    },
-                    icon: "fas fa-check me-1",
-                };
-            case "assist":
-                return {
-                    className: "btn-info",
-                    style: {
-                        backgroundColor: "var(--frost-info-color, #17aac9)",
-                    },
-                    icon: "fas fa-hands-helping me-1",
-                };
-            case "info":
-                return {
-                    className: "btn-outline-secondary",
-                    style: {
-                        color: "var(--frost-text-color, #374151)",
-                        borderColor:
-                            "var(--frost-light-primary-color, #e2e8f0)",
-                        backgroundColor: "transparent",
-                    },
-                    icon: "fas fa-info-circle me-1",
-                };
-            default:
-                return {
-                    className: "btn-secondary",
-                    style: {
-                        backgroundColor:
-                            "var(--frost-secondary-color, #6b7280)",
-                    },
-                    icon: "fas fa-info me-1",
-                };
-        }
-    };
+                    if (response.success) {
+                        alert(`Class completed: ${course.course_name}`);
+                        console.log(
+                            `Completed InstUnit ID: ${course.inst_unit.id}`
+                        );
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "assigned":
-                return "var(--frost-success-color, #22c55e)"; // Green - InstUnit exists, class is active
-            case "unassigned":
-                return "var(--frost-warning-color, #f59e0b)"; // Orange - CourseDate exists, no InstUnit yet
-            case "completed":
-                return "var(--frost-info-color, #17aac9)"; // Blue - InstUnit completed
-            case "expired":
-                return "var(--frost-danger-color, #ef4444)"; // Red - CourseDate time passed without InstUnit
-            case "scheduled":
-                return "var(--frost-secondary-color, #6b7280)"; // Gray - Future CourseDate
-            // Legacy support
-            case "live":
-                return "var(--frost-success-color, #22c55e)";
-            case "ready_to_start":
-                return "var(--frost-warning-color, #f59e0b)";
-            case "ready_to_restart":
-                return "var(--frost-warning-color, #f59e0b)";
-            default:
-                return "var(--frost-secondary-color, #6b7280)";
+                        // Update class status to completed
+                        course.class_status = "completed";
+
+                        // Trigger data refresh to show updated status immediately
+                        if (onRefreshData) {
+                            setTimeout(() => onRefreshData(), 500);
+                        }
+                    } else {
+                        alert(`Failed to complete class: ${response.message}`);
+                    }
+                } catch (error: any) {
+                    console.error("Error completing classroom session:", error);
+                    alert(`Error completing class: ${error.message}`);
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                alert(`No active session found for: ${course.course_name}`);
+            }
         }
     };
 
     return (
         <div
-            className="card h-100"
-            style={{
-                backgroundColor: "#f3f4f6",
-                border: "1px solid var(--frost-light-primary-color, #e2e8f0)",
-                boxShadow:
-                    "var(--frost-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1))",
-                transition: "var(--frost-transition-base, 0.2s ease-in-out)",
-                cursor: onCourseSelect ? "pointer" : "default",
-            }}
+            className="card card-primary card-outline h-100"
             onClick={handleCardClick}
+            style={{ cursor: onCourseSelect ? "pointer" : "default" }}
         >
-            {/* Card Header with Status */}
-            <div
-                className="card-header"
-                style={{
-                    backgroundColor: course.inst_unit // InstUnit exists = instructor has taken control
-                        ? "var(--frost-success-color, #22c55e)"
-                        : "var(--frost-secondary-color, #394867)", // CourseDate only, no InstUnit yet
-                    color: "var(--frost-white-color, #ffffff)",
-                    borderBottom: "none",
-                }}
-            >
-                <h6 className="card-title mb-0 d-flex align-items-center">
-                    <i
-                        className={`fas ${
-                            course.inst_unit
-                                ? "fa-play-circle" // InstUnit exists - class is controlled
-                                : "fa-clock" // CourseDate only - waiting for instructor control
-                        } mr-2 me-2`}
-                    ></i>
-                    {course.course_name} - {course.module}
-                </h6>
-            </div>
-
-            {/* Card Body with Course Stats in Circles */}
-            <div className="card-body">
-                <div className="row text-center mb-3">
-                    <div className="col-4">
-                        <div className="d-flex flex-column align-items-center">
-                            <div
-                                className="rounded-circle d-flex align-items-center justify-content-center mb-2"
-                                style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    backgroundColor:
-                                        "var(--frost-info-color, #17aac9)",
-                                    color: "var(--frost-white-color, #ffffff)",
-                                    fontSize: "1.2rem",
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                {course.lesson_count || 0}
-                            </div>
-                            <div
-                                className="small"
-                                style={{
-                                    color: "var(--frost-base-color, #6b7280)",
-                                    fontWeight: "500",
-                                }}
-                            >
-                                Lessons
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-4">
-                        <div className="d-flex flex-column align-items-center">
-                            <div
-                                className="rounded-circle d-flex align-items-center justify-content-center mb-2"
-                                style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    backgroundColor:
-                                        "var(--frost-success-color, #22c55e)",
-                                    color: "var(--frost-white-color, #ffffff)",
-                                    fontSize: "0.9rem",
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                {course.student_count || 0}
-                            </div>
-                            <div
-                                className="small"
-                                style={{
-                                    color: "var(--frost-base-color, #6b7280)",
-                                    fontWeight: "500",
-                                }}
-                            >
-                                Students
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-4">
-                        <div className="d-flex flex-column align-items-center">
-                            <div
-                                className="rounded-circle d-flex align-items-center justify-content-center mb-2"
-                                style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    backgroundColor:
-                                        "var(--frost-warning-color, #f59e0b)",
-                                    color: "var(--frost-white-color, #ffffff)",
-                                    fontSize: "0.8rem",
-                                    fontWeight: "bold",
-                                    textAlign: "center",
-                                }}
-                            >
-                                {course.time || "N/A"}
-                            </div>
-                            <div
-                                className="small"
-                                style={{
-                                    color: "var(--frost-base-color, #6b7280)",
-                                    fontWeight: "500",
-                                }}
-                            >
-                                Start Time
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Status and Instructor/Assistant Info */}
+            {/* Card Header */}
+            <div className="card-header">
                 <div className="d-flex justify-content-between align-items-center">
+                    <h3 className="card-title mb-0">
+                        <i className="fas fa-graduation-cap me-2"></i>
+                        {course.course_name}
+                    </h3>
                     <span
-                        className="badge"
-                        style={{
-                            backgroundColor: getStatusColor(
-                                course.class_status || "unassigned"
-                            ),
-                            color: "var(--frost-white-color, #ffffff)",
-                        }}
+                        className={`badge ${
+                            course.class_status === "unassigned"
+                                ? "bg-warning"
+                                : course.class_status === "assigned"
+                                ? "bg-success"
+                                : course.class_status === "completed"
+                                ? "bg-info"
+                                : course.class_status === "in_progress"
+                                ? "bg-primary"
+                                : "bg-secondary"
+                        }`}
                     >
                         {(course.class_status || "unassigned")
                             .replace("_", " ")
                             .toUpperCase()}
                     </span>
+                </div>
+                <div className="card-tools mt-2">
+                    <span className="badge bg-light text-dark">
+                        <i className="fas fa-bookmark me-1"></i>
+                        {course.module}
+                    </span>
+                </div>
+            </div>
 
-                    <div className="text-end">
-                        <small
-                            className="d-block"
-                            style={{
-                                color: "var(--frost-base-color, #6b7280)",
-                                fontSize: "0.75rem",
-                            }}
-                        >
-                            Instructor:{" "}
-                            {course.inst_unit
-                                ? course.instructor_name
-                                : "Not Taken Control"}
-                        </small>
+            {/* Card Body */}
+            <div className="card-body">
+                {/* Stats Row */}
+                <div className="row text-center mb-3">
+                    <div className="col-4">
+                        <div className="info-box-content">
+                            <span className="info-box-number text-primary h4">
+                                {course.lesson_count || 0}
+                            </span>
+                            <span className="info-box-text small text-muted">
+                                Lessons
+                            </span>
+                        </div>
+                    </div>
+                    <div className="col-4">
+                        <div className="info-box-content">
+                            <span className="info-box-number text-success h4">
+                                {course.student_count || 0}
+                            </span>
+                            <span className="info-box-text small text-muted">
+                                Students
+                            </span>
+                        </div>
+                    </div>
+                    <div className="col-4">
+                        <div className="info-box-content">
+                            <span className="info-box-number text-warning h6">
+                                {course.time || "N/A"}
+                            </span>
+                            <span className="info-box-text small text-muted">
+                                Start
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
-                        <small
-                            className="d-block"
-                            style={{
-                                color: "var(--frost-info-color, #17aac9)",
-                                fontSize: "0.7rem",
-                            }}
-                        >
-                            Assistant:{" "}
-                            {course.inst_unit
-                                ? course.assistant_name || "None"
-                                : "TBD"}
-                        </small>
+                {/* Instructor Information */}
+                <div className="row">
+                    <div className="col-6">
+                        <div className="description-block border-right">
+                            <span className="description-header">
+                                {course.inst_unit && course.instructor_name
+                                    ? course.instructor_name
+                                    : "Not Assigned"}
+                            </span>
+                            <span className="description-text">Instructor</span>
+                        </div>
+                    </div>
+                    <div className="col-6">
+                        <div className="description-block">
+                            <span className="description-header">
+                                {course.inst_unit && course.assistant_name
+                                    ? course.assistant_name
+                                    : "TBD"}
+                            </span>
+                            <span className="description-text">Assistant</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Card Footer with Action Buttons */}
             {course.buttons && (
-                <div
-                    className="card-footer"
-                    style={{
-                        backgroundColor: "var(--frost-light-bg-color, #f8fafc)",
-                        borderTop:
-                            "1px solid var(--frost-light-primary-color, #e2e8f0)",
-                        padding: "0.75rem 1rem",
-                    }}
-                >
-                    <div className="d-flex flex-wrap gap-2">
+                <div className="card-footer">
+                    <div className="d-flex gap-2">
                         {Object.entries(course.buttons).map(
                             ([action, label]) => {
-                                const buttonStyle = getButtonStyle(action);
+                                const isStartClass =
+                                    action === "start_class" ||
+                                    action === "take_control";
+                                const isComplete = action === "complete";
+                                const isAssist = action === "assist";
+
                                 return (
                                     <button
                                         key={action}
-                                        className={`btn ${buttonStyle.className} btn-sm`}
-                                        style={buttonStyle.style}
+                                        className={`btn ${
+                                            isStartClass
+                                                ? "btn-primary"
+                                                : isComplete
+                                                ? "btn-success"
+                                                : isAssist
+                                                ? "btn-info"
+                                                : "btn-secondary"
+                                        } btn-sm flex-fill`}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleButtonClick(action, course);
                                         }}
+                                        disabled={isLoading}
                                     >
-                                        <i className={buttonStyle.icon}></i>
-                                        {label}
+                                        {isLoading ? (
+                                            <>
+                                                <i className="fas fa-spinner fa-spin me-1"></i>
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i
+                                                    className={`fas ${
+                                                        action ===
+                                                            "start_class" ||
+                                                        action ===
+                                                            "take_control"
+                                                            ? "fa-play"
+                                                            : action ===
+                                                              "complete"
+                                                            ? "fa-check"
+                                                            : action ===
+                                                              "assist"
+                                                            ? "fa-hands-helping"
+                                                            : "fa-info-circle"
+                                                    } me-1`}
+                                                ></i>
+                                                {label}
+                                            </>
+                                        )}
                                     </button>
                                 );
                             }

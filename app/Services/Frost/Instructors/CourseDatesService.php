@@ -284,6 +284,11 @@ class CourseDatesService
                                     'completed_at' => $instUnit->completed_at
                                 ]);
 
+                                // Clear instructor data for stale InstUnit
+                                $instructor = null;
+                                $assistant = null;
+                                $instUnit = null;
+
                                 // Treat as unassigned since this is stale data
                                 if ($now->lt($startTime)) {
                                     $classStatus = 'scheduled';
@@ -297,18 +302,49 @@ class CourseDatesService
                                 }
                             }
                         } else {
-                            // InstUnit exists but not completed - check if class time has started
-                            if ($now->gte($startTime)) {
-                                // Class time has started/passed and instructor is assigned
-                                $classStatus = 'in_progress';
-                                $buttons = [
-                                    'take_control' => 'Take Control',
-                                    'assist' => 'Assist'
-                                ];
+                            // InstUnit exists but not completed - check if it's from the same day first
+                            $instUnitCreatedDay = Carbon::parse($instUnit->created_at)->format('Y-m-d');
+                            $courseDateDay = Carbon::parse($courseDate->starts_at)->format('Y-m-d');
+
+                            if ($instUnitCreatedDay !== $courseDateDay) {
+                                // Stale InstUnit from different day - treat as unassigned
+                                \Log::warning('CourseDatesService: Uncompleted InstUnit from different day', [
+                                    'course_date_id' => $courseDate->id,
+                                    'course_date_day' => $courseDateDay,
+                                    'inst_unit_created_day' => $instUnitCreatedDay,
+                                    'created_at' => $instUnit->created_at
+                                ]);
+
+                                // Clear instructor data for stale InstUnit
+                                $instructor = null;
+                                $assistant = null;
+                                $instUnit = null;
+
+                                // Treat as unassigned
+                                if ($now->lt($startTime)) {
+                                    $classStatus = 'scheduled';
+                                    $buttons = ['info' => 'Class starts at ' . $startTime->format('g:i A')];
+                                } elseif ($now->between($startTime, $endTime) || $now->between($startTime->copy()->subHours(1), $endTime->copy()->addHours(1))) {
+                                    $classStatus = 'unassigned';
+                                    $buttons = ['start_class' => 'Start Class'];
+                                } else {
+                                    $classStatus = 'expired';
+                                    $buttons = ['info' => 'Class time has ended'];
+                                }
                             } else {
-                                // Before class time but instructor assigned
-                                $classStatus = 'assigned';
-                                $buttons = ['info' => 'Instructor assigned - starts at ' . $startTime->format('g:i A')];
+                                // InstUnit exists but not completed - check if class time has started
+                                if ($now->gte($startTime)) {
+                                    // Class time has started/passed and instructor is assigned
+                                    $classStatus = 'in_progress';
+                                    $buttons = [
+                                        'take_control' => 'Take Control',
+                                        'assist' => 'Assist'
+                                    ];
+                                } else {
+                                    // Before class time but instructor assigned
+                                    $classStatus = 'assigned';
+                                    $buttons = ['info' => 'Instructor assigned - starts at ' . $startTime->format('g:i A')];
+                                }
                             }
                         }
                     } else {
@@ -339,8 +375,7 @@ class CourseDatesService
                         }
                     }
 
-                    // Get lesson count using existing CourseUnitObj class
-                    $lessonCount = $lessonCount; // Use the value we calculated above with CourseUnitObj
+                    // Lesson count is already calculated above with CourseUnitObj
 
                     return [
                         'id' => $courseDate->id,
@@ -349,7 +384,7 @@ class CourseDatesService
                         'course_name' => $course->title ?? 'Unknown Course',
                         'course_code' => $course->title ?? 'N/A',
                         'lesson_name' => $courseUnit->title ?? 'Unknown Lesson',
-                        'module' => 'Module ' . ($courseUnit->sequence ?? 'N/A'),
+                        'module' => $courseUnit->admin_title ?? 'Module N/A',
                         'student_count' => $studentCount,
                         'lesson_count' => $lessonCount, // Add lesson count for course card
                         'class_status' => $classStatus,

@@ -70,6 +70,15 @@ Route::prefix('frost-support')->name('frost-support.')->middleware(['admin'])->g
     Route::get('/student/{studentId}/exams', [\App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class, 'getStudentExams'])
         ->name('student.exams');
 
+    Route::get('/student/{studentId}/validations', [\App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class, 'getStudentValidations'])
+        ->name('student.validations');
+
+    Route::post('/validation/{validationId}/approve', [\App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class, 'approveValidation'])
+        ->name('validation.approve');
+
+    Route::post('/validation/{validationId}/reject', [\App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class, 'rejectValidation'])
+        ->name('validation.reject');
+
     Route::post('/ban-student-course', [\App\Http\Controllers\Admin\SupportCenter\FrostSupportDashboardController::class, 'banStudentFromCourse'])
         ->name('ban.student.course');
 
