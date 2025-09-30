@@ -34,3 +34,40 @@
 [2025-09-30 12:28:57] [DEPLOY] Copying files with robocopy...
 [2025-09-30 12:29:05] [DEPLOY] Files deployed successfully with robocopy
 [2025-09-30 12:29:05] [SUCCESS] Staging deployment completed successfully
+[2025-09-30 12:32:11] [START] Starting staging deployment process
+[2025-09-30 12:32:11] [GIT] Git Branch: copilot/vscode1758901784978
+[2025-09-30 12:32:11] [GIT] Git Commit: f5c9724
+[2025-09-30 12:32:11] [GIT] Git Author: Kkpsecurity
+[2025-09-30 12:32:11] [DEPLOY] Starting file deployment to staging...
+[2025-09-30 12:32:12] [DEPLOY] rsync not found, falling back to robocopy
+[2025-09-30 12:32:12] [DEPLOY] Copying files with robocopy...
+[2025-09-30 12:32:17] [DEPLOY] Files deployed successfully with robocopy
+[2025-09-30 12:32:18] [SUCCESS] Staging deployment completed successfully
+[2025-09-30 12:36:22] [START] Starting staging deployment process
+[2025-09-30 12:36:23] [GIT] Git Branch: copilot/vscode1758901784978
+[2025-09-30 12:36:23] [GIT] Git Commit: f5c9724
+[2025-09-30 12:36:23] [GIT] Git Author: Kkpsecurity
+[2025-09-30 12:36:23] [DEPLOY] Starting file deployment to staging...
+[2025-09-30 12:36:24] [DEPLOY] rsync not found, falling back to robocopy
+[2025-09-30 12:36:24] [DEPLOY] Robocopy command: robocopy C:\laragon\www\frost \\atlas\webroot\frost-staging /E /PURGE /XD .git /XD node_modules /XD vendor /XD docs /XD scripts /XD .vscode /XD storage/logs /XD storage/framework/cache /XD storage/framework/sessions /XD storage/framework/views /XF *.env* /XF *.log /XF deployment*.log /XF .phpunit.result.cache /R:3 /W:10 /MT:8
+[2025-09-30 12:36:24] [DEPLOY] Copying files with robocopy...
+[2025-09-30 12:36:28] [DEPLOY] Files deployed successfully with robocopy
+[2025-09-30 12:36:28] [SUCCESS] Staging deployment completed successfully
+[2025-09-30 12:36:52] [START] Starting staging deployment process
+[2025-09-30 12:36:52] [GIT] Git Branch: copilot/vscode1758901784978
+[2025-09-30 12:36:52] [GIT] Git Commit: 4d64186
+[2025-09-30 12:36:52] [GIT] Git Author: Kkpsecurity
+[2025-09-30 12:36:53] [DEPLOY] Starting file deployment to staging...
+[2025-09-30 12:36:53] [DEPLOY] rsync not found, falling back to robocopy
+[2025-09-30 12:36:53] [DEPLOY] Copying files with robocopy...
+[2025-09-30 12:36:58] [DEPLOY] Files deployed successfully with robocopy
+[2025-09-30 12:36:58] [SUCCESS] Staging deployment completed successfully
+[2025-09-30 13:40:07] [START] Starting staging deployment process
+[2025-09-30 13:40:07] [GIT] Git Branch: copilot/vscode1758901784978
+[2025-09-30 13:40:07] [GIT] Git Commit: 842f1af
+[2025-09-30 13:40:07] [GIT] Git Author: Kkpsecurity
+[2025-09-30 13:40:07] [DEPLOY] Starting file deployment to staging...
+[2025-09-30 13:40:08] [DEPLOY] rsync not found, falling back to robocopy
+[2025-09-30 13:40:08] [DEPLOY] Copying files with robocopy...
+[2025-09-30 13:40:14] [DEPLOY] Files deployed with warnings (exit code: 3)
+[2025-09-30 13:40:14] [SUCCESS] Staging deployment completed successfully
