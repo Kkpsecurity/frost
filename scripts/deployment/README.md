@@ -84,8 +84,10 @@ The deployment automatically excludes:
 
 ### Directories
 - `.git` - Git repository data
-- `node_modules` - Node.js dependencies
+- `node_modules` - Node.js dependencies  
 - `vendor` - Composer dependencies (may need manual install)
+- `docs/` - Documentation (development only)
+- `scripts/` - Development scripts and tools
 - `.vscode` - VS Code settings
 - `storage/logs` - Log files
 - `storage/framework/cache` - Cache files

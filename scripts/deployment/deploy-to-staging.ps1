@@ -62,8 +62,8 @@ function New-StagingBackup {
             New-Item -ItemType Directory -Path $BackupPath -Force | Out-Null
         }
 
-        # Use robocopy for efficient copying (excluding vendor and node_modules)
-        $RobocopyArgs = @($StagingPath, $BackupFullPath, "/E", "/XD", ".git", "node_modules", "vendor", "/R:3", "/W:10", "/NFL", "/NDL")
+        # Use robocopy for efficient copying (excluding dev-only folders)
+        $RobocopyArgs = @($StagingPath, $BackupFullPath, "/E", "/XD", ".git", "node_modules", "vendor", "docs", "scripts", "/R:3", "/W:10", "/NFL", "/NDL")
         $Result = & robocopy @RobocopyArgs
 
         if ($LASTEXITCODE -le 1) {
@@ -109,6 +109,8 @@ function Deploy-Files {
                 ".git/",
                 "node_modules/",
                 "vendor/",
+                "docs/",
+                "scripts/",
                 ".vscode/",
                 "storage/logs/",
                 "storage/framework/cache/",
@@ -159,7 +161,7 @@ function Deploy-Files {
         }
         else {
             # Fallback to robocopy
-            $ExcludeDirs = @(".git", "node_modules", "vendor", ".vscode", "storage/logs", "storage/framework/cache", "storage/framework/sessions", "storage/framework/views")
+            $ExcludeDirs = @(".git", "node_modules", "vendor", "docs", "scripts", ".vscode", "storage/logs", "storage/framework/cache", "storage/framework/sessions", "storage/framework/views")
             $ExcludeFiles = @("*.env*", "*.log", "deployment*.log", ".phpunit.result.cache")
 
             # Build robocopy command
