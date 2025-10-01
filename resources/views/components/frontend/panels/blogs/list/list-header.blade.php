@@ -7,11 +7,11 @@
     // Dynamic title and description based on context
     $pageTitle = $title ?? 'Security Training & Legal Insights';
     $pageDescription = $description ?? 'Expert guidance on security training, firearms regulations, and professional development for security professionals';
-    
+
     // Check for site configuration override
-    if (function_exists('App\RCache::SiteConfig')) {
-        $pageTitle = App\RCache::SiteConfig('blog_page_title', $pageTitle);
-        $pageDescription = App\RCache::SiteConfig('blog_page_description', $pageDescription);
+    if (method_exists('App\Services\RCache', 'SiteConfig')) {
+        $pageTitle = App\Services\RCache::SiteConfig('blog_page_title') ?: $pageTitle;
+        $pageDescription = App\Services\RCache::SiteConfig('blog_page_description') ?: $pageDescription;
     }
 @endphp
 

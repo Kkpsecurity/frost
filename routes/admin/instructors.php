@@ -38,6 +38,9 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         })->name('online');
 
         // Classroom management actions
+        Route::post('/start-class/{courseDateId}', [InstructorDashboardController::class, 'startClass'])
+            ->name('start-class');
+
         Route::post('/take-over', [InstructorDashboardController::class, 'takeOverClass'])
             ->name('take-over');
 

@@ -1,0 +1,101 @@
+/* Enhanced Course Card Styles for React Components */
+
+.course-card .instructor-avatar img,
+.course-card .assistant-avatar img {
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.course-card .instructor-avatar img:hover,
+.course-card .assistant-avatar img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.course-card .description-block {
+    padding: 0.75rem 0;
+}
+
+.course-card .description-header {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: block;
+    line-height: 1.3;
+}
+
+.course-card .description-text {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.course-card .info-box-content {
+    text-align: center;
+}
+
+.course-card .info-box-number {
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.course-card .info-box-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.course-card .card-header {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.course-card .card-footer {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 1rem 1.5rem;
+}
+
+.course-card .btn {
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+}
+
+.course-card .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.course-card .btn i {
+    font-size: 0.9em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .course-card .card-body {
+        padding: 1rem !important;
+    }
+
+    .course-card .card-footer {
+        padding: 0.75rem 1rem !important;
+    }
+
+    .course-card .instructor-avatar img,
+    .course-card .assistant-avatar img {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .course-card .instructor-avatar div,
+    .course-card .assistant-avatar div {
+        width: 28px !important;
+        height: 28px !important;
+    }
+}

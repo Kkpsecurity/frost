@@ -24,6 +24,16 @@
 }
 
 .course-icon-large i {
+    color: var(--frost-highlight-color, #17a2b8);
+}
+
+/* Dark background context - make icon visible */
+.frost-secondary-bg .course-icon-large i {
+    color: #17a2b8;
+}
+
+/* Light background context - use gradient */
+.course-details-wrapper .course-icon-large i {
     background: linear-gradient(135deg, var(--frost-primary-color), var(--frost-secondary-color));
     background-clip: text;
     -webkit-background-clip: text;
@@ -33,13 +43,29 @@
 .course-title-large {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--frost-primary-color);
+    color: #ffffff;
     line-height: 1.2;
+}
+
+/* Dark background context */
+.frost-secondary-bg .course-title-large {
+    color: #ffffff;
+}
+
+/* Light background context */
+.course-details-wrapper .course-title-large {
+    color: var(--frost-primary-color);
 }
 
 .course-type-large {
     font-size: 1.2rem;
     font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Light background context */
+.course-details-wrapper .course-type-large {
+    color: var(--text-secondary);
 }
 
 .course-badge-large .badge {

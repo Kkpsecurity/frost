@@ -6,7 +6,7 @@ use App\Classes\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseDate;
-use App\RCache;
+use App\Services\RCache;
 use Carbon\Carbon;
 use App\Traits\PageMetaDataTrait;
 use Illuminate\Http\Request;

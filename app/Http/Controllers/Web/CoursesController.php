@@ -72,31 +72,15 @@ class CoursesController extends Controller
             }
         }
 
-        // If no lessons, fall back to course-type-specific features
+        // If no lessons, use course description or basic info
         if (empty($features)) {
-            $features = $course->needs_range ? [
-                'Firearms Training & Certification',
-                'Legal Requirements & Regulations',
-                'Use of Force Protocols',
-                'Professional Responsibilities',
-                'Crisis De-escalation Techniques',
-                'Report Writing & Documentation',
-                'Emergency Response Procedures',
-                'State Exam Preparation',
-                'Hands-on Training Exercises',
-                'Certificate Upon Completion'
-            ] : [
-                'Surveillance Techniques',
-                'Professional Report Writing',
-                'Legal Boundaries & Ethics',
-                'Communication Skills',
-                'Emergency Procedures',
-                'State Certification',
-                'De-escalation Techniques',
-                'Professional Conduct Standards',
-                'Crisis Management',
-                'Certificate Upon Completion'
-            ];
+            $features = [];
+            if ($course->description) {
+                $features[] = 'Professional Security Training';
+                $features[] = 'State-Approved Curriculum';
+                $features[] = 'Expert Instruction';
+                $features[] = 'Industry Certification';
+            }
         }
 
         // Add curriculum content descriptions for each course unit
@@ -109,24 +93,24 @@ class CoursesController extends Controller
         $courseData = [
             'id' => $course->id,
             'title' => $course->title_long ?? $course->title,
-            'type' => $course->title ?? 'Security Training',
+            'type' => $course->type ?? null,
             'badge' => $this->getCourseBadgeFromTitle($course->title),
-            'description' => $this->getCourseDescriptionFromTitle($course->title),
-            'fullDescription' => $this->getCourseFullDescriptionFromTitle($course->title),
+            'description' => $course->description ?? null,
+            'fullDescription' => $course->description ?? null,
             'price' => $course->price,
-            'duration' => $course->total_minutes ? ceil($course->total_minutes / 60 / 8) . ' Days' : $this->getDefaultDurationFromTitle($course->title),
-            'format' => 'Hybrid (Online + In-Person)',
-            'level' => 'Entry Level',
-            'language' => 'English',
-            'certification' => 'State Approved',
-            'classSize' => '12 Students Max',
-            'studentsEnrolled' => '200+',
+            'duration' => $course->total_minutes ? ceil($course->total_minutes / 60) . ' Hours' : null,
+            'format' => $course->format ?? null,
+            'level' => $course->level ?? null,
+            'language' => $course->language ?? null,
+            'certification' => $course->certification ?? 'State Approved',
+            'classSize' => $course->class_size ?? null,
+            'studentsEnrolled' => $course->students_enrolled ?? null,
             'icon' => $this->getCourseIconFromTitle($course->title),
             'features' => $features, // Use real lesson data
             'courseUnits' => $courseUnitsWithContent, // Add course units with curriculum content for display
             'requirements' => $this->getCourseRequirementsFromTitle($course->title),
-            'popular' => false, // Could be determined by enrollment numbers in the future
-            'keywords' => 'security training, certification, professional development, ' . $this->getCourseKeywordsFromTitle($course->title)
+            'popular' => $course->is_popular ?? false,
+            'keywords' => $course->keywords ?? 'security training, certification, professional development'
         ];
 
         $content = [
@@ -286,6 +270,32 @@ class CoursesController extends Controller
             return 'armed security, Class G, firearms training';
         } else {
             return 'unarmed security, Class D, surveillance training';
+        }
+    }
+
+    /**
+     * Get key features for course display
+     */
+    private function getCourseKeyFeatures($title)
+    {
+        if (strpos($title, 'G28') !== false || strpos($title, "Class 'G'") !== false) {
+            return [
+                'Firearms Training & Certification',
+                'Legal Requirements & Regulations',
+                'Use of Force Protocols',
+                'Professional Responsibilities',
+                'State Exam Preparation',
+                'Certificate Upon Completion'
+            ];
+        } else {
+            return [
+                'Surveillance Techniques',
+                'Professional Report Writing',
+                'Legal Boundaries & Ethics',
+                'Communication Skills',
+                'Emergency Procedures',
+                'State Certification'
+            ];
         }
     }
 

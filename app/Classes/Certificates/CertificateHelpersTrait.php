@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace App\Classes\Certificates;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
-use App\RCache;
+use App\Services\RCache;
 use App\Models\StudentUnit;
 use App\Models\User;
 

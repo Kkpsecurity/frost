@@ -11,7 +11,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 // use Illuminate\Auth\Events\Registered;
 
-use App\RCache;
+use App\Services\RCache;
 use App\Classes\Redirectors\ExamRedirector;
 # use App\Classes\Redirectors\RangeDateRedirector;
 

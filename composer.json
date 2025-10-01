@@ -24,9 +24,11 @@
         "laravel/tinker": "^2.8",
         "laravolt/avatar": "^6.2",
         "league/flysystem-aws-s3-v3": "^3.29",
+        "paypal/paypal-server-sdk": "^1.1",
         "predis/predis": "^2.4",
         "spatie/laravel-medialibrary": "^11.13",
         "spatie/laravel-permission": "^6.21",
+        "stripe/stripe-php": "^18.0",
         "teamtnt/laravel-scout-tntsearch-driver": "^15.0",
         "tightenco/ziggy": "^2.0",
         "yajra/laravel-datatables": "^10.0"

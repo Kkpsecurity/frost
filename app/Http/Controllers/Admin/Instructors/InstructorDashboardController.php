@@ -9,6 +9,7 @@ use App\Services\Frost\Instructors\InstructorDashboardService;
 use App\Services\Frost\Instructors\CourseDatesService;
 use App\Services\Frost\Instructors\ClassroomService;
 use App\Services\Frost\Students\BackendStudentService;
+use App\Services\ClassroomSessionService;
 
 class InstructorDashboardController extends Controller
 {
@@ -23,17 +24,20 @@ class InstructorDashboardController extends Controller
     protected CourseDatesService $courseDatesService;
     protected ClassroomService $classroomService;
     protected BackendStudentService $studentService;
+    protected ClassroomSessionService $sessionService;
 
     public function __construct(
         InstructorDashboardService $dashboardService,
         CourseDatesService $courseDatesService,
         ClassroomService $classroomService,
-        BackendStudentService $studentService
+        BackendStudentService $studentService,
+        ClassroomSessionService $sessionService
     ) {
         $this->dashboardService = $dashboardService;
         $this->courseDatesService = $courseDatesService;
         $this->classroomService = $classroomService;
         $this->studentService = $studentService;
+        $this->sessionService = $sessionService;
 
         // Make sure that the validation directories are created
         $idcardsPath = config('storage.paths.idcards', 'idcards');
@@ -252,5 +256,50 @@ class InstructorDashboardController extends Controller
         $upcomingCoursesPanel = $this->dashboardService->getUpcomingCoursesPanel();
 
         return response()->json($upcomingCoursesPanel);
+    }
+
+    /**
+     * Start a class session - Create InstUnit and redirect to classroom
+     */
+    public function startClass($courseDateId)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        try {
+            // Create InstUnit using ClassroomSessionService
+            $instUnit = $this->sessionService->startClassroomSession((int) $courseDateId);
+
+            if (!$instUnit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to start class session. Please check the logs.'
+                ], 500);
+            }
+
+            // Return success with redirect URL to classroom
+            return response()->json([
+                'success' => true,
+                'inst_unit_id' => $instUnit->id,
+                'course_date_id' => $courseDateId,
+                'redirect_url' => "/instructor/classroom/{$courseDateId}",
+                'message' => 'Class session started successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('InstructorDashboardController: Error starting class', [
+                'course_date_id' => $courseDateId,
+                'admin_id' => $admin->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error starting class: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

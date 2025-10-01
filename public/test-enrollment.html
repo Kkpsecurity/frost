@@ -1,0 +1,43 @@
+{{-- Simple test page to check enrollment link --}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enrollment Link Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Enrollment Link Test</h1>
+
+    <p><strong>Test different enrollment links:</strong></p>
+
+    <a href="/courses/enroll/1" class="test-btn">Direct URL: /courses/enroll/1</a><br>
+    <a href="https://frost.test/courses/enroll/1" class="test-btn">Full URL: https://frost.test/courses/enroll/1</a><br>
+
+    <p><strong>Instructions:</strong></p>
+    <ol>
+        <li>Click each link above</li>
+        <li>See which one works</li>
+        <li>If neither works, there's a route/controller issue</li>
+        <li>If they work, the issue is with the main course detail page</li>
+    </ol>
+
+    <script>
+        document.querySelectorAll('.test-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                console.log('Test button clicked:', this.href);
+            });
+        });
+    </script>
+</body>
+</html>

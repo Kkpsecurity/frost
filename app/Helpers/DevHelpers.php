@@ -3,11 +3,11 @@
 namespace App\Helpers;
 
 use stdClass;
-use Auth;
 use Exception;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
-use App\RCache;
+use App\Services\RCache;
 use App\Models\CourseAuth;
 use App\Models\CourseDate;
 use App\Models\InstUnit;

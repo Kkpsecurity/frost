@@ -527,6 +527,11 @@ class AdminLteConfigElements {
                         'icon' => 'fas fa-fw fa-wrench',
                     ],
                     [
+                        'text' => 'Payments',
+                        'route' => 'admin.payments.index',
+                        'icon' => 'fas fa-fw fa-credit-card',
+                    ],
+                    [
                         'text' => 'Media Manager',
                         'route' => 'admin.media-manager.index',
                         'icon' => 'fas fa-fw fa-hdd',

@@ -18,6 +18,192 @@ class ProfileController extends Controller
     }
 
     /**
+     * Add Stripe payment method
+     */
+    public function addStripePaymentMethod(Request $request)
+    {
+        $request->validate([
+            'payment_method_id' => 'required|string',
+            'set_default' => 'boolean'
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            // Initialize Stripe with secret key from settings
+            $stripeSecretKey = setting('payments.stripe.test_secret_key'); // Get from admin settings
+            if (empty($stripeSecretKey)) {
+                return response()->json(['success' => false, 'message' => 'Stripe is not configured']);
+            }
+
+            \Stripe\Stripe::setApiKey($stripeSecretKey);
+
+            // Retrieve the payment method from Stripe
+            $paymentMethod = \Stripe\PaymentMethod::retrieve($request->payment_method_id);
+
+            // Get current saved payment methods
+            $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+            $savedMethods = isset($userPrefs['saved_payment_methods'])
+                ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
+                : [];
+
+            // If setting as default, unset other defaults
+            if ($request->boolean('set_default')) {
+                foreach ($savedMethods as &$method) {
+                    $method['is_default'] = false;
+                }
+            }
+
+            // Add new payment method
+            $newMethod = [
+                'id' => 'stripe_' . $paymentMethod->id,
+                'stripe_id' => $paymentMethod->id,
+                'type' => 'card',
+                'brand' => $paymentMethod->card->brand,
+                'last4' => $paymentMethod->card->last4,
+                'exp_month' => $paymentMethod->card->exp_month,
+                'exp_year' => $paymentMethod->card->exp_year,
+                'is_default' => $request->boolean('set_default') || empty($savedMethods),
+                'created_at' => now()->toISOString()
+            ];
+
+            $savedMethods[] = $newMethod;
+
+            // Save to user preferences
+            $user->UserPrefs()->updateOrCreate(
+                ['key' => 'saved_payment_methods'],
+                ['value' => json_encode($savedMethods)]
+            );
+
+            return response()->json(['success' => true, 'message' => 'Payment method added successfully']);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to add payment method: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Connect PayPal account
+     */
+    public function connectPayPal(Request $request)
+    {
+        // TODO: Implement PayPal OAuth flow
+        // For now, redirect back with a message
+        return redirect()->route('account.index', ['section' => 'payments'])
+            ->with('error', 'PayPal integration is coming soon!');
+    }
+
+    /**
+     * Set default payment method
+     */
+    public function setDefaultPaymentMethod(Request $request)
+    {
+        $request->validate([
+            'method_id' => 'required|string'
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            // Get current saved payment methods
+            $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+            $savedMethods = isset($userPrefs['saved_payment_methods'])
+                ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
+                : [];
+
+            $found = false;
+            foreach ($savedMethods as &$method) {
+                if ($method['id'] === $request->method_id) {
+                    $method['is_default'] = true;
+                    $found = true;
+                } else {
+                    $method['is_default'] = false;
+                }
+            }
+
+            if (!$found) {
+                return response()->json(['success' => false, 'message' => 'Payment method not found']);
+            }
+
+            // Save updated methods
+            $user->UserPrefs()->updateOrCreate(
+                ['key' => 'saved_payment_methods'],
+                ['value' => json_encode($savedMethods)]
+            );
+
+            return response()->json(['success' => true, 'message' => 'Default payment method updated']);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to update default payment method: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Delete payment method
+     */
+    public function deletePaymentMethod(Request $request)
+    {
+        $request->validate([
+            'method_id' => 'required|string'
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            // Get current saved payment methods
+            $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+            $savedMethods = isset($userPrefs['saved_payment_methods'])
+                ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
+                : [];
+
+            $methodToDelete = null;
+            foreach ($savedMethods as $index => $method) {
+                if ($method['id'] === $request->method_id) {
+                    $methodToDelete = $method;
+                    unset($savedMethods[$index]);
+                    break;
+                }
+            }
+
+            if (!$methodToDelete) {
+                return response()->json(['success' => false, 'message' => 'Payment method not found']);
+            }
+
+            // If this was a Stripe payment method, detach it from Stripe
+            if (isset($methodToDelete['stripe_id'])) {
+                $stripeSecretKey = setting('payments.stripe.test_secret_key');
+                if (!empty($stripeSecretKey)) {
+                    \Stripe\Stripe::setApiKey($stripeSecretKey);
+                    try {
+                        $paymentMethod = \Stripe\PaymentMethod::retrieve($methodToDelete['stripe_id']);
+                        $paymentMethod->detach();
+                    } catch (\Exception $stripeError) {
+                        // Log the error but don't fail the whole operation
+                        \Log::warning('Failed to detach Stripe payment method: ' . $stripeError->getMessage());
+                    }
+                }
+            }
+
+            // Re-index array and save
+            $savedMethods = array_values($savedMethods);
+
+            $user->UserPrefs()->updateOrCreate(
+                ['key' => 'saved_payment_methods'],
+                ['value' => json_encode($savedMethods)]
+            );
+
+            return response()->json(['success' => true, 'message' => 'Payment method deleted successfully']);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to delete payment method: ' . $e->getMessage()]);
+        }
+    }
+
+    /**  {
+        $this->middleware('auth');
+    }
+
+    /**
      * Display the user account dashboard with sidebar navigation
      *
      * @param Request $request
@@ -38,6 +224,10 @@ class ProfileController extends Controller
         $ordersData = $this->getOrdersData($user);
         $paymentsData = $this->getPaymentsData($user); // New payments section
 
+        // Payment gateway configuration
+        $stripeEnabled = !empty(setting('payments.stripe.test_secret_key')) || !empty(setting('payments.stripe.live_secret_key'));
+        $paypalEnabled = !empty(setting('payments.paypal.client_id'));
+
         return view('student.account.index', compact(
             'user',
             'activeSection',
@@ -45,7 +235,9 @@ class ProfileController extends Controller
             'settingsData',
             'alertsData',
             'ordersData',
-            'paymentsData'
+            'paymentsData',
+            'stripeEnabled',
+            'paypalEnabled'
         ));
     }
 
@@ -215,14 +407,37 @@ class ProfileController extends Controller
             'phone' => $studentInfo['phone'] ?? ''
         ];
 
-        // For now, payment methods are placeholder until you implement stored payment methods
-        // You can expand this when you add payment method storage
+        // Get saved payment methods (this will be expanded with actual Stripe/PayPal integrations)
         $paymentMethods = [];
+        $savedMethods = [];
+
+        // TODO: Get actual saved payment methods from Stripe and PayPal
+        // For now, we'll check if user has stored payment method preferences
+        $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+
+        // Example saved payment methods (you'll replace this with real Stripe/PayPal data)
+        if (isset($userPrefs['saved_payment_methods'])) {
+            $savedMethodsData = json_decode($userPrefs['saved_payment_methods'], true) ?? [];
+
+            foreach ($savedMethodsData as $method) {
+                $savedMethods[] = [
+                    'id' => $method['id'],
+                    'type' => $method['type'], // 'card' or 'paypal'
+                    'brand' => $method['brand'] ?? 'visa',
+                    'last4' => $method['last4'] ?? '0000',
+                    'exp_month' => $method['exp_month'] ?? null,
+                    'exp_year' => $method['exp_year'] ?? null,
+                    'email' => $method['email'] ?? null, // for PayPal
+                    'is_default' => $method['is_default'] ?? false,
+                    'created_at' => $method['created_at'] ?? now()
+                ];
+            }
+        }
 
         // Check if user has any completed payments to show they have payment history
         $hasPaymentHistory = $orders->where('completed_at', '!=', null)->count() > 0;
 
-        if ($hasPaymentHistory) {
+        if ($hasPaymentHistory && empty($savedMethods)) {
             $paymentMethods[] = [
                 'id' => 'historical',
                 'type' => 'historical',
@@ -241,6 +456,7 @@ class ProfileController extends Controller
 
         return [
             'payment_methods' => $paymentMethods,
+            'saved_methods' => $savedMethods, // New: actual saved payment methods
             'payment_history' => $paymentHistory,
             'billing_address' => $billingAddress,
             'order_stats' => [
@@ -296,5 +512,24 @@ class ProfileController extends Controller
 
         return redirect()->route('account.index', ['tab' => 'settings'])
             ->with('success', 'Settings updated successfully!');
+    }
+
+    /**
+     * Download invoice for an order
+     */
+    public function downloadInvoice($orderId)
+    {
+        $user = Auth::user();
+
+        // Find the order and ensure it belongs to the authenticated user
+        $order = \App\Models\Order::where('id', $orderId)
+            ->where('user_id', $user->id)
+            ->with(['Course', 'PaymentType'])
+            ->firstOrFail();
+
+        // For now, redirect back to account with a message
+        // In the future, this could generate and return a PDF invoice
+        return redirect()->route('account.index', ['tab' => 'orders'])
+            ->with('info', 'Invoice download feature coming soon. Order #' . $order->id . ' details are available in your order history.');
     }
 }

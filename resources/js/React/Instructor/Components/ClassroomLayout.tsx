@@ -47,41 +47,46 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
     const getStudentStatusColor = (status: string) => {
         switch (status) {
             case "online":
-                return "success";
+                return "var(--frost-success-color, #22c55e)";
             case "away":
-                return "warning";
+                return "var(--frost-warning-color, #f59e0b)";
             case "offline":
-                return "secondary";
+                return "var(--frost-secondary-color, #394867)";
             default:
-                return "secondary";
+                return "var(--frost-secondary-color, #394867)";
         }
     };
 
     return (
-        <div className="classroom-layout" style={{ height: '100vh', overflow: 'hidden' }}>
+        <div
+            className="classroom-layout"
+            style={{ height: "100vh", overflow: "hidden" }}
+        >
             {/* Top Header */}
             <div
                 className="classroom-header d-flex justify-content-between align-items-center p-3"
                 style={{
-                    backgroundColor: 'var(--frost-primary-color, #3b82f6)',
-                    color: 'white',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    backgroundColor: "var(--frost-primary-color, #212a3e)",
+                    color: "var(--frost-white-color, #ffffff)",
+                    boxShadow:
+                        "var(--frost-shadow-md, 0 4px 6px rgba(0,0,0,0.1))",
                 }}
             >
                 <div className="d-flex align-items-center">
                     <button
                         className="btn btn-link text-white p-0 me-3"
                         onClick={onBackToOverview}
-                        style={{ textDecoration: 'none' }}
+                        style={{ textDecoration: "none" }}
                     >
                         <i className="fas fa-arrow-left fs-4"></i>
                     </button>
                     <div>
-                        <h5 className="mb-0">{course.course_name} - {course.module}</h5>
+                        <h5 className="mb-0">
+                            {course.course_name} - {course.module}
+                        </h5>
                         <small className="text-white-50">
-                            Instructor: {course.instructor_name || 'You'} |
-                            Time: {course.time} |
-                            Duration: {course.duration}
+                            Instructor: {course.instructor_name || "You"} |
+                            Time: {course.time} | Duration: {course.duration}
                         </small>
                     </div>
                 </div>
@@ -90,7 +95,11 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                         className="btn btn-light btn-sm"
                         onClick={() => setIsFullscreen(!isFullscreen)}
                     >
-                        <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                        <i
+                            className={`fas ${
+                                isFullscreen ? "fa-compress" : "fa-expand"
+                            }`}
+                        ></i>
                     </button>
                     <div className="dropdown">
                         <button
@@ -100,10 +109,27 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                             <i className="fas fa-cog"></i>
                         </button>
                         <ul className="dropdown-menu">
-                            <li><a className="dropdown-item" href="#"><i className="fas fa-volume-up me-2"></i>Audio Settings</a></li>
-                            <li><a className="dropdown-item" href="#"><i className="fas fa-video me-2"></i>Video Settings</a></li>
-                            <li><hr className="dropdown-divider" /></li>
-                            <li><a className="dropdown-item" href="#"><i className="fas fa-save me-2"></i>Save Session</a></li>
+                            <li>
+                                <a className="dropdown-item" href="#">
+                                    <i className="fas fa-volume-up me-2"></i>
+                                    Audio Settings
+                                </a>
+                            </li>
+                            <li>
+                                <a className="dropdown-item" href="#">
+                                    <i className="fas fa-video me-2"></i>Video
+                                    Settings
+                                </a>
+                            </li>
+                            <li>
+                                <hr className="dropdown-divider" />
+                            </li>
+                            <li>
+                                <a className="dropdown-item" href="#">
+                                    <i className="fas fa-save me-2"></i>Save
+                                    Session
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -112,49 +138,90 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
             {/* Main 3-Column Layout */}
             <div
                 className="classroom-content d-flex"
-                style={{ height: 'calc(100vh - 80px)' }}
+                style={{ height: "calc(100vh - 80px)" }}
             >
                 {/* Column 1: Lessons Panel */}
                 <div
                     className="lessons-panel"
                     style={{
-                        width: '280px',
-                        backgroundColor: '#f8f9fa',
-                        borderRight: '1px solid #dee2e6',
-                        overflow: 'hidden'
+                        width: "280px",
+                        backgroundColor: "var(--frost-light-color, #f8f9fa)",
+                        borderRight:
+                            "1px solid var(--frost-light-primary-color, #e2e8f0)",
+                        overflow: "hidden",
                     }}
                 >
-                    <div className="p-3 border-bottom">
-                        <h6 className="mb-0 d-flex align-items-center">
-                            <i className="fas fa-list-ol me-2 text-primary"></i>
+                    <div
+                        className="p-3 border-bottom"
+                        style={{
+                            borderColor:
+                                "var(--frost-light-primary-color, #e2e8f0)",
+                        }}
+                    >
+                        <h6
+                            className="mb-0 d-flex align-items-center"
+                            style={{
+                                color: "var(--frost-dark-color, #374151)",
+                            }}
+                        >
+                            <i
+                                className="fas fa-list-ol me-2"
+                                style={{
+                                    color: "var(--frost-primary-color, #212a3e)",
+                                }}
+                            ></i>
                             Lesson Plan ({mockLessons.length} lessons)
                         </h6>
                     </div>
-                    <div style={{ height: 'calc(100% - 60px)', overflowY: 'auto' }}>
+                    <div
+                        style={{
+                            height: "calc(100% - 60px)",
+                            overflowY: "auto",
+                        }}
+                    >
                         {mockLessons.map((lesson) => (
                             <div
                                 key={lesson.id}
-                                className={`lesson-item p-3 border-bottom ${
-                                    selectedLesson === lesson.id ? 'bg-light' : ''
-                                }`}
+                                className={`lesson-item p-3 border-bottom`}
                                 style={{
-                                    cursor: 'pointer',
-                                    transition: 'background-color 0.2s'
+                                    cursor: "pointer",
+                                    transition: "background-color 0.2s",
+                                    backgroundColor:
+                                        selectedLesson === lesson.id
+                                            ? "var(--frost-light-primary-color, #e2e8f0)"
+                                            : "transparent",
+                                    borderColor:
+                                        "var(--frost-light-primary-color, #e2e8f0)",
                                 }}
                                 onClick={() => setSelectedLesson(lesson.id)}
                             >
                                 <div className="d-flex align-items-start">
                                     <div className="me-3 mt-1">
-                                        <i className={getStatusIcon(lesson.status)}></i>
+                                        <i
+                                            className={getStatusIcon(
+                                                lesson.status
+                                            )}
+                                        ></i>
                                     </div>
                                     <div className="flex-grow-1">
-                                        <div className="fw-medium">{lesson.title}</div>
+                                        <div className="fw-medium">
+                                            {lesson.title}
+                                        </div>
                                         <small className="text-muted d-flex justify-content-between">
-                                            <span>Duration: {lesson.duration}</span>
-                                            <span className={`badge bg-${
-                                                lesson.status === 'completed' ? 'success' :
-                                                lesson.status === 'current' ? 'primary' : 'secondary'
-                                            }`}>
+                                            <span>
+                                                Duration: {lesson.duration}
+                                            </span>
+                                            <span
+                                                className={`badge bg-${
+                                                    lesson.status ===
+                                                    "completed"
+                                                        ? "success"
+                                                        : lesson.status ===
+                                                          "current"
+                                                        ? "primary"
+                                                        : "secondary"
+                                                }`}
+                                            >
                                                 {lesson.status}
                                             </span>
                                         </small>
@@ -169,28 +236,69 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                 <div
                     className="teaching-tools flex-grow-1"
                     style={{
-                        backgroundColor: 'white',
-                        display: 'flex',
-                        flexDirection: 'column'
+                        backgroundColor: "var(--frost-white-color, #ffffff)",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
                 >
                     {/* Tools Header */}
-                    <div className="tools-header p-3 border-bottom">
+                    <div
+                        className="tools-header p-3 border-bottom"
+                        style={{
+                            borderColor:
+                                "var(--frost-light-primary-color, #e2e8f0)",
+                        }}
+                    >
                         <div className="d-flex justify-content-between align-items-center">
-                            <h6 className="mb-0">
-                                <i className="fas fa-tools me-2 text-primary"></i>
+                            <h6
+                                className="mb-0"
+                                style={{
+                                    color: "var(--frost-dark-color, #374151)",
+                                }}
+                            >
+                                <i
+                                    className="fas fa-tools me-2"
+                                    style={{
+                                        color: "var(--frost-primary-color, #212a3e)",
+                                    }}
+                                ></i>
                                 Teaching Tools
                             </h6>
                             <div className="btn-group btn-group-sm">
-                                <button className="btn btn-outline-primary active">
+                                <button
+                                    className="btn active"
+                                    style={{
+                                        backgroundColor:
+                                            "var(--frost-primary-color, #212a3e)",
+                                        borderColor:
+                                            "var(--frost-primary-color, #212a3e)",
+                                        color: "var(--frost-white-color, #ffffff)",
+                                    }}
+                                >
                                     <i className="fas fa-chalkboard-teacher me-1"></i>
                                     Present
                                 </button>
-                                <button className="btn btn-outline-secondary">
+                                <button
+                                    className="btn"
+                                    style={{
+                                        backgroundColor: "transparent",
+                                        borderColor:
+                                            "var(--frost-secondary-color, #394867)",
+                                        color: "var(--frost-secondary-color, #394867)",
+                                    }}
+                                >
                                     <i className="fas fa-comments me-1"></i>
                                     Chat
                                 </button>
-                                <button className="btn btn-outline-secondary">
+                                <button
+                                    className="btn"
+                                    style={{
+                                        backgroundColor: "transparent",
+                                        borderColor:
+                                            "var(--frost-secondary-color, #394867)",
+                                        color: "var(--frost-secondary-color, #394867)",
+                                    }}
+                                >
                                     <i className="fas fa-poll me-1"></i>
                                     Poll
                                 </button>
@@ -203,28 +311,78 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                         <div className="text-center h-100 d-flex align-items-center justify-content-center">
                             <div>
                                 <div className="mb-4">
-                                    <i className="fas fa-chalkboard fa-4x text-muted mb-3"></i>
-                                    <h4 className="text-muted">Ready to Teach</h4>
-                                    <p className="text-muted">
-                                        Select a lesson from the left panel to begin, or use the tools above to interact with your students.
+                                    <i
+                                        className="fas fa-chalkboard fa-4x mb-3"
+                                        style={{
+                                            color: "var(--frost-base-color, #9ba4b5)",
+                                        }}
+                                    ></i>
+                                    <h4
+                                        style={{
+                                            color: "var(--frost-dark-color, #374151)",
+                                        }}
+                                    >
+                                        Ready to Teach
+                                    </h4>
+                                    <p
+                                        style={{
+                                            color: "var(--frost-base-color, #9ba4b5)",
+                                        }}
+                                    >
+                                        Select a lesson from the left panel to
+                                        begin, or use the tools above to
+                                        interact with your students.
                                     </p>
                                 </div>
 
                                 {/* Quick Action Buttons */}
                                 <div className="d-flex justify-content-center gap-3 flex-wrap">
-                                    <button className="btn btn-primary">
+                                    <button
+                                        className="btn"
+                                        style={{
+                                            backgroundColor:
+                                                "var(--frost-primary-color, #212a3e)",
+                                            borderColor:
+                                                "var(--frost-primary-color, #212a3e)",
+                                            color: "var(--frost-white-color, #ffffff)",
+                                        }}
+                                    >
                                         <i className="fas fa-play me-2"></i>
                                         Start Lesson
                                     </button>
-                                    <button className="btn btn-outline-primary">
+                                    <button
+                                        className="btn"
+                                        style={{
+                                            backgroundColor: "transparent",
+                                            borderColor:
+                                                "var(--frost-info-color, #17aac9)",
+                                            color: "var(--frost-info-color, #17aac9)",
+                                        }}
+                                    >
                                         <i className="fas fa-microphone me-2"></i>
                                         Enable Audio
                                     </button>
-                                    <button className="btn btn-outline-primary">
+                                    <button
+                                        className="btn"
+                                        style={{
+                                            backgroundColor: "transparent",
+                                            borderColor:
+                                                "var(--frost-info-color, #17aac9)",
+                                            color: "var(--frost-info-color, #17aac9)",
+                                        }}
+                                    >
                                         <i className="fas fa-video me-2"></i>
                                         Enable Video
                                     </button>
-                                    <button className="btn btn-outline-secondary">
+                                    <button
+                                        className="btn"
+                                        style={{
+                                            backgroundColor: "transparent",
+                                            borderColor:
+                                                "var(--frost-secondary-color, #394867)",
+                                            color: "var(--frost-secondary-color, #394867)",
+                                        }}
+                                    >
                                         <i className="fas fa-screen-share me-2"></i>
                                         Share Screen
                                     </button>
@@ -236,25 +394,57 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                     {/* Bottom Toolbar */}
                     <div
                         className="bottom-toolbar p-3 border-top"
-                        style={{ backgroundColor: '#f8f9fa' }}
+                        style={{
+                            backgroundColor:
+                                "var(--frost-light-color, #f8f9fa)",
+                            borderColor:
+                                "var(--frost-light-primary-color, #e2e8f0)",
+                        }}
                     >
                         <div className="d-flex justify-content-between align-items-center">
                             <div className="d-flex gap-2">
-                                <button className="btn btn-sm btn-outline-danger">
+                                <button
+                                    className="btn btn-sm"
+                                    style={{
+                                        backgroundColor: "transparent",
+                                        borderColor:
+                                            "var(--frost-danger-color, #ef4444)",
+                                        color: "var(--frost-danger-color, #ef4444)",
+                                    }}
+                                >
                                     <i className="fas fa-stop me-1"></i>
                                     End Class
                                 </button>
-                                <button className="btn btn-sm btn-outline-warning">
+                                <button
+                                    className="btn btn-sm"
+                                    style={{
+                                        backgroundColor: "transparent",
+                                        borderColor:
+                                            "var(--frost-warning-color, #f59e0b)",
+                                        color: "var(--frost-warning-color, #f59e0b)",
+                                    }}
+                                >
                                     <i className="fas fa-pause me-1"></i>
                                     Break
                                 </button>
                             </div>
                             <div className="d-flex align-items-center gap-3">
-                                <span className="badge bg-success">
+                                <span
+                                    className="badge"
+                                    style={{
+                                        backgroundColor:
+                                            "var(--frost-success-color, #22c55e)",
+                                        color: "var(--frost-white-color, #ffffff)",
+                                    }}
+                                >
                                     <i className="fas fa-circle me-1"></i>
                                     Live
                                 </span>
-                                <small className="text-muted">
+                                <small
+                                    style={{
+                                        color: "var(--frost-base-color, #9ba4b5)",
+                                    }}
+                                >
                                     Session: 45:23
                                 </small>
                             </div>
@@ -266,68 +456,173 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                 <div
                     className="students-panel"
                     style={{
-                        width: '300px',
-                        backgroundColor: '#f8f9fa',
-                        borderLeft: '1px solid #dee2e6',
-                        overflow: 'hidden'
+                        width: "300px",
+                        backgroundColor: "var(--frost-light-color, #f8f9fa)",
+                        borderLeft:
+                            "1px solid var(--frost-light-primary-color, #e2e8f0)",
+                        overflow: "hidden",
                     }}
                 >
-                    <div className="p-3 border-bottom">
-                        <h6 className="mb-0 d-flex align-items-center justify-content-between">
+                    <div
+                        className="p-3 border-bottom"
+                        style={{
+                            borderColor:
+                                "var(--frost-light-primary-color, #e2e8f0)",
+                        }}
+                    >
+                        <h6
+                            className="mb-0 d-flex align-items-center justify-content-between"
+                            style={{
+                                color: "var(--frost-dark-color, #374151)",
+                            }}
+                        >
                             <span>
-                                <i className="fas fa-users me-2 text-primary"></i>
+                                <i
+                                    className="fas fa-users me-2"
+                                    style={{
+                                        color: "var(--frost-primary-color, #212a3e)",
+                                    }}
+                                ></i>
                                 Students ({mockStudents.length})
                             </span>
                             <div className="d-flex gap-1">
-                                <span className="badge bg-success">{mockStudents.filter(s => s.status === 'online').length}</span>
-                                <span className="badge bg-warning">{mockStudents.filter(s => s.status === 'away').length}</span>
-                                <span className="badge bg-secondary">{mockStudents.filter(s => s.status === 'offline').length}</span>
+                                <span
+                                    className="badge"
+                                    style={{
+                                        backgroundColor:
+                                            "var(--frost-success-color, #22c55e)",
+                                        color: "var(--frost-white-color, #ffffff)",
+                                    }}
+                                >
+                                    {
+                                        mockStudents.filter(
+                                            (s) => s.status === "online"
+                                        ).length
+                                    }
+                                </span>
+                                <span
+                                    className="badge"
+                                    style={{
+                                        backgroundColor:
+                                            "var(--frost-warning-color, #f59e0b)",
+                                        color: "var(--frost-white-color, #ffffff)",
+                                    }}
+                                >
+                                    {
+                                        mockStudents.filter(
+                                            (s) => s.status === "away"
+                                        ).length
+                                    }
+                                </span>
+                                <span
+                                    className="badge"
+                                    style={{
+                                        backgroundColor:
+                                            "var(--frost-secondary-color, #394867)",
+                                        color: "var(--frost-white-color, #ffffff)",
+                                    }}
+                                >
+                                    {
+                                        mockStudents.filter(
+                                            (s) => s.status === "offline"
+                                        ).length
+                                    }
+                                </span>
                             </div>
                         </h6>
                     </div>
-                    <div style={{ height: 'calc(100% - 60px)', overflowY: 'auto' }}>
+                    <div
+                        style={{
+                            height: "calc(100% - 60px)",
+                            overflowY: "auto",
+                        }}
+                    >
                         {mockStudents.map((student) => (
                             <div
                                 key={student.id}
                                 className="student-item p-3 border-bottom"
-                                style={{ cursor: 'pointer' }}
+                                style={{
+                                    cursor: "pointer",
+                                    borderColor:
+                                        "var(--frost-light-primary-color, #e2e8f0)",
+                                }}
                             >
                                 <div className="d-flex align-items-center">
                                     <div className="position-relative me-3">
                                         <div
                                             className="rounded-circle d-flex align-items-center justify-content-center"
                                             style={{
-                                                width: '40px',
-                                                height: '40px',
-                                                backgroundColor: 'var(--frost-primary-color, #3b82f6)',
-                                                color: 'white',
-                                                fontSize: '14px',
-                                                fontWeight: 'bold'
+                                                width: "40px",
+                                                height: "40px",
+                                                backgroundColor:
+                                                    "var(--frost-primary-color, #212a3e)",
+                                                color: "var(--frost-white-color, #ffffff)",
+                                                fontSize: "14px",
+                                                fontWeight: "bold",
                                             }}
                                         >
-                                            {student.name.split(' ').map(n => n[0]).join('')}
+                                            {student.name
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")}
                                         </div>
                                         <span
-                                            className={`position-absolute bottom-0 end-0 badge rounded-pill bg-${getStudentStatusColor(student.status)}`}
-                                            style={{ fontSize: '8px', padding: '2px 4px' }}
+                                            className="position-absolute bottom-0 end-0 badge rounded-pill"
+                                            style={{
+                                                fontSize: "8px",
+                                                padding: "2px 4px",
+                                                backgroundColor:
+                                                    getStudentStatusColor(
+                                                        student.status
+                                                    ),
+                                                color: "var(--frost-white-color, #ffffff)",
+                                            }}
                                         >
                                             ●
                                         </span>
                                     </div>
                                     <div className="flex-grow-1">
-                                        <div className="fw-medium">{student.name}</div>
+                                        <div
+                                            className="fw-medium"
+                                            style={{
+                                                color: "var(--frost-dark-color, #374151)",
+                                            }}
+                                        >
+                                            {student.name}
+                                        </div>
                                         <div className="d-flex justify-content-between align-items-center">
-                                            <small className={`text-${getStudentStatusColor(student.status)}`}>
+                                            <small
+                                                style={{
+                                                    color: getStudentStatusColor(
+                                                        student.status
+                                                    ),
+                                                }}
+                                            >
                                                 {student.status}
                                             </small>
-                                            <small className="text-muted">
+                                            <small
+                                                style={{
+                                                    color: "var(--frost-base-color, #9ba4b5)",
+                                                }}
+                                            >
                                                 {student.progress}%
                                             </small>
                                         </div>
-                                        <div className="progress mt-1" style={{ height: '3px' }}>
+                                        <div
+                                            className="progress mt-1"
+                                            style={{
+                                                height: "3px",
+                                                backgroundColor:
+                                                    "var(--frost-light-primary-color, #e2e8f0)",
+                                            }}
+                                        >
                                             <div
-                                                className="progress-bar bg-success"
-                                                style={{ width: `${student.progress}%` }}
+                                                className="progress-bar"
+                                                style={{
+                                                    width: `${student.progress}%`,
+                                                    backgroundColor:
+                                                        "var(--frost-success-color, #22c55e)",
+                                                }}
                                             ></div>
                                         </div>
                                     </div>

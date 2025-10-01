@@ -42,7 +42,7 @@ class SettingsController extends Controller
             $groupedSettings[$setting->group][$setting->key] = $setting->value;
         }
 
-        return view('admin.admin-center.settings.index', compact('settingsForTable', 'groupedSettings'));
+        return view('admin.settings.index', compact('settingsForTable', 'groupedSettings'));
     }
 
     /**
@@ -50,7 +50,7 @@ class SettingsController extends Controller
      */
     public function create()
     {
-        return view('admin.admin-center.settings.create');
+        return view('admin.settings.create');
     }
 
     /**
@@ -78,7 +78,18 @@ class SettingsController extends Controller
     public function show($key)
     {
         $value = setting($key);
-        return view('admin.admin-center.settings.show', compact('key', 'value'));
+
+        // Determine value type for display
+        $valueType = 'string'; // default
+        if (is_bool($value)) {
+            $valueType = 'boolean';
+        } elseif (is_numeric($value)) {
+            $valueType = 'number';
+        } elseif (is_array($value) || (is_string($value) && json_decode($value) !== null)) {
+            $valueType = 'json';
+        }
+
+        return view('admin.settings.show', compact('key', 'value', 'valueType'));
     }
 
     /**
@@ -116,7 +127,20 @@ class SettingsController extends Controller
             $key = $setting->key; // Use the actual key without group prefix
         }
 
-        return view('admin.admin-center.settings.edit', compact('key', 'value', 'prefix', 'settingName', 'group'));
+        // Determine value type for form handling
+        $valueType = 'string'; // default
+        if (is_bool($value)) {
+            $valueType = 'boolean';
+        } elseif (is_numeric($value)) {
+            $valueType = 'number';
+        } elseif (is_array($value) || (is_string($value) && json_decode($value) !== null)) {
+            $valueType = 'json';
+        }
+
+        // Optional description (could be added to database later)
+        $description = '';
+
+        return view('admin.settings.edit', compact('key', 'value', 'prefix', 'settingName', 'group', 'valueType', 'description'));
     }
 
     /**
@@ -185,7 +209,7 @@ class SettingsController extends Controller
             'first_10_settings' => array_slice($adminlteSettings, 0, 10, true)
         ]);
 
-        return view('admin.admin-center.settings.adminlte', compact('adminlteSettings', 'groupedSettings'));
+        return view('admin.settings.adminlte', compact('adminlteSettings', 'groupedSettings'));
     }
 
     /**
@@ -343,7 +367,7 @@ class SettingsController extends Controller
         Setting::forget('test_setting');
         Setting::forget('test.helper_setting');
 
-        return view('admin.admin-center.settings.test', compact('tests', 'allSettings'));
+        return view('admin.settings.test', compact('tests', 'allSettings'));
     }
 
     /**
@@ -368,7 +392,7 @@ class SettingsController extends Controller
             ]
         ];
 
-        return view('admin.admin-center.settings.storage', compact('storageSettings'));
+        return view('admin.settings.storage', compact('storageSettings'));
     }
 
     /**
@@ -404,7 +428,7 @@ class SettingsController extends Controller
         $authSettings = $siteConfigService->getAuthSettings();
         $siteSettings = $siteConfigService->getSiteSettings();
 
-        return view('admin.admin-center.settings.auth', compact('authSettings', 'siteSettings'));
+        return view('admin.settings.auth', compact('authSettings', 'siteSettings'));
     }
 
     /**

@@ -214,7 +214,7 @@ return [
 
         // last
         // App\Providers\RCacheServiceProvider::class,
-        // App\RCacheWarmer::class,
+        // App\Services\RCacheWarmer::class,
 
     ],
 
@@ -249,7 +249,7 @@ return [
         // 'SEO'               => Artesaos\SEOTools\Facades\SEOTools::class,
         // 'Zoom'              => MacsiDigital\Zoom\Facades\Zoom::class,
 
-        // 'RCache'            => App\RCache::class,
+        'RCache' => App\Services\RCache::class,
         // 'Helpers'           => App\Helpers\Helpers::class,
         // 'KKPS3'             => App\Classes\KKPS3::class,
 

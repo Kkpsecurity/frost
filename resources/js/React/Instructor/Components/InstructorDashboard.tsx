@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     DashboardHeader,
     LoadingState,
@@ -22,6 +22,7 @@ const InstructorDashboard: React.FC = () => {
     const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(
         null
     );
+    const [manualDashboard, setManualDashboard] = useState(false); // Track if user manually went back to dashboard
 
     const {
         courseDates: courses,
@@ -38,6 +39,29 @@ const InstructorDashboard: React.FC = () => {
         error: completedError,
     } = useCompletedCourses();
 
+    // Auto-redirect to classroom when instructor is assigned to an active class
+    useEffect(() => {
+        // Don't auto-redirect if user manually chose to stay on dashboard
+        if (manualDashboard) return;
+
+        // Find any "in_progress" class that the instructor is assigned to
+        const activeClass = courses?.find(
+            (course) =>
+                course.class_status === "in_progress" &&
+                course.inst_unit &&
+                course.instructor_name
+        );
+
+        if (activeClass && currentView === "dashboard") {
+            console.log(
+                "🎯 Auto-redirecting to classroom for active class:",
+                activeClass
+            );
+            setSelectedCourse(activeClass);
+            setCurrentView("classroom");
+        }
+    }, [courses, currentView, manualDashboard]);
+
     const handleCourseSelect = (courseDate: CourseDate) => {
         console.log("Selected course:", courseDate);
         // TODO: Navigate to course management interface
@@ -52,6 +76,12 @@ const InstructorDashboard: React.FC = () => {
     const handleExitClassroom = () => {
         setCurrentView("dashboard");
         setSelectedCourse(null);
+        setManualDashboard(true); // Mark that user manually returned to dashboard
+
+        // Clear manual dashboard flag after 5 minutes to allow auto-redirect again
+        setTimeout(() => {
+            setManualDashboard(false);
+        }, 5 * 60 * 1000); // 5 minutes
     };
 
     const handleAdminAction = () => {
@@ -111,6 +141,33 @@ const InstructorDashboard: React.FC = () => {
                             ></i>
                             {isPolling ? "Live Updates" : "Paused"}
                         </span>
+
+                        {/* Auto-redirect indicator */}
+                        {!manualDashboard &&
+                            courses?.some(
+                                (c) =>
+                                    c.class_status === "in_progress" &&
+                                    c.inst_unit
+                            ) && (
+                                <span
+                                    className="badge bg-info me-2"
+                                    style={{ fontSize: "0.7rem" }}
+                                >
+                                    <i className="fas fa-rocket me-1"></i>
+                                    Auto-Classroom
+                                </span>
+                            )}
+
+                        {manualDashboard && (
+                            <span
+                                className="badge bg-warning me-2"
+                                style={{ fontSize: "0.7rem" }}
+                            >
+                                <i className="fas fa-pause me-1"></i>
+                                Manual Mode
+                            </span>
+                        )}
+
                         <small
                             style={{
                                 color: "var(--frost-base-color, #6b7280)",
@@ -121,14 +178,26 @@ const InstructorDashboard: React.FC = () => {
                                 : "Loading..."}
                         </small>
                     </div>
-                    <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={refetch}
-                        disabled={loading}
-                    >
-                        <i className="fas fa-sync me-1"></i>
-                        Refresh
-                    </button>
+                    <div className="d-flex gap-2">
+                        {manualDashboard && (
+                            <button
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => setManualDashboard(false)}
+                                title="Re-enable automatic classroom redirect"
+                            >
+                                <i className="fas fa-play me-1"></i>
+                                Enable Auto-Redirect
+                            </button>
+                        )}
+                        <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={refetch}
+                            disabled={loading}
+                        >
+                            <i className="fas fa-sync me-1"></i>
+                            Refresh
+                        </button>
+                    </div>
                 </div>
             </div>
 

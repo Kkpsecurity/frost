@@ -2,11 +2,11 @@
 
 namespace App\Helpers;
 
-use Auth;
 use Exception;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
-use App\RCache;
+use App\Services\RCache;
 use App\Models\Course;
 use KKP\Laravel\JSData;
 

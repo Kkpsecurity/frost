@@ -109,6 +109,15 @@ class RCache
         return self::_getModelCache(SiteConfig::class, $value, $key);
     }
 
+    /**
+     * Get a specific site configuration value by config_name
+     */
+    public static function SiteConfig(string $configName, $default = null)
+    {
+        $config = self::SiteConfigs()->where('config_name', $configName)->first();
+        return $config ? $config->config_value : $default;
+    }
+
 
 
     ########################

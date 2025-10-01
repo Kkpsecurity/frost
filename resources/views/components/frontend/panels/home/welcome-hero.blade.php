@@ -1,5 +1,5 @@
 @php
-    $courses = App\RCache::Courses()->where('is_active', true);
+    $courses = App\Services\RCache::Courses()->where('is_active', true);
 
     $courseD = $courses->firstWhere('id', 1);
     $courseG = $courses->firstWhere('id', 3);

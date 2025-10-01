@@ -1,96 +1,16 @@
 {{-- Modern Payments Section Content --}}
 <div class="row">
-    <div class="col-lg-8">
-        {{-- Payment Methods --}}
+    <div class="col-lg-12">
+        {{-- Payment Methods Management --}}
         <div class="modern-card mb-4">
-            <div class="card-body">
-                <div class="section-title">
-                    <i class="fas fa-credit-card"></i>Payment Methods
-                </div>
-
-                @if(count($paymentsData['payment_methods']) > 0)
-                    <div class="row">
-                        @foreach($paymentsData['payment_methods'] as $method)
-                            <div class="col-md-12 mb-3">
-                                <div class="card border" style="border-radius: 12px;">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-credit-card fa-2x text-secondary me-3"></i>
-                                            <div>
-                                                <div class="fw-bold">{{ $method['note'] ?? 'Payment Methods' }}</div>
-                                                <small class="text-muted">Historical payment methods from completed orders</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-4">
-                        <div class="mb-3">
-                            <i class="fas fa-credit-card fa-3x text-muted"></i>
-                        </div>
-                        <h6 class="text-muted">No payment methods added</h6>
-                        <p class="text-muted small">Add a payment method to make purchases easier.</p>
-                    </div>
-                @endif
-
-                <div class="d-flex justify-content-center mt-4">
-                    <button class="btn-modern btn-modern-primary">
-                        <i class="fas fa-plus"></i>Add Payment Method
-                    </button>
-                </div>
-            </div>
+            @include('student.account.sections.payment-method')
         </div>
 
         {{-- Order Statistics --}}
         @if(isset($paymentsData['order_stats']) && $paymentsData['order_stats']['total_orders'] > 0)
-        <div class="modern-card mb-4">
-            <div class="card-body">
-                <div class="section-title">
-                    <i class="fas fa-chart-bar"></i>Order Statistics
-                </div>
-
-                <div class="row text-center">
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-item">
-                            <div class="stat-number">{{ $paymentsData['order_stats']['total_orders'] }}</div>
-                            <div class="stat-label">Total Orders</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-item">
-                            <div class="stat-number text-success">{{ $paymentsData['order_stats']['completed_orders'] }}</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-item">
-                            <div class="stat-number text-warning">{{ $paymentsData['order_stats']['pending_orders'] }}</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-item">
-                            <div class="stat-number text-primary">{{ $paymentsData['order_stats']['total_spent'] }}</div>
-                            <div class="stat-label">Total Spent</div>
-                        </div>
-                    </div>
-                </div>
-
-                @if($paymentsData['order_stats']['refunded_orders'] > 0)
-                <div class="row justify-content-center">
-                    <div class="col-md-6 text-center">
-                        <div class="stat-item">
-                            <div class="stat-number text-danger">{{ $paymentsData['order_stats']['total_refunded'] }}</div>
-                            <div class="stat-label">Total Refunded ({{ $paymentsData['order_stats']['refunded_orders'] }} orders)</div>
-                        </div>
-                    </div>
-                </div>
-                @endif
+            <div class="modern-card mb-4">
+                @include('student.account.components.order-statistics', ['stats' => $paymentsData['order_stats']])
             </div>
-        </div>
         @endif
 
         {{-- Payment History --}}
@@ -102,8 +22,8 @@
 
                 @if(count($paymentsData['payment_history']) > 0)
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-hover" style="background: transparent;">
+                            <thead style="background: rgba(255,255,255,0.1);">
                                 <tr>
                                     <th>Invoice</th>
                                     <th>Date</th>
@@ -115,7 +35,7 @@
                             </thead>
                             <tbody>
                                 @foreach($paymentsData['payment_history'] as $payment)
-                                    <tr>
+                                    <tr style="background: rgba(255,255,255,0.5);">
                                         <td>
                                             <code>{{ $payment['id'] }}</code>
                                         </td>
@@ -164,96 +84,541 @@
         </div>
     </div>
 
-    <div class="col-lg-4">
-        {{-- Billing Address --}}
-        <div class="modern-card mb-4">
-            <div class="card-body">
-                <div class="section-title">
-                    <i class="fas fa-map-marker-alt"></i>Billing Address
-                </div>
 
-                <div class="billing-info">
-                    <div class="summary-item">
-                        <span class="summary-label">Address</span>
-                        <span class="summary-value">{{ $paymentsData['billing_address']['line1'] }}</span>
-                    </div>
-                    @if($paymentsData['billing_address']['line2'])
-                        <div class="summary-item">
-                            <span class="summary-label">Line 2</span>
-                            <span class="summary-value">{{ $paymentsData['billing_address']['line2'] }}</span>
-                        </div>
-                    @endif
-                    <div class="summary-item">
-                        <span class="summary-label">City</span>
-                        <span class="summary-value">{{ $paymentsData['billing_address']['city'] }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">State</span>
-                        <span class="summary-value">{{ $paymentsData['billing_address']['state'] }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Postal Code</span>
-                        <span class="summary-value">{{ $paymentsData['billing_address']['postal_code'] }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Phone</span>
-                        <span class="summary-value">{{ $paymentsData['billing_address']['phone'] }}</span>
-                    </div>
-                </div>
+</div>
 
-                <div class="mt-3">
-                    <button class="btn btn-outline-primary btn-sm w-100">
-                        <i class="fas fa-edit me-1"></i>Update Billing Address
-                    </button>
-                </div>
+{{-- Add Payment Method Modals --}}
+{{-- Stripe Card Modal --}}
+<div class="modal fade" id="addStripeCardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 16px; border: none; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0" style="background: linear-gradient(135deg, var(--frost-primary-color, #212a3e) 0%, var(--frost-secondary-color, #394867) 100%);">
+                <h5 class="modal-title text-white">
+                    <i class="fab fa-stripe me-2"></i>Add Credit/Debit Card
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-        </div>
-
-        {{-- Subscription Status --}}
-        <div class="modern-card">
-            <div class="card-body">
-                <div class="section-title">
-                    <i class="fas fa-crown"></i>Subscription
-                </div>
-
-                @if($paymentsData['subscription_status']['active'])
-                    <div class="text-center mb-3">
-                        <div class="summary-badge active mb-2" style="font-size: 1.125rem; padding: 0.75rem 1.5rem;">
-                            {{ $paymentsData['subscription_status']['plan'] }}
+            <div class="modal-body p-4">
+                <form id="stripe-card-form">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold">Card Information</label>
+                            <div id="stripe-card-element" class="form-control" style="height: 50px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px;">
+                                <!-- Stripe Elements will create form elements here -->
+                            </div>
+                            <div id="stripe-card-errors" class="text-danger mt-2" role="alert"></div>
                         </div>
-                        <div class="h4 mb-0">{{ $paymentsData['subscription_status']['amount'] }}</div>
                     </div>
 
-                    <div class="summary-item">
-                        <span class="summary-label">Status</span>
-                        <span class="summary-badge active">Active</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Next Billing</span>
-                        <span class="summary-value">{{ $paymentsData['subscription_status']['next_billing_date']->format('M j, Y') }}</span>
-                    </div>
-
-                    <div class="d-grid gap-2 mt-3">
-                        <button class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-edit me-1"></i>Change Plan
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm">
-                            <i class="fas fa-times me-1"></i>Cancel Subscription
-                        </button>
-                    </div>
-                @else
-                    <div class="text-center py-4">
-                        <div class="mb-3">
-                            <i class="fas fa-crown fa-3x text-muted"></i>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Cardholder Name</label>
+                            <input type="text" class="form-control" id="stripe-cardholder-name" placeholder="John Doe" required style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px;">
                         </div>
-                        <h6 class="text-muted">No Active Subscription</h6>
-                        <p class="text-muted small">Upgrade to access premium features.</p>
-                        <button class="btn-modern btn-modern-primary btn-sm">
-                            <i class="fas fa-arrow-up me-1"></i>Upgrade Now
-                        </button>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Billing ZIP Code</label>
+                            <input type="text" class="form-control" id="stripe-billing-zip" placeholder="12345" required style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px;">
+                        </div>
                     </div>
-                @endif
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="stripe-set-default" checked>
+                        <label class="form-check-label fw-bold" for="stripe-set-default">
+                            Set as default payment method
+                        </label>
+                    </div>
+
+                    <div class="alert alert-info border-0" style="background: #f0f9ff;">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        <small class="text-info-emphasis">Your card information is securely processed by Stripe and encrypted at rest.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-modern btn-modern-primary" id="stripe-submit-button">
+                    <i class="fas fa-plus me-2"></i>Add Card
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+{{-- PayPal Account Modal --}}
+<div class="modal fade" id="addPayPalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 16px; border: none; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0" style="background: linear-gradient(135deg, #0070ba 0%, #003087 100%);">
+                <h5 class="modal-title text-white">
+                    <i class="fab fa-paypal me-2"></i>Link PayPal Account
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-4">
+                    <i class="fab fa-paypal fa-4x text-primary mb-3"></i>
+                    <h6>Connect your PayPal account for secure payments</h6>
+                    <p class="text-muted small">You'll be redirected to PayPal to authorize this connection.</p>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="paypal-set-default" checked>
+                    <label class="form-check-label fw-bold" for="paypal-set-default">
+                        Set as default payment method
+                    </label>
+                </div>
+
+                <div class="alert alert-warning border-0" style="background: #fffbeb;">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    <small class="text-warning-emphasis">You'll need an active PayPal account to complete this setup.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn text-white" id="paypal-connect-button" style="background: #0070ba;">
+                    <i class="fab fa-paypal me-2"></i>Connect PayPal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Confirmation Modal --}}
+<div class="modal fade" id="deletePaymentMethodModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 16px; border: none; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Delete Payment Method
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Are you sure you want to delete this payment method? This action cannot be undone.</p>
+                <div class="alert alert-warning border-0" style="background: #fffbeb;">
+                    <small class="text-warning-emphasis">
+                        <i class="fas fa-info-circle me-1"></i>
+                        If this is your default payment method, please set another method as default first.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-payment-method">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Payment Method Cards */
+.payment-method-card {
+    transition: all 0.3s ease;
+}
+
+.payment-method-card:hover {
+    transform: translateY(-2px);
+}
+
+.payment-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+}
+
+/* Stripe Elements Styling */
+.StripeElement {
+    box-sizing: border-box;
+    height: 40px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background-color: white;
+    box-shadow: 0 1px 3px 0 #e6ebf1;
+    -webkit-transition: box-shadow 150ms ease;
+    transition: box-shadow 150ms ease;
+}
+
+.StripeElement--focus {
+    box-shadow: 0 1px 3px 0 #cfd7df;
+}
+
+.StripeElement--invalid {
+    border-color: #fa755a;
+}
+
+.StripeElement--webkit-autofill {
+    background-color: #fefde5 !important;
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Fix remaining white backgrounds */
+.table-responsive .table {
+    background: transparent !important;
+}
+
+.table-responsive .table thead th {
+    background: rgba(255,255,255,0.2) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.table-responsive .table tbody tr {
+    background: rgba(255,255,255,0.5) !important;
+    backdrop-filter: blur(5px);
+}
+
+.table-responsive .table tbody tr:hover {
+    background: rgba(255,255,255,0.7) !important;
+}
+
+.table-responsive .table tbody td {
+    border-color: rgba(255,255,255,0.2) !important;
+    color: #1e293b;
+}
+
+.form-control {
+    background: rgba(255,255,255,0.9) !important;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(226,232,240,0.5) !important;
+}
+
+.form-control:focus {
+    background: rgba(255,255,255,0.95) !important;
+    border-color: var(--frost-primary-color, #212a3e) !important;
+}
+
+.modal-body {
+    background: transparent !important;
+}
+
+.dropdown-menu {
+    background: rgba(255,255,255,0.95) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(226,232,240,0.3) !important;
+}
+
+.dropdown-item {
+    background: transparent !important;
+}
+
+.dropdown-item:hover {
+    background: rgba(33, 42, 62, 0.1) !important;
+}
+</style>
+
+<script>
+// Global variables for Stripe
+let stripe, elements, cardElement;
+
+// Payment gateway configuration
+const paymentConfig = {
+    stripe: {
+        enabled: {{ isset($stripeEnabled) && $stripeEnabled ? 'true' : 'false' }},
+        @if(isset($stripeEnabled) && $stripeEnabled)
+        publishableKey: '{{ setting("payments.stripe.environment", "test") === "test" ? setting("payments.stripe.test_publishable_key", "") : setting("payments.stripe.live_publishable_key", "") }}'
+        @endif
+    },
+    paypal: {
+        enabled: {{ isset($paypalEnabled) && $paypalEnabled ? 'true' : 'false' }}
+    }
+};
+
+// Initialize Stripe dynamically based on configuration
+function initializeStripe() {
+    if (!paymentConfig.stripe.enabled) {
+        console.log('Stripe is not enabled');
+        return;
+    }
+
+    const stripePublishableKey = paymentConfig.stripe.publishableKey;
+
+    if (typeof Stripe !== 'undefined' && stripePublishableKey && stripePublishableKey.startsWith('pk_')) {
+        stripe = Stripe(stripePublishableKey);
+        elements = stripe.elements();
+
+        // Create card element with enhanced styling
+        cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    '::placeholder': {
+                        color: '#aab7c4',
+                    },
+                    iconColor: '#666EE8',
+                },
+                invalid: {
+                    color: '#e74c3c',
+                    iconColor: '#e74c3c',
+                },
+                complete: {
+                    color: '#27ae60',
+                    iconColor: '#27ae60',
+                }
+            },
+        });
+        console.log('Stripe initialized successfully');
+    } else {
+        console.error('Stripe could not be initialized:', {
+            stripeLoaded: typeof Stripe !== 'undefined',
+            keyProvided: !!stripePublishableKey,
+            keyFormat: stripePublishableKey ? stripePublishableKey.substring(0, 8) + '...' : 'none'
+        });
+    }
+}
+
+// Show add card modal
+function showAddCardModal(provider) {
+    if (provider === 'stripe') {
+        if (!paymentConfig.stripe.enabled) {
+            alert('Stripe payments are not currently enabled. Please contact support.');
+            return;
+        }
+
+        if (!stripe || !cardElement) {
+            alert('Stripe is not properly configured. Please contact support.');
+            return;
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('addStripeCardModal'));
+        modal.show();
+
+        // Mount Stripe card element when modal is shown
+        setTimeout(() => {
+            if (cardElement && !cardElement._mounted) {
+                cardElement.mount('#stripe-card-element');
+
+                // Handle real-time validation errors from the card Element
+                cardElement.on('change', (event) => {
+                    const displayError = document.getElementById('stripe-card-errors');
+                    if (event.error) {
+                        displayError.textContent = event.error.message;
+                    } else {
+                        displayError.textContent = '';
+                    }
+                });
+            }
+        }, 300);
+    }
+}
+
+// Show PayPal modal
+function showAddPayPalModal() {
+    if (!paymentConfig.paypal.enabled) {
+        alert('PayPal payments are not currently enabled. Please contact support.');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('addPayPalModal'));
+    modal.show();
+}
+
+// Set default payment method
+function setDefaultPaymentMethod(methodId) {
+    // Show loading state
+    const button = event.target;
+    button.classList.add('btn-loading');
+
+    // TODO: Make AJAX request to set default payment method
+    fetch('/account/payments/set-default', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ method_id: methodId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to show updated default status
+            window.location.reload();
+        } else {
+            alert('Failed to set default payment method: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while setting the default payment method.');
+    })
+    .finally(() => {
+        button.classList.remove('btn-loading');
+    });
+}
+
+// Delete payment method
+function deletePaymentMethod(methodId) {
+    // Store method ID for confirmation
+    document.getElementById('confirm-delete-payment-method').setAttribute('data-method-id', methodId);
+
+    // Show confirmation modal
+    const modal = new bootstrap.Modal(document.getElementById('deletePaymentMethodModal'));
+    modal.show();
+}
+
+// Handle Stripe card submission
+document.getElementById('stripe-submit-button').addEventListener('click', async (event) => {
+    event.preventDefault();
+
+    const button = event.target;
+    button.classList.add('btn-loading');
+
+    if (!stripe || !cardElement) {
+        alert('Stripe is not properly initialized. Please refresh the page and try again.');
+        button.classList.remove('btn-loading');
+        return;
+    }
+
+    const cardholderName = document.getElementById('stripe-cardholder-name').value;
+    const billingZip = document.getElementById('stripe-billing-zip').value;
+    const setDefault = document.getElementById('stripe-set-default').checked;
+
+    if (!cardholderName || !billingZip) {
+        alert('Please fill in all required fields.');
+        button.classList.remove('btn-loading');
+        return;
+    }
+
+    // Create payment method
+    const {error, paymentMethod} = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+            name: cardholderName,
+            address: {
+                postal_code: billingZip,
+            },
+        },
+    });
+
+    if (error) {
+        console.error('Stripe error:', error);
+        document.getElementById('stripe-card-errors').textContent = error.message;
+        button.classList.remove('btn-loading');
+    } else {
+        // Send payment method to your server
+        fetch('/account/payments/add-stripe-method', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                payment_method_id: paymentMethod.id,
+                set_default: setDefault
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal and reload page
+                bootstrap.Modal.getInstance(document.getElementById('addStripeCardModal')).hide();
+                window.location.reload();
+            } else {
+                alert('Failed to save payment method: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the payment method.');
+        })
+        .finally(() => {
+            button.classList.remove('btn-loading');
+        });
+    }
+});
+
+// Handle PayPal connection
+document.getElementById('paypal-connect-button').addEventListener('click', () => {
+    const button = event.target;
+    button.classList.add('btn-loading');
+
+    const setDefault = document.getElementById('paypal-set-default').checked;
+
+    // Redirect to PayPal OAuth
+    window.location.href = `/account/payments/connect-paypal?set_default=${setDefault}`;
+});
+
+// Handle delete confirmation
+document.getElementById('confirm-delete-payment-method').addEventListener('click', () => {
+    const methodId = event.target.getAttribute('data-method-id');
+    const button = event.target;
+    button.classList.add('btn-loading');
+
+    fetch('/account/payments/delete-method', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ method_id: methodId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and reload page
+            bootstrap.Modal.getInstance(document.getElementById('deletePaymentMethodModal')).hide();
+            window.location.reload();
+        } else {
+            alert('Failed to delete payment method: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the payment method.');
+    })
+    .finally(() => {
+        button.classList.remove('btn-loading');
+    });
+});
+
+// Initialize everything when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Stripe
+    initializeStripe();
+
+    // Clean up Stripe elements when modals are hidden
+    document.getElementById('addStripeCardModal').addEventListener('hidden.bs.modal', () => {
+        if (cardElement && cardElement._mounted) {
+            cardElement.unmount();
+        }
+        // Clear form
+        document.getElementById('stripe-card-form').reset();
+        document.getElementById('stripe-card-errors').textContent = '';
+    });
+});
+</script>

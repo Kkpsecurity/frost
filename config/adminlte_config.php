@@ -343,8 +343,6 @@ return [
         ],
 
         ['header' => 'ADMINISTRATION'],
-        // TODO: Uncomment when routes are created
-        /*
         [
             'text' => 'Admin Center',
             'icon' => 'fas fa-fw fa-cogs',
@@ -360,13 +358,17 @@ return [
                     'icon' => 'fas fa-fw fa-wrench',
                 ],
                 [
+                    'text' => 'Payments',
+                    'route' => 'admin.payments.index',
+                    'icon' => 'fas fa-fw fa-credit-card',
+                ],
+                [
                     'text' => 'Media Manager',
                     'route' => 'admin.media-manager.index',
                     'icon' => 'fas fa-fw fa-hdd',
                 ],
             ],
         ],
-        */
         [
             'text' => 'Frost Support',
             'url' => 'admin/frost-support',

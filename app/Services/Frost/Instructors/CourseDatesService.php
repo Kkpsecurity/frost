@@ -364,8 +364,8 @@ class CourseDatesService
                             // During class time and no InstUnit - class is unassigned
                             $classStatus = 'unassigned';
                             $buttons = ['start_class' => 'Start Class'];
-                        } elseif ($now->between($startTime->copy()->subHours(1), $endTime->copy()->addHours(1))) {
-                            // Within 1 hour window of class time - allow starting
+                        } elseif ($now->between($startTime->copy()->subHours(2), $endTime->copy()->addHours(8))) {
+                            // Within extended window (2 hours before, 8 hours after) - allow starting
                             $classStatus = 'unassigned';
                             $buttons = ['start_class' => 'Start Class'];
                         } else {

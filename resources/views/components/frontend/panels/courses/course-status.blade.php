@@ -1,7 +1,7 @@
 {{-- Course Status Overview Panel --}}
 @php
     // Get dynamic course data from database
-    $courses = \App\RCache::Courses()->where('is_active', true);
+    $courses = \App\Services\RCache::Courses()->where('is_active', true);
     $classDCourse = $courses->firstWhere('id', 1); // Class D course
     $classGCourse = $courses->firstWhere('id', 3); // Class G course
 

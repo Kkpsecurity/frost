@@ -26,6 +26,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/account', [App\Http\Controllers\Student\ProfileController::class, 'index'])->name('account.index');
     Route::post('/account/profile', [App\Http\Controllers\Student\ProfileController::class, 'updateProfile'])->name('account.profile.update');
     Route::post('/account/settings', [App\Http\Controllers\Student\ProfileController::class, 'updateSettings'])->name('account.settings.update');
+    Route::get('/account/invoice/{order}', [App\Http\Controllers\Student\ProfileController::class, 'downloadInvoice'])->name('student.invoice');
+
+    // Payment method management routes
+    Route::prefix('account/payments')->name('account.payments.')->group(function () {
+        Route::post('/add-stripe-method', [App\Http\Controllers\Student\ProfileController::class, 'addStripePaymentMethod'])->name('add-stripe');
+        Route::get('/connect-paypal', [App\Http\Controllers\Student\ProfileController::class, 'connectPayPal'])->name('connect-paypal');
+        Route::post('/paypal-callback', [App\Http\Controllers\Student\ProfileController::class, 'paypalCallback'])->name('paypal-callback');
+        Route::post('/set-default', [App\Http\Controllers\Student\ProfileController::class, 'setDefaultPaymentMethod'])->name('set-default');
+        Route::delete('/delete-method', [App\Http\Controllers\Student\ProfileController::class, 'deletePaymentMethod'])->name('delete-method');
+    });
 });
 
 /**
@@ -57,95 +67,27 @@ Route::middleware('auth')->prefix('student/offline')->name('student.offline.')->
         ->name('session.force-end');
 });
 
-// Temporary test route for debugging CourseDatesService
-Route::get('/test-service', function () {
-    try {
-        $service = new \App\Services\Frost\Instructors\CourseDatesService();
-        $result = $service->getTodaysLessons();
+/**
+ * Admin Payment Configuration Routes
+ */
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Payment management routes
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'index'])->name('index');
 
-        return response()->json([
-            'success' => true,
-            'data' => $result
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
-    }
+        // PayPal configuration
+        Route::get('/paypal', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'paypal'])->name('paypal');
+        Route::put('/paypal', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'updatePayPal'])->name('update-paypal');
+
+        // Stripe configuration
+        Route::get('/stripe', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'stripe'])->name('stripe');
+        Route::put('/stripe', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'updateStripe'])->name('update-stripe');
+
+        // Connection testing
+        Route::post('/test-connection', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'testConnection'])->name('test-connection');
+    });
 });
 
-// Test kkpdebug function availability
-Route::get('/test/kkpdebug', function () {
-    try {
-        kkpdebug("Testing kkpdebug function", "TEST");
-        return response()->json([
-            'status' => 'success',
-            'message' => 'kkpdebug function is working'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'kkpdebug function error: ' . $e->getMessage()
-        ]);
-    }
-});
-
-// Test StudentDashboardController debug without auth
-Route::get('/test/debug', function () {
-    try {
-        $controller = new \App\Http\Controllers\Student\StudentDashboardController();
-        $result = $controller->debug();
-        return $result;
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
-    }
-});
-
-// Test instructor dashboard data for discrepancy analysis
-Route::get('/test/instructor-data', function () {
-    try {
-        $service = new \App\Services\Frost\Instructors\CourseDatesService();
-        $lessons = $service->getTodaysLessons();
-
-        // Also get raw course dates for comparison
-        $rawCourseDates = \App\Models\CourseDate::whereDate('starts_at', now()->format('Y-m-d'))
-            ->where('is_active', true)
-            ->with(['CourseUnit', 'InstUnit', 'InstUnit.GetCreatedBy', 'GetCourse'])
-            ->get()
-            ->map(function ($cd) {
-                return [
-                    'id' => $cd->id,
-                    'starts_at' => $cd->starts_at,
-                    'course_title' => $cd->GetCourse()->title ?? 'No Course',
-                    'unit_title' => $cd->CourseUnit->title ?? 'No Unit',
-                    'has_inst_unit' => $cd->InstUnit !== null,
-                    'inst_unit_id' => $cd->InstUnit?->id,
-                    'inst_unit_created_by' => $cd->InstUnit?->created_by,
-                    'instructor_from_inst_unit' => $cd->InstUnit && $cd->InstUnit->GetCreatedBy()
-                        ? ($cd->InstUnit->GetCreatedBy()->fname ?? '') . ' ' . ($cd->InstUnit->GetCreatedBy()->lname ?? '')
-                        : null,
-                ];
-            });
-
-        return response()->json([
-            'service_lessons' => $lessons,
-            'raw_course_dates' => $rawCourseDates,
-            'analysis' => [
-                'service_count' => count($lessons['lessons'] ?? []),
-                'raw_count' => $rawCourseDates->count(),
-                'discrepancy_check' => 'Compare instructor_name in service vs instructor_from_inst_unit in raw data'
-            ]
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
-    }
-});
+/**
+ * Clean web routes - test/debug routes moved to separate files
+ */

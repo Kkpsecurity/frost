@@ -62,7 +62,18 @@ class CourseDate extends Model
 
     public function InstUnit()
     {
-        return $this->hasOne(InstUnit::class, 'course_date_id');
+        return $this->hasOne(InstUnit::class, 'course_date_id')
+            ->whereDate('created_at', $this->starts_at);
+    }
+
+    /**
+     * Get InstUnit for today's date specifically
+     * This ensures we only get InstUnits created on the same day as the CourseDate
+     */
+    public function TodaysInstUnit()
+    {
+        return $this->hasOne(InstUnit::class, 'course_date_id')
+            ->whereDate('created_at', now()->format('Y-m-d'));
     }
 
     public function StudentUnits()

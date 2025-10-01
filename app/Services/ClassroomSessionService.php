@@ -27,7 +27,8 @@ class ClassroomSessionService
     public function startClassroomSession(int $courseDateId, ?int $assistantId = null): ?InstUnit
     {
         try {
-            $user = Auth::user();
+            // Check both admin and user guards
+            $user = Auth::guard('admin')->user() ?? Auth::user();
             if (!$user) {
                 Log::error('ClassroomSessionService: No authenticated user found');
                 return null;
@@ -64,7 +65,7 @@ class ClassroomSessionService
                 'course_date_id' => $courseDateId,
                 'inst_unit_id' => $instUnit->id,
                 'instructor_id' => $user->id,
-                'instructor_name' => $user->fullname(),
+                'instructor_name' => $user->name ?? 'Unknown',
                 'assistant_id' => $assistantId
             ]);
 
@@ -91,7 +92,8 @@ class ClassroomSessionService
     public function completeClassroomSession(int $instUnitId): bool
     {
         try {
-            $user = Auth::user();
+            // Check both admin and user guards
+            $user = Auth::guard('admin')->user() ?? Auth::user();
             if (!$user) {
                 Log::error('ClassroomSessionService: No authenticated user found for completion');
                 return false;
@@ -114,7 +116,7 @@ class ClassroomSessionService
             Log::info('ClassroomSessionService: InstUnit completed successfully', [
                 'inst_unit_id' => $instUnitId,
                 'completed_by' => $user->id,
-                'instructor_name' => $user->fullname()
+                'instructor_name' => $user->name ?? 'Unknown'
             ]);
 
             return true;
@@ -162,7 +164,7 @@ class ClassroomSessionService
             Log::info('ClassroomSessionService: Assistant assigned successfully', [
                 'inst_unit_id' => $instUnitId,
                 'assistant_id' => $assistantId,
-                'assistant_name' => $assistant->fullname()
+                'assistant_name' => $assistant->name ?? 'Unknown'
             ]);
 
             return true;
@@ -214,11 +216,11 @@ class ClassroomSessionService
                 'course_name' => $courseDate->GetCourse()->title ?? 'Unknown Course',
                 'instructor' => [
                     'id' => $instUnit->created_by,
-                    'name' => $instUnit->GetCreatedBy()->fullname() ?? 'Unknown Instructor'
+                    'name' => $instUnit->GetCreatedBy()->name ?? 'Unknown Instructor'
                 ],
                 'assistant' => $instUnit->assistant_id ? [
                     'id' => $instUnit->assistant_id,
-                    'name' => $instUnit->GetAssistant()->fullname() ?? 'Unknown Assistant'
+                    'name' => $instUnit->GetAssistant()->name ?? 'Unknown Assistant'
                 ] : null,
                 'created_at' => $instUnit->created_at,
                 'completed_at' => $instUnit->completed_at,

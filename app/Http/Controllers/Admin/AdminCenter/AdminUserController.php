@@ -22,8 +22,14 @@ class AdminUserController extends Controller
     /**
      * Display a listing of admin users with DataTables
      */
-    public function index()
+    public function index(Request $request)
     {
+        // Handle AJAX request for DataTables
+        if ($request->ajax()) {
+            return $this->getData($request);
+        }
+
+        // Return the view for regular requests
         return view('admin.admin-center.admin-users.index');
     }
 
@@ -32,7 +38,7 @@ class AdminUserController extends Controller
      */
     public function getData(Request $request): JsonResponse
     {
-        $query = Admin::with('Role')->select('users.*');
+        $query = Admin::with('Role');
 
         // Apply role filter if provided
         if ($request->has('role_filter') && !empty($request->role_filter)) {
@@ -42,15 +48,11 @@ class AdminUserController extends Controller
         }
 
         return DataTables::of($query)
-            ->addColumn('full_name', function ($admin) {
+            ->addColumn('name', function ($admin) {
                 return $admin->fname . ' ' . $admin->lname;
             })
-            ->addColumn('role_name', function ($admin) {
-                $roleName = $admin->Role->name ?? null;
-                if ($roleName) {
-                    return RoleManager::getDisplayName($roleName);
-                }
-                return 'N/A';
+            ->addColumn('role', function ($admin) {
+                return $admin->Role ? $admin->Role->name : 'N/A';
             })
             ->addColumn('status', function ($admin) {
                 return $admin->is_active ?
@@ -75,45 +77,25 @@ class AdminUserController extends Controller
                 }
                 return '<i class="fas fa-user-circle fa-2x text-muted"></i>';
             })
-            ->addColumn('formatted_created_at', function ($admin) {
-                return RoleManager::formatDate($admin->created_at, 'datetime_medium');
+            ->editColumn('created_at', function ($admin) {
+                return $admin->created_at ? $admin->created_at->format('M d, Y') : 'N/A';
             })
-            ->addColumn('actions', function ($admin) {
-                $currentUser = auth()->user();
-                $currentUserRole = $currentUser && $currentUser->Role ? $currentUser->Role->name : null;
-                $targetUserRole = $admin->Role ? $admin->Role->name : null;
-
-                $canImpersonate = $currentUserRole && RoleManager::canImpersonate($currentUserRole)
-                    && $admin->id !== $currentUser->id
-                    && $targetUserRole && RoleManager::canBeImpersonated($targetUserRole);
-
-                $actions = '
+            ->addColumn('action', function ($admin) {
+                return '
                     <div class="btn-group" role="group">
                         <a href="' . route('admin.admin-center.admin-users.show', $admin->id) . '" class="btn btn-sm btn-info" title="View">
                             <i class="fas fa-eye"></i>
                         </a>
                         <a href="' . route('admin.admin-center.admin-users.edit', $admin->id) . '" class="btn btn-sm btn-primary" title="Edit">
                             <i class="fas fa-edit"></i>
-                        </a>';
-
-                // Add impersonate button only for sys admins and valid target users
-                if ($canImpersonate) {
-                    $actions .= '
-                        <a href="' . route('admin.impersonate', $admin->id) . '" class="btn btn-sm btn-warning" title="Impersonate User" onclick="return confirm(\'Are you sure you want to impersonate this user?\')">
-                            <i class="fas fa-user-secret"></i>
-                        </a>';
-                }
-
-                $actions .= '
+                        </a>
                         <button type="button" class="btn btn-sm btn-danger" title="Delete" onclick="deleteAdmin(' . $admin->id . ')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 ';
-
-                return $actions;
             })
-            ->rawColumns(['status', 'role_badge', 'avatar_display', 'actions', 'formatted_created_at'])
+            ->rawColumns(['status', 'role', 'action'])
             ->make(true);
     }
 

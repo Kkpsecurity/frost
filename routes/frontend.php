@@ -33,6 +33,11 @@ require __DIR__ . '/classroom.php';
 require __DIR__ . '/frontend/courses.php';
 
 /**
+ * Payment Processing Routes
+ */
+require __DIR__ . '/frontend/payments.php';
+
+/**
  * Blog Section Routes
  */
 require __DIR__ . '/frontend/blog.php';

@@ -2,7 +2,7 @@
 $segments = request()->segments();
 $segment1 = isset($segments[0]) ? $segments[0] : null;
 $segment2 = isset($segments[1]) ? $segments[1] : null;
-$companyName = App\RCache::SiteConfig('site_company_name');
+$companyName = App\Services\RCache::SiteConfig('site_company_name');
 
 $menuItems = [
     [
