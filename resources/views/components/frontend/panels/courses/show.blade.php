@@ -141,9 +141,12 @@
                             {{-- Action Buttons --}}
                             <div class="course-actions d-grid gap-2">
                                 @auth
-                                    <a href="{{ route('courses.enroll', $course['id']) }}" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-graduation-cap me-2"></i>Enroll Now
-                                    </a>
+                                    <form action="{{ route('courses.enroll.process', $course['id']) }}" method="POST" class="d-grid">
+                                        @csrf
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-graduation-cap me-2"></i>Enroll Now
+                                        </button>
+                                    </form>
                                 @else
                                     <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
                                         <i class="fas fa-sign-in-alt me-2"></i>Login to Enroll

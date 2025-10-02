@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 
 use App\Services\RCache;
@@ -22,17 +23,30 @@ class EnrollmentController extends Controller
 
     public function AutoPayFlowPro( Course $Course ) : RedirectResponse
     {
-
+        // Check if user is already enrolled
         if ( Auth::user()->ActiveCourseAuths->firstWhere( 'course_id', $Course->id ) )
         {
-            return back()->with( 'warning', 'You are already enrolled in this course.' );
+            return redirect()->route('courses.show', $Course->id)
+                ->with('warning', 'You are already enrolled in this course.');
         }
 
-        $Order   = $this->GetOrder( $Course );
-        $Payment = $this->GetPayment( $Order );
+        // Check if course is active
+        if (!$Course->is_active) {
+            return redirect()->route('courses.list')
+                ->with('error', 'This course is not currently available for enrollment.');
+        }
 
-        return redirect()->route( 'payments.payflowpro', $Payment );
+        try {
+            $Order = $this->GetOrder($Course);
+            $Payment = $this->GetPayment($Order);
 
+            return redirect()->route('payments.payflowpro', $Payment);
+        } catch (\Exception $e) {
+            Log::error('Enrollment error for course ' . $Course->id . ': ' . $e->getMessage());
+
+            return redirect()->route('courses.show', $Course->id)
+                ->with('error', 'There was an error processing your enrollment. Please try again or contact support.');
+        }
     }
 
 

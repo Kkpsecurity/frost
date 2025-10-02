@@ -32,10 +32,27 @@ class CoursesController extends Controller
      */
     public function list()
     {
-        // Fetch active courses from database
+        // Fetch active courses from database with their related data
         $courses = Course::where('is_active', true)
+            ->with(['CourseUnits'])
                         ->orderBy('title')
-                        ->get();
+            ->get()
+            ->map(function ($course) {
+                // Enhance each course with additional data
+                $course->lessons = $course->GetLessons();
+                $course->course_type = $course->getCourseType();
+                $course->duration_days = $course->getDurationDays();
+                $course->calculated_total_minutes = $course->getCalculatedTotalMinutes();
+
+                // Get key features from lessons
+                $course->key_features = $course->lessons->take(5)->pluck('title')->toArray();
+
+                // Calculate stats
+                $course->total_lessons = $course->lessons->count();
+                $course->total_units = $course->CourseUnits->count();
+
+                return $course;
+            });
 
         $content = [
             'title' => 'Course List - ' . config('app.name'),
