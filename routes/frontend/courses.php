@@ -44,6 +44,21 @@ Route::post('/courses/enroll/{course}', [EnrollmentController::class, 'AutoPayFl
     ->name('courses.enroll.process')
     ->middleware('auth');
 
+// Debug route to test enrollment without form
+Route::get('/debug/enroll/{course}', function (App\Models\Course $course) {
+    if (!auth()->check()) {
+        return 'User not authenticated';
+    }
+
+    try {
+        $controller = new App\Http\Controllers\Web\EnrollmentController();
+        $response = $controller->AutoPayFlowPro($course);
+        return 'Enrollment test successful - should redirect to: ' . $response->getTargetUrl();
+    } catch (Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+})->middleware('auth')->name('debug.enroll');
+
 // Legacy enrollment processing route
 Route::post('/enroll/{course}', [EnrollmentController::class, 'AutoPayFlowPro'])
     ->name('enroll.process')

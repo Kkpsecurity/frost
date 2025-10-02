@@ -141,11 +141,30 @@
                             {{-- Action Buttons --}}
                             <div class="course-actions d-grid gap-2">
                                 @auth
-                                    <form action="{{ route('courses.enroll.process', $course['id']) }}" method="POST" class="d-grid">
+                                    {{-- Debug: Multiple enrollment options --}}
+                                    <div class="alert alert-info">
+                                        <small>DEBUG: Click to test enrollment methods</small>
+                                    </div>
+
+                                    {{-- Method 1: Standard form --}}
+                                    <form action="{{ route('courses.enroll.process', $course['id']) }}" method="POST" class="d-grid mb-2">
                                         @csrf
                                         <button type="submit" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-graduation-cap me-2"></i>Enroll Now
+                                            <i class="fas fa-graduation-cap me-2"></i>Enroll Now (Form)
                                         </button>
+                                    </form>
+
+                                    {{-- Method 2: Direct link test --}}
+                                    <a href="{{ route('debug.enroll', $course['id']) }}" class="btn btn-warning btn-lg mb-2">
+                                        <i class="fas fa-bug me-2"></i>Test Enroll (Debug)
+                                    </a>
+
+                                    {{-- Method 3: JavaScript form submission --}}
+                                    <button onclick="document.getElementById('enrollForm').submit();" class="btn btn-info btn-lg mb-2">
+                                        <i class="fas fa-code me-2"></i>Enroll (JS Submit)
+                                    </button>
+                                    <form id="enrollForm" action="{{ route('courses.enroll.process', $course['id']) }}" method="POST" style="display: none;">
+                                        @csrf
                                     </form>
                                 @else
                                     <a href="{{ route('login') }}" class="btn btn-primary btn-lg">

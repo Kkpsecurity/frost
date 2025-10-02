@@ -23,26 +23,37 @@ class EnrollmentController extends Controller
 
     public function AutoPayFlowPro( Course $Course ) : RedirectResponse
     {
+        // Debug logging to track enrollment attempts
+        Log::info('Enrollment attempt for course ' . $Course->id . ' by user ' . Auth::id());
+
         // Check if user is already enrolled
         if ( Auth::user()->ActiveCourseAuths->firstWhere( 'course_id', $Course->id ) )
         {
+            Log::info('User ' . Auth::id() . ' already enrolled in course ' . $Course->id);
             return redirect()->route('courses.show', $Course->id)
                 ->with('warning', 'You are already enrolled in this course.');
         }
 
         // Check if course is active
         if (!$Course->is_active) {
+            Log::warning('Attempted enrollment in inactive course ' . $Course->id);
             return redirect()->route('courses.list')
                 ->with('error', 'This course is not currently available for enrollment.');
         }
 
         try {
+            Log::info('Creating order for course ' . $Course->id);
             $Order = $this->GetOrder($Course);
-            $Payment = $this->GetPayment($Order);
+            Log::info('Order created with ID: ' . $Order->id);
 
+            $Payment = $this->GetPayment($Order);
+            Log::info('Payment created with ID: ' . $Payment->id);
+
+            Log::info('Redirecting to payment gateway for payment ' . $Payment->id);
             return redirect()->route('payments.payflowpro', $Payment);
         } catch (\Exception $e) {
             Log::error('Enrollment error for course ' . $Course->id . ': ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             return redirect()->route('courses.show', $Course->id)
                 ->with('error', 'There was an error processing your enrollment. Please try again or contact support.');
