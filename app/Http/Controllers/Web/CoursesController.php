@@ -143,7 +143,7 @@ class CoursesController extends Controller
     }
 
     /**
-     * Display the course enrollment page
+     * Redirect to payment page for course enrollment
      */
     public function enroll(Course $course)
     {
@@ -158,28 +158,16 @@ class CoursesController extends Controller
                            ->with('warning', 'You are already enrolled in this course.');
         }
 
-        // Get course data similar to show method but focused on enrollment
-        $courseData = [
-            'id' => $course->id,
-            'title' => $course->title_long ?? $course->title,
-            'badge' => $this->getCourseBadgeFromTitle($course->title),
-            'description' => $this->getCourseDescriptionFromTitle($course->title),
-            'price' => $course->price,
-            'duration' => $course->total_minutes ? ceil($course->total_minutes / 60 / 8) . ' Days' : $this->getDefaultDurationFromTitle($course->title),
-            'icon' => $this->getCourseIconFromTitle($course->title),
-            'requirements' => $this->getCourseRequirementsFromTitle($course->title),
-        ];
-
-        $content = [
-            'title' => 'Enroll in ' . $courseData['title'] . ' - ' . config('app.name'),
-            'description' => 'Complete your enrollment for ' . $courseData['title'],
-            'keywords' => 'course enrollment, security training registration, ' . $this->getCourseKeywordsFromTitle($course->title),
-        ];
-
-        // Merge with meta data
-        $content = array_merge($content, self::renderPageMeta('course-enrollment'));
-
-        return view('frontend.courses.enroll', compact('content'), ['course' => $courseData]);
+        try {
+            // Create order and payment, then redirect to payment page
+            $enrollmentController = new \App\Http\Controllers\Web\EnrollmentController();
+            return $enrollmentController->AutoPayFlowPro($course);
+        } catch (\Exception $e) {
+            \Log::error('Enrollment redirection error for course ' . $course->id . ': ' . $e->getMessage());
+            
+            return redirect()->route('courses.show', $course->id)
+                           ->with('error', 'There was an error starting your enrollment. Please try again or contact support.');
+        }
     }
 
     /**
