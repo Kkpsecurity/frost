@@ -13,6 +13,7 @@ use App\Models\Course;
 use App\Models\CourseAuth;
 use App\Models\PaymentType;
 use App\Models\DiscountCode;
+use App\Models\Payment;
 use App\Models\Payments\PaymentModel;
 
 use App\Models\Traits\Order\CalcPrice;
@@ -216,6 +217,14 @@ class Order extends Model
         return (
             RCache::PaymentTypes($this->payment_type_id)->model_class
         )::firstWhere('order_id', $this->id);
+    }
+
+    /**
+     * Get all payments for this order (new Payment model)
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 
 

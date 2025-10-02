@@ -13,8 +13,7 @@ use App\Classes\PaymentQueries;
 use App\Models\Course;
 use App\Models\CourseAuth;
 use App\Models\Order;
-use App\Models\Payments\PaymentModel;
-use App\Models\Payments\PayFlowPro;
+use App\Models\Payment;
 
 
 class EnrollmentController extends Controller
@@ -138,23 +137,23 @@ class EnrollmentController extends Controller
     ################################
 
 
-    public  function GetPayment( Order $Order ) : PaymentModel
+    public function GetPayment(Order $Order): Payment
     {
-
-        if ( $Payment = $Order->GetPayment() )
+        // Check if payment already exists for this order
+        if ($Payment = $Order->payments()->first())
         {
             return $Payment;
         }
 
-        return PayFlowPro::forceCreate([
-
-            'id'            => $Order->id,
-            'order_id'      => $Order->id,
-            'total_price'   => $Order->total_price,
-            'pp_is_sandbox' => ( ! app()->environment( 'production' ) )
-
-        ])->refresh();
-
+        // Create new payment record
+        return Payment::create([
+            'order_id' => $Order->id,
+            'payment_method' => 'payflowpro',
+            'gateway' => 'payflowpro',
+            'amount' => $Order->total_price,
+            'currency' => 'USD',
+            'status' => 'pending'
+        ]);
     }
 
 
