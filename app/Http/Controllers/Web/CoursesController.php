@@ -164,9 +164,9 @@ class CoursesController extends Controller
             return $enrollmentController->AutoPayFlowPro($course);
         } catch (\Exception $e) {
             \Log::error('Enrollment redirection error for course ' . $course->id . ': ' . $e->getMessage());
-            
+
             return redirect()->route('courses.show', $course->id)
-                           ->with('error', 'There was an error starting your enrollment. Please try again or contact support.');
+                ->with('error', 'There was an error starting your enrollment. Please try again or contact support.');
         }
     }
 

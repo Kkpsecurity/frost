@@ -105,7 +105,7 @@
                             <div class="course-actions">
                                 <a href="{{ route('courses.show', $course->id) }}" class="btn btn-outline-primary btn-sm me-2">Learn More</a>
                                 @auth
-                                    <a href="{{ route('courses.enroll', $course->id) }}" class="btn btn-primary btn-sm">Enroll Now</a>
+                                    <a href="{{ route('payments.course', $course->id) }}" class="btn btn-primary btn-sm">Enroll Now</a>
                                 @else
                                     <a href="{{ route('login') }}" class="btn btn-primary btn-sm">Login to Enroll</a>
                                 @endauth

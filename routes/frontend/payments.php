@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->prefix('payments')->name('payments.')->group(function () {
 
+    // Course payment selection page - direct checkout
+    Route::get('/course/{course}', [PaymentController::class, 'coursePayment'])
+        ->name('course');
+
     // Payment processing page
     Route::get('/payflowpro/{payment}', [PaymentController::class, 'payflowpro'])
         ->name('payflowpro');
@@ -24,6 +28,13 @@ Route::middleware(['auth'])->prefix('payments')->name('payments.')->group(functi
 
     Route::post('/paypal/{payment}', [PaymentController::class, 'processPaypal'])
         ->name('paypal.process');
+
+    // Course payment processing (creates order and payment on the fly)
+    Route::post('/course/stripe/{course}', [PaymentController::class, 'processCourseStripe'])
+        ->name('course.stripe');
+
+    Route::post('/course/paypal/{course}', [PaymentController::class, 'processCoursePaypal'])
+        ->name('course.paypal');
 
     // Payment callbacks
     Route::get('/success/{payment}', [PaymentController::class, 'success'])
