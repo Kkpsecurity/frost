@@ -141,12 +141,31 @@
                             {{-- Action Buttons --}}
                             <div class="course-actions d-grid gap-2">
                                 @auth
-                                    <form action="{{ route('courses.enroll.process', $course['id']) }}" method="POST" class="d-grid">
+                                    {{-- Debug: Check form submission --}}
+                                    <form action="{{ route('courses.enroll.process', $course['id']) }}" method="POST" class="d-grid"
+                                          onsubmit="console.log('Form submitting to:', this.action); console.log('Method:', this.method); return true;">
                                         @csrf
-                                        <button type="submit" class="btn btn-primary btn-lg">
+                                        <button type="submit" class="btn btn-primary btn-lg"
+                                                onclick="console.log('Button clicked, form will submit'); event.stopPropagation();">
                                             <i class="fas fa-graduation-cap me-2"></i>Enroll Now
                                         </button>
                                     </form>
+
+                                    {{-- Debug info --}}
+                                    <div class="alert alert-info mt-2">
+                                        <small>
+                                            <strong>Debug Info:</strong><br>
+                                            Route: {{ route('courses.enroll.process', $course['id']) }}<br>
+                                            Course ID: {{ $course['id'] }}<br>
+                                            User: {{ auth()->user()->name ?? 'Not logged in' }}<br>
+                                            CSRF: {{ csrf_token() }}
+                                        </small>
+                                    </div>
+
+                                    {{-- Simple test link to bypass form issues --}}
+                                    <a href="{{ route('test.enroll', $course['id']) }}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-bug me-1"></i>Test Direct Enrollment (Bypass Form)
+                                    </a>
                                 @else
                                     <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
                                         <i class="fas fa-sign-in-alt me-2"></i>Login to Enroll
