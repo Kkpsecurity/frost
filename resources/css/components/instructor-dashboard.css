@@ -1,0 +1,273 @@
+/* Instructor Dashboard 3-Column Layout Styles */
+.instructor-dashboard-3col {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.lessons-sidebar-left {
+    height: 100vh;
+    overflow: hidden;
+    border-right: 1px solid #dee2e6;
+}
+
+.center-content {
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    height: 100vh;
+}
+
+.students-sidebar-right {
+    height: 100vh;
+    overflow: hidden;
+    border-left: 1px solid #dee2e6;
+}
+
+.students-sidebar {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.students-sidebar .sidebar-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+}
+
+.students-sidebar .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.students-sidebar .sidebar-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.student-item {
+    transition: background-color 0.2s ease;
+}
+
+.student-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Lessons Sidebar Styles */
+.lessons-sidebar {
+    background: white;
+    border-left: 1px solid #dee2e6;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.lessons-sidebar .sidebar-header {
+    background: var(--frost-primary-color, #f8fafc);
+    border-bottom: 1px solid var(--frost-border-color, #e2e8f0);
+}
+
+.lessons-sidebar .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.lessons-sidebar .sidebar-footer {
+    background: var(--frost-light-bg-color, #f8fafc);
+    border-top: 1px solid var(--frost-border-color, #e2e8f0);
+}
+
+.lesson-item {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.lesson-item:hover {
+    background-color: #f8f9fa !important;
+    border-left-color: var(--frost-primary-color, #0d6efd);
+}
+
+.lesson-item.completed {
+    opacity: 0.8;
+}
+
+.lesson-item.completed .lesson-number {
+    background-color: #198754 !important;
+    color: white !important;
+}
+
+.lesson-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+/* Course Cards Enhancement for Sidebar Integration */
+.course-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.course-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.course-card.selected {
+    border-color: var(--frost-primary-color, #0d6efd) !important;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .sidebar-container {
+        width: 350px !important;
+        min-width: 350px !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar-container {
+        width: 320px !important;
+        min-width: 320px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .instructor-dashboard-layout {
+        flex-direction: column;
+    }
+
+    .sidebar-container {
+        position: fixed !important;
+        top: 0;
+        right: 0;
+        z-index: 1050;
+        width: 100% !important;
+        max-width: 400px;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .main-content.with-sidebar {
+        filter: blur(2px);
+    }
+}
+
+/* Theme Integration - AdminLTE Compatible */
+:root {
+    --frost-primary-color: #007bff;
+    --frost-secondary-color: #6c757d;
+    --frost-success-color: #28a745;
+    --frost-danger-color: #dc3545;
+    --frost-warning-color: #ffc107;
+    --frost-info-color: #17a2b8;
+    --frost-light-color: #f8f9fa;
+    --frost-dark-color: #343a40;
+    --frost-border-color: #dee2e6;
+    --frost-light-bg-color: #ffffff;
+    --frost-base-color: #495057;
+    --frost-white-color: #ffffff;
+}
+
+/* Instructor Bulletin Board Theme Enhancements */
+.instructor-bulletin-board .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.instructor-bulletin-board .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+.instructor-bulletin-board .resource-item:hover,
+.instructor-bulletin-board .course-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.instructor-bulletin-board .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.instructor-bulletin-board .announcement-item:last-child {
+    border-bottom: none !important;
+}
+
+/* AdminLTE Integration */
+.instructor-dashboard-layout {
+    background-color: #f4f4f4;
+}
+
+.main-content {
+    background-color: #f4f4f4;
+}
+
+.lessons-sidebar .sidebar-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
+.lessons-sidebar .sidebar-header h5 {
+    color: white !important;
+}
+
+.lessons-sidebar .sidebar-header .btn-close {
+    filter: invert(1);
+}
+
+.lessons-sidebar .sidebar-header small {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Sidebar Toggle Animation */
+.sidebar-enter {
+    transform: translateX(100%);
+}
+
+.sidebar-enter-active {
+    transform: translateX(0);
+    transition: transform 300ms ease-in-out;
+}
+
+.sidebar-exit {
+    transform: translateX(0);
+}
+
+.sidebar-exit-active {
+    transform: translateX(100%);
+    transition: transform 300ms ease-in-out;
+}
+
+/* Loading States */
+.lesson-item-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Custom Scrollbar */
+.lessons-sidebar .sidebar-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lessons-sidebar .sidebar-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.lessons-sidebar .sidebar-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.lessons-sidebar .sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

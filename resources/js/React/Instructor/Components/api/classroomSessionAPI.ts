@@ -44,15 +44,17 @@ export interface StartSessionResponse {
 }
 
 class ClassroomSessionAPI {
-    private baseURL = '/api/classroom/session';
+    private baseURL = "/admin/instructors/classroom";
 
     /**
      * Get CSRF token for requests
      */
     private async getCSRFToken(): Promise<string> {
-        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const token = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content");
         if (!token) {
-            throw new Error('CSRF token not found');
+            throw new Error("CSRF token not found");
         }
         return token;
     }
@@ -60,122 +62,133 @@ class ClassroomSessionAPI {
     /**
      * Start a new classroom session
      */
-    async startSession(courseDateId: number, assistantId?: number): Promise<StartSessionResponse> {
+    async startSession(
+        courseDateId: number,
+        assistantId?: number
+    ): Promise<StartSessionResponse> {
         try {
             const csrfToken = await this.getCSRFToken();
 
-            const response = await fetch(`${this.baseURL}/start`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    course_date_id: courseDateId,
-                    assistant_id: assistantId || null,
-                }),
-            });
+            const response = await fetch(
+                `${this.baseURL}/start-class/${courseDateId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        assistant_id: assistantId || null,
+                    }),
+                }
+            );
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to start classroom session');
+                throw new Error(
+                    data.message || "Failed to start classroom session"
+                );
             }
 
             return data;
         } catch (error) {
-            console.error('Error starting classroom session:', error);
+            console.error("Error starting classroom session:", error);
             throw error;
         }
     }
 
     /**
-     * Complete a classroom session
+     * Take over a classroom session
      */
-    async completeSession(instUnitId: number): Promise<{ success: boolean; message: string }> {
+    async takeOverClass(): Promise<{ success: boolean; message: string }> {
         try {
             const csrfToken = await this.getCSRFToken();
 
-            const response = await fetch(`${this.baseURL}/${instUnitId}/complete`, {
-                method: 'POST',
+            const response = await fetch(`${this.baseURL}/take-over`, {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest",
                 },
-                credentials: 'same-origin',
+                credentials: "same-origin",
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to complete classroom session');
+                throw new Error(
+                    data.message || "Failed to take over classroom session"
+                );
             }
 
             return data;
         } catch (error) {
-            console.error('Error completing classroom session:', error);
+            console.error("Error taking over classroom session:", error);
             throw error;
         }
     }
 
     /**
-     * Assign assistant to a classroom session
+     * Assist in a classroom session
      */
-    async assignAssistant(instUnitId: number, assistantId: number): Promise<{ success: boolean; message: string }> {
+    async assistClass(): Promise<{ success: boolean; message: string }> {
         try {
             const csrfToken = await this.getCSRFToken();
 
-            const response = await fetch(`${this.baseURL}/${instUnitId}/assign-assistant`, {
-                method: 'POST',
+            const response = await fetch(`${this.baseURL}/assist`, {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest",
                 },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    assistant_id: assistantId,
-                }),
+                credentials: "same-origin",
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to assign assistant');
+                throw new Error(
+                    data.message || "Failed to assist in classroom session"
+                );
             }
 
             return data;
         } catch (error) {
-            console.error('Error assigning assistant:', error);
+            console.error("Error assisting in classroom session:", error);
             throw error;
         }
     }
 
     /**
-     * Get classroom session information
+     * Get classroom status and data
      */
-    async getSession(courseDateId: number): Promise<ClassroomSessionInfo> {
+    async getClassroomStatus(): Promise<any> {
         try {
-            const response = await fetch(`${this.baseURL}/${courseDateId}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            const response = await fetch(
+                "/admin/instructors/data/classroom/status",
+                {
+                    method: "GET",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    credentials: "same-origin",
+                }
+            );
 
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error('Failed to get classroom session');
+                throw new Error("Failed to get classroom status");
             }
 
-            return result.data;
+            return result;
         } catch (error) {
-            console.error('Error getting classroom session:', error);
+            console.error("Error getting classroom status:", error);
             throw error;
         }
     }

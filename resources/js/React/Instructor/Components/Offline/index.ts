@@ -13,6 +13,10 @@ export { default as CompletedCoursesList } from "./CompletedCoursesList";
 export { useBulletinBoard } from "./useBulletinBoard";
 export { useUser } from "./useUser";
 export { useCompletedCourses } from "./useCompletedCourses";
+export { useInstructorBulletinBoard } from "./useInstructorBulletinBoard";
+
+// Bulletin Board Components
+export { default as InstructorBulletinBoard } from "./InstructorBulletinBoard";
 
 // Types
 export type { CourseDate, InstructorDashboardProps } from "./types";

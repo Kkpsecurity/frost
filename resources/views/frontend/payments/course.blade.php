@@ -21,12 +21,68 @@
                                     <p class="text-muted mb-0">{{ $course->description ?? 'Professional Security Training Course' }}</p>
                                 </div>
                                 <div class="col-md-4 text-end">
-                                    <h3 class="text-primary mb-0">${{ number_format($course->price, 2) }}</h3>
+                                    <h3 class="text-primary mb-0">${{ number_format((float)$course->price, 2) }}</h3>
                                     <small class="text-muted">USD</small>
                                 </div>
                             </div>
+                            {{-- Debug Info --}}
+                            <div class="mt-3 p-2" style="background: #f8f9fa; border-radius: 5px; font-size: 12px;">
+                                <strong>Debug:</strong>
+                                Stripe: {{ $paymentConfig['stripe_enabled'] ? 'ENABLED' : 'DISABLED' }} |
+                                PayPal: {{ $paymentConfig['paypal_enabled'] ? 'ENABLED' : 'DISABLED' }} |
+                                Guest: {{ ($isGuest ?? true) ? 'YES' : 'NO' }}
+                            </div>
                         </div>
                     </div>
+
+                    @if($isGuest ?? true)
+                        {{-- Quick Registration Panel for Guests --}}
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-plus me-2"></i>Complete Your Registration
+                                </h5>
+                                <small>Enter your details to proceed with payment</small>
+                            </div>
+                            <div class="card-body">
+                                <form id="guestRegistrationForm" class="row g-3">
+                                    @csrf
+                                    <div class="col-md-6">
+                                        <label for="firstName" class="form-label">First Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="firstName" name="first_name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="lastName" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="lastName" name="last_name" required>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="phone" class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone">
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                            <label class="form-check-label" for="terms">
+                                                I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a> <span class="text-danger">*</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter">
+                                            <label class="form-check-label" for="newsletter">
+                                                Subscribe to course updates and security training newsletters
+                                            </label>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- Payment Method Selection --}}
                     <div class="card">
@@ -34,6 +90,7 @@
                             <h5 class="mb-0">
                                 <i class="fas fa-credit-card me-2"></i>Select Payment Method
                             </h5>
+                            <small class="text-muted">Choose your preferred payment method below</small>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -56,8 +113,8 @@
                                                         <i class="fab fa-cc-discover"></i>
                                                     </div>
                                                 </div>
-                                                <button type="submit" class="btn btn-primary w-100 mt-3">
-                                                    <i class="fas fa-lock me-2"></i>Pay with Card
+                                                <button type="submit" class="btn btn-primary w-100 mt-3" id="stripePaymentBtn">
+                                                    <i class="fas fa-lock me-2"></i>Pay with Card - ${{ number_format((float)$course->price, 2) }}
                                                 </button>
                                             </div>
                                         </form>
@@ -82,8 +139,8 @@
                                                         </small>
                                                     </div>
                                                 </div>
-                                                <button type="submit" class="btn w-100 mt-3" style="background: #0070ba; color: white; border: none;">
-                                                    <i class="fab fa-paypal me-2"></i>Pay with PayPal
+                                                <button type="submit" class="btn w-100 mt-3" style="background: #0070ba; color: white; border: none;" id="paypalPaymentBtn">
+                                                    <i class="fab fa-paypal me-2"></i>Pay with PayPal - ${{ number_format((float)$course->price, 2) }}
                                                 </button>
                                             </div>
                                         </form>
@@ -130,22 +187,32 @@
 
     <style>
         .payment-option {
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
+            background: linear-gradient(145deg, #1e3a8a, #1e40af);
+            border: 2px solid rgba(79, 70, 229, 0.3);
+            border-radius: 15px;
+            padding: 25px;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             height: 100%;
+            color: white;
         }
 
         .payment-option:hover {
-            border-color: #007bff;
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+            transform: translateY(-5px);
+            border-color: #8b5cf6;
+            box-shadow: 0 15px 35px rgba(79, 70, 229, 0.4);
+            background: linear-gradient(145deg, #3730a3, #4f46e5);
         }
 
         .payment-header h6 {
             margin-top: 10px;
             font-weight: 600;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .payment-body p {
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .accepted-cards i {
@@ -164,5 +231,41 @@
             border-radius: 8px;
             border-left: 4px solid #28a745;
         }
+
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .registration-complete {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
     </style>
+
+    @if($isGuest ?? true)
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add payment method click tracking for debugging
+            const stripeBtn = document.getElementById('stripePaymentBtn');
+            const paypalBtn = document.getElementById('paypalPaymentBtn');
+
+            if (stripeBtn) {
+                stripeBtn.addEventListener('click', function() {
+                    console.log('Stripe payment method selected');
+                });
+            }
+
+            if (paypalBtn) {
+                paypalBtn.addEventListener('click', function() {
+                    console.log('PayPal payment method selected');
+                });
+            }
+        });
+    </script>
+    @endif
 </x-frontend.site.site-wrapper>

@@ -15,45 +15,125 @@ use Carbon\Carbon;
 class CourseDatesService
 {
     /**
-     * Get bulletin board data with course statistics
+     * Get bulletin board data for instructor dashboard
      *
      * @return array
      */
     public function getBulletinBoardData(): array
     {
-        $courseDates = DB::table('course_dates');
+        // Get instructor statistics
+        $totalInstructors = DB::table('admins')->where('active', 1)->count();
+        $activeCourses = DB::table('course_dates')->where('starts_at', '>=', now()->startOfDay())
+            ->where('starts_at', '<=', now()->endOfDay())->count();
+        $totalStudents = DB::table('users')->where('status', 'active')->count();
 
-        // Get basic statistics
-        $stats = $this->getCourseDateStatistics($courseDates);
-
-        // Get upcoming and recent courses
-        $upcomingCourses = $this->getUpcomingCourses($courseDates);
-        $recentHistory = $this->getRecentCourseHistory($courseDates);
-
-        // Get chart data
-        $chartData = $this->getChartData($stats);
-
-        return [
-            'bulletin_board' => [
-                'stats' => $stats,
-                'upcoming_classes' => $upcomingCourses,
-                'recent_history' => $recentHistory,
-                'charts' => $chartData
+        // Sample announcements (you can replace with actual data from announcements table)
+        $announcements = [
+            [
+                'id' => 1,
+                'title' => 'New Course Materials Available',
+                'content' => 'Updated training materials for Cybersecurity Fundamentals are now available in the resources section.',
+                'type' => 'training',
+                'author' => 'Training Department',
+                'created_at' => now()->subDays(1)->toISOString(),
+                'expires_at' => now()->addDays(30)->toISOString()
             ],
-            'metadata' => [
-                'generated_at' => now()->toISOString(),
-                'view_type' => 'bulletin_board',
-                'has_course_dates' => $stats['total_course_dates'] > 0
+            [
+                'id' => 2,
+                'title' => 'System Maintenance Scheduled',
+                'content' => 'The learning management system will undergo maintenance this weekend from 10 PM to 2 AM.',
+                'type' => 'urgent',
+                'author' => 'IT Department',
+                'created_at' => now()->subHours(6)->toISOString(),
+                'expires_at' => now()->addDays(3)->toISOString()
+            ],
+            [
+                'id' => 3,
+                'title' => 'Updated Teaching Guidelines',
+                'content' => 'Please review the updated teaching guidelines for hybrid learning environments.',
+                'type' => 'policy',
+                'author' => 'Academic Affairs',
+                'created_at' => now()->subDays(3)->toISOString(),
+                'expires_at' => null
             ]
         ];
-    }
 
-    /**
-     * Get course date statistics
-     *
-     * @param \Illuminate\Database\Query\Builder $courseDates
-     * @return array
-     */
+        // Sample instructor resources (you can replace with actual data)
+        $instructorResources = [
+            [
+                'id' => 1,
+                'title' => 'Instructor Training Videos',
+                'description' => 'Comprehensive video guides for effective online teaching',
+                'type' => 'video',
+                'category' => 'Training',
+                'url' => '/instructor/resources/videos'
+            ],
+            [
+                'id' => 2,
+                'title' => 'Course Planning Template',
+                'description' => 'Standardized template for lesson planning and course structure',
+                'type' => 'document',
+                'category' => 'Templates',
+                'url' => '/instructor/resources/templates/course-planning.pdf'
+            ],
+            [
+                'id' => 3,
+                'title' => 'Student Engagement Strategies',
+                'description' => 'Best practices for keeping students engaged in virtual classrooms',
+                'type' => 'training',
+                'category' => 'Best Practices',
+                'url' => '/instructor/resources/engagement-strategies'
+            ],
+            [
+                'id' => 4,
+                'title' => 'Technical Support Portal',
+                'description' => 'Quick access to technical support and troubleshooting guides',
+                'type' => 'link',
+                'category' => 'Support',
+                'url' => '/support/technical'
+            ]
+        ];
+
+        // Sample available courses (you can replace with actual data from courses table)
+        $availableCourses = DB::table('courses')
+            ->select(
+                'id',
+                'course_name as title',
+                'course_description as description',
+                'duration_hours as total_minutes',
+                'price',
+                'is_active'
+            )
+            ->where('is_active', 1)
+            ->limit(6)
+            ->get()
+            ->map(function ($course) {
+                return [
+                    'id' => $course->id,
+                    'title' => $course->title,
+                    'description' => $course->description ?? 'No description available',
+                    'total_minutes' => ($course->total_minutes ?? 60) * 60, // Convert hours to minutes
+                    'price' => $course->price ?? 0,
+                    'is_active' => (bool) $course->is_active
+                ];
+            })->toArray();
+
+        return [
+            'announcements' => $announcements,
+            'available_courses' => $availableCourses,
+            'instructor_resources' => $instructorResources,
+            'quick_stats' => [
+                'total_instructors' => $totalInstructors,
+                'active_courses_today' => $activeCourses,
+                'students_in_system' => $totalStudents
+            ]
+        ];
+    }    /**
+         * Get course date statistics
+         *
+         * @param \Illuminate\Database\Query\Builder $courseDates
+         * @return array
+         */
     private function getCourseDateStatistics($courseDates): array
     {
         $totalCourseDates = $courseDates->count();

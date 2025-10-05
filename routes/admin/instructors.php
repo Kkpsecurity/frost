@@ -104,6 +104,10 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::get('/debug/lessons/today', [InstructorDashboardController::class, 'debugTodayLessons'])
             ->name('debug.lessons.today');
 
+        // Course lessons for sidebar
+        Route::get('/lessons/{courseDateId}', [InstructorDashboardController::class, 'getCourseLessons'])
+            ->name('lessons.course');
+
         // Recent activity data
         Route::get('/activity/recent', [InstructorDashboardController::class, 'getRecentActivity'])
             ->name('activity.recent');

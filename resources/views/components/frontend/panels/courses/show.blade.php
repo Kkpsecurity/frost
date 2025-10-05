@@ -2,9 +2,9 @@
 
 @push('component-styles')
     <link rel="stylesheet" href="{{ asset('css/components/course-details.css') }}">
-@endpush
-
-<div class="frost-secondary-bg py-5">
+@endpu                                <a href="{{ route('payments.course', $course['id']) }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-graduation-cap me-2"></i>Enroll Now
+                                </a><div class="frost-secondary-bg py-5">
     <div class="container">
         <div class="row">
             <div class="col-lg-8">
@@ -140,15 +140,10 @@
 
                             {{-- Action Buttons --}}
                             <div class="course-actions d-grid gap-2">
-                                @auth
-                                    <a href="{{ route('payments.course', $course['id']) }}" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-graduation-cap me-2"></i>Enroll Now
-                                    </a>
-                                @else
-                                    <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-sign-in-alt me-2"></i>Login to Enroll
-                                    </a>
-                                @endauth
+                                <a href="{{ route('payments.course', $course['id']) }}" class="btn btn-primary btn-lg"
+                                   onclick="console.log('Enrolling in course {{ $course['id'] }}', '{{ route('payments.course', $course['id']) }}'); return true;">
+                                    <i class="fas fa-graduation-cap me-2"></i>Enroll Now
+                                </a>
                                 <a href="{{ route('courses.list') }}" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-2"></i>Back to Courses
                                 </a>

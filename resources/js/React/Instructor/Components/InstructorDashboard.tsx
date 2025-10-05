@@ -1,43 +1,25 @@
 import React, { useState, useEffect } from "react";
 import {
-    DashboardHeader,
     LoadingState,
     ErrorState,
-    EmptyState,
-    ContentHeader,
-    CoursesGrid,
-    CompletedCoursesList,
     useBulletinBoard,
-    useCompletedCourses,
-    type InstructorDashboardProps,
     type CourseDate,
 } from "./Offline";
-import AssignmentHistoryTable from "./Offline/AssignmentHistoryTable";
 import ClassroomManager from "./ClassroomManager";
 
 const InstructorDashboard: React.FC = () => {
-    const [currentView, setCurrentView] = useState<"dashboard" | "classroom">(
-        "dashboard"
-    );
-    const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(
-        null
-    );
-    const [manualDashboard, setManualDashboard] = useState(false); // Track if user manually went back to dashboard
+    const [currentView, setCurrentView] = useState<"dashboard" | "classroom">("dashboard");
+    const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(null);
+    const [activeTab, setActiveTab] = useState<"live" | "today" | "upcoming">("live");
 
     const {
         courseDates: courses,
-        assignmentHistory,
         loading,
         error,
         refetch,
         isPolling,
         lastUpdated,
     } = useBulletinBoard();
-    const {
-        completedCourses,
-        loading: completedLoading,
-        error: completedError,
-    } = useCompletedCourses();
 
     // Auto-redirect to classroom when instructor is assigned to an active class
     useEffect(() => {

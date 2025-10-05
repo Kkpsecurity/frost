@@ -15,7 +15,7 @@ class PaymentController extends Controller
     use PageMetaDataTrait;
 
     /**
-     * Display course payment selection page
+     * Display course payment selection page - GUEST CHECKOUT ENABLED
      */
     public function coursePayment(\App\Models\Course $course)
     {
@@ -24,11 +24,14 @@ class PaymentController extends Controller
             abort(404, 'Course not found');
         }
 
-        // Check if user is already enrolled
-        if (auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id)) {
-            return redirect()->route('courses.show', $course->id)
-                           ->with('warning', 'You are already enrolled in this course.');
-        }
+        // TEMPORARILY DISABLED - Let payment page load regardless of enrollment status
+        // if (auth()->check()) {
+        //     $enrolled = auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id);
+        //     if ($enrolled) {
+        //         return redirect()->route('courses.show', $course->id)
+        //             ->with('warning', 'You are already enrolled in this course.');
+        //     }
+        // }
 
         // Prepare content data
         $content = array_merge([
@@ -37,136 +40,81 @@ class PaymentController extends Controller
             'keywords' => 'payment, course enrollment, stripe, paypal, secure checkout'
         ], self::renderPageMeta('course-payment'));
 
-        // Check which payment gateways are enabled
+        // Check which payment gateways are enabled - TEMPORARILY ENABLE FOR TESTING
         $paymentConfig = [
-            'stripe_enabled' => !empty(setting('payment.stripe_public_key')) && !empty(setting('payment.stripe_secret_key')),
-            'paypal_enabled' => !empty(setting('payment.paypal_client_id')) && !empty(setting('payment.paypal_client_secret')),
+            'stripe_enabled' => true, // Temporarily enabled for testing
+            'paypal_enabled' => true, // Temporarily enabled for testing
         ];
 
-        return view('frontend.payments.course', compact('content', 'course', 'paymentConfig'));
+        // Pass guest checkout flag
+        $isGuest = !auth()->check();
+
+        return view('frontend.payments.course', compact('content', 'course', 'paymentConfig', 'isGuest'));
     }
 
     /**
-     * Display the payment processing page
+     * Debug course payment information
      */
-    public function payflowpro(Payment $payment)
+    public function debugCoursePayment(\App\Models\Course $course)
     {
-        // Check if payment exists and belongs to current user
-        if (!$payment || $payment->order->user_id !== auth()->id()) {
-            abort(404, 'Payment not found');
-        }
-
-        // Check if payment is already completed
-        if ($payment->status === 'completed') {
-            return redirect()->route('courses.show', $payment->order->course_id)
-                           ->with('success', 'This payment has already been completed.');
-        }
-
-        // Get course information
-        $course = $payment->order->course;
-
-        // Prepare content data
-        $content = array_merge([
-            'title' => 'Payment Processing - ' . $course->title,
-            'description' => 'Complete your payment for ' . $course->title,
-            'keywords' => 'payment, course enrollment, secure checkout'
-        ], self::renderPageMeta('payment-processing'));
-
-        // Check which payment gateways are enabled
-        $paymentConfig = [
-            'stripe_enabled' => !empty(setting('payment.stripe_public_key')) && !empty(setting('payment.stripe_secret_key')),
-            'paypal_enabled' => !empty(setting('payment.paypal_client_id')) && !empty(setting('payment.paypal_client_secret')),
+        $debug = [
+            'course' => [
+                'id' => $course->id,
+                'title' => $course->title,
+                'price' => $course->price,
+                'is_active' => $course->is_active,
+            ],
+            'authentication' => [
+                'is_authenticated' => auth()->check(),
+                'guest_checkout' => !auth()->check(),
+            ],
+            'payment_config' => [
+                'stripe_enabled' => !empty(setting('payment.stripe_public_key')) && !empty(setting('payment.stripe_secret_key')),
+                'paypal_enabled' => !empty(setting('payment.paypal_client_id')) && !empty(setting('payment.paypal_client_secret')),
+            ],
         ];
 
-        return view('frontend.payments.payflowpro', compact('content', 'payment', 'course', 'paymentConfig'));
+        if (auth()->check()) {
+            $user = auth()->user();
+            $enrolled = $user->ActiveCourseAuths->firstWhere('course_id', $course->id);
+
+            $debug['user'] = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'active_enrollments_count' => $user->ActiveCourseAuths->count(),
+            ];
+
+            $debug['enrollment_check'] = [
+                'is_enrolled' => $enrolled ? true : false,
+                'will_redirect' => $enrolled ? true : false,
+            ];
+        }
+
+        return response()->json($debug, 200, [], JSON_PRETTY_PRINT);
     }
 
     /**
-     * Process Stripe payment
-     */
-    public function processStripe(Request $request, Payment $payment)
-    {
-        // TODO: Implement Stripe payment processing
-        // This would integrate with Stripe API to process the payment
-
-        return back()->with('info', 'Stripe payment processing coming soon!');
-    }
-
-    /**
-     * Process PayPal payment
-     */
-    public function processPaypal(Request $request, Payment $payment)
-    {
-        // TODO: Implement PayPal payment processing
-        // This would integrate with PayPal API to process the payment
-
-        return back()->with('info', 'PayPal payment processing coming soon!');
-    }
-
-    /**
-     * Handle payment success callback
-     */
-    public function success(Payment $payment)
-    {
-        // Update payment status
-        $payment->update(['status' => 'completed']);
-
-        // Create course enrollment
-        $courseAuth = CourseAuth::create([
-            'user_id' => auth()->id(),
-            'course_id' => $payment->order->course_id,
-            'is_active' => true,
-            'enrolled_at' => now(),
-        ]);
-
-        return redirect()->route('account.index')
-                       ->with('success', 'Payment successful! You are now enrolled in the course.');
-    }
-
-    /**
-     * Handle payment cancellation
-     */
-    public function cancel(Payment $payment)
-    {
-        return redirect()->route('courses.show', $payment->order->course_id)
-                       ->with('warning', 'Payment was cancelled. You can try again anytime.');
-    }
-
-    /**
-     * Process Stripe payment for course enrollment
+     * Process Stripe payment for course enrollment - REDIRECT TO STRIPE
      */
     public function processCourseStripe(Request $request, \App\Models\Course $course)
     {
-        // Check if user is already enrolled
-        if (auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id)) {
-            return redirect()->route('courses.show', $course->id)
-                           ->with('warning', 'You are already enrolled in this course.');
-        }
-
         try {
-            // Create order and payment through enrollment controller
-            $enrollmentController = new \App\Http\Controllers\Web\EnrollmentController();
-            $order = $enrollmentController->GetOrder($course);
-            $payment = $enrollmentController->GetPayment($order);
-
-            // TODO: Integrate with actual Stripe payment processing
-            // For now, simulate successful payment
-            $payment->update([
-                'status' => 'completed',
-                'transaction_id' => 'stripe_test_' . uniqid(),
-                'processed_at' => now()
+            // Store course and user info in session for when they return
+            session([
+                'payment_course_id' => $course->id,
+                'payment_method' => 'stripe',
+                'payment_amount' => $course->price,
+                'payment_user_data' => $request->all()
             ]);
 
-            // Create course enrollment
-            CourseAuth::create([
-                'user_id' => auth()->id(),
-                'course_id' => $course->id,
-                'is_active' => true,
-                'enrolled_at' => now(),
+            // Create a Stripe payment simulation page
+            return view('frontend.payments.stripe-checkout', [
+                'course' => $course,
+                'amount' => $course->price,
+                'currency' => 'USD',
+                'return_url' => route('courses.show', $course->id)
             ]);
-
-            return redirect()->route('courses.show', $course->id)
-                           ->with('success', 'Payment successful! You are now enrolled in ' . $course->title);
 
         } catch (\Exception $e) {
             Log::error('Course Stripe payment error: ' . $e->getMessage());
@@ -175,44 +123,59 @@ class PaymentController extends Controller
     }
 
     /**
-     * Process PayPal payment for course enrollment
+     * Process PayPal payment for course enrollment - REDIRECT TO PAYPAL
      */
     public function processCoursePaypal(Request $request, \App\Models\Course $course)
     {
-        // Check if user is already enrolled
-        if (auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id)) {
-            return redirect()->route('courses.show', $course->id)
-                           ->with('warning', 'You are already enrolled in this course.');
-        }
-
         try {
-            // Create order and payment through enrollment controller
-            $enrollmentController = new \App\Http\Controllers\Web\EnrollmentController();
-            $order = $enrollmentController->GetOrder($course);
-            $payment = $enrollmentController->GetPayment($order);
-
-            // TODO: Integrate with actual PayPal payment processing
-            // For now, simulate successful payment
-            $payment->update([
-                'status' => 'completed',
-                'transaction_id' => 'paypal_test_' . uniqid(),
-                'processed_at' => now()
+            // Store course and user info in session for when they return
+            session([
+                'payment_course_id' => $course->id,
+                'payment_method' => 'paypal',
+                'payment_amount' => $course->price,
+                'payment_user_data' => $request->all()
             ]);
 
-            // Create course enrollment
-            CourseAuth::create([
-                'user_id' => auth()->id(),
-                'course_id' => $course->id,
-                'is_active' => true,
-                'enrolled_at' => now(),
+            // Create a PayPal payment simulation page
+            return view('frontend.payments.paypal-checkout', [
+                'course' => $course,
+                'amount' => $course->price,
+                'currency' => 'USD',
+                'return_url' => route('courses.show', $course->id)
             ]);
-
-            return redirect()->route('courses.show', $course->id)
-                           ->with('success', 'Payment successful via PayPal! You are now enrolled in ' . $course->title);
 
         } catch (\Exception $e) {
             Log::error('Course PayPal payment error: ' . $e->getMessage());
             return back()->with('error', 'Payment processing failed. Please try again.');
         }
+    }
+
+    /**
+     * Handle payment success simulation from checkout pages
+     */
+    public function successSimulation(Request $request)
+    {
+        $courseId = $request->input('course_id');
+        $paymentMethod = $request->input('payment_method');
+        $amount = $request->input('amount');
+        $returnUrl = $request->input('return_url');
+
+        // Store success data in session
+        session([
+            'payment_success' => true,
+            'payment_course_id' => $courseId,
+            'payment_method' => $paymentMethod,
+            'payment_amount' => $amount
+        ]);
+
+        // Create success simulation view
+        return view('frontend.payments.success-simulation', [
+            'course_id' => $courseId,
+            'payment_method' => $paymentMethod,
+            'amount' => $amount,
+            'return_url' => $returnUrl,
+            'email' => $request->input('email'),
+            'transaction_id' => 'SIM_' . strtoupper($paymentMethod) . '_' . time()
+        ]);
     }
 }

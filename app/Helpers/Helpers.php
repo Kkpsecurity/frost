@@ -34,19 +34,16 @@ class Helpers
             $Course = Course::findOrFail( $Course );
         }
 
-        if ( ! Auth::check() )
-        {
-            return view( 'frontend.shop.partials.enroll_buttons.register' )->render();
-        }
-
-        if ( Auth::user()->IsEnrolled( $Course ) )
+        // If user is enrolled, show "Continue Learning" button
+        if (Auth::check() && Auth::user()->IsEnrolled($Course))
         {
             return view( 'frontend.shop.partials.enroll_buttons.active' )->render();
         }
 
+        // For everyone else (logged in or not), show "Enroll Now" that goes to payment page
         return view(
                     'frontend.shop.partials.enroll_buttons.enroll',
-            ['route' => route('courses.enroll', $Course)]
+            ['route' => route('payments.course', $Course)]
                )->render();
 
     }

@@ -12,13 +12,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth'])->prefix('payments')->name('payments.')->group(function () {
+Route::prefix('payments')->name('payments.')->group(function () {
 
-    // Course payment selection page - direct checkout
+    // Debug endpoint for course payment issues (no auth required for testing)
+    Route::get('/debug/course/{course}', [PaymentController::class, 'debugCoursePayment'])
+        ->name('debug.course');
+
+    // Course payment selection page - GUEST CHECKOUT ENABLED
     Route::get('/course/{course}', [PaymentController::class, 'coursePayment'])
         ->name('course');
 
-    // Payment processing page
+    // Payment success simulation - for testing checkout flows
+    Route::post('/success-simulation', [PaymentController::class, 'successSimulation'])
+        ->name('success-simulation');
+
+    // Authenticated payment routes
+    Route::middleware(['auth'])->group(function () {
+
+        // Payment processing page
     Route::get('/payflowpro/{payment}', [PaymentController::class, 'payflowpro'])
         ->name('payflowpro');
 
@@ -36,10 +47,11 @@ Route::middleware(['auth'])->prefix('payments')->name('payments.')->group(functi
     Route::post('/course/paypal/{course}', [PaymentController::class, 'processCoursePaypal'])
         ->name('course.paypal');
 
-    // Payment callbacks
-    Route::get('/success/{payment}', [PaymentController::class, 'success'])
-        ->name('success');
+        // Payment callbacks
+        Route::get('/success/{payment}', [PaymentController::class, 'success'])
+            ->name('success');
 
-    Route::get('/cancel/{payment}', [PaymentController::class, 'cancel'])
-        ->name('cancel');
+        Route::get('/cancel/{payment}', [PaymentController::class, 'cancel'])
+            ->name('cancel');
+    });
 });

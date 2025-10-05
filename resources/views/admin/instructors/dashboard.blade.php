@@ -21,6 +21,11 @@
 
 @endsection
 
+@section('css')
+    {{-- Include admin dashboard styles --}}
+    @vite(['resources/css/admin.css'])
+@endsection
+
 @section('js')
     {{-- Ensure the instructor route JS loads for mounting React (Vite) --}}
     @vite(['resources/js/instructor.ts'])
