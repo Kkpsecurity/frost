@@ -12,7 +12,7 @@ export interface CourseDate {
     time: string;
     duration: string;
     student_count: number;
-    class_status: string; // "unassigned" | "assigned" | "completed" | "expired"
+    class_status?: string; // "unassigned" | "assigned" | "completed" | "expired" | null
     // NOTE: These instructor/assistant names are only populated when InstUnit exists
     // They are constructed from User.fname + User.lname by the backend service
     instructor_name: string | null; // From InstUnit->created_by User fname + lname

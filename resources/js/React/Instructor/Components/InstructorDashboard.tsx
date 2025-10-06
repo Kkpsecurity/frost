@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from "react";
 import {
+    DashboardHeader,
     LoadingState,
     ErrorState,
+    EmptyState,
+    CoursesGrid,
     useBulletinBoard,
     type CourseDate,
 } from "./Offline";
+import AssignmentHistoryTable from "./Offline/AssignmentHistoryTable";
 import ClassroomManager from "./ClassroomManager";
 
 const InstructorDashboard: React.FC = () => {
-    const [currentView, setCurrentView] = useState<"dashboard" | "classroom">("dashboard");
-    const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(null);
-    const [activeTab, setActiveTab] = useState<"live" | "today" | "upcoming">("live");
+    const [currentView, setCurrentView] = useState<"dashboard" | "classroom">(
+        "dashboard"
+    );
+    const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(
+        null
+    );
+    // Note: No tabs needed - show all courses by default
 
     const {
         courseDates: courses,
+        assignmentHistory,
         loading,
         error,
         refetch,
@@ -21,57 +30,59 @@ const InstructorDashboard: React.FC = () => {
         lastUpdated,
     } = useBulletinBoard();
 
-    // Auto-redirect to classroom when instructor is assigned to an active class
+    // Auto-determine view based on active InstUnit
     useEffect(() => {
-        // Don't auto-redirect if user manually chose to stay on dashboard
-        if (manualDashboard) return;
-
-        // Find any "in_progress" class that the instructor is assigned to
+        // Find any course with active InstUnit (CourseDate + InstUnit = classroom mode)
         const activeClass = courses?.find(
             (course) =>
-                course.class_status === "in_progress" &&
                 course.inst_unit &&
-                course.instructor_name
+                course.class_status === "in_progress" &&
+                course.inst_unit.completed_at === null
         );
 
-        if (activeClass && currentView === "dashboard") {
+        if (activeClass) {
+            // CourseDate + InstUnit = Classroom Mode
             console.log(
-                "🎯 Auto-redirecting to classroom for active class:",
+                "🎯 Active InstUnit found, entering classroom mode:",
                 activeClass
             );
             setSelectedCourse(activeClass);
             setCurrentView("classroom");
+        } else {
+            // CourseDate only OR No CourseDate = Bulletin Board Mode
+            console.log("📋 No active InstUnit, showing bulletin board");
+            setCurrentView("dashboard");
+            setSelectedCourse(null);
         }
-    }, [courses, currentView, manualDashboard]);
+    }, [courses]);
 
     const handleCourseSelect = (courseDate: CourseDate) => {
         console.log("Selected course:", courseDate);
         // TODO: Navigate to course management interface
     };
 
-    const handleStartClass = (courseDate: CourseDate) => {
+    const handleStartClass = async (courseDate: CourseDate) => {
         console.log("Starting class:", courseDate);
+        // TODO: Create InstUnit via API call
+        // For now, simulate starting the class
         setSelectedCourse(courseDate);
         setCurrentView("classroom");
     };
 
-    const handleExitClassroom = () => {
+    const handleExitClassroom = async () => {
+        console.log("Ending class:", selectedCourse);
+        // TODO: End InstUnit via API call
+        // For now, simulate ending the class
         setCurrentView("dashboard");
         setSelectedCourse(null);
-        setManualDashboard(true); // Mark that user manually returned to dashboard
-
-        // Clear manual dashboard flag after 5 minutes to allow auto-redirect again
-        setTimeout(() => {
-            setManualDashboard(false);
-        }, 5 * 60 * 1000); // 5 minutes
+        // Refresh data to reflect InstUnit is ended
+        refetch();
     };
 
     const handleAdminAction = () => {
-        console.log("Admin action: Create new course schedule");
-        // TODO: Open modal or navigate to course creation interface
-        alert(
-            "Course Schedule Creation - Coming Soon!\n\nThis will open a dialog to create new course schedules automatically or manually."
-        );
+        console.log("Admin action: Course management");
+        // TODO: Navigate to course management interface
+        alert("Course Management - Coming Soon!");
     };
 
     // Show classroom view when instructor starts a class
@@ -93,112 +104,28 @@ const InstructorDashboard: React.FC = () => {
         return <ErrorState error={error} />;
     }
 
-    const courseCount = courses?.length || 0;
+    // Show all courses (no filtering - bulletin board shows everything)
+    const filteredCourses = courses || [];
+    const courseCount = filteredCourses.length;
 
     return (
         <div className="container-fluid p-0">
             <DashboardHeader onAdminAction={handleAdminAction} />
-
-            {/* Polling Status Bar */}
-            <div
-                className="px-4 py-2"
-                style={{
-                    backgroundColor: "var(--frost-light-bg-color, #f8fafc)",
-                    borderBottom:
-                        "1px solid var(--frost-light-primary-color, #e2e8f0)",
-                }}
-            >
-                <div className="d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center">
-                        <span
-                            className={`badge me-2 ${
-                                isPolling ? "bg-success" : "bg-secondary"
-                            }`}
-                            style={{ fontSize: "0.7rem" }}
-                        >
-                            <i
-                                className={`fas ${
-                                    isPolling ? "fa-sync fa-spin" : "fa-pause"
-                                } me-1`}
-                            ></i>
-                            {isPolling ? "Live Updates" : "Paused"}
-                        </span>
-
-                        {/* Auto-redirect indicator */}
-                        {!manualDashboard &&
-                            courses?.some(
-                                (c) =>
-                                    c.class_status === "in_progress" &&
-                                    c.inst_unit
-                            ) && (
-                                <span
-                                    className="badge bg-info me-2"
-                                    style={{ fontSize: "0.7rem" }}
-                                >
-                                    <i className="fas fa-rocket me-1"></i>
-                                    Auto-Classroom
-                                </span>
-                            )}
-
-                        {manualDashboard && (
-                            <span
-                                className="badge bg-warning me-2"
-                                style={{ fontSize: "0.7rem" }}
-                            >
-                                <i className="fas fa-pause me-1"></i>
-                                Manual Mode
-                            </span>
-                        )}
-
-                        <small
-                            style={{
-                                color: "var(--frost-base-color, #6b7280)",
-                            }}
-                        >
-                            {lastUpdated
-                                ? `Last updated: ${lastUpdated.toLocaleTimeString()}`
-                                : "Loading..."}
-                        </small>
-                    </div>
-                    <div className="d-flex gap-2">
-                        {manualDashboard && (
-                            <button
-                                className="btn btn-sm btn-outline-success"
-                                onClick={() => setManualDashboard(false)}
-                                title="Re-enable automatic classroom redirect"
-                            >
-                                <i className="fas fa-play me-1"></i>
-                                Enable Auto-Redirect
-                            </button>
-                        )}
-                        <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={refetch}
-                            disabled={loading}
-                        >
-                            <i className="fas fa-sync me-1"></i>
-                            Refresh
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <div className="p-4">
                 {courseCount === 0 ? (
-                    <EmptyState />
+                    <EmptyState
+                        title="No Classes Scheduled"
+                        message="There are no courses scheduled for today."
+                        icon="fas fa-calendar-times"
+                    />
                 ) : (
                     <CoursesGrid
-                        courses={courses}
+                        courses={filteredCourses}
                         onCourseSelect={handleCourseSelect}
                         onStartClass={handleStartClass}
                         onRefreshData={refetch}
                     />
                 )}
-            </div>
-
-            {/* Assignment History Section */}
-            <div className="px-4 mb-4">
-                <AssignmentHistoryTable data={assignmentHistory} />
             </div>
         </div>
     );

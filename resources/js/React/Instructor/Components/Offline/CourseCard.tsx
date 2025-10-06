@@ -44,7 +44,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const statusKey =
         (course.class_status as keyof typeof STATUS_META) || "unassigned";
-    const statusMeta = STATUS_META[statusKey];
+    const statusMeta = STATUS_META[statusKey] || STATUS_META.unassigned;
 
     const handleCardClick = () => onCourseSelect?.(course);
 
