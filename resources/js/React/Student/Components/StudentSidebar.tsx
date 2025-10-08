@@ -8,6 +8,7 @@ const StudentSidebar = ({
     hasLessons = false,
     isOnline = false,
     selectedCourseAuthId = null,
+    studentAttendance = null,
 }: {
     instructor: { fname: string; lname: string } | null;
     classroomStatus: string;
@@ -15,6 +16,15 @@ const StudentSidebar = ({
     hasLessons?: boolean;
     isOnline?: boolean;
     selectedCourseAuthId?: number | null;
+    studentAttendance?: {
+        is_present: boolean;
+        entry_time: string | null;
+        entry_time_relative: string | null;
+        attendance_status: string;
+        session_duration?: {
+            formatted: string;
+        };
+    } | null;
 }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -73,8 +83,8 @@ const StudentSidebar = ({
             <div className="p-2 text-white border-bottom border-secondary d-flex justify-content-between align-items-center">
                 {!isCollapsed && (
                     <h5 className="mb-0">
-                        <i className="fas fa-chalkboard-teacher me-2"></i>
-                        Instructor
+                        <i className="fas fa-user-check me-2"></i>
+                        Session Status
                     </h5>
                 )}
                 <button
@@ -98,13 +108,86 @@ const StudentSidebar = ({
 
             {!isCollapsed && (
                 <>
-                    {instructor && (
-                        <div className="px-3 py-2 text-white">
-                            <p className="mb-0 opacity-75">
-                                {instructor.fname} {instructor.lname}
-                            </p>
+                    {/* Student Entry Time */}
+                    <div className="px-3 py-2 text-white">
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                            <small className="text-muted text-uppercase">
+                                Class Session:
+                            </small>
+                            <span
+                                className={`badge ${
+                                    studentAttendance?.is_present
+                                        ? "bg-success"
+                                        : studentAttendance?.attendance_status ===
+                                          "left"
+                                        ? "bg-warning"
+                                        : "bg-secondary"
+                                }`}
+                            >
+                                {studentAttendance?.is_present
+                                    ? "In Session"
+                                    : studentAttendance?.attendance_status ===
+                                      "left"
+                                    ? "Left Session"
+                                    : "Not in Session"}
+                            </span>
                         </div>
-                    )}
+                        <div className="d-flex align-items-center">
+                            <i className="fas fa-clock me-2 text-info"></i>
+                            <span className="fw-bold">
+                                {studentAttendance?.entry_time || "--:-- --"}
+                            </span>
+                        </div>
+                        <small className="text-muted">
+                            {studentAttendance?.entry_time_relative ||
+                                "No active class session"}
+                        </small>
+                        {studentAttendance?.session_duration && (
+                            <div className="mt-1">
+                                <small className="text-info">
+                                    <i className="fas fa-stopwatch me-1"></i>
+                                    Session:{" "}
+                                    {
+                                        studentAttendance.session_duration
+                                            .formatted
+                                    }
+                                </small>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* System Status */}
+                    <div className="px-3 py-2 text-white border-top border-secondary">
+                        <small className="text-muted text-uppercase d-block mb-2">
+                            System Status:
+                        </small>
+                        <div className="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div className="d-flex align-items-center mb-1">
+                                    <i
+                                        className="fas fa-circle me-2 text-success"
+                                        style={{ fontSize: "8px" }}
+                                    ></i>
+                                    <small>Online</small>
+                                </div>
+                                <div className="d-flex align-items-center">
+                                    <i
+                                        className={`fas fa-circle me-2 ${
+                                            studentAttendance?.is_present
+                                                ? "text-success"
+                                                : "text-secondary"
+                                        }`}
+                                        style={{ fontSize: "8px" }}
+                                    ></i>
+                                    <small>
+                                        {studentAttendance?.is_present
+                                            ? "In Class Session"
+                                            : "Not in Class Session"}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
 

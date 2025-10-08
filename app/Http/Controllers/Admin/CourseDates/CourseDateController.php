@@ -45,11 +45,12 @@ class CourseDateController extends Controller
             'search' => $request->get('search'),
         ];
 
-        // Build query with relationships
+        // Build query with relationships (including both StudentUnits and CourseAuths for comparison)
         $query = CourseDate::with([
-            'CourseUnit.Course',
+            'CourseUnit.Course.CourseAuths', // Add CourseAuths for enrollment count
             'InstUnit.CreatedBy',
-            'InstUnit.Assistant'
+            'InstUnit.Assistant',
+            'StudentUnits' // StudentUnits for attendance count (only when class started)
         ]);
 
         // Apply course filter
@@ -155,9 +156,7 @@ class CourseDateController extends Controller
     {
         $courses = Course::where('is_active', true)
                         ->with(['CourseUnits' => function($q) {
-                            $q->where('is_active', true)
-                              ->orderBy('day')
-                              ->orderBy('ordering');
+                    $q->orderBy('ordering');
                         }])
                         ->orderBy('title')
                         ->get();
@@ -329,9 +328,7 @@ class CourseDateController extends Controller
 
         $courses = Course::where('is_active', true)
                         ->with(['CourseUnits' => function($q) {
-                            $q->where('is_active', true)
-                              ->orderBy('day')
-                              ->orderBy('ordering');
+                    $q->orderBy('ordering');
                         }])
                         ->orderBy('title')
                         ->get();
@@ -402,31 +399,92 @@ class CourseDateController extends Controller
     /**
      * Remove the specified course date
      */
-    public function destroy(CourseDate $courseDate): RedirectResponse
+    public function destroy(CourseDate $courseDate)
     {
-        // Check if there are any enrolled students
-        if ($courseDate->StudentUnits()->count() > 0) {
-            return back()->with('error', 'Cannot delete course date with enrolled students.');
+        // Check if there are any ACTIVE students (consistent with frontend display logic)
+        // Only block deletion if class has started and has active students
+        $instUnit = $courseDate->InstUnit;
+        $activeStudentCount = 0;
+
+        if ($instUnit && !$instUnit->completed_at) {
+            // Class has started but not completed - check for active students
+            $activeStudentCount = \App\Classes\ClassroomQueries::ActiveStudentUnits($courseDate)->count();
         }
+
+        if ($activeStudentCount > 0) {
+            $errorMessage = "Cannot delete course date with {$activeStudentCount} active students in class.";
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 400);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
+
+        // Check if there is an instructor session (InstUnit) for today
+        // Use direct database query to avoid relationship date filtering issues
+        $hasInstUnitToday = InstUnit::where('course_date_id', $courseDate->id)
+            ->whereDate('created_at', now()->toDateString())
+            ->exists();
+
+        if ($hasInstUnitToday) {
+            $errorMessage = 'Cannot delete course date with active instructor session from today.';
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 400);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
+
+        // Note: We don't block deletion just because InstUnit exists - we delete it as part of cleanup
 
         DB::beginTransaction();
         try {
+            Log::info("Attempting to delete course date: {$courseDate->id}");
+
             // Delete instructor assignment
-            InstUnit::where('course_date_id', $courseDate->id)->delete();
+            $deletedInstUnits = InstUnit::where('course_date_id', $courseDate->id)->delete();
+            Log::info("Deleted {$deletedInstUnits} InstUnit records");
 
             // Delete course date
             $courseDate->delete();
+            Log::info("Course date {$courseDate->id} deleted successfully");
 
             DB::commit();
 
+            $successMessage = 'Course date deleted successfully.';
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage
+                ]);
+            }
+
             return redirect()->route('admin.course-dates.index')
-                           ->with('success', 'Course date deleted successfully.');
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Course date deletion failed: ' . $e->getMessage());
 
-            return back()->withErrors(['error' => 'Failed to delete course date: ' . $e->getMessage()]);
+            $errorMessage = 'Failed to delete course date: ' . $e->getMessage();
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            return back()->withErrors(['error' => $errorMessage]);
         }
     }
 
@@ -460,48 +518,85 @@ class CourseDateController extends Controller
     public function getCourseUnits(Course $course): JsonResponse
     {
         $courseUnits = CourseUnit::where('course_id', $course->id)
-                                ->where('is_active', true)
-                                ->orderBy('day')
                                 ->orderBy('ordering')
-                                ->get(['id', 'title', 'day', 'ordering']);
+                        ->get(['id', 'title', 'ordering']);
 
         return response()->json($courseUnits);
     }
 
     /**
-     * Show the course date generator interface
+     * Show the simplified course date generator for creating test courses today
      */
     public function generator(): View
     {
+                // Get active courses with their course units for selection
         $courses = Course::where('is_active', true)
                         ->with(['CourseUnits' => function($q) {
-                            $q->where('is_active', true)
-                              ->orderBy('day')
-                              ->orderBy('ordering');
+                    $q->orderBy('ordering');
                         }])
                         ->orderBy('title')
                         ->get();
 
+        // Get available instructors
         $instructors = User::whereIn('role_id', [1, 2, 3, 4, 5])
                           ->orderBy('fname')
                           ->get(['id', 'fname', 'lname']);
 
-        // Get generator status - using basic statistics since getStatus doesn't exist
-        $generatorStatus = [
-            'total_course_dates' => CourseDate::count(),
-            'upcoming_course_dates' => CourseDate::where('starts_at', '>=', now())->count(),
+        // Simple stats for today
+        $todayStats = [
             'today_course_dates' => CourseDate::whereDate('starts_at', today())->count(),
-            'active_courses' => Course::where('is_active', true)->whereHas('courseUnits')->count(),
+            'total_courses' => $courses->count(),
         ];
 
         $content = [
-            'title' => 'Course Date Generator',
+            'title' => 'Create Test Course for Today',
             'courses' => $courses,
             'instructors' => $instructors,
-            'generator_status' => $generatorStatus,
+            'stats' => $todayStats,
         ];
 
         return view('admin.course-dates.generator', compact('content'));
+    }
+
+    /**
+     * Get courses data for React modal
+     */
+    public function getCourses(): JsonResponse
+    {
+        $courses = Course::where('is_active', true)
+            ->select('id', 'title')
+            ->orderBy('title')
+            ->get();
+
+        return response()->json(['data' => $courses]);
+    }
+
+    /**
+     * Get instructors data for React modal
+     */
+    public function getInstructors(): JsonResponse
+    {
+        $instructors = User::whereIn('role_id', [1, 2, 3, 4, 5])
+            ->select('id', 'fname', 'lname')
+            ->orderBy('fname')
+            ->get();
+
+        return response()->json(['data' => $instructors]);
+    }
+
+    /**
+     * Debug course date for deletion troubleshooting
+     */
+    public function debugCourseDate(CourseDate $courseDate): JsonResponse
+    {
+        return response()->json([
+            'id' => $courseDate->id,
+            'course_name' => $courseDate->course_name ?? 'N/A',
+            'student_units_count' => $courseDate->StudentUnits()->count(),
+            'inst_units_count' => InstUnit::where('course_date_id', $courseDate->id)->count(),
+            'exists' => $courseDate->exists,
+            'model_data' => $courseDate->toArray()
+        ]);
     }
 
     /**
@@ -531,33 +626,78 @@ class CourseDateController extends Controller
     }
 
     /**
-     * Generate course dates using the generator service
+     * Create a simple test course for today using course template times
      */
     public function generatorGenerate(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'course_id' => 'required|exists:courses,id',
+            'instructor_id' => 'nullable|exists:users,id',
         ]);
 
         try {
-            $startDate = Carbon::parse($validated['start_date']);
-            $endDate = Carbon::parse($validated['end_date']);
+            // Get the course
+            $course = Course::with('courseUnits')->findOrFail($validated['course_id']);
 
-            $result = $this->generatorService->generateCourseDatesForRange($startDate, $endDate);
+            // Get the first course unit for the test course
+            $courseUnit = $course->courseUnits->first();
+            if (!$courseUnit) {
+                throw new \Exception('No course units found for this course');
+            }
+
+            // Get default times from course template or use defaults
+            $defaultStart = '09:00';
+            $defaultEnd = '17:00';
+
+            // If course has dates_template, use those times
+            if ($course->dates_template && isset($course->dates_template['week_1'])) {
+                foreach ($course->dates_template['week_1'] as $template) {
+                    if ($template['course_unit_id'] == $courseUnit->id) {
+                        $defaultStart = $template['start'] ?? $defaultStart;
+                        $defaultEnd = $template['end'] ?? $defaultEnd;
+                        break;
+                    }
+                }
+            }
+
+            // Create course date for today
+            $today = now()->startOfDay();
+            $startTime = Carbon::parse($today->format('Y-m-d') . ' ' . $defaultStart);
+            $endTime = Carbon::parse($today->format('Y-m-d') . ' ' . $defaultEnd);
+
+            $courseDate = CourseDate::create([
+                'course_unit_id' => $courseUnit->id,
+                'starts_at' => $startTime,
+                'ends_at' => $endTime,
+                'is_active' => true,
+            ]);
+
+            // Create instructor assignment if provided
+            if (isset($validated['instructor_id'])) {
+                InstUnit::create([
+                    'course_date_id' => $courseDate->id,
+                    'user_id' => $validated['instructor_id'],
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => "Successfully generated {$result['dates_created']} course dates.",
-                'data' => $result
+                'message' => "Test course created for today: {$course->title} - {$courseUnit->title}",
+                'data' => [
+                    'course_date_id' => $courseDate->id,
+                    'course_title' => $course->title,
+                    'course_unit_title' => $courseUnit->title,
+                    'start_time' => $startTime->format('H:i'),
+                    'end_time' => $endTime->format('H:i'),
+                ]
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Course date generation failed: ' . $e->getMessage());
+            Log::error('Test course creation failed: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Generation failed: ' . $e->getMessage()
+                'message' => 'Failed to create test course: ' . $e->getMessage()
             ], 500);
         }
     }

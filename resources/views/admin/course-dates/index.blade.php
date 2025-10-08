@@ -314,9 +314,26 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge badge-primary">
-                                        {{ $courseDate->StudentUnits->count() }} enrolled
-                                    </span>
+                                    @php
+                                        $course = $courseDate->CourseUnit->Course ?? null;
+                                        // Count active CourseAuths (not completed) - students eligible for class
+                                        $activeRegistered = $course ? $course->CourseAuths->whereNull('completed_at')->count() : 0;
+                                        $hasStarted = $courseDate->InstUnit !== null;
+                                        $actualAttending = $hasStarted ? $courseDate->StudentUnits->count() : 0;
+                                    @endphp
+                                    
+                                    <div class="student-counts">
+                                        <span class="badge badge-info">
+                                            {{ $activeRegistered }} registered
+                                        </span>
+                                        <br>
+                                        <span class="badge {{ $hasStarted ? 'badge-success' : 'badge-secondary' }}">
+                                            {{ $actualAttending }} attending
+                                        </span>
+                                        @if(!$hasStarted && $courseDate->StudentUnits->count() > 0)
+                                            <br><small class="text-warning">⚠️ Stale data</small>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
@@ -607,6 +624,21 @@ $(document).ready(function() {
 
 .course-date-checkbox {
     transform: scale(1.2);
+}
+
+.student-counts {
+    min-width: 120px;
+}
+
+.student-counts .badge {
+    display: inline-block;
+    min-width: 80px;
+    margin-bottom: 2px;
+}
+
+.student-counts small.text-warning {
+    font-size: 0.7rem;
+    font-style: italic;
 }
 </style>
 @stop

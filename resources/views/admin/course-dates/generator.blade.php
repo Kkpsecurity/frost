@@ -4,13 +4,19 @@
 
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
-        <h1>
-            <i class="fas fa-magic"></i>
-            {{ $content['title'] }}
-        </h1>
-        <a href="{{ route('admin.course-dates.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i>
-            Back to Course Dates
+        <div>
+            <h1>
+                <i class="fas fa-plus-circle"></i>
+                {{ $content['title'] }}
+            </h1>
+            <p class="text-muted mb-0">
+                <i class="fas fa-info-circle"></i>
+                Create a test course for today - you'll return to the Instructor Dashboard when done
+            </p>
+        </div>
+        <a href="/dashboards/instructor" class="btn btn-primary">
+            <i class="fas fa-chalkboard-teacher"></i>
+            Back to Instructor Dashboard
         </a>
     </div>
 @stop
@@ -38,213 +44,132 @@
         @endif
 
         <div class="row">
-            <!-- Generator Form -->
+            <!-- Simple Test Course Generator -->
             <div class="col-lg-8">
                 <div class="card card-outline card-primary">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-cogs"></i>
-                            Course Date Generator
+                            <i class="fas fa-plus-circle"></i>
+                            Create Test Course for Today
                         </h3>
                     </div>
                     <form id="generator-form">
                         @csrf
                         <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Quick Test Course Creation</strong><br>
+                                This tool creates a simple test course for today using the course's template times.
+                                Perfect for testing when no courses are scheduled.
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="course_id">Course <span class="text-danger">*</span></label>
+                                        <label for="course_id">Select Course <span class="text-danger">*</span></label>
                                         <select name="course_id" id="course_id" class="form-control select2" required>
-                                            <option value="">Select a course...</option>
+                                            <option value="">Choose a course to create test session...</option>
                                             @foreach($content['courses'] as $course)
                                                 <option value="{{ $course->id }}">
                                                     {{ $course->title }}
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <small class="text-muted">The course's template times will be used automatically</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="instructor_id">Default Instructor</label>
+                                        <label for="instructor_id">Assign Instructor</label>
                                         <select name="instructor_id" id="instructor_id" class="form-control select2">
-                                            <option value="">No default instructor</option>
+                                            <option value="">No instructor assigned</option>
                                             @foreach($content['instructors'] as $instructor)
                                                 <option value="{{ $instructor->id }}">
                                                     {{ $instructor->fname }} {{ $instructor->lname }}
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <small class="text-muted">Optional: Assign an instructor to this test course</small>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="start_date">Start Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="start_date" id="start_date"
-                                               class="form-control" required min="{{ date('Y-m-d') }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="end_date">End Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="end_date" id="end_date"
-                                               class="form-control" required min="{{ date('Y-m-d') }}">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="time_start">Start Time <span class="text-danger">*</span></label>
-                                        <input type="time" name="time_start" id="time_start"
-                                               class="form-control" required value="09:00">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="time_end">End Time <span class="text-danger">*</span></label>
-                                        <input type="time" name="time_end" id="time_end"
-                                               class="form-control" required value="17:00">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="schedule_pattern">Schedule Pattern <span class="text-danger">*</span></label>
-                                <select name="schedule_pattern" id="schedule_pattern" class="form-control" required>
-                                    <option value="">Select a schedule pattern...</option>
-                                    <option value="daily">Daily (Monday - Friday)</option>
-                                    <option value="weekly">Weekly (Same day each week)</option>
-                                    <option value="bi-weekly">Bi-weekly (Every other week)</option>
-                                    <option value="monthly">Monthly (Same date each month)</option>
-                                    <option value="custom">Custom Days</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group" id="custom-days-group" style="display: none;">
-                                <label>Custom Days</label>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="1" id="monday" class="form-check-input">
-                                            <label class="form-check-label" for="monday">Monday</label>
-                                        </div>
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="2" id="tuesday" class="form-check-input">
-                                            <label class="form-check-label" for="tuesday">Tuesday</label>
-                                        </div>
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="3" id="wednesday" class="form-check-input">
-                                            <label class="form-check-label" for="wednesday">Wednesday</label>
-                                        </div>
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="4" id="thursday" class="form-check-input">
-                                            <label class="form-check-label" for="thursday">Thursday</label>
-                                        </div>
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="5" id="friday" class="form-check-input">
-                                            <label class="form-check-label" for="friday">Friday</label>
-                                        </div>
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="6" id="saturday" class="form-check-input">
-                                            <label class="form-check-label" for="saturday">Saturday</label>
-                                        </div>
-                                        <div class="form-check-inline">
-                                            <input type="checkbox" name="custom_days[]" value="0" id="sunday" class="form-check-input">
-                                            <label class="form-check-label" for="sunday">Sunday</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="overwrite_existing" id="overwrite_existing"
-                                               class="form-check-input" value="1">
-                                        <label class="form-check-label" for="overwrite_existing">
-                                            Overwrite existing course dates for selected course
-                                            <small class="text-muted d-block">
-                                                Warning: This will delete all existing dates for the selected course and create new ones
-                                            </small>
-                                        </label>
+                                <div class="col-md-12">
+                                    <div class="bg-light p-3 rounded">
+                                        <h6><i class="fas fa-calendar-day"></i> Course Date Details</h6>
+                                        <p class="mb-1"><strong>Date:</strong> {{ date('l, F j, Y') }} (Today)</p>
+                                        <p class="mb-1"><strong>Times:</strong> Will use the selected course's template start/end times</p>
+                                        <p class="mb-0"><strong>Purpose:</strong> Testing and demonstration</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="card-footer">
-                            <div class="d-flex justify-content-between">
-                                <button type="button" class="btn btn-info" id="preview-btn">
-                                    <i class="fas fa-eye"></i>
-                                    Preview Dates
-                                </button>
-                                <button type="button" class="btn btn-success" id="generate-btn" disabled>
-                                    <i class="fas fa-magic"></i>
-                                    Generate Course Dates
-                                </button>
-                            </div>
+                            <button type="button" class="btn btn-success btn-lg" id="generate-btn">
+                                <i class="fas fa-plus-circle"></i>
+                                Create Test Course for Today
+                            </button>
                         </div>
                     </form>
                 </div>
 
-                <!-- Preview Results -->
-                <div class="card card-outline card-info" id="preview-card" style="display: none;">
+                <!-- Generation Results -->
+                <div class="card card-outline card-success" id="results-card" style="display: none;">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-list"></i>
-                            Preview Results
+                            <i class="fas fa-check-circle"></i>
+                            Test Course Created
                         </h3>
                     </div>
                     <div class="card-body">
-                        <div id="preview-content">
-                            <!-- Preview will be loaded here -->
+                        <div id="results-content">
+                            <!-- Results will be loaded here -->
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar with Info and Cleanup -->
+            <!-- Sidebar with Info -->
             <div class="col-lg-4">
-                <!-- Generator Status -->
+                <!-- Test Course Info -->
                 <div class="card card-outline card-info">
                     <div class="card-header">
                         <h3 class="card-title">
                             <i class="fas fa-info-circle"></i>
-                            Generator Info
+                            Test Course Generator
                         </h3>
                     </div>
                     <div class="card-body">
-                        <h6><i class="fas fa-magic"></i> How It Works</h6>
+                        <h6><i class="fas fa-rocket"></i> Quick Setup</h6>
                         <ol class="text-sm">
-                            <li>Select a course and date range</li>
-                            <li>Choose your schedule pattern</li>
-                            <li>Preview the generated dates</li>
-                            <li>Generate all dates at once</li>
+                            <li>Select a course from the dropdown</li>
+                            <li>Optionally assign an instructor</li>
+                            <li>Click "Create Test Course for Today"</li>
+                            <li>Course is ready for testing!</li>
                         </ol>
 
                         <hr>
 
-                        <h6><i class="fas fa-calendar-check"></i> Schedule Patterns</h6>
-                        <ul class="list-unstyled text-sm">
-                            <li><strong>Daily:</strong> Monday through Friday</li>
-                            <li><strong>Weekly:</strong> Same weekday each week</li>
-                            <li><strong>Bi-weekly:</strong> Every other week</li>
-                            <li><strong>Monthly:</strong> Same date each month</li>
-                            <li><strong>Custom:</strong> Select specific days</li>
-                        </ul>
+                        <h6><i class="fas fa-clock"></i> Template Times</h6>
+                        <p class="text-sm text-muted">
+                            Each course has template start and end times configured.
+                            The test course will automatically use these times for today's session.
+                        </p>
 
                         <hr>
 
-                        <h6><i class="fas fa-lightbulb"></i> Pro Tips</h6>
-                        <ul class="list-unstyled text-sm">
-                            <li><i class="fas fa-check text-success"></i> Always preview before generating</li>
-                            <li><i class="fas fa-check text-success"></i> Use cleanup to remove old dates</li>
-                            <li><i class="fas fa-check text-success"></i> Consider holidays when setting dates</li>
-                        </ul>
+                        <h6><i class="fas fa-arrow-left"></i> After Creation</h6>
+                        <p class="text-sm text-muted">
+                            Once your test course is created, you'll be automatically redirected back to the
+                            <strong>Instructor Dashboard</strong> where you can start your class.
+                        </p>
+
+                        <div class="text-center mt-3">
+                            <a href="/dashboards/instructor" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chalkboard-teacher"></i> Back to Dashboard
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -335,111 +260,36 @@
 @section('js')
 <script>
 $(document).ready(function() {
-    // Initialize Select2
+    // Initialize Select2 for dropdowns
     $('.select2').select2({
-        theme: 'bootstrap4'
+        theme: 'bootstrap4',
+        placeholder: 'Select an option...'
     });
 
-    // Show/hide custom days based on schedule pattern
-    $('#schedule_pattern').change(function() {
-        if ($(this).val() === 'custom') {
-            $('#custom-days-group').show();
-        } else {
-            $('#custom-days-group').hide();
-            $('input[name="custom_days[]"]').prop('checked', false);
-        }
-    });
-
-    // Validate end date is after start date
-    $('#start_date, #end_date').change(function() {
-        const startDate = $('#start_date').val();
-        const endDate = $('#end_date').val();
-
-        if (startDate && endDate) {
-            if (new Date(endDate) <= new Date(startDate)) {
-                $('#end_date').val('');
-                toastr.error('End date must be after start date');
-            }
-        }
-    });
-
-    // Validate end time is after start time
-    $('#time_start, #time_end').change(function() {
-        const startTime = $('#time_start').val();
-        const endTime = $('#time_end').val();
-
-        if (startTime && endTime) {
-            if (endTime <= startTime) {
-                $('#time_end').val('');
-                toastr.error('End time must be after start time');
-            }
-        }
-    });
-
-    // Preview functionality
-    $('#preview-btn').click(function() {
-        const formData = new FormData($('#generator-form')[0]);
-        const btn = $(this);
-
-        // Validation
-        if (!validateForm()) {
-            return;
-        }
-
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading Preview...');
-
-        $.ajax({
-            url: '{{ route("admin.course-dates.generator.preview") }}',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    displayPreview(response.preview);
-                    $('#preview-card').show();
-                    $('#generate-btn').prop('disabled', false);
-
-                    // Scroll to preview
-                    $('html, body').animate({
-                        scrollTop: $('#preview-card').offset().top - 100
-                    }, 500);
-                } else {
-                    toastr.error(response.message || 'Preview failed');
-                }
-            },
-            error: function(xhr) {
-                const errorMsg = xhr.responseJSON?.message || 'Error generating preview';
-                toastr.error(errorMsg);
-            },
-            complete: function() {
-                btn.prop('disabled', false).html('<i class="fas fa-eye"></i> Preview Dates');
-            }
-        });
-    });
-
-    // Generate functionality
+    // Simple test course generation
     $('#generate-btn').click(function() {
-        const formData = new FormData($('#generator-form')[0]);
+        const courseId = $('#course_id').val();
+        const instructorId = $('#instructor_id').val();
         const btn = $(this);
 
-        if (!validateForm()) {
+        // Simple validation
+        if (!courseId) {
+            toastr.error('Please select a course');
             return;
         }
 
-        const overwrite = $('#overwrite_existing').is(':checked');
-        const confirmMsg = overwrite ?
-            'This will overwrite existing course dates. Are you sure?' :
-            'This will generate new course dates. Continue?';
-
-        if (!confirm(confirmMsg)) {
+        if (!confirm('Create a test course for today using this course\'s template times?')) {
             return;
         }
 
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Test Course...');
+
+        const formData = new FormData();
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+        formData.append('course_id', courseId);
+        if (instructorId) {
+            formData.append('instructor_id', instructorId);
+        }
 
         $.ajax({
             url: '{{ route("admin.course-dates.generator.generate") }}',
@@ -447,22 +297,48 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
             success: function(response) {
                 if (response.success) {
                     toastr.success(response.message);
 
-                    // Reset form and hide preview
+                    // Show results with countdown
+                    $('#results-content').html(`
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle"></i> Test Course Created Successfully!</h5>
+                            <p><strong>Course:</strong> ${response.course_title}</p>
+                            <p><strong>Date:</strong> ${response.date}</p>
+                            <p><strong>Time:</strong> ${response.start_time} - ${response.end_time}</p>
+                            ${response.instructor ? `<p><strong>Instructor:</strong> ${response.instructor}</p>` : ''}
+                        </div>
+                        <div class="text-center">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle"></i>
+                                Redirecting to Instructor Dashboard in <span id="countdown">3</span> seconds...
+                            </div>
+                            <a href="/dashboards/instructor" class="btn btn-primary mr-2">
+                                <i class="fas fa-chalkboard-teacher"></i> Go to Instructor Dashboard Now
+                            </a>
+                            <a href="{{ route('admin.course-dates.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list"></i> View All Course Dates
+                            </a>
+                        </div>
+                    `);
+                    $('#results-card').show();
+
+                    // Reset form
                     $('#generator-form')[0].reset();
-                    $('#preview-card').hide();
                     $('.select2').trigger('change');
 
-                    // Redirect to course dates list after short delay
-                    setTimeout(() => {
-                        window.location.href = '{{ route("admin.course-dates.index") }}';
-                    }, 2000);
+                    // Auto-redirect countdown
+                    let countdown = 3;
+                    const countdownInterval = setInterval(() => {
+                        countdown--;
+                        $('#countdown').text(countdown);
+                        if (countdown <= 0) {
+                            clearInterval(countdownInterval);
+                            window.location.href = '/dashboards/instructor';
+                        }
+                    }, 1000);
                 } else {
                     toastr.error(response.message || 'Generation failed');
                 }
@@ -523,49 +399,24 @@ $(document).ready(function() {
         });
     });
 
-    function validateForm() {
-        const required = ['course_id', 'start_date', 'end_date', 'time_start', 'time_end', 'schedule_pattern'];
-
-        for (let field of required) {
-            if (!$(`#${field}`).val()) {
-                toastr.error(`Please fill in the ${field.replace('_', ' ')} field`);
-                $(`#${field}`).focus();
-                return false;
-            }
+    // Simple validation for test course creation
+    function validateCourseSelection() {
+        if (!$('#course_id').val()) {
+            toastr.error('Please select a course to create a test session');
+            $('#course_id').focus();
+            return false;
         }
-
-        // Check custom days if pattern is custom
-        if ($('#schedule_pattern').val() === 'custom') {
-            if ($('input[name="custom_days[]"]:checked').length === 0) {
-                toastr.error('Please select at least one custom day');
-                return false;
-            }
-        }
-
         return true;
     }
 
-    function displayPreview(preview) {
-        let html = '';
-
-        if (preview.dates && preview.dates.length > 0) {
-            html += `
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>${preview.dates.length} course dates</strong> will be generated
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Course Unit</th>
-                                <th>Day of Week</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+    // Optional: Show course details when selected
+    $('#course_id').change(function() {
+        const courseId = $(this).val();
+        if (courseId) {
+            // Could add AJAX call here to show course template times
+            toastr.info('Course selected - ready to create test session');
+        }
+    });
 
             preview.dates.forEach(date => {
                 html += `

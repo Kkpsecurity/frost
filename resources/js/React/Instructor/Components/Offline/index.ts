@@ -8,6 +8,7 @@ export { default as CoursesGrid } from "./CoursesGrid";
 export { default as ContentHeader } from "./ContentHeader";
 export { default as AdminButton } from "./AdminButton";
 export { default as CompletedCoursesList } from "./CompletedCoursesList";
+export { default as QuickCourseModal } from "./QuickCourseModal";
 
 // Custom Hooks
 export { useBulletinBoard } from "./useBulletinBoard";

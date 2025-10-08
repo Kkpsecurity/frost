@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\AdminCenter\CenterController;
 
 Route::middleware(['admin'])->group(function () {
 
+    // Admin Center Dashboard
+    Route::get('/admin-center', [CenterController::class, 'dashboard'])->name('admin-center.dashboard');
+
     // Admin Users Management
     Route::prefix('admin-center/admin-users')->name('admin-center.admin-users.')->group(function () {
         Route::get('/', [AdminUserController::class, 'index'])->name('index');

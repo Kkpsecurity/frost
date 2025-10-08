@@ -10,9 +10,9 @@ interface AdminButtonProps {
 
 const AdminButton: React.FC<AdminButtonProps> = ({
     onClick,
-    text = "Create New Course Schedule",
+    text = "Create Test Course",
     icon = "fas fa-plus-circle",
-    className = ""
+    className = "",
 }) => {
     const { isSysAdmin, isLoading } = useUser();
 
@@ -24,10 +24,6 @@ const AdminButton: React.FC<AdminButtonProps> = ({
     const handleClick = () => {
         if (onClick) {
             onClick();
-        } else {
-            // Default action - show modal or navigate to course creation
-            console.log("Admin action: Create new course schedule");
-            // TODO: Implement course creation modal/navigation
         }
     };
 
@@ -49,7 +45,8 @@ const AdminButton: React.FC<AdminButtonProps> = ({
             }}
             onMouseEnter={(e) => {
                 const target = e.target as HTMLButtonElement;
-                target.style.backgroundColor = "var(--frost-info-color, #17aac9)";
+                target.style.backgroundColor =
+                    "var(--frost-info-color, #17aac9)";
                 target.style.borderColor = "var(--frost-info-color, #17aac9)";
                 target.style.color = "var(--frost-white-color, #ffffff)";
                 target.style.transform = "translateY(-1px)";
@@ -57,8 +54,10 @@ const AdminButton: React.FC<AdminButtonProps> = ({
             }}
             onMouseLeave={(e) => {
                 const target = e.target as HTMLButtonElement;
-                target.style.backgroundColor = "var(--frost-highlight-color, #fede59)";
-                target.style.borderColor = "var(--frost-highlight-color, #fede59)";
+                target.style.backgroundColor =
+                    "var(--frost-highlight-color, #fede59)";
+                target.style.borderColor =
+                    "var(--frost-highlight-color, #fede59)";
                 target.style.color = "var(--frost-primary-color, #212a3e)";
                 target.style.transform = "translateY(0)";
                 target.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";

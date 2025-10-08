@@ -58,6 +58,7 @@ class StudentUnit extends Model
         #'verified'          => 'array',
 
         'unit_completed'    => 'boolean',
+        'attendance_type' => 'string',
 
     ];
 
@@ -150,5 +151,41 @@ class StudentUnit extends Model
             'Sleeping / Inattentiveness',
             'Disruptive Behavior',
         ];
+    }
+
+    /**
+     * Attendance Type Scopes and Helper Methods
+     */
+
+    /**
+     * Scope to filter online attendance records
+     */
+    public function scopeOnlineAttendance($query)
+    {
+        return $query->where('attendance_type', 'online');
+    }
+
+    /**
+     * Scope to filter offline attendance records
+     */
+    public function scopeOfflineAttendance($query)
+    {
+        return $query->where('attendance_type', 'offline');
+    }
+
+    /**
+     * Check if this attendance record is online
+     */
+    public function isOnlineAttendance(): bool
+    {
+        return $this->attendance_type === 'online';
+    }
+
+    /**
+     * Check if this attendance record is offline
+     */
+    public function isOfflineAttendance(): bool
+    {
+        return $this->attendance_type === 'offline';
     }
 }

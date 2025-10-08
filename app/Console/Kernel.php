@@ -38,6 +38,16 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/course-date-generation.log'));
+
+        // Close classroom sessions after 12 AM the day after class date
+        // Runs every hour after midnight to catch sessions that should be closed
+        $schedule->command('classrooms:close-sessions')
+            ->hourly()
+            ->between('00:00', '06:00') // Only run between midnight and 6 AM
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/classroom-session-closure.log'));
     }
 
     /**

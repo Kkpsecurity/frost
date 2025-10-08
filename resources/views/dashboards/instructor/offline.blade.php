@@ -7,13 +7,13 @@
         <div class="col">
             <h1 class="h3 mb-0">
                 <i class="fas fa-chalkboard-teacher text-primary"></i>
-                Instructor Dashboard - Offline Mode
+                Welcome to Florida Online Dashboard
             </h1>
             <p class="text-muted mb-0">Today's lesson board and class overview</p>
         </div>
         <div class="col-auto">
             <span class="badge badge-secondary badge-lg">
-                <i class="fas fa-wifi-slash"></i> Offline Mode
+                <i class="fas fa-bulletin-board"></i> Bulletin Board
             </span>
         </div>
     </div>

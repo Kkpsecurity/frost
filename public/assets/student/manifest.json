@@ -1,17 +1,17 @@
 {
-  "generated_at": "2025-10-05T20:06:43.410Z",
+  "generated_at": "2025-10-08T17:47:03.807Z",
   "build_info": {
     "vite_version": "4.5.14",
     "environment": "production",
-    "timestamp": 1759694803412
+    "timestamp": 1759945623810
   },
   "assets": {
     "student": {
       "resources/js/React/Student/app.tsx": {
-        "file": "assets/app-6c732e6c.js",
+        "file": "assets/app-d653c02f.js",
         "imports": [
           "_client-51f689cc.js",
-          "_QueryClientProvider-53ac6051.js"
+          "_QueryClientProvider-8f198b1f.js"
         ],
         "isDynamicEntry": true,
         "src": "resources/js/React/Student/app.tsx"
@@ -20,7 +20,7 @@
         "dynamicImports": [
           "resources/js/React/Student/app.tsx"
         ],
-        "file": "assets/student-7d28e57f.js",
+        "file": "assets/student-feb78516.js",
         "imports": [
           "_routeUtils-0c0a4e32.js",
           "_bootstrap-39f03ff0.js"
@@ -30,10 +30,11 @@
       }
     },
     "dashboard": {
-      "_InstructorDashboard-1b3ffe22.js": {
-        "file": "assets/InstructorDashboard-1b3ffe22.js",
+      "_InstructorDashboard-a2683f97.js": {
+        "file": "assets/InstructorDashboard-a2683f97.js",
         "imports": [
-          "_client-51f689cc.js"
+          "_client-51f689cc.js",
+          "_QueryClientProvider-8f198b1f.js"
         ]
       }
     },

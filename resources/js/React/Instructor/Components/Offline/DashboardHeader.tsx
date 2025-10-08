@@ -8,9 +8,9 @@ interface DashboardHeaderProps {
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-    title = "Instructor Dashboard",
-    subtitle = "Ready for dual sidebar layout implementation",
-    onAdminAction
+    title = "Welcome to Florida Online Dashboard",
+    subtitle = "Today's lesson board and class overview",
+    onAdminAction,
 }) => {
     return (
         <div

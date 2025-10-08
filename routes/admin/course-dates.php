@@ -14,6 +14,30 @@ Route::middleware(['admin'])->prefix('course-dates')->name('course-dates.')->gro
     Route::get('/', [CourseDateController::class, 'index'])->name('index');
     Route::get('/calendar', [CourseDateController::class, 'calendar'])->name('calendar');
     Route::get('/create', [CourseDateController::class, 'create'])->name('create');
+
+    // Auto-generation integration routes (MUST be before wildcard routes)
+    Route::get('/generator', [CourseDateController::class, 'generator'])->name('generator');
+    Route::post('/generator/preview', [CourseDateController::class, 'generatorPreview'])->name('generator.preview');
+    Route::post('/generator/generate', [CourseDateController::class, 'generatorGenerate'])->name('generator.generate');
+    Route::post('/generator/cleanup', [CourseDateController::class, 'generatorCleanup'])->name('generator.cleanup');
+
+    // Import/Export functionality (before wildcards)
+    Route::get('/import', [CourseDateController::class, 'import'])->name('import');
+    Route::post('/import', [CourseDateController::class, 'processImport'])->name('import.process');
+    Route::get('/export', [CourseDateController::class, 'export'])->name('export');
+
+    // AJAX endpoints (before wildcards)
+    Route::get('/api/calendar', [CourseDateController::class, 'apiCalendar'])->name('api.calendar');
+    Route::get('/api/course/{course}/units', [CourseDateController::class, 'getCourseUnits'])->name('api.course.units');
+    Route::get('/data/courses', [CourseDateController::class, 'getCourses'])->name('data.courses');
+    Route::get('/data/instructors', [CourseDateController::class, 'getInstructors'])->name('data.instructors');
+    Route::get('/debug/{courseDate}', [CourseDateController::class, 'debugCourseDate'])->name('debug.course-date');
+
+    // Bulk operations (before wildcards)
+    Route::post('/bulk/delete', [CourseDateController::class, 'bulkDelete'])->name('bulk.delete');
+    Route::post('/bulk/toggle-active', [CourseDateController::class, 'bulkToggleActive'])->name('bulk.toggle-active');
+
+    // Wildcard routes (MUST be last)
     Route::post('/', [CourseDateController::class, 'store'])->name('store');
     Route::get('/{courseDate}', [CourseDateController::class, 'show'])->name('show');
     Route::get('/{courseDate}/edit', [CourseDateController::class, 'edit'])->name('edit');
@@ -23,22 +47,5 @@ Route::middleware(['admin'])->prefix('course-dates')->name('course-dates.')->gro
     // Toggle active status
     Route::patch('/{courseDate}/toggle-active', [CourseDateController::class, 'toggleActive'])->name('toggle-active');
 
-    // AJAX endpoints
-    Route::get('/api/calendar', [CourseDateController::class, 'apiCalendar'])->name('api.calendar');
-    Route::get('/api/course/{course}/units', [CourseDateController::class, 'getCourseUnits'])->name('api.course.units');
 
-    // Bulk operations
-    Route::post('/bulk/delete', [CourseDateController::class, 'bulkDelete'])->name('bulk.delete');
-    Route::post('/bulk/toggle-active', [CourseDateController::class, 'bulkToggleActive'])->name('bulk.toggle-active');
-
-    // Auto-generation integration routes
-    Route::get('/generator', [CourseDateController::class, 'generator'])->name('generator');
-    Route::post('/generator/preview', [CourseDateController::class, 'generatorPreview'])->name('generator.preview');
-    Route::post('/generator/generate', [CourseDateController::class, 'generatorGenerate'])->name('generator.generate');
-    Route::post('/generator/cleanup', [CourseDateController::class, 'generatorCleanup'])->name('generator.cleanup');
-
-    // Import/Export functionality
-    Route::get('/import', [CourseDateController::class, 'import'])->name('import');
-    Route::post('/import', [CourseDateController::class, 'processImport'])->name('import.process');
-    Route::get('/export', [CourseDateController::class, 'export'])->name('export');
 });

@@ -46,14 +46,59 @@
 
     <div class="container-fluid mt-4">
         <div class="row">
-            {{-- Left Sidebar - Lessons and Resources --}}
+            {{-- Left Sidebar - Student Attendance & Lessons --}}
             <div class="col-lg-3">
                 <div class="card sticky-top" style="top: 20px;">
-                    <div class="card-header bg-info text-white">
+                    {{-- Student Attendance Status --}}
+                    <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
+                            <i class="fas fa-user-check"></i>
+                            Student Attendance
+                        </h5>
+                    </div>
+                    <div class="card-body p-3 bg-light">
+                        <div class="attendance-status">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <strong>{{ Auth::user()->fname }} {{ Auth::user()->lname }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ Auth::user()->email }}</small>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="attendance-info">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small text-muted">SESSION STATUS</span>
+                                    <span class="badge badge-warning" id="session-status">
+                                        <i class="fas fa-clock"></i> PENDING START
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small text-muted">ATTENDANCE TYPE</span>
+                                    <span class="badge badge-info" id="attendance-type">
+                                        <i class="fas fa-laptop"></i> ONLINE
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="small text-muted">SESSION TIME</span>
+                                    <span class="small" id="session-time">--:--:--</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    Session starts when you begin a lesson
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{-- Lessons Section --}}
+                    <div class="card-header bg-info text-white border-top">
+                        <h6 class="mb-0">
                             <i class="fas fa-book"></i>
                             My Courses & Lessons
-                        </h5>
+                        </h6>
                     </div>
                     <div class="card-body p-0 thin-scrollbar" style="max-height: 600px; overflow-y: auto;">
                         {{-- Current Course Progress --}}

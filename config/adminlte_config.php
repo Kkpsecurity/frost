@@ -345,29 +345,8 @@ return [
         ['header' => 'ADMINISTRATION'],
         [
             'text' => 'Admin Center',
+            'route' => 'admin.admin-center.dashboard',
             'icon' => 'fas fa-fw fa-cogs',
-            'submenu' => [
-                [
-                    'text' => 'Admin Users',
-                    'route' => 'admin.admin-center.admin-users.index',
-                    'icon' => 'fas fa-fw fa-user-shield',
-                ],
-                [
-                    'text' => 'Site Settings',
-                    'route' => 'admin.settings.index',
-                    'icon' => 'fas fa-fw fa-wrench',
-                ],
-                [
-                    'text' => 'Payments',
-                    'route' => 'admin.payments.index',
-                    'icon' => 'fas fa-fw fa-credit-card',
-                ],
-                [
-                    'text' => 'Media Manager',
-                    'route' => 'admin.media-manager.index',
-                    'icon' => 'fas fa-fw fa-hdd',
-                ],
-            ],
         ],
         [
             'text' => 'Frost Support',

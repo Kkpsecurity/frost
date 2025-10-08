@@ -6,6 +6,7 @@ import {
     EmptyState,
     CoursesGrid,
     useBulletinBoard,
+    QuickCourseModal,
     type CourseDate,
 } from "./Offline";
 import AssignmentHistoryTable from "./Offline/AssignmentHistoryTable";
@@ -18,6 +19,8 @@ const InstructorDashboard: React.FC = () => {
     const [selectedCourse, setSelectedCourse] = useState<CourseDate | null>(
         null
     );
+    const [showQuickCourseModal, setShowQuickCourseModal] =
+        useState<boolean>(false);
     // Note: No tabs needed - show all courses by default
 
     const {
@@ -80,9 +83,18 @@ const InstructorDashboard: React.FC = () => {
     };
 
     const handleAdminAction = () => {
-        console.log("Admin action: Course management");
-        // TODO: Navigate to course management interface
-        alert("Course Management - Coming Soon!");
+        console.log("Admin action: Open quick course creation modal");
+        setShowQuickCourseModal(true);
+    };
+
+    const handleQuickCourseSuccess = () => {
+        console.log("Quick course created successfully, refreshing data");
+        refetch(); // Refresh the bulletin board data to show new course
+    };
+
+    const handleDeleteCourse = (courseDate: CourseDate) => {
+        console.log("Course deleted, refreshing data:", courseDate);
+        refetch(); // Refresh the bulletin board data after deletion
     };
 
     // Show classroom view when instructor starts a class
@@ -124,9 +136,17 @@ const InstructorDashboard: React.FC = () => {
                         onCourseSelect={handleCourseSelect}
                         onStartClass={handleStartClass}
                         onRefreshData={refetch}
+                        onDeleteCourse={handleDeleteCourse}
                     />
                 )}
             </div>
+
+            {/* Quick Course Creation Modal */}
+            <QuickCourseModal
+                isOpen={showQuickCourseModal}
+                onClose={() => setShowQuickCourseModal(false)}
+                onSuccess={handleQuickCourseSuccess}
+            />
         </div>
     );
 };

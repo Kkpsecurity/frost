@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Services\StudentDashboardService;
 use App\Services\ClassroomDashboardService;
+use App\Services\StudentAttendanceService;
+use App\Services\AttendanceService;
 use App\Traits\PageMetaDataTrait;
 use App\Models\CourseAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -19,12 +23,20 @@ class StudentDashboardController extends Controller
 
     protected ?StudentDashboardService $dashboardService;
     protected ?ClassroomDashboardService $classroomService;
+    protected ?StudentAttendanceService $attendanceService;
+    protected ?AttendanceService $coreAttendanceService;
 
-    public function __construct(StudentDashboardService $dashboardService = null, ClassroomDashboardService $classroomService = null)
-    {
+    public function __construct(
+        StudentDashboardService $dashboardService = null,
+        ClassroomDashboardService $classroomService = null,
+        StudentAttendanceService $attendanceService = null,
+        AttendanceService $coreAttendanceService = null
+    ) {
         $this->middleware('auth');
         $this->dashboardService = $dashboardService;
         $this->classroomService = $classroomService;
+        $this->attendanceService = $attendanceService;
+        $this->coreAttendanceService = $coreAttendanceService;
     }
 
     /**
@@ -570,6 +582,436 @@ class StudentDashboardController extends Controller
                 'error' => 'Failed to fetch class data: ' . $e->getMessage(),
                 'instructor' => null,
                 'course_dates' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Enter class and create StudentUnit attendance record
+     * 
+     * @param Request $request
+     * @param int $courseDateId
+     * @return JsonResponse
+     */
+    public function enterClass(Request $request, int $courseDateId): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user || !$this->attendanceService) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required or service unavailable'
+            ], 401);
+        }
+
+        try {
+            $result = $this->attendanceService->enterClass($user, $courseDateId);
+
+            Log::info('Student class entry API called', [
+                'user_id' => $user->id,
+                'course_date_id' => $courseDateId,
+                'result' => $result['code']
+            ]);
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+
+        } catch (Exception $e) {
+            Log::error('Student class entry API error', [
+                'user_id' => $user->id,
+                'course_date_id' => $courseDateId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to enter class',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get student attendance data for dashboard
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAttendanceData(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user || !$this->attendanceService) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required or service unavailable'
+            ], 401);
+        }
+
+        try {
+            $dashboardData = $this->attendanceService->getDashboardData($user);
+
+            Log::info('Student attendance data API called', [
+                'user_id' => $user->id,
+                'current_session' => $dashboardData['current_session'] !== null,
+                'present_in_classes' => $dashboardData['present_in_classes'] ?? 0
+            ]);
+
+            return response()->json($dashboardData);
+
+        } catch (Exception $e) {
+            Log::error('Student attendance data API error', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get attendance data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get attendance details for a specific course date
+     * 
+     * @param Request $request
+     * @param int $courseDateId
+     * @return JsonResponse
+     */
+    public function getClassAttendance(Request $request, int $courseDateId): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user || !$this->attendanceService) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required or service unavailable'
+            ], 401);
+        }
+
+        try {
+            $courseDate = \App\Models\CourseDate::find($courseDateId);
+
+            if (!$courseDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course date not found'
+                ], 404);
+            }
+
+            $attendanceDetails = $this->attendanceService->getStudentAttendanceDetails($user, $courseDate);
+
+            return response()->json([
+                'success' => true,
+                'attendance' => $attendanceDetails
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Student class attendance API error', [
+                'user_id' => $user->id,
+                'course_date_id' => $courseDateId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get class attendance',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Record offline attendance (for instructor use)
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function recordOfflineAttendance(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required'
+            ], 401);
+        }
+
+        // TODO: Add instructor role validation here
+        // For now, allow any authenticated user to record offline attendance
+
+        try {
+            $validated = $request->validate([
+                'student_id' => 'required|integer|exists:users,id',
+                'course_date_id' => 'required|integer|exists:course_dates,id',
+                'recorded_by' => 'nullable|string|max:255',
+                'verification_method' => 'nullable|string|max:100',
+                'location' => 'nullable|string|max:255'
+            ]);
+
+            $student = \App\Models\User::find($validated['student_id']);
+
+            $metadata = [
+                'recorded_by' => $validated['recorded_by'] ?? $user->name,
+                'verification_method' => $validated['verification_method'] ?? 'instructor_marked',
+                'location' => $validated['location'] ?? 'classroom',
+                'recorded_by_user_id' => $user->id
+            ];
+
+            $result = $this->coreAttendanceService->recordOfflineAttendance(
+                $student,
+                $validated['course_date_id'],
+                $metadata
+            );
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (Exception $e) {
+            Log::error('Offline attendance recording error', [
+                'user_id' => $user->id,
+                'request_data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record offline attendance',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get attendance summary for a course date (online vs offline counts)
+     * 
+     * @param Request $request
+     * @param int $courseDateId
+     * @return JsonResponse
+     */
+    public function getAttendanceSummary(Request $request, int $courseDateId): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required'
+            ], 401);
+        }
+
+        try {
+            $courseDate = \App\Models\CourseDate::find($courseDateId);
+
+            if (!$courseDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course date not found'
+                ], 404);
+            }
+
+            // Get attendance counts by type
+            $onlineCount = \App\Models\StudentUnit::where('course_date_id', $courseDateId)
+                ->onlineAttendance()
+                ->count();
+
+            $offlineCount = \App\Models\StudentUnit::where('course_date_id', $courseDateId)
+                ->offlineAttendance()
+                ->count();
+
+            $totalCount = $onlineCount + $offlineCount;
+
+            return response()->json([
+                'success' => true,
+                'course_date_id' => $courseDateId,
+                'attendance_summary' => [
+                    'total_present' => $totalCount,
+                    'online_attendance' => $onlineCount,
+                    'offline_attendance' => $offlineCount,
+                    'online_percentage' => $totalCount > 0 ? round(($onlineCount / $totalCount) * 100, 1) : 0,
+                    'offline_percentage' => $totalCount > 0 ? round(($offlineCount / $totalCount) * 100, 1) : 0
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Attendance summary error', [
+                'user_id' => $user->id,
+                'course_date_id' => $courseDateId,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get attendance summary',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Start a lesson - This triggers the attendance session
+     * 
+     * Business Rule: Offline sessions only start when student begins a lesson,
+     * not just because they're physically present in class.
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function startLesson(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required'
+            ], 401);
+        }
+
+        try {
+            $validated = $request->validate([
+                'course_date_id' => 'required|integer|exists:course_dates,id',
+                'lesson_id' => 'nullable|integer',
+                'attendance_type' => 'nullable|string|in:online,offline',
+                'location' => 'nullable|string|max:255'
+            ]);
+
+            // Determine attendance type based on request or default to online
+            $attendanceType = $validated['attendance_type'] ?? 'online';
+
+            $metadata = [
+                'lesson_id' => $validated['lesson_id'] ?? null,
+                'location' => $validated['location'] ?? ($attendanceType === 'offline' ? 'classroom' : 'online'),
+                'started_by' => $user->name,
+                'user_agent' => $request->userAgent(),
+                'ip_address' => $request->ip(),
+                'timestamp' => now()
+            ];
+
+            // Use the new handleLessonStart method which implements the business rule
+            $result = $this->coreAttendanceService->handleLessonStart(
+                $user,
+                $validated['course_date_id'],
+                $attendanceType,
+                $metadata
+            );
+
+            // Log lesson start for tracking
+            Log::info('Student lesson start request', [
+                'student_id' => $user->id,
+                'student_name' => $user->name,
+                'course_date_id' => $validated['course_date_id'],
+                'lesson_id' => $validated['lesson_id'] ?? null,
+                'attendance_type' => $attendanceType,
+                'result_code' => $result['code'] ?? 'unknown',
+                'session_started' => $result['success']
+            ]);
+
+            return response()->json($result, $result['success'] ? 200 : 400);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (Exception $e) {
+            Log::error('Lesson start error', [
+                'user_id' => $user->id,
+                'request_data' => $request->all(),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to start lesson',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get current attendance session status for student
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAttendanceStatus(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication required'
+            ], 401);
+        }
+
+        try {
+            $courseDateId = $request->query('course_date_id');
+
+            if (!$courseDateId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course date ID required'
+                ], 400);
+            }
+
+            // Get current attendance session
+            $studentUnit = \App\Models\StudentUnit::whereHas('CourseAuth', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+                ->where('course_date_id', $courseDateId)
+                ->latest()
+                ->first();
+
+            if ($studentUnit) {
+                $sessionDuration = $studentUnit->created_at->diffInSeconds(now());
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'session_active' => true,
+                        'attendance_type' => $studentUnit->attendance_type,
+                        'session_start' => $studentUnit->created_at,
+                        'session_duration' => $sessionDuration,
+                        'session_duration_formatted' => gmdate('H:i:s', $sessionDuration),
+                        'student_unit_id' => $studentUnit->id
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'session_active' => false,
+                        'attendance_type' => null,
+                        'session_start' => null,
+                        'session_duration' => 0,
+                        'session_duration_formatted' => '00:00:00'
+                    ]
+                ]);
+            }
+
+        } catch (Exception $e) {
+            Log::error('Attendance status check error', [
+                'user_id' => $user->id,
+                'course_date_id' => $courseDateId ?? null,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get attendance status',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

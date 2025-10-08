@@ -236,7 +236,9 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                 <div
                     className="teaching-tools flex-grow-1"
                     style={{
-                        backgroundColor: "var(--frost-white-color, #ffffff)",
+                        backgroundColor:
+                            "var(--frost-secondary-color, #394867)",
+                        color: "var(--frost-light-color, #f8f9fa)",
                         display: "flex",
                         flexDirection: "column",
                     }}
@@ -253,13 +255,13 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                             <h6
                                 className="mb-0"
                                 style={{
-                                    color: "var(--frost-dark-color, #374151)",
+                                    color: "var(--frost-light-color, #f8f9fa)",
                                 }}
                             >
                                 <i
                                     className="fas fa-tools me-2"
                                     style={{
-                                        color: "var(--frost-primary-color, #212a3e)",
+                                        color: "var(--frost-light-color, #f8f9fa)",
                                     }}
                                 ></i>
                                 Teaching Tools
@@ -283,8 +285,8 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                                     style={{
                                         backgroundColor: "transparent",
                                         borderColor:
-                                            "var(--frost-secondary-color, #394867)",
-                                        color: "var(--frost-secondary-color, #394867)",
+                                            "var(--frost-light-color, #f8f9fa)",
+                                        color: "var(--frost-light-color, #f8f9fa)",
                                     }}
                                 >
                                     <i className="fas fa-comments me-1"></i>
@@ -295,8 +297,8 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                                     style={{
                                         backgroundColor: "transparent",
                                         borderColor:
-                                            "var(--frost-secondary-color, #394867)",
-                                        color: "var(--frost-secondary-color, #394867)",
+                                            "var(--frost-light-color, #f8f9fa)",
+                                        color: "var(--frost-light-color, #f8f9fa)",
                                     }}
                                 >
                                     <i className="fas fa-poll me-1"></i>
@@ -319,14 +321,14 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                                     ></i>
                                     <h4
                                         style={{
-                                            color: "var(--frost-dark-color, #374151)",
+                                            color: "var(--frost-light-color, #f8f9fa)",
                                         }}
                                     >
                                         Ready to Teach
                                     </h4>
                                     <p
                                         style={{
-                                            color: "var(--frost-base-color, #9ba4b5)",
+                                            color: "var(--frost-light-primary-color, #d6d9e2)",
                                         }}
                                     >
                                         Select a lesson from the left panel to
@@ -379,8 +381,8 @@ const ClassroomLayout: React.FC<ClassroomLayoutProps> = ({
                                         style={{
                                             backgroundColor: "transparent",
                                             borderColor:
-                                                "var(--frost-secondary-color, #394867)",
-                                            color: "var(--frost-secondary-color, #394867)",
+                                                "var(--frost-light-color, #f8f9fa)",
+                                            color: "var(--frost-light-color, #f8f9fa)",
                                         }}
                                     >
                                         <i className="fas fa-screen-share me-2"></i>

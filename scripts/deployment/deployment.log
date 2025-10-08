@@ -1,0 +1,98 @@
+[2025-09-30 12:26:38] POST-COMMIT: Starting auto-deploy for commit ece490f9fd08ba02c70cdbf66a9525f76e3ab9ce
+[2025-09-30 12:26:38] BRANCH: copilot/vscode1758901784978
+[2025-09-30 12:26:39] AUTHOR: Kkpsecurity
+[2025-09-30 12:26:39] MESSAGE: Test auto-deployment to staging server with rsync/robocopy exclusions 
+[2025-09-30 12:26:40] DEPLOY: Starting deployment process
+[2025-09-30 12:26:50] SUCCESS: Deployment completed successfully
+[2025-09-30 12:26:51] POST-COMMIT: Auto-deploy process completed
+[2025-09-30 12:32:10] POST-COMMIT: Starting auto-deploy for commit f5c97242eecfbe5b16426f807b2fa36ac20b5038
+[2025-09-30 12:32:10] BRANCH: copilot/vscode1758901784978
+[2025-09-30 12:32:10] AUTHOR: Kkpsecurity
+[2025-09-30 12:32:10] MESSAGE: Update deployment: exclude docs/ and scripts/ folders from staging [test exclusions] 
+[2025-09-30 12:32:10] DEPLOY: Starting deployment process
+[2025-09-30 12:32:18] SUCCESS: Deployment completed successfully
+[2025-09-30 12:32:19] POST-COMMIT: Auto-deploy process completed
+[2025-09-30 12:36:51] POST-COMMIT: Starting auto-deploy for commit 4d6418612d5c91b6f1be9e55874b899d09f1edee
+[2025-09-30 12:36:51] BRANCH: copilot/vscode1758901784978
+[2025-09-30 12:36:51] AUTHOR: Kkpsecurity
+[2025-09-30 12:36:51] MESSAGE: Test auto-deployment functionality - verify exclusions working 
+[2025-09-30 12:36:52] DEPLOY: Starting deployment process
+[2025-09-30 12:36:58] SUCCESS: Deployment completed successfully
+[2025-09-30 12:36:58] POST-COMMIT: Auto-deploy process completed
+[2025-09-30 13:40:05] POST-COMMIT: Starting auto-deploy for commit 842f1afdeed073b51b408b5ec6a02803441f8329
+[2025-09-30 13:40:05] BRANCH: copilot/vscode1758901784978
+[2025-09-30 13:40:05] AUTHOR: Kkpsecurity
+[2025-09-30 13:40:05] MESSAGE: Testing Git hook auto-deployment trigger 
+[2025-09-30 13:40:06] DEPLOY: Starting deployment process
+[2025-09-30 13:40:14] SUCCESS: Deployment completed successfully
+[2025-09-30 13:40:14] POST-COMMIT: Auto-deploy process completed
+[2025-09-30 13:43:24] POST-COMMIT: Starting auto-deploy for commit 3ef807ec5f29e2ff2c19a5a8848c9393dbd1a5c2
+[2025-09-30 13:43:24] BRANCH: copilot/vscode1758901784978
+[2025-09-30 13:43:24] AUTHOR: Kkpsecurity
+[2025-09-30 13:43:24] MESSAGE: Complete auto-deployment system with optimized exclusions and staging setup 
+[2025-09-30 13:43:24] DEPLOY: Starting deployment process
+[2025-09-30 13:43:30] SUCCESS: Deployment completed successfully
+[2025-09-30 13:43:31] POST-COMMIT: Auto-deploy process completed
+[2025-10-01 15:43:56] POST-COMMIT: Starting auto-deploy for commit 3fc51070d4679dc541d2533b0022696d40f712a8
+[2025-10-01 15:43:56] BRANCH: copilot/vscode1758901784978
+[2025-10-01 15:43:56] AUTHOR: Kkpsecurity
+[2025-10-01 15:43:56] MESSAGE: Updates 
+[2025-10-01 15:43:56] DEPLOY: Starting deployment process
+[2025-10-01 15:44:05] SUCCESS: Deployment completed successfully
+[2025-10-01 15:44:05] POST-COMMIT: Auto-deploy process completed
+[2025-10-02 13:10:41] POST-COMMIT: Starting auto-deploy for commit 568b81069fa875622f9fce4faebbd89430b50f87
+[2025-10-02 13:10:41] BRANCH: copilot/vscode1758901784978
+[2025-10-02 13:10:41] AUTHOR: Kkpsecurity
+[2025-10-02 13:10:41] MESSAGE: Fix enrollment flow - bypass cart, go straight to checkout 
+[2025-10-02 13:10:42] DEPLOY: Starting deployment process
+[2025-10-02 13:10:54] SUCCESS: Deployment completed successfully
+[2025-10-02 13:10:54] POST-COMMIT: Auto-deploy process completed
+[2025-10-02 13:34:06] POST-COMMIT: Starting auto-deploy for commit db46651e2e351e2d60e0261ec15de863254c61e7
+[2025-10-02 13:34:06] BRANCH: copilot/vscode1758901784978
+[2025-10-02 13:34:06] AUTHOR: Kkpsecurity
+[2025-10-02 13:34:07] MESSAGE: Add enrollment debugging - multiple test methods 
+[2025-10-02 13:34:07] DEPLOY: Starting deployment process
+[2025-10-02 13:34:15] SUCCESS: Deployment completed successfully
+[2025-10-02 13:34:15] POST-COMMIT: Auto-deploy process completed
+[2025-10-02 13:46:58] POST-COMMIT: Starting auto-deploy for commit b4fb0f2cdec43977096a21cdb79a0a5a269a182a
+[2025-10-02 13:46:58] BRANCH: copilot/vscode1758901784978
+[2025-10-02 13:46:58] AUTHOR: Kkpsecurity
+[2025-10-02 13:46:58] MESSAGE: Fix enrollment flow - use correct Payment model and clean UI 
+[2025-10-02 13:46:59] DEPLOY: Starting deployment process
+[2025-10-02 13:47:11] SUCCESS: Deployment completed successfully
+[2025-10-02 13:47:12] POST-COMMIT: Auto-deploy process completed
+[2025-10-02 14:16:33] POST-COMMIT: Starting auto-deploy for commit a68575c0377f76bdb19debfdae12d1242c28b80e
+[2025-10-02 14:16:33] BRANCH: copilot/vscode1758901784978
+[2025-10-02 14:16:33] AUTHOR: Kkpsecurity
+[2025-10-02 14:16:33] MESSAGE: Add enrollment debugging - form and direct test 
+[2025-10-02 14:16:34] DEPLOY: Starting deployment process
+[2025-10-02 14:16:41] SUCCESS: Deployment completed successfully
+[2025-10-02 14:16:41] POST-COMMIT: Auto-deploy process completed
+[2025-10-02 16:48:03] POST-COMMIT: Starting auto-deploy for commit e57a663f4ca9e56ad224730b462280ea3288a3ec
+[2025-10-02 16:48:03] BRANCH: copilot/vscode1758901784978
+[2025-10-02 16:48:03] AUTHOR: Kkpsecurity
+[2025-10-02 16:48:04] MESSAGE: Simplify enrollment flow - direct link to payment page 
+[2025-10-02 16:48:04] DEPLOY: Starting deployment process
+[2025-10-02 16:48:16] SUCCESS: Deployment completed successfully
+[2025-10-02 16:48:17] POST-COMMIT: Auto-deploy process completed
+[2025-10-02 16:59:51] POST-COMMIT: Starting auto-deploy for commit ca1de881cd561c6954ce15195f939a97140dcd7e
+[2025-10-02 16:59:51] BRANCH: copilot/vscode1758901784978
+[2025-10-02 16:59:51] AUTHOR: Kkpsecurity
+[2025-10-02 16:59:51] MESSAGE: Create dedicated course payment selection page 
+[2025-10-02 16:59:52] DEPLOY: Starting deployment process
+[2025-10-02 16:59:59] SUCCESS: Deployment completed successfully
+[2025-10-02 16:59:59] POST-COMMIT: Auto-deploy process completed
+[2025-10-05 16:38:36] POST-COMMIT: Starting auto-deploy for commit e57de8f3c7eefdc6b0b742884cf6d20c05083a04
+[2025-10-05 16:38:36] BRANCH: copilot/vscode1759696699785
+[2025-10-05 16:38:36] AUTHOR: Kkpsecurity
+[2025-10-05 16:38:36] MESSAGE: Checkpoint from VS Code for coding agent session 
+[2025-10-05 16:38:36] DEPLOY: Starting deployment process
+[2025-10-05 16:38:46] SUCCESS: Deployment completed successfully
+[2025-10-05 16:38:46] POST-COMMIT: Auto-deploy process completed
+[2025-10-06 14:43:32] POST-COMMIT: Starting auto-deploy for commit 66deb139ca8db210d54f34ea2f65fad12d8f1936
+[2025-10-06 14:43:32] BRANCH: copilot/vscode1759696699785
+[2025-10-06 14:43:32] AUTHOR: Kkpsecurity
+[2025-10-06 14:43:32] MESSAGE: Fix Instructor Dashboard: Implement proper bulletin board with CourseDate structure  - Fixed InstructorDashboard to show pure bulletin board layout (no classroom mixing) - Corrected CourseCard status handling with proper fallback for undefined class_status - Updated CourseDate type definition to make class_status optional - Implemented proper Template-Instance pattern understanding:   * One CourseDate = One class day (8-hour session)   * CourseDate represents scheduled instance of CourseUnit template   * InstUnit created when instructor takes control - Added testing scripts for CourseDate generation and data validation - Fixed auto-redirect logic to only show classroom when InstUnit exists - Clean separation: bulletin board vs classroom as separate components  Changes: - InstructorDashboard.tsx: Pure bulletin board with CoursesGrid - CourseCard.tsx: Fixed status handling with STATUS_META fallback - types.ts: Made class_status optional for new CourseDate records - Added CourseDate testing and validation scripts 
+[2025-10-06 14:43:33] DEPLOY: Starting deployment process
+[2025-10-06 14:43:44] SUCCESS: Deployment completed successfully
+[2025-10-06 14:43:45] POST-COMMIT: Auto-deploy process completed

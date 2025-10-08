@@ -1,6 +1,7 @@
 import React from "react";
 import { SchoolDashboardTabContentProps } from "../types/props/classroom.props";
 import VideoLessonTab from "./VideoLessonTab";
+import { useClassAttendance } from "../../hooks/useClassAttendance";
 
 const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
     student,
@@ -8,6 +9,62 @@ const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
     courseAuths,
     courseDates,
 }) => {
+    // Use the class attendance hook to check for active classes
+    const classAttendance = useClassAttendance();
+
+    // Show loading state while checking for active classes
+    if (classAttendance.loading) {
+        return (
+            <div className="tab-content" id="nav-tabContent">
+                <div
+                    className="tab-pane fade show active"
+                    id="nav-home"
+                    role="tabpanel"
+                >
+                    <div className="row">
+                        <div className="col-12 text-center py-5">
+                            <div
+                                className="spinner-border text-primary"
+                                role="status"
+                            >
+                                <span className="visually-hidden">
+                                    Checking class status...
+                                </span>
+                            </div>
+                            <p className="mt-3 text-muted">
+                                Checking for active classes today...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show redirect message (shouldn't normally be seen due to redirect in hook)
+    if (classAttendance.hasActiveClass) {
+        return (
+            <div className="tab-content" id="nav-tabContent">
+                <div
+                    className="tab-pane fade show active"
+                    id="nav-home"
+                    role="tabpanel"
+                >
+                    <div className="row">
+                        <div className="col-12">
+                            <div className="alert alert-info text-center">
+                                <i className="fas fa-graduation-cap fa-2x mb-3"></i>
+                                <h4>Class Onboarding Required</h4>
+                                <p>{classAttendance.message}</p>
+                                <p>Redirecting to class onboarding...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="tab-content" id="nav-tabContent">
             {/* Home Tab */}
@@ -256,6 +313,150 @@ const SchoolDashboardTabContent: React.FC<SchoolDashboardTabContentProps> = ({
                                         No student data available
                                     </p>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ID Verification Section */}
+                    <div className="col-md-6">
+                        <div
+                            className="card shadow-sm border-0 mb-4"
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, var(--frost-secondary-color), var(--frost-primary-color))",
+                                color: "white",
+                            }}
+                        >
+                            <div
+                                className="card-header border-0"
+                                style={{ background: "transparent" }}
+                            >
+                                <h5 className="mb-0 d-flex align-items-center">
+                                    <i
+                                        className="fas fa-id-card me-2"
+                                        style={{
+                                            color: "var(--frost-highlight-color)",
+                                        }}
+                                    ></i>
+                                    ID Verification
+                                </h5>
+                            </div>
+                            <div className="card-body">
+                                <div className="id-verification-details">
+                                    {/* ID Status */}
+                                    <div className="row mb-3">
+                                        <div className="col-4">
+                                            <strong>Status:</strong>
+                                        </div>
+                                        <div className="col-8 text-end">
+                                            <span className="badge bg-warning text-dark">
+                                                Pending
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* ID Type */}
+                                    <div className="row mb-3">
+                                        <div className="col-4">
+                                            <strong>ID Type:</strong>
+                                        </div>
+                                        <div className="col-8 text-end">
+                                            Not Provided
+                                        </div>
+                                    </div>
+
+                                    {/* Verification Date */}
+                                    <div className="row mb-3">
+                                        <div className="col-4">
+                                            <strong>Verified Date:</strong>
+                                        </div>
+                                        <div className="col-8 text-end">
+                                            Pending
+                                        </div>
+                                    </div>
+
+                                    {/* Verification Button */}
+                                    <div className="row mb-0">
+                                        <div className="col-12 text-center">
+                                            <button className="btn btn-outline-light btn-sm">
+                                                <i className="fas fa-camera me-1"></i>
+                                                Upload ID
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Signature Verification Section */}
+                    <div className="col-md-6">
+                        <div
+                            className="card shadow-sm border-0 mb-4"
+                            style={{
+                                background:
+                                    "linear-gradient(135deg, var(--frost-secondary-color), var(--frost-primary-color))",
+                                color: "white",
+                            }}
+                        >
+                            <div
+                                className="card-header border-0"
+                                style={{ background: "transparent" }}
+                            >
+                                <h5 className="mb-0 d-flex align-items-center">
+                                    <i
+                                        className="fas fa-signature me-2"
+                                        style={{
+                                            color: "var(--frost-highlight-color)",
+                                        }}
+                                    ></i>
+                                    Signature Verification
+                                </h5>
+                            </div>
+                            <div className="card-body">
+                                <div className="signature-verification-details">
+                                    {/* Signature Status */}
+                                    <div className="row mb-3">
+                                        <div className="col-4">
+                                            <strong>Status:</strong>
+                                        </div>
+                                        <div className="col-8 text-end">
+                                            <span className="badge bg-warning text-dark">
+                                                Pending
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Signature Date */}
+                                    <div className="row mb-3">
+                                        <div className="col-4">
+                                            <strong>Signed Date:</strong>
+                                        </div>
+                                        <div className="col-8 text-end">
+                                            Pending
+                                        </div>
+                                    </div>
+
+                                    {/* Digital Signature */}
+                                    <div className="row mb-3">
+                                        <div className="col-4">
+                                            <strong>Method:</strong>
+                                        </div>
+                                        <div className="col-8 text-end">
+                                            Digital Signature
+                                        </div>
+                                    </div>
+
+                                    {/* Signature Button */}
+                                    <div className="row mb-0">
+                                        <div className="col-12 text-center">
+                                            <button className="btn btn-outline-light btn-sm">
+                                                <i className="fas fa-pen me-1"></i>
+                                                Sign Document
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

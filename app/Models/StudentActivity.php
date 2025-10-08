@@ -16,19 +16,13 @@ class StudentActivity extends Model
 {
     use HasFactory;
 
-    protected $table = 'student_activities';
+    protected $table = 'student_activity';
 
     protected $fillable = [
-        'user_id',
         'course_auth_id',
-        'course_date_id',
         'student_unit_id',
-        'lesson_id',
-        'activity_type',
-        'category',
-        'data',
-        'ip_address',
-        'user_agent',
+        'inst_unit_id',
+        'action',
     ];
 
     protected $casts = [
@@ -42,27 +36,11 @@ class StudentActivity extends Model
     // =============================================================================
 
     /**
-     * Get the user that performed this activity
-     */
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
      * Get the course authorization this activity belongs to
      */
     public function courseAuth(): BelongsTo
     {
-        return $this->belongsTo(CourseAuth::class);
-    }
-
-    /**
-     * Get the course date this activity is associated with
-     */
-    public function courseDate(): BelongsTo
-    {
-        return $this->belongsTo(CourseDate::class);
+                return $this->belongsTo(CourseAuth::class, 'course_auth_id');
     }
 
     /**
@@ -70,15 +48,15 @@ class StudentActivity extends Model
      */
     public function studentUnit(): BelongsTo
     {
-        return $this->belongsTo(StudentUnit::class);
+        return $this->belongsTo(StudentUnit::class, 'student_unit_id');
     }
 
     /**
-     * Get the lesson this activity is associated with
+     * Get the instructor unit associated with this activity
      */
-    public function lesson(): BelongsTo
+    public function instUnit(): BelongsTo
     {
-        return $this->belongsTo(Lesson::class);
+        return $this->belongsTo(InstUnit::class, 'inst_unit_id');
     }
 
     // =============================================================================
@@ -166,13 +144,79 @@ class StudentActivity extends Model
      */
     public function getIsSessionActivityAttribute(): bool
     {
-        return in_array($this->activity_type, [
-            'school_entry',
-            'classroom_entry',
-            'offline_session_start',
-            'offline_session_end',
-            'online_session_start',
-            'online_session_end'
+        return in_array($this->action, [
+            'student_unit_created',
+            'onboarding_started',
+            'classroom_entered',
+            'session_ended'
         ]);
+    }
+
+    // =============================================================================
+    // ONBOARDING STATIC METHODS
+    // =============================================================================
+
+    /**
+     * Log a student activity event.
+     * 
+     * @param int $courseAuthId
+     * @param int $studentUnitId
+     * @param string $action
+     * @param int|null $instUnitId
+     * @return self
+     */
+    public static function logActivity(int $courseAuthId, int $studentUnitId, string $action, ?int $instUnitId = null): self
+    {
+        return self::create([
+            'course_auth_id' => $courseAuthId,
+            'student_unit_id' => $studentUnitId,
+            'inst_unit_id' => $instUnitId,
+            'action' => $action
+        ]);
+    }
+
+    /**
+     * Get activities for a specific student unit.
+     * 
+     * @param int $studentUnitId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public static function getForStudentUnit(int $studentUnitId)
+    {
+        return self::where('student_unit_id', $studentUnitId)
+            ->orderBy('created_at')
+            ->get();
+    }
+
+    /**
+     * Check if a specific action has been logged for a student unit.
+     * 
+     * @param int $studentUnitId
+     * @param string $action
+     * @return bool
+     */
+    public static function hasAction(int $studentUnitId, string $action): bool
+    {
+        return self::where('student_unit_id', $studentUnitId)
+            ->where('action', $action)
+            ->exists();
+    }
+
+    /**
+     * Get commonly tracked onboarding activity actions.
+     * 
+     * @return array
+     */
+    public static function getOnboardingActionTypes(): array
+    {
+        return [
+            'student_unit_auto_created' => 'StudentUnit automatically created',
+            'onboarding_started' => 'Onboarding process started',
+            'agreement_accepted' => 'Student agreement accepted',
+            'rules_acknowledged' => 'Classroom rules acknowledged',
+            'identity_verified' => 'Identity verification completed',
+            'onboarding_completed' => 'Onboarding process completed',
+            'classroom_entered' => 'Student entered classroom'
+        ];
     }
 }

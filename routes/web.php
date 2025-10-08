@@ -39,6 +39,33 @@ Route::middleware('auth')->group(function () {
 });
 
 /**
+ * Student Classroom Onboarding Routes
+ */
+Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(function () {
+    // Attendance detection and auto-creation
+    Route::get('/check-attendance', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'checkAttendanceRequired'])
+        ->name('check-attendance');
+
+    // Attendance marking page
+    Route::get('/attendance/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'showAttendance'])
+        ->name('attendance');
+    Route::post('/attendance/{studentUnit}/mark', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'markAttendance'])
+        ->name('attendance.mark');
+
+    // Onboarding process
+    Route::get('/onboarding/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'show'])
+        ->name('onboarding');
+    Route::post('/onboarding/{studentUnit}/agreement', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acceptAgreement'])
+        ->name('onboarding.agreement');
+    Route::post('/onboarding/{studentUnit}/rules', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acknowledgeRules'])
+        ->name('onboarding.rules');
+    Route::post('/onboarding/{studentUnit}/identity', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'verifyIdentity'])
+        ->name('onboarding.identity');
+    Route::post('/onboarding/{studentUnit}/enter', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'enterClassroom'])
+        ->name('onboarding.enter');
+});
+
+/**
  * Student Offline Session Tracking Routes
  */
 Route::middleware('auth')->prefix('student/offline')->name('student.offline.')->group(function () {
