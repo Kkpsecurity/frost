@@ -41,10 +41,10 @@ interface BulletinBoardData {
 // API function to fetch bulletin board data
 const fetchBulletinBoardData = async (): Promise<BulletinBoardData> => {
     console.log(
-        "🔄 Fetching bulletin board data from /admin/instructors/api/bulletin-board"
+        "🔄 Fetching bulletin board data from /admin/instructors/data/bulletin-board"
     );
 
-    const response = await fetch("/admin/instructors/api/bulletin-board", {
+    const response = await fetch("/admin/instructors/data/bulletin-board", {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

@@ -38,13 +38,16 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         })->name('online');
 
         // Classroom management actions
+        Route::post('/assign-instructor/{courseDateId}', [InstructorDashboardController::class, 'assignInstructor'])
+            ->name('assign-instructor');
+
         Route::post('/start-class/{courseDateId}', [InstructorDashboardController::class, 'startClass'])
             ->name('start-class');
 
         Route::post('/take-over', [InstructorDashboardController::class, 'takeOverClass'])
             ->name('take-over');
 
-        Route::post('/assist', [InstructorDashboardController::class, 'assistClass'])
+        Route::post('/assist/{courseDateId?}', [InstructorDashboardController::class, 'assistClass'])
             ->name('assist');
 
         // Chat functionality for live classes

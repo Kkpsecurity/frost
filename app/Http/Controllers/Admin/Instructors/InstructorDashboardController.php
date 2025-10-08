@@ -11,6 +11,7 @@ use App\Services\Frost\Instructors\ClassroomService;
 use App\Services\Frost\Students\BackendStudentService;
 use App\Services\ClassroomSessionService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 class InstructorDashboardController extends Controller
 {
@@ -260,9 +261,9 @@ class InstructorDashboardController extends Controller
     }
 
     /**
-     * Start a class session - Create InstUnit and redirect to classroom
+     * Assign an instructor to a CourseDate (creates InstUnit without starting class)
      */
-    public function startClass($courseDateId)
+    public function assignInstructor($courseDateId, Request $request)
     {
         $admin = auth('admin')->user();
 
@@ -271,8 +272,90 @@ class InstructorDashboardController extends Controller
         }
 
         try {
+            // Get instructor_id from request, default to current admin
+            $instructorId = $request->input('instructor_id', $admin->id);
+            $assistantId = $request->input('assistant_id');
+
+            // Verify the course date exists
+            $courseDate = \App\Models\CourseDate::find($courseDateId);
+            if (!$courseDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course date not found'
+                ], 404);
+            }
+
+            // Check if InstUnit already exists
+            if ($courseDate->InstUnit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course already has an assigned instructor'
+                ], 400);
+            }
+
+            // Create InstUnit with assigned instructor (not started yet)
+            $instUnit = \App\Models\InstUnit::create([
+                'course_date_id' => $courseDateId,
+                'created_by' => $instructorId,
+                'assistant_id' => $assistantId,
+                'created_at' => now(),
+                // Note: completed_at remains null since class hasn't started
+            ]);
+
+            // Get instructor and assistant names
+            $instructor = \App\Models\User::find($instructorId);
+            $assistant = $assistantId ? \App\Models\User::find($assistantId) : null;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Instructor assigned successfully!',
+                'data' => [
+                    'inst_unit_id' => $instUnit->id,
+                    'course_date_id' => $courseDateId,
+                    'instructor' => [
+                        'id' => $instructor->id,
+                        'name' => trim(($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) ?: $instructor->email
+                    ],
+                    'assistant' => $assistant ? [
+                        'id' => $assistant->id,
+                        'name' => trim(($assistant->fname ?? '') . ' ' . ($assistant->lname ?? '')) ?: $assistant->email
+                    ] : null,
+                    'created_at' => $instUnit->created_at->toISOString(),
+                    'is_assignment_only' => true // Flag to indicate this is just assignment, not active session
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('InstructorDashboardController: Error assigning instructor', [
+                'course_date_id' => $courseDateId,
+                'admin_id' => $admin->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error assigning instructor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Start a class session - Create InstUnit and redirect to classroom
+     */
+    public function startClass($courseDateId, Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        try {
+            // Get assistant_id from request if provided
+            $assistantId = $request->input('assistant_id');
+
             // Create InstUnit using ClassroomSessionService
-            $instUnit = $this->sessionService->startClassroomSession((int) $courseDateId);
+            $instUnit = $this->sessionService->startClassroomSession((int) $courseDateId, $assistantId);
 
             if (!$instUnit) {
                 return response()->json([
@@ -281,13 +364,21 @@ class InstructorDashboardController extends Controller
                 ], 500);
             }
 
-            // Return success with redirect URL to classroom
+            // Get session info including instructor and assistant details
+            $sessionInfo = $this->sessionService->getClassroomSession((int) $courseDateId);
+
+            // Return success with classroom session data
             return response()->json([
                 'success' => true,
-                'inst_unit_id' => $instUnit->id,
-                'course_date_id' => $courseDateId,
-                'redirect_url' => "/instructor/classroom/{$courseDateId}",
-                'message' => 'Class session started successfully!'
+                'message' => 'Class session started successfully!',
+                'data' => [
+                    'inst_unit_id' => $instUnit->id,
+                    'course_date_id' => $courseDateId,
+                    'instructor' => $sessionInfo['instructor'] ?? null,
+                    'assistant' => $sessionInfo['assistant'] ?? null,
+                    'created_at' => $instUnit->created_at->toISOString(),
+                    'is_existing' => $instUnit->wasRecentlyCreated ? false : true
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -340,7 +431,7 @@ class InstructorDashboardController extends Controller
     /**
      * Assist in a classroom session
      */
-    public function assistClass()
+    public function assistClass(Request $request, $courseDateId = null)
     {
         $admin = auth('admin')->user();
 
@@ -349,17 +440,62 @@ class InstructorDashboardController extends Controller
         }
 
         try {
-            // Implementation for assisting in a class
-            // This would involve adding the admin as an assistant
+            // Get the course_date_id from route parameter or request body
+            if (!$courseDateId) {
+                $courseDateId = $request->input('course_date_id');
+            }
+
+            $instUnitId = $request->input('inst_unit_id');
+
+            if (!$courseDateId && !$instUnitId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Course date ID or InstUnit ID is required'
+                ], 400);
+            }
+
+            // If we have course_date_id, find the InstUnit
+            if ($courseDateId) {
+                $courseDate = \App\Models\CourseDate::find($courseDateId);
+                if (!$courseDate || !$courseDate->InstUnit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No active class session found for this course'
+                    ], 404);
+                }
+                $instUnitId = $courseDate->InstUnit->id;
+            }
+
+            // Assign the current admin as assistant
+            $success = $this->sessionService->assignAssistant($instUnitId, $admin->id);
+
+            if (!$success) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to assign assistant. Please check the logs.'
+                ], 500);
+            }
+
+            // Get updated session info
+            $sessionInfo = $this->sessionService->getClassroomSession((int) ($courseDateId ?? 0));
 
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully joined the class as an assistant!'
+                'message' => 'Successfully joined the class as an assistant!',
+                'data' => [
+                    'inst_unit_id' => $instUnitId,
+                    'assistant' => [
+                        'id' => $admin->id,
+                        'name' => $admin->name ?? ($admin->fname . ' ' . $admin->lname)
+                    ],
+                    'session_info' => $sessionInfo
+                ]
             ]);
 
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error assisting class', [
                 'admin_id' => $admin->id,
+                'course_date_id' => $courseDateId,
                 'error' => $e->getMessage()
             ]);
 

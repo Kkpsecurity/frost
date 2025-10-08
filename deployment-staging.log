@@ -1,0 +1,9 @@
+[2025-10-08 14:02:22] [START] Starting staging deployment process
+[2025-10-08 14:02:22] [GIT] Git Branch: copilot/vscode1759696699785
+[2025-10-08 14:02:22] [GIT] Git Commit: 1349832
+[2025-10-08 14:02:22] [GIT] Git Author: Kkpsecurity
+[2025-10-08 14:02:22] [DEPLOY] Starting file deployment to staging...
+[2025-10-08 14:02:23] [DEPLOY] rsync not found, falling back to robocopy
+[2025-10-08 14:02:23] [DEPLOY] Copying files with robocopy...
+[2025-10-08 14:02:40] [DEPLOY] Files deployed with warnings (exit code: 3)
+[2025-10-08 14:02:40] [SUCCESS] Staging deployment completed successfully

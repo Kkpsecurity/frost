@@ -1,0 +1,7 @@
+[2025-10-08 14:02:19] POST-COMMIT: Starting auto-deploy for commit 13498329d0e05ffc6d3236f3dce71dbfcd211a50
+[2025-10-08 14:02:19] BRANCH: copilot/vscode1759696699785
+[2025-10-08 14:02:19] AUTHOR: Kkpsecurity
+[2025-10-08 14:02:20] MESSAGE: Fix course date delete functionality with proper modal and InstUnit cleanup  - Add delete modal to CourseCard with proper z-index layering - Remove blocking check for InstUnit existence in CourseDateController - Allow deletion of courses with old InstUnit records but no active students - Add proper error handling and detailed error messages in React - Fix validation logic to match frontend display (ActiveStudentUnits) - Working delete flow: Check active students -> Delete InstUnits -> Delete CourseDate 
+[2025-10-08 14:02:20] DEPLOY: Starting deployment process
+[2025-10-08 14:02:40] SUCCESS: Deployment completed successfully
+[2025-10-08 14:02:40] POST-COMMIT: Auto-deploy process completed

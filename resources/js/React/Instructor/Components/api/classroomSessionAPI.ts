@@ -43,6 +43,20 @@ export interface StartSessionResponse {
     errors?: any;
 }
 
+export interface AssistClassResponse {
+    success: boolean;
+    message: string;
+    data?: {
+        inst_unit_id: number;
+        assistant: {
+            id: number;
+            name: string;
+        };
+        session_info: ClassroomSessionInfo;
+    };
+    errors?: any;
+}
+
 class ClassroomSessionAPI {
     private baseURL = "/admin/instructors/classroom";
 
@@ -57,6 +71,47 @@ class ClassroomSessionAPI {
             throw new Error("CSRF token not found");
         }
         return token;
+    }
+
+    /**
+     * Assign an instructor to a course (creates InstUnit without starting session)
+     */
+    async assignInstructor(
+        courseDateId: number,
+        instructorId?: number,
+        assistantId?: number
+    ): Promise<StartSessionResponse> {
+        try {
+            const csrfToken = await this.getCSRFToken();
+
+            const response = await fetch(
+                `${this.baseURL}/assign-instructor/${courseDateId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        instructor_id: instructorId || null,
+                        assistant_id: assistantId || null,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to assign instructor");
+            }
+
+            return data;
+        } catch (error) {
+            console.error("Error assigning instructor:", error);
+            throw error;
+        }
     }
 
     /**
@@ -135,11 +190,19 @@ class ClassroomSessionAPI {
     /**
      * Assist in a classroom session
      */
-    async assistClass(): Promise<{ success: boolean; message: string }> {
+    async assistClass(
+        courseDateId?: number,
+        instUnitId?: number
+    ): Promise<{ success: boolean; message: string; data?: any }> {
         try {
             const csrfToken = await this.getCSRFToken();
 
-            const response = await fetch(`${this.baseURL}/assist`, {
+            // Build URL with course date ID if provided
+            const url = courseDateId
+                ? `${this.baseURL}/assist/${courseDateId}`
+                : `${this.baseURL}/assist`;
+
+            const response = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -147,6 +210,10 @@ class ClassroomSessionAPI {
                     "X-Requested-With": "XMLHttpRequest",
                 },
                 credentials: "same-origin",
+                body: JSON.stringify({
+                    course_date_id: courseDateId,
+                    inst_unit_id: instUnitId,
+                }),
             });
 
             const data = await response.json();

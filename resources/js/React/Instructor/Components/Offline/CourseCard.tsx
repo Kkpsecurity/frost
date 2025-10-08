@@ -6,7 +6,9 @@ interface CourseCardProps {
     course: CourseDate;
     onCourseSelect?: (course: CourseDate) => void;
     onStartClass?: (course: CourseDate) => void;
+    onAssistClass?: (course: CourseDate) => void;
     onRefreshData?: () => void;
+    onDeleteCourse?: (course: CourseDate) => void;
 }
 
 const STATUS_META: Record<
@@ -39,7 +41,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
     course,
     onCourseSelect,
     onStartClass,
+    onAssistClass,
     onRefreshData,
+    onDeleteCourse,
 }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -95,7 +99,39 @@ const CourseCard: React.FC<CourseCardProps> = ({
     };
 
     const handleButtonClick = async (action: string, c: CourseDate) => {
-        if (action === "start_class" || action === "take_control") {
+        if (action === "assign_instructor") {
+            setIsLoading(true);
+            try {
+                const response = await classroomSessionAPI.assignInstructor(
+                    c.id
+                );
+                if (!response.success) {
+                    return alert(
+                        `Failed to assign instructor: ${response.message}`
+                    );
+                }
+                if (response.data) {
+                    c.inst_unit = {
+                        id: response.data.inst_unit_id,
+                        created_by: response.data.instructor.id,
+                        created_at: response.data.created_at,
+                        completed_at: null,
+                        assistant_id: response.data.assistant?.id || null,
+                        instructor: response.data.instructor.name,
+                        assistant: response.data.assistant?.name || null,
+                    };
+                    c.instructor_name = response.data.instructor.name;
+                    c.assistant_name = response.data.assistant?.name || null;
+                    c.class_status = "assigned";
+                }
+                alert(`Instructor assigned successfully: ${c.course_name}`);
+                onRefreshData && setTimeout(onRefreshData, 300);
+            } catch (e: any) {
+                alert(`Error assigning instructor: ${e?.message || e}`);
+            } finally {
+                setIsLoading(false);
+            }
+        } else if (action === "start_class" || action === "take_control") {
             setIsLoading(true);
             try {
                 const response = await classroomSessionAPI.startSession(c.id);
@@ -123,7 +159,39 @@ const CourseCard: React.FC<CourseCardProps> = ({
                 setIsLoading(false);
             }
         } else if (action === "assist") {
-            alert(`Assisting: ${c.course_name}`);
+            // Use the provided onAssistClass callback if available, otherwise fallback to direct API call
+            if (onAssistClass) {
+                onAssistClass(c);
+            } else {
+                setIsLoading(true);
+                try {
+                    const response = await classroomSessionAPI.assistClass(
+                        c.id,
+                        c.inst_unit?.id
+                    );
+                    if (!response.success) {
+                        return alert(`Failed to assist: ${response.message}`);
+                    }
+
+                    // Update the course data with assistant information
+                    if (response.data && response.data.assistant) {
+                        c.assistant_name = response.data.assistant.name;
+                        if (c.inst_unit) {
+                            c.inst_unit.assistant_id =
+                                response.data.assistant.id;
+                            c.inst_unit.assistant =
+                                response.data.assistant.name;
+                        }
+                    }
+
+                    alert(`Successfully joined as assistant: ${c.course_name}`);
+                    onRefreshData && setTimeout(onRefreshData, 300);
+                } catch (e: any) {
+                    alert(`Error assisting class: ${e?.message || e}`);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
         } else if (action === "complete") {
             if (!c.inst_unit?.id) return alert("No active session found.");
             // TODO: Implement course completion logic
@@ -223,6 +291,15 @@ const CourseCard: React.FC<CourseCardProps> = ({
                                     {course.course_name}
                                 </h5>
                             </div>
+                            {course.lesson_name && (
+                                <div className="mt-1 small text-primary fw-semibold">
+                                    <i
+                                        className="fas fa-calendar-day mr-2"
+                                        aria-hidden="true"
+                                    />
+                                    <span>{course.lesson_name}</span>
+                                </div>
+                            )}
                             <div className="mt-1 small text-muted">
                                 <i
                                     className="fas fa-bookmark mr-2"
@@ -317,11 +394,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
                                             alt=""
                                             width="28"
                                             height="28"
-                                            className="rounded-circle"
+                                            className="rounded-circle mr-2"
                                         />
                                         <div className="d-flex flex-column flex-grow-1">
                                             <span
-                                                className="small text-muted text-uppercase fw-bold"
+                                                className="small text-dark text-uppercase fw-bold "
                                                 style={{
                                                     fontSize: "0.65rem",
                                                     letterSpacing: "0.5px",
@@ -375,11 +452,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
                                             alt=""
                                             width="28"
                                             height="28"
-                                            className="rounded-circle"
+                                            className="rounded-circle mr-2"
                                         />
                                         <div className="d-flex flex-column flex-grow-1">
                                             <span
-                                                className="small text-muted text-uppercase fw-bold"
+                                                className="small text-dark text-uppercase fw-bold"
                                                 style={{
                                                     fontSize: "0.65rem",
                                                     letterSpacing: "0.5px",

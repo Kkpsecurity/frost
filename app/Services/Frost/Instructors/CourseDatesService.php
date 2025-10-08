@@ -367,6 +367,9 @@ class CourseDatesService
                         }
                     }
 
+                    // Get current authenticated user ID for instructor/assistant logic
+                    $currentUserId = auth('admin')->id();
+
                     // Determine class status based on InstUnit assignment FIRST, then time
                     $now = now();
                     $startTime = Carbon::parse($courseDate->starts_at);
@@ -462,14 +465,31 @@ class CourseDatesService
                                 if ($now->gte($startTime)) {
                                     // Class time has started/passed and instructor is assigned
                                     $classStatus = 'in_progress';
-                                    $buttons = [
-                                        'take_control' => 'Take Control',
-                                        'assist' => 'Assist'
-                                    ];
+
+                                    // Check if current user is the assigned instructor
+                                    if ($currentUserId && $instUnit->created_by == $currentUserId) {
+                                        // Current user IS the assigned instructor
+                                        $buttons = [
+                                            'take_control' => 'Take Control',
+                                            'complete' => 'Complete Class'
+                                        ];
+                                    } else {
+                                        // Current user is NOT the assigned instructor - show assistant view
+                                        $buttons = [
+                                            'assist' => 'Join as Assistant'
+                                        ];
+                                    }
                                 } else {
                                     // Before class time but instructor assigned
                                     $classStatus = 'assigned';
-                                    $buttons = ['info' => 'Instructor assigned - starts at ' . $startTime->format('g:i A')];
+
+                                    if ($currentUserId && $instUnit->created_by == $currentUserId) {
+                                        // Current user IS the assigned instructor
+                                        $buttons = ['info' => 'You are assigned - starts at ' . $startTime->format('g:i A')];
+                                    } else {
+                                        // Current user is NOT the assigned instructor
+                                        $buttons = ['info' => 'Instructor: ' . (($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) . ' - starts at ' . $startTime->format('g:i A')];
+                                    }
                                 }
                             }
                         }
@@ -503,11 +523,21 @@ class CourseDatesService
 
                     // Lesson count is already calculated above with CourseUnitObj
 
+                    // Create a more descriptive course name by combining course and lesson info
+                    $courseTitle = $course->title ?? 'Unknown Course';
+                    $lessonTitle = $courseUnit->title ?? 'Unknown Lesson';
+
+                    // If lesson title contains meaningful information, combine them
+                    $fullCourseName = $courseTitle;
+                    if ($lessonTitle && $lessonTitle !== 'Unknown Lesson' && !str_contains($courseTitle, $lessonTitle)) {
+                        $fullCourseName = $courseTitle . ' - ' . $lessonTitle;
+                    }
+
                     return [
                         'id' => $courseDate->id,
                         'time' => $startTime->format('h:i A'),
                         'duration' => $startTime->diffInHours($endTime) . ' hours',
-                        'course_name' => $course->title ?? 'Unknown Course',
+                        'course_name' => $fullCourseName,
                         'course_code' => $course->title ?? 'N/A',
                         'lesson_name' => $courseUnit->title ?? 'Unknown Lesson',
                         'module' => $courseUnit->admin_title ?? 'Module N/A',

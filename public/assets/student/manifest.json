@@ -1,9 +1,9 @@
 {
-  "generated_at": "2025-10-08T17:47:03.807Z",
+  "generated_at": "2025-10-08T19:39:25.724Z",
   "build_info": {
     "vite_version": "4.5.14",
     "environment": "production",
-    "timestamp": 1759945623810
+    "timestamp": 1759952365728
   },
   "assets": {
     "student": {
@@ -30,8 +30,8 @@
       }
     },
     "dashboard": {
-      "_InstructorDashboard-a2683f97.js": {
-        "file": "assets/InstructorDashboard-a2683f97.js",
+      "_InstructorDashboard-dd512894.js": {
+        "file": "assets/InstructorDashboard-dd512894.js",
         "imports": [
           "_client-51f689cc.js",
           "_QueryClientProvider-8f198b1f.js"

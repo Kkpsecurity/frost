@@ -7,13 +7,13 @@
  * that the InstUnit data is properly returned in the lessons.
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 // Bootstrap Laravel
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+$app = require_once __DIR__ . '/../../bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 echo "=== Today's Lessons API Test ===\n\n";
@@ -46,7 +46,8 @@ try {
     if (!empty($lessonsData['lessons'])) {
         echo "\n--- Lesson Details ---\n";
         foreach ($lessonsData['lessons'] as $index => $lesson) {
-            echo "#{$index + 1}: {$lesson['course_name']} - {$lesson['lesson_name']}\n";
+            $lessonNumber = $index + 1;
+            echo "#{$lessonNumber}: {$lesson['course_name']} - {$lesson['lesson_name']}\n";
             echo "  - ID: {$lesson['id']}\n";
             echo "  - Time: {$lesson['time']}\n";
             echo "  - Status: {$lesson['class_status']}\n";

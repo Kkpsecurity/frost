@@ -7,6 +7,7 @@ interface CoursesGridProps {
     courses: CourseDate[];
     onCourseSelect?: (course: CourseDate) => void;
     onStartClass?: (course: CourseDate) => void;
+    onAssistClass?: (course: CourseDate) => void;
     onRefreshData?: () => void; // Add refresh callback
     onDeleteCourse?: (course: CourseDate) => void;
 }
@@ -15,6 +16,7 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
     courses,
     onCourseSelect,
     onStartClass,
+    onAssistClass,
     onRefreshData,
     onDeleteCourse,
 }) => {
@@ -36,6 +38,7 @@ const CoursesGrid: React.FC<CoursesGridProps> = ({
                         course={course}
                         onCourseSelect={onCourseSelect}
                         onStartClass={onStartClass}
+                        onAssistClass={onAssistClass}
                         onRefreshData={onRefreshData}
                         onDeleteCourse={onDeleteCourse}
                     />

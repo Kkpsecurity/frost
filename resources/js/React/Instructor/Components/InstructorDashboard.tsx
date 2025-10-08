@@ -11,6 +11,9 @@ import {
 } from "./Offline";
 import AssignmentHistoryTable from "./Offline/AssignmentHistoryTable";
 import ClassroomManager from "./ClassroomManager";
+import AssistantView from "../Views/AssistantView";
+import { useInstructorAssignment } from "../Hooks/useInstructorAssignment";
+import { useClassroomActions } from "../Hooks/useClassroomActions";
 
 const InstructorDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState<"dashboard" | "classroom">(
@@ -33,31 +36,44 @@ const InstructorDashboard: React.FC = () => {
         lastUpdated,
     } = useBulletinBoard();
 
-    // Auto-determine view based on active InstUnit
-    useEffect(() => {
-        // Find any course with active InstUnit (CourseDate + InstUnit = classroom mode)
-        const activeClass = courses?.find(
-            (course) =>
-                course.inst_unit &&
-                course.class_status === "in_progress" &&
-                course.inst_unit.completed_at === null
-        );
+    // Hook to detect instructor/assistant assignments
+    const {
+        assignedCourse,
+        isInstructor,
+        isAssistant,
+        shouldEnterClassroom,
+        currentUserId,
+    } = useInstructorAssignment({
+        courses,
+        currentUserId: 2, // TODO: Get from auth context - your user ID for testing
+        autoEnterClassroom: true, // Enable auto-enter for assistant feature
+    });
 
-        if (activeClass) {
-            // CourseDate + InstUnit = Classroom Mode
-            console.log(
-                "🎯 Active InstUnit found, entering classroom mode:",
-                activeClass
-            );
-            setSelectedCourse(activeClass);
+    // Hook for classroom joining actions
+    const {
+        isLoading: classroomLoading,
+        error: classroomError,
+        joinAsInstructor,
+        joinAsAssistant,
+        leaveClassroom,
+        clearError,
+    } = useClassroomActions();
+
+    // Handle classroom view switching based on assignment
+    useEffect(() => {
+        if (shouldEnterClassroom && assignedCourse) {
+            console.log("🎯 Entering classroom mode:", {
+                course: assignedCourse.course_name,
+                role: isInstructor ? "instructor" : "assistant",
+            });
+            setSelectedCourse(assignedCourse);
             setCurrentView("classroom");
         } else {
-            // CourseDate only OR No CourseDate = Bulletin Board Mode
-            console.log("📋 No active InstUnit, showing bulletin board");
+            console.log("📋 Staying on bulletin board");
             setCurrentView("dashboard");
             setSelectedCourse(null);
         }
-    }, [courses]);
+    }, [shouldEnterClassroom, assignedCourse, isInstructor, isAssistant]);
 
     const handleCourseSelect = (courseDate: CourseDate) => {
         console.log("Selected course:", courseDate);
@@ -66,20 +82,39 @@ const InstructorDashboard: React.FC = () => {
 
     const handleStartClass = async (courseDate: CourseDate) => {
         console.log("Starting class:", courseDate);
-        // TODO: Create InstUnit via API call
-        // For now, simulate starting the class
-        setSelectedCourse(courseDate);
-        setCurrentView("classroom");
+        clearError(); // Clear any previous errors
+
+        const success = await joinAsInstructor(courseDate);
+        if (success) {
+            setSelectedCourse(courseDate);
+            setCurrentView("classroom");
+            refetch(); // Refresh data to show updated InstUnit
+        }
+    };
+
+    const handleJoinAsAssistant = async (courseDate: CourseDate) => {
+        console.log("Joining as assistant:", courseDate);
+        clearError(); // Clear any previous errors
+
+        const success = await joinAsAssistant(courseDate);
+        if (success) {
+            setSelectedCourse(courseDate);
+            setCurrentView("classroom");
+            refetch(); // Refresh data to show updated InstUnit
+        }
     };
 
     const handleExitClassroom = async () => {
         console.log("Ending class:", selectedCourse);
-        // TODO: End InstUnit via API call
-        // For now, simulate ending the class
+        clearError(); // Clear any previous errors
+
+        if (selectedCourse?.inst_unit?.id) {
+            await leaveClassroom(selectedCourse.inst_unit.id);
+        }
+
         setCurrentView("dashboard");
         setSelectedCourse(null);
-        // Refresh data to reflect InstUnit is ended
-        refetch();
+        refetch(); // Refresh data to reflect InstUnit is ended
     };
 
     const handleAdminAction = () => {
@@ -97,23 +132,41 @@ const InstructorDashboard: React.FC = () => {
         refetch(); // Refresh the bulletin board data after deletion
     };
 
-    // Show classroom view when instructor starts a class
+    // Show classroom view when instructor starts a class or assistant joins
     if (currentView === "classroom" && selectedCourse) {
-        return (
-            <ClassroomManager
-                initialCourse={selectedCourse}
-                onExitClassroom={handleExitClassroom}
-            />
-        );
+        // Determine if current user is assistant for this course
+        const userIsAssistant =
+            selectedCourse.inst_unit &&
+            selectedCourse.inst_unit.assistant_id === currentUserId;
+
+        if (userIsAssistant) {
+            // Show Assistant View
+            return (
+                <AssistantView
+                    course={selectedCourse}
+                    onExitClassroom={handleExitClassroom}
+                />
+            );
+        } else {
+            // Show Instructor Classroom Manager
+            return (
+                <ClassroomManager
+                    initialCourse={selectedCourse}
+                    onExitClassroom={handleExitClassroom}
+                />
+            );
+        }
     }
 
     // Show main dashboard
-    if (loading) {
+    if (loading || classroomLoading) {
         return <LoadingState />;
     }
 
-    if (error) {
-        return <ErrorState error={error} />;
+    // Prioritize classroom errors over general errors
+    const displayError = classroomError || error;
+    if (displayError) {
+        return <ErrorState error={displayError} />;
     }
 
     // Show all courses (no filtering - bulletin board shows everything)
@@ -135,6 +188,7 @@ const InstructorDashboard: React.FC = () => {
                         courses={filteredCourses}
                         onCourseSelect={handleCourseSelect}
                         onStartClass={handleStartClass}
+                        onAssistClass={handleJoinAsAssistant}
                         onRefreshData={refetch}
                         onDeleteCourse={handleDeleteCourse}
                     />
