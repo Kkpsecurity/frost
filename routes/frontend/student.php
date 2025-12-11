@@ -1,0 +1,125 @@
+<?php
+
+use App\Http\Controllers\Student\StudentDashboardController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Student Routes
+|--------------------------------------------------------------------------
+|
+| Web routes for student React application using Inertia.js
+|
+*/
+
+/**
+ * Student Dashboard Routes (Web only - no API routes needed for Inertia/React)
+ */
+Route::middleware(['auth'])->group(function () {
+
+    /**
+     * DEBUG ROUTES - must come before parameterized routes
+     */
+    Route::get('/classroom/debug', [StudentDashboardController::class, 'debug'])
+        ->name('classroom.debug');
+
+    // Debug route for classroom data only
+    Route::get('/classroom/debug/class', [StudentDashboardController::class, 'debugClass'])
+        ->name('classroom.debug.class');
+
+    // Debug route for student data only
+    Route::get('/classroom/debug/student', [StudentDashboardController::class, 'debugStudent'])
+        ->name('classroom.debug.student');
+
+    /**
+     * Student Polling Routes - must come before parameterized routes
+     */
+    Route::get('/classroom/student/data', [StudentDashboardController::class, 'getStudentData'])
+        ->name('classroom.student.data');
+
+    Route::get('/classroom/class/data', [StudentDashboardController::class, 'getClassData'])
+        ->name('classroom.class.data');
+
+    /**
+     * New Configuration-Based Student Data Routes
+     */
+    Route::get('/classroom/student/data-array', [StudentDashboardController::class, 'getStudentDataArray'])
+        ->name('classroom.student.data-array');
+
+    Route::get('/classroom/student/poll', [StudentDashboardController::class, 'getStudentPollData'])
+        ->name('classroom.student.poll');
+
+    /**
+     * Zoom Portal Routes - Iframe isolated Zoom SDK
+     */
+    Route::get('/classroom/portal/zoom/screen_share/{courseAuthId}/{courseDateId}', [StudentDashboardController::class, 'zoomScreenShare'])
+        ->name('classroom.zoom.screen-share');
+
+    Route::post('/classroom/portal/zoom/generate-signature', [StudentDashboardController::class, 'generateZoomSignature'])
+        ->name('classroom.zoom.generate-signature');
+
+    /**
+     * Student Attendance Routes
+     */
+    Route::post('/classroom/enter-class', [StudentDashboardController::class, 'enterClass'])
+        ->name('classroom.enter');
+
+    Route::get('/classroom/attendance/data', [StudentDashboardController::class, 'getAttendanceData'])
+        ->name('classroom.attendance.data');
+
+    Route::get('/classroom/attendance/{courseDateId}', [StudentDashboardController::class, 'getClassAttendance'])
+        ->where('courseDateId', '[0-9]+')
+        ->name('classroom.attendance.class');
+
+    /**
+     * Student ID Verification Routes
+     */
+    Route::post('/classroom/id-verification/start', [StudentDashboardController::class, 'startIdVerification'])
+        ->name('classroom.id-verification.start');
+
+    Route::get('/classroom/id-verification/status/{studentId}', [StudentDashboardController::class, 'getIdVerificationStatus'])
+        ->where('studentId', '[0-9]+')
+        ->name('classroom.id-verification.status');
+
+    Route::get('/classroom/id-verification/summary/{verificationId}', [StudentDashboardController::class, 'getIdVerificationSummary'])
+        ->where('verificationId', '[0-9]+')
+        ->name('classroom.id-verification.summary');
+
+    /**
+     * Student Session & Lesson Management Routes (Phase 1)
+     */
+    // Session synchronization endpoints
+    Route::get('/classroom/session/check-sync', [StudentDashboardController::class, 'checkSessionSync'])
+        ->name('classroom.session.check-sync');
+
+    Route::get('/classroom/session/restore', [StudentDashboardController::class, 'restoreSession'])
+        ->name('classroom.session.restore');
+
+    Route::post('/classroom/session/create', [StudentDashboardController::class, 'createSession'])
+        ->name('classroom.session.create');
+
+    // Lesson management endpoints
+    Route::post('/classroom/lesson/start', [StudentDashboardController::class, 'startLessonSession'])
+        ->name('classroom.lesson.start');
+
+    Route::post('/classroom/lesson/sync-progress', [StudentDashboardController::class, 'syncLessonProgress'])
+        ->name('classroom.lesson.sync-progress');
+
+    Route::post('/classroom/lesson/pause', [StudentDashboardController::class, 'pauseLessonSession'])
+        ->name('classroom.lesson.pause');
+
+    Route::post('/classroom/lesson/complete', [StudentDashboardController::class, 'completeLessonSession'])
+        ->name('classroom.lesson.complete');
+
+    // Main student classroom dashboard
+    Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
+        ->name('classroom.dashboard');
+
+    // Student classroom with course ID - MUST come last
+    Route::get('/classroom/{id}', [StudentDashboardController::class, 'dashboard'])
+        ->where('id', '[0-9]+')  // Only match numeric IDs
+        ->name('classroom.course');
+
+
+
+});

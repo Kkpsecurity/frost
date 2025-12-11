@@ -1,0 +1,930 @@
+/**
+ * Admin Custom CSS
+ * Additional styles for the admin panel
+ */
+
+/* Instructor Dashboard Specific Styles */
+.instructor-dashboard {
+    padding: 20px;
+}
+
+.instructor-dashboard .classroom-interface {
+    margin-top: 20px;
+}
+
+/* Notification Badges */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Fix for AdminLTE sidebar notifications */
+.control-sidebar-content {
+    padding: 15px;
+}
+
+.notification-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* React Component Loading States */
+.react-component-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.react-component-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+/* Instructor Classroom Interface Styles */
+.classroom-interface .alert {
+    margin: 15px;
+}
+
+.classroom-interface .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Button improvements */
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+/* Control sidebar width override - set to 500px */
+.control-sidebar {
+    width: 500px !important;
+    transition: right 0.3s ease-in-out !important;
+    right: -500px !important;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 1040 !important;
+    overflow-y: auto !important;
+}
+
+/* When sidebar is open/slide, position it correctly */
+.control-sidebar-slide-open .control-sidebar {
+    right: 0 !important;
+}
+
+/* Ensure main content doesn't move when sidebar opens (slide mode) */
+.control-sidebar-slide-open .wrapper {
+    margin-right: 0 !important;
+}
+
+/* Communication Sidebar Specific Styles */
+.communication-sidebar .sidebar-header {
+    background: rgba(0,0,0,0.02);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.communication-sidebar .sidebar-close-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.communication-sidebar .sidebar-close-btn:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.communication-sidebar .message-item {
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+    padding: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.communication-sidebar .message-item:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.communication-sidebar .message-item.unread {
+    background-color: rgba(0,123,255,0.05);
+    border-left: 3px solid #007bff;
+}
+
+.communication-sidebar .message-item:last-child {
+    border-bottom: none;
+}
+
+.communication-sidebar .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.communication-sidebar .message-from {
+    display: flex;
+    align-items: center;
+}
+
+.communication-sidebar .message-subject {
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.communication-sidebar .message-preview {
+    color: #6c757d;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+/* Notification specific styles */
+.communication-sidebar .notification-actions {
+    margin-top: 8px;
+}
+
+.communication-sidebar .notification-actions .btn {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+}
+
+/* Activity list styles */
+.communication-sidebar .activity-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Empty state styles */
+.communication-sidebar .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.communication-sidebar .empty-state i {
+    color: #dee2e6;
+    margin-bottom: 15px;
+}
+
+/* Tab badges */
+.communication-sidebar .nav-tabs .badge {
+    font-size: 0.7rem;
+    padding: 2px 5px;
+}
+
+/* Custom tab styles */
+.communication-sidebar .custom-tabs .nav-link {
+    color: #495057;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 12px 15px;
+}
+
+.communication-sidebar .custom-tabs .nav-link.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    background-color: transparent;
+}
+
+.communication-sidebar .custom-tabs .nav-link:hover {
+    border-color: transparent;
+    background-color: rgba(0,123,255,0.1);
+}
+
+/* Alternative approach - use CSS custom properties */
+:root {
+    --control-sidebar-width: 500px;
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --info-color: #17a2b8;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+/* Force all AdminLTE layout variations */
+.layout-navbar-fixed .wrapper .control-sidebar,
+.layout-navbar-fixed.layout-fixed .wrapper .control-sidebar,
+.layout-fixed .wrapper .control-sidebar {
+    width: var(--control-sidebar-width) !important;
+    right: calc(-1 * var(--control-sidebar-width)) !important;
+}
+
+/* Push mode - when sidebar opens, push content */
+.control-sidebar-push-open .wrapper {
+    margin-right: var(--control-sidebar-width) !important;
+}
+
+/* Ensure sidebar content is visible in push mode */
+.control-sidebar-push-open .control-sidebar {
+    right: 0 !important;
+}
+
+/* ===== TABBED COMMUNICATION INTERFACE STYLES ===== */
+
+/* Main Communication Sidebar Container */
+.communication-sidebar {
+    height: 100%;
+    background: transparent;
+    color: #c2c7d0;
+}
+
+/* Tab Navigation Styling */
+.communication-sidebar .nav-tabs-custom {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.communication-sidebar .nav-tabs {
+    border-bottom: none;
+    background: transparent;
+}
+
+.communication-sidebar .nav-tabs .nav-item {
+    margin-bottom: 0;
+}
+
+.communication-sidebar .nav-tabs .nav-link {
+    border: none;
+    border-radius: 0;
+    padding: 12px 8px;
+    background: transparent;
+    color: #adb5bd;
+    font-size: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+}
+
+.communication-sidebar .nav-tabs .nav-link:hover {
+    border-color: transparent;
+    background: rgba(52, 144, 220, 0.2);
+    color: #3490dc;
+}
+
+.communication-sidebar .nav-tabs .nav-link.active {
+    background: transparent;
+    color: #3490dc;
+    border-bottom-color: #3490dc;
+    font-weight: 600;
+}
+
+.communication-sidebar .nav-tabs .nav-link .badge {
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 10px;
+}
+
+/* Tab Content */
+.communication-sidebar .tab-content {
+    padding: 15px;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+}
+
+.communication-sidebar .tab-pane {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.communication-sidebar .card {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    margin-bottom: 0;
+    color: #c2c7d0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.communication-sidebar .card-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    color: #c2c7d0;
+}
+
+.communication-sidebar .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Message List (Email Style) */
+.communication-sidebar .message-list {
+    background: transparent !important;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.communication-sidebar .card-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.communication-sidebar .card-footer {
+    flex-shrink: 0;
+}
+
+.communication-sidebar .message-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.communication-sidebar .message-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.communication-sidebar .message-item.unread {
+    background: rgba(52, 144, 220, 0.1);
+    border-left: 3px solid #3490dc;
+}
+
+.communication-sidebar .message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.communication-sidebar .message-from {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+}
+
+.communication-sidebar .message-time {
+    font-size: 10px;
+}
+
+.communication-sidebar .message-subject {
+    font-size: 12px;
+    font-weight: 600;
+    color: #c2c7d0;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.communication-sidebar .message-preview {
+    font-size: 11px;
+    color: rgba(194, 199, 208, 0.7);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.communication-sidebar .message-item.unread .message-subject {
+    color: #3490dc;
+}
+
+.communication-sidebar .message-item.unread .message-from strong {
+    color: #3490dc;
+}
+
+/* List Group for Notifications */
+.communication-sidebar .list-group-item {
+    background: transparent;
+    border-left: none;
+    border-right: none;
+    border-color: rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    font-size: 12px;
+    color: #c2c7d0;
+}
+
+.communication-sidebar .list-group-item:first-child {
+    border-top: none;
+}
+
+.communication-sidebar .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.communication-sidebar .list-group-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Video Chat Buttons */
+.communication-sidebar .btn-group-vertical .btn {
+    font-size: 12px;
+    padding: 8px 16px;
+}
+
+.communication-sidebar .callout {
+    padding: 10px;
+    margin: 15px 0 0 0;
+    font-size: 11px;
+}
+
+.communication-sidebar .callout h5 {
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+/* Force all white backgrounds to be transparent in dark theme */
+.communication-sidebar .card-body,
+.communication-sidebar .card-footer,
+.communication-sidebar .tab-content,
+.communication-sidebar .tab-pane,
+.communication-sidebar .callout {
+    background: transparent !important;
+    color: #c2c7d0;
+}
+
+.communication-sidebar .form-control {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #c2c7d0 !important;
+}
+
+.communication-sidebar .form-control::placeholder {
+    color: rgba(194, 199, 208, 0.6) !important;
+}
+
+/* Container */
+.communication-tabs-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    background: #fff;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0;
+}
+
+.custom-tabs {
+    border-bottom: none;
+    margin: 0;
+}
+
+.custom-tabs .nav-item {
+    flex: 1;
+}
+
+.custom-tabs .nav-link {
+    border: none;
+    border-radius: 0;
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    background: none;
+    transition: all 0.2s ease;
+    position: relative;
+    border-bottom: 3px solid transparent;
+}
+
+.custom-tabs .nav-link:hover {
+    color: var(--primary-color);
+    background: #f8f9fa;
+}
+
+.custom-tabs .nav-link.active {
+    color: var(--primary-color);
+    background: #fff;
+    border-bottom-color: var(--primary-color);
+}
+
+.custom-tabs .nav-link i {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.custom-tabs .tab-text {
+    display: block;
+    font-size: 10px;
+}
+
+.custom-tabs .badge {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+}
+
+/* Tab Content */
+.tab-content {
+    flex: 1;
+    overflow: hidden;
+    background: #fff;
+}
+
+.tab-pane {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Panel Headers */
+.panel-header {
+    padding: 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    flex: 1;
+}
+
+.compose-btn, #mark-all-read {
+    margin-left: auto;
+}
+
+/* Panel Content */
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+/* ===== MESSAGES STYLES ===== */
+.message-threads {
+    padding: 0;
+}
+
+.message-thread {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.message-thread:hover {
+    background: #f8f9fa;
+}
+
+.message-thread.unread {
+    background: #e3f2fd;
+    border-left: 3px solid var(--primary-color);
+}
+
+.thread-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-fallback {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.status-indicator.online { background: var(--success-color); }
+.status-indicator.away { background: var(--warning-color); }
+.status-indicator.offline { background: #6c757d; }
+
+.thread-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.thread-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.thread-sender {
+    font-weight: 600;
+    font-size: 13px;
+    color: #495057;
+}
+
+.thread-time {
+    font-size: 11px;
+    color: #6c757d;
+    margin-left: auto;
+}
+
+.thread-preview {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.thread-meta {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.thread-course {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* ===== NOTIFICATIONS STYLES ===== */
+.notification-list {
+    padding: 0;
+}
+
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item.unread {
+    background: #e8f4fd;
+    border-left: 3px solid var(--info-color);
+}
+
+.notification-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: #495057;
+    margin-bottom: 2px;
+}
+
+.notification-text {
+    font-size: 11px;
+    color: #6c757d;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.notification-time {
+    font-size: 10px;
+    color: #adb5bd;
+}
+
+.notification-actions {
+    flex-shrink: 0;
+}
+
+.btn-xs {
+    padding: 2px 6px;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+/* ===== COMMUNICATION/SUPPORT STYLES ===== */
+.status-indicator-group {
+    margin-left: auto;
+}
+
+.status-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.online {
+    background: #d4edda;
+    color: #155724;
+}
+
+.quick-actions {
+    padding: 15px;
+}
+
+.support-activity, .help-resources {
+    padding: 0 15px 15px;
+}
+
+.section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.activity-list {
+    margin: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.activity-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    font-size: 11px;
+    color: #495057;
+    margin-bottom: 2px;
+}
+
+.activity-text {
+    font-size: 10px;
+    color: #6c757d;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.activity-time {
+    font-size: 9px;
+    color: #adb5bd;
+}
+
+.resource-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.resource-link {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #495057;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.resource-link:hover {
+    background: #e9ecef;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* ===== EMPTY STATES ===== */
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state i {
+    opacity: 0.5;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 576px) {
+    .custom-tabs .tab-text {
+        display: none;
+    }
+
+    .custom-tabs .nav-link {
+        padding: 10px 4px;
+    }
+
+    .panel-header {
+        padding: 10px;
+    }
+
+    .message-thread, .notification-item {
+        padding: 10px;
+    }
+}
+
+/* Additional spacing for messaging content in control sidebar */
+.control-sidebar .messaging-container {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.control-sidebar .notification-container {
+    padding: 15px;
+    height: 100%;
+    overflow-y: auto;
+}

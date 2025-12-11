@@ -1,0 +1,151 @@
+.search-filter-container {
+  margin-bottom: 10px;
+  padding: 20px;
+  border-bottom: 1px solid #f4f4f4;
+}
+.search-filter__input {
+  border-radius: 0;
+  border: 1px solid #d2d6de;
+  box-shadow: none;
+  height: 50px;
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 16px;
+}
+.search-filter__input:focus {
+  outline: none;
+  border-color: #4d90fe;
+  box-shadow: 0 0 5px #4d90fe;
+}
+#daterange {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.sort-icons {
+  display: inline-block;
+  margin-left: 5px;
+  cursor: pointer;
+}
+.sort-icons i {
+  vertical-align: middle;
+}
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #2196f3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196f3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+.form-control {
+  background-color: #f8f9fa; /* set background color of form elements */
+  border-color: #ced4da; /* set border color of form elements */
+  color: #212529; /* set text color of form elements */
+}
+
+.form-group label {
+  font-weight: bold; /* make form labels bold */
+  color: #212529; /* set label text color */
+}
+
+.form-group.required label:after {
+  content: " *"; /* add asterisk to required field labels */
+  color: red; /* set color of asterisk */
+}
+
+.form-group .help-block {
+  color: #999999; /* set color of help text */
+}
+
+.btn-primary {
+  background-color: #007bff; /* set background color of primary button */
+  border-color: #007bff; /* set border color of primary button */
+  color: #ffffff; /* set text color of primary button */
+}
+
+.btn-primary:hover {
+  background-color: #0069d9; /* set background color of primary button on hover */
+  border-color: #0062cc; /* set border color of primary button on hover */
+  color: #ffffff; /* set text color of primary button on hover */
+}
+
+.alert-info {
+  background-color: #d1ecf1; /* set background color of info alert */
+  border-color: #bee5eb; /* set border color of info alert */
+  color: #0c5460; /* set text color of info alert */
+}
+.form-group {
+  background-color: #f9f9f9;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.form-group:nth-of-type(even) {
+  background-color: #f5f5f5;
+}
+
+.form-control {
+  background-color: #f5f5f5;
+  color: #555;
+  border-color: #ddd;
+}
+
+.form-control:focus {
+  background-color: #fff;
+  color: #333;
+  border-color: #3c8dbc;
+}

@@ -1,0 +1,165 @@
+/* Main Application CSS */
+@import './style.css';
+@import './root.css';
+@import './utilities.css';
+
+/* Bootstrap Spacing Fix - Convert me-* to mr-* for better compatibility */
+.me-1 { margin-right: 0.25rem !important; }
+.me-2 { margin-right: 0.5rem !important; }
+.me-3 { margin-right: 1rem !important; }
+.me-4 { margin-right: 1.5rem !important; }
+.me-5 { margin-right: 3rem !important; }
+
+.ms-1 { margin-left: 0.25rem !important; }
+.ms-2 { margin-left: 0.5rem !important; }
+.ms-3 { margin-left: 1rem !important; }
+.ms-4 { margin-left: 1.5rem !important; }
+.ms-5 { margin-left: 3rem !important; }
+
+.pe-1 { padding-right: 0.25rem !important; }
+.pe-2 { padding-right: 0.5rem !important; }
+.pe-3 { padding-right: 1rem !important; }
+.pe-4 { padding-right: 1.5rem !important; }
+.pe-5 { padding-right: 3rem !important; }
+
+.ps-1 { padding-left: 0.25rem !important; }
+.ps-2 { padding-left: 0.5rem !important; }
+.ps-3 { padding-left: 1rem !important; }
+.ps-4 { padding-left: 1.5rem !important; }
+.ps-5 { padding-left: 3rem !important; }
+
+/* Student Sidebar Enhancements */
+/* Subtle Blue-Green Tint - Much Darker */
+.bg-light-success {
+    background-color: #2C5F5F !important; /* Much darker blue-green, closer to sidebar theme */
+}
+
+.text-light-success {
+    color: #2C5F5F !important;
+}
+
+.btn-outline-light-success {
+    color: #2C5F5F;
+    border-color: #2C5F5F;
+}
+
+.btn-outline-light-success:hover {
+    color: #fff;
+    background-color: #2C5F5F;
+    border-color: #2C5F5F;
+}
+
+/* Ultra Thin Scrollbar */
+.ultra-thin-scrollbar {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.ultra-thin-scrollbar::-webkit-scrollbar {
+    width: 4px; /* Much thinner than default */
+}
+
+.ultra-thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ultra-thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+
+.ultra-thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Hide scrollbar corner */
+.ultra-thin-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Enroll Button Styles */
+.enroll-button-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.enroll-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.enroll-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+.register-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+}
+
+.register-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+.active-btn {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    border: none;
+}
+
+.active-btn:hover {
+    background: linear-gradient(135deg, #1e7e34, #155724);
+}
+
+/* Lesson Progress Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Navbar Fix - Ensure navigation stays right-aligned */
+.header-area .navbar-nav {
+    margin-left: auto !important;
+}
+
+.header-area .navbar-collapse {
+    justify-content: flex-end !important;
+}
+
+/* Prevent React components from affecting navbar */
+nav.navbar .navbar-nav.ms-auto {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}

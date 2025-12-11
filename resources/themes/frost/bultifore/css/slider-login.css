@@ -1,0 +1,254 @@
+/*----------------------------------------*/
+/*  Welcome Slider Area
+/*----------------------------------------*/
+
+.slider-area {
+    background: rgba(0, 0, 0, 0)
+        url(../img/background/thomas-def-MfM3p2yn4Ew-unsplash-1-scaled.jpg)
+        no-repeat scroll top center / cover;
+    width: 100%;
+    min-height: 600px;
+    height: auto;
+    padding: 100px 0px;
+    margin-top: 140px;
+    position: relative;
+    z-index: 1;
+}
+
+.slider-area::after {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(7, 11, 41, 0.8);
+    content: "";
+    z-index: -1;
+}
+
+.slider-content {
+    overflow: hidden;
+    padding: 0px 0px;
+}
+
+.slider-content h2 {
+    font-size: 38px;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.slider-content p {
+    padding: 20px;
+    font-size: 18px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.slider-area .login-panel {
+    margin-top: 40px;
+    padding: 30px 30px;
+    width: 430px;
+    position: relative;
+    z-index: 1;
+}
+
+.slider-area .login-panel::before {
+    content: "";
+    position: absolute;
+    right: -30px;
+    top: -30px;
+    width: 60%;
+    height: 115%;
+    opacity: 0.8;
+    z-index: -1;
+    border-radius: 3px;
+    background: var(--frost-base-color);
+}
+
+.all-services {
+    overflow: hidden;
+    background: #1b2654;
+    border-radius: 0.25rem;
+}
+
+.well-services {
+    width: 100%;
+    margin: 1px;
+    text-align: center;
+    overflow: hidden;
+    transition: transform 0.4s;
+    padding: 0.875rem 0 0.625rem;
+    z-index: 1;
+}
+
+.main-wel {
+    width: 100%;
+    padding: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+}
+
+.wel-img {
+    position: relative;
+    z-index: 1;
+    padding: 10px;
+}
+
+.main-wel .btn {
+    margin: 0 0.3125rem 0.3125rem;
+    padding: 0.525rem 1.05rem;
+    font-size: 0.775rem;
+    font-weight: 600;
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.5s;
+}
+
+.wel-content p {
+    margin-bottom: 0;
+    text-align: center;
+    width: 80%;
+    margin: 0 auto;
+    color: #999;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 0 0 0.625rem;
+}
+
+.wel-content h4 {
+    display: inline-block;
+    font-size: 1.2rem;
+    margin-bottom: 0;
+    color: var(--frost-light-color);
+    padding: 0 0 0.625rem;
+    font-weight: 600;
+}
+
+.wel-content h4 span {
+    color: var(--frost-info-color);
+    font-weight: 700;
+    padding-right: 0.625rem;
+}
+
+.well-services:hover .big-icon::after {
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 1;
+}
+
+.wel-content .price {
+    color: #999;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.well-services.first-item,
+.well-services.thired-item {
+    position: relative;
+    top: 3.75rem;
+}
+
+.account-profile-container {
+    height: 260px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.account-profile {
+    width: 100%;
+    height: 260px;
+    text-align: center;
+}
+
+.profile-detail h4 {
+    font-size: 24px;
+    color: var(--frost-white-color);
+}
+
+.profile-detail p {
+    font-size: 18px;
+}
+
+.login-form-inner {
+    padding: 20px;
+    background: #1b2654;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+.login-btn {
+    border: 1px solid var(--frost-info-color);
+    display: inline-block;
+    font-weight: 600;
+    margin: 0px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 0.4s ease 0s;
+    width: auto;
+    border-radius: 0px;
+    background-color: var(--frost-info-color);
+    color: var(--frost-white-color);
+    height: 50px;
+    font-size: 16px;
+}
+
+.login-btn:hover {
+    background-color: transparent;
+    color: var(--frost-info-color);
+    transition: all 0.4s ease 0s;
+}
+
+.big-icon {
+    font-size: 60px;
+    display: inline-block;
+    line-height: 64px;
+    color: var(--frost-white-color);
+    position: relative;
+    z-index: 1;
+}
+
+.big-icon::after {
+    position: absolute;
+    content: "";
+    left: -25px;
+    top: -15px;
+    background: var(--frost-info-color);
+    z-index: -1;
+    width: 70px;
+    height: 70px;
+    opacity: 0.5;
+    border-radius: 50%;
+    transition: 0.5s;
+    box-shadow: 0 0 0 0 rgba(23, 170, 201, 0.5);
+}
+
+.big-icon img {
+    width: 12rem;
+    height: 10rem;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+}
+
+@media screen and (max-width: 380px) {
+    .slider-area {
+        padding: 50px 0px;
+    }
+
+    .slider-content {
+        margin-top: -30px;
+        padding: 0px 0px;
+    }
+
+    .slider-content h2 {
+        font-size: 24px;
+    }
+
+    .slider-content p {
+        font-size: 14px;
+    }
+}

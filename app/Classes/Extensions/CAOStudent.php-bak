@@ -1,0 +1,197 @@
+<?php
+
+namespace App\Classes\Extensions;
+
+use stdClass;
+
+use RCache;
+use App\Models\CourseDate;
+use App\Models\CourseUnit;
+use App\Models\InstUnit;
+use App\Models\StudentLesson;
+use App\Models\StudentUnit;
+
+
+trait CAOStudent
+{
+
+
+    public function CanJoinClass( CourseDate $CourseDate ) : stdClass
+    {
+
+        $result = (object) [
+            'can_join'      => false,
+            'error_msg'     => null,
+        ];
+
+
+        if ( $this->_CourseAuth->completed_at or $this->_CourseAuth->IsExpired() )
+        {
+            logger( '*** COMPLETED OR EXPIRED ***' );
+            return $result;
+        }
+
+        /*  FIXME RETURN THIS
+		if ( ! $CourseDate->Starts_Soon() )
+		{
+            logger( '*** CLASS NOT STARTING SOON ***' );
+            $result->error_msg = 'Class Not Starting Soon';
+            return $result;
+        }
+        */
+
+		if ( $CourseDate->Is_Ended() )
+		{
+            logger( '*** CLASS ALREADY ENDED ***' );
+            $result->error_msg = 'Class Has Already Ended';
+            return $result;
+        }
+
+
+        $result->can_join = true;
+        return $result;
+
+    }
+
+
+    public function StudentUnit_InstUnit( CourseDate $CourseDate ) : ?StudentUnit
+    {
+
+        //
+        // has an instructor come online?
+        //   if not, there can't be a matching StudentUnit
+        //
+
+        if ( ! $InstUnit = $CourseDate->InstUnit )
+        {
+            #logger( "StudentUnit_InstUnit( {$CourseDate->id} ) no InstUnit" );
+            return null;
+        }
+
+        //
+        // instructor has closed the day
+        //
+
+        if ( $InstUnit->completed_at )
+        {
+            #logger( "StudentUnit_InstUnit( {$CourseDate->id} ) InstUnit completed_at" );
+            return null;
+        }
+
+        //
+        // retrieve record
+        //
+
+        #logger( "StudentUnit_InstUnit( {$CourseDate->id} ) Searching StudentUnit CourseAuthID( {$this->_CourseAuth->id} )" );
+
+        return StudentUnit::where( 'course_auth_id', $this->_CourseAuth->id )
+                          ->where( 'inst_unit_id',   $InstUnit->id )
+                          ->latest()
+                          ->first();
+
+    }
+
+
+    public function StudentUnitReady( CourseDate $CourseDate ) : ?StudentUnit
+    {
+
+        #logger( "StudentUnitReady CourseDateID {$CourseDate->id}" );
+
+        if ( $StudentUnit = $this->StudentUnit_InstUnit( $CourseDate ) )
+        {
+
+            //
+            // StudentUnit still active ?
+            //
+
+            if ( $StudentUnit->completed_at )
+            {
+                #logger( "StudentUnitReady(CDID:{$CourseDate->id}) StudentUnit already completed_at" );
+                return null;
+            }
+            else
+            {
+                #logger( "StudentUnitReady(CDID:{$CourseDate->id}) Returning active StudentUnit ID:{$StudentUnit->id}" );
+                return $StudentUnit;
+            }
+
+        }
+
+        //
+        // instructor is online
+        //
+
+        if ( $InstUnit = $CourseDate->InstUnit )
+        {
+
+            #logger( "StudentUnitReady(CDID:{$CourseDate->id}) Creating new StudentUnit" );
+            return $this->InitStudentUnit( $CourseDate->GetCourseUnit(), $CourseDate, $InstUnit );
+
+        }
+
+        #logger( "StudentUnitReady(CDID:{$CourseDate->id}) No active InstUnit" );
+        return null;
+
+    }
+
+
+    //
+    // writers
+    //
+
+
+    public function InitStudentUnit( CourseUnit $CourseUnit, CourseDate $CourseDate, InstUnit $InstUnit ) : ?StudentUnit
+    {
+
+        #logger( "InitStudentUnit( {$CourseUnit->id}, {$CourseDate->id}, {$InstUnit->id} )" );
+
+        if ( $StudentUnit = StudentUnit::where( 'course_auth_id', $this->_CourseAuth->id )
+                                       ->where( 'course_unit_id', $CourseUnit->id )
+                                   ->whereNull( 'completed_at' )
+                                      ->latest()
+                                       ->first()
+        )
+        {
+            #logger( "InitStudentUnit Returning StudentUnitID {$StudentUnit->id}" );
+            return $StudentUnit;
+        }
+
+
+
+        $locker_key = "InitStudentUnit:{$this->_CourseAuth->id}:{$CourseDate->id}";
+
+        if ( ! RCache::Locker( $locker_key, 5 ) )
+        {
+        	#logger( 'CAOStudent::InitStudentUnit failed to get lock' );
+        	return null;
+        }
+
+
+        //
+        // create StudentUnit
+        //
+
+        $StudentUnit = StudentUnit::create([
+
+            'course_auth_id' => $this->_CourseAuth->id,
+            'course_unit_id' => $CourseUnit->id,
+            'course_date_id' => $CourseDate->id,
+            'inst_unit_id'   => $InstUnit->id,
+
+        ])->refresh();
+
+        //
+        // refresh previously completed lessons
+        //
+
+        $this->_CourseAuth->PCLCache( true );
+
+
+        RCache::Locker( $locker_key, 0 );
+
+        return $StudentUnit;
+
+    }
+
+
+}

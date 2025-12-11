@@ -1,0 +1,329 @@
+/**
+ * FilePond Styles
+ * Custom styling for FilePond file upload components
+ */
+
+/* Import FilePond core styles (if using npm package) */
+/* @import 'filepond/dist/filepond.min.css'; */
+
+/* Custom FilePond overrides and enhancements */
+.filepond--root {
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.filepond--drop-label {
+    color: #6c757d;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.filepond--label-action {
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.filepond--panel-root {
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.filepond--panel-root:hover {
+    border-color: #007bff;
+    background-color: #e7f3ff;
+}
+
+/* Drag and drop states */
+.filepond--root.filepond--hopper {
+    border-color: #007bff;
+    background-color: #e7f3ff;
+}
+
+.filepond--root .filepond--drop-label {
+    margin: 0;
+    padding: 2rem 1rem;
+}
+
+/* File item styles */
+.filepond--item {
+    border-radius: 0.375rem;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.filepond--item-panel {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filepond--file-info {
+    padding: 0.75rem 1rem;
+}
+
+.filepond--file-info-main {
+    color: #495057;
+    font-weight: 500;
+}
+
+.filepond--file-info-sub {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Progress bar */
+.filepond--file-status {
+    padding: 0.75rem 1rem;
+}
+
+.filepond--file-status-main {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.filepond--file-status-sub {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Action buttons */
+.filepond--action-button {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.filepond--action-button:hover {
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filepond--action-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Remove button */
+.filepond--action-remove-item {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.filepond--action-remove-item:hover {
+    background: rgba(220, 53, 69, 0.2);
+}
+
+.filepond--action-remove-item svg {
+    color: #dc3545;
+}
+
+/* Retry button */
+.filepond--action-retry-item-load {
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.filepond--action-retry-item-load:hover {
+    background: rgba(255, 193, 7, 0.2);
+}
+
+.filepond--action-retry-item-load svg {
+    color: #ffc107;
+}
+
+/* Process button */
+.filepond--action-process-item {
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.filepond--action-process-item:hover {
+    background: rgba(40, 167, 69, 0.2);
+}
+
+.filepond--action-process-item svg {
+    color: #28a745;
+}
+
+/* Image preview */
+.filepond--image-preview-wrapper {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.filepond--image-preview {
+    border-radius: 0.375rem;
+}
+
+/* Size variants */
+.filepond--root.filepond--small {
+    font-size: 0.875rem;
+}
+
+.filepond--root.filepond--small .filepond--drop-label {
+    padding: 1.5rem 0.75rem;
+}
+
+.filepond--root.filepond--large {
+    font-size: 1.1rem;
+}
+
+.filepond--root.filepond--large .filepond--drop-label {
+    padding: 3rem 1.5rem;
+}
+
+/* Error states */
+.filepond--item.filepond--item-invalid .filepond--item-panel {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.filepond--file-status-main.filepond--file-status-error {
+    color: #dc3545;
+}
+
+/* Success states */
+.filepond--item.filepond--item-complete .filepond--item-panel {
+    border-color: #28a745;
+    background-color: #d4edda;
+}
+
+/* Loading states */
+.filepond--item.filepond--item-loading .filepond--item-panel {
+    border-color: #17a2b8;
+    background-color: #d1ecf1;
+}
+
+/* Custom upload area with icon */
+.filepond-upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.filepond-upload-area:hover {
+    border-color: #007bff;
+    background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
+}
+
+.filepond-upload-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+}
+
+.filepond-upload-area:hover .filepond-upload-icon {
+    color: #007bff;
+}
+
+.filepond-upload-text {
+    color: #495057;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.filepond-upload-subtext {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-align: center;
+    max-width: 300px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .filepond--root .filepond--drop-label {
+        padding: 1.5rem 0.75rem;
+    }
+    
+    .filepond--file-info,
+    .filepond--file-status {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .filepond-upload-area {
+        min-height: 150px;
+    }
+    
+    .filepond-upload-icon {
+        font-size: 2.5rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .filepond--panel-root {
+        background-color: #343a40;
+        border-color: #495057;
+    }
+    
+    .filepond--panel-root:hover {
+        background-color: #495057;
+    }
+    
+    .filepond--item-panel {
+        background-color: #495057;
+        border-color: #6c757d;
+        color: #fff;
+    }
+    
+    .filepond--file-info-main {
+        color: #fff;
+    }
+    
+    .filepond--file-info-sub {
+        color: #adb5bd;
+    }
+    
+    .filepond--drop-label {
+        color: #adb5bd;
+    }
+    
+    .filepond-upload-area {
+        background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+        border-color: #6c757d;
+    }
+    
+    .filepond-upload-area:hover {
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    }
+    
+    .filepond-upload-text {
+        color: #fff;
+    }
+    
+    .filepond-upload-subtext {
+        color: #adb5bd;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .filepond--panel-root {
+        border-width: 3px;
+    }
+    
+    .filepond--item-panel {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .filepond--panel-root,
+    .filepond--action-button,
+    .filepond-upload-area,
+    .filepond-upload-icon {
+        transition: none;
+    }
+}

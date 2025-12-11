@@ -1,0 +1,322 @@
+:root {
+  /* Color Variables */
+  --bs-body-bg: #f8f9fa;
+  --frost-primary-color: #2c3e50;
+  --frost-secondary-color: #3498db;
+  --frost-white-color: #ffffff;
+  --frost-light-color: #ecf0f1;
+  --frost-dark-color: #343a40;
+  --frost-gray-color: #6c757d;
+  --frost-highlight-color: #17a2b8;
+  --frost-login-btn-color: #28a745;
+  
+  /* Shadow Variables */
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+  
+  /* Transition Variables */
+  --transition-base: all 0.3s ease;
+  --transition-fade: opacity 0.15s linear;
+}
+
+/* Dashboard Layout */
+.dashboard-area {
+  padding: 5rem 0 3rem;
+  background-color: var(--bs-body-bg);
+  min-height: 100vh;
+}
+
+.dashboard-container {
+  display: grid;
+  grid-template-columns: minmax(250px, 300px) 1fr;
+  gap: 1.5rem;
+}
+
+/* Sidebar Styles */
+.dashboard-side {
+  background: var(--frost-primary-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem 0;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+}
+
+.dashboard-profile {
+  text-align: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--frost-light-color);
+  margin: 0 auto 1rem;
+  transition: var(--transition-base);
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+}
+
+.pro-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--frost-light-color);
+  margin-bottom: 0.5rem;
+}
+
+/* Navigation Menu */
+.dashboard-nav {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  flex-grow: 1;
+}
+
+.dashboard-nav-item {
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-nav-link {
+  display: flex;
+  align-items: center;
+  color: var(--frost-light-color);
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25rem;
+  transition: var(--transition-base);
+  font-weight: 500;
+}
+
+.dashboard-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--frost-white-color);
+}
+
+.dashboard-nav-link.active {
+  background-color: var(--frost-secondary-color);
+  color: var(--frost-white-color);
+}
+
+.dashboard-nav-icon {
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+  width: 1.25em;
+  text-align: center;
+}
+
+/* Support Section */
+.support-section {
+  margin-top: auto;
+  padding: 1.5rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.support-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--frost-light-color);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+.support-link:hover {
+  color: var(--frost-secondary-color);
+}
+
+.support-icon {
+  margin-right: 0.5rem;
+  font-size: 1.25rem;
+}
+
+/* Content Area */
+.dashboard-content {
+  background-color: var(--frost-white-color);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+/* Utility Classes */
+.edit-icon {
+  position: absolute;
+  right: 0.5rem;
+  top: -0.5rem;
+  color: var(--frost-gray-color);
+  transition: var(--transition-base);
+}
+
+.edit-icon:hover {
+  color: var(--frost-highlight-color);
+}
+
+.section-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--frost-primary-color);
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background-color: var(--frost-secondary-color);
+}
+
+/* Billing Section */
+.billing-section {
+  margin-bottom: 2rem;
+}
+
+.billing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.billing-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.billing-subtitle {
+  font-size: 1rem;
+  color: var(--frost-gray-color);
+}
+
+/* Download Area */
+.download-area {
+  background-color: #f1f3f5;
+  padding: 3.75rem 0;
+}
+
+.download-card {
+  background: var(--frost-white-color);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  transition: var(--transition-base);
+}
+
+.download-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+}
+
+.download-icon {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  margin-bottom: 1.25rem;
+}
+
+/* Terms Area */
+.terms-list {
+  counter-reset: terms-counter;
+}
+
+.term-item {
+  margin-bottom: 2rem;
+  counter-increment: terms-counter;
+}
+
+.term-number::before {
+  content: counter(terms-counter) ".";
+  color: var(--frost-highlight-color);
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.term-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  color: var(--frost-white-color);
+}
+
+.term-text {
+  color: #d9d9d9;
+  font-size: 1rem;
+}
+
+/* Overview Area */
+.overview-area {
+  padding: 6.25rem 1rem;
+}
+
+.overview-image {
+  width: 100%;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.overview-title {
+  font-size: 1.75rem;
+  margin-bottom: 1.25rem;
+  color: var(--frost-highlight-color);
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.overview-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background-color: var(--frost-light-primary-color);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .dashboard-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-side {
+    position: static;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-area {
+    padding: 3rem 0 2rem;
+  }
+  
+  .dashboard-content {
+    padding: 1.5rem;
+  }
+  
+  .overview-area {
+    padding: 3rem 1rem;
+  }
+}
+
+/* Animation Enhancements */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-content {
+  animation: fadeIn 0.3s ease-out;
+}

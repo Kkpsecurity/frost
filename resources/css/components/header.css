@@ -1,0 +1,132 @@
+/**
+ * ============================================================================
+ * FROST - HEADER COMPONENT STYLES
+ * ============================================================================
+ *
+ * Main site header styling using Frost theme
+ */
+
+.header-one {
+    position: relative;
+    width: 100%;
+    z-index: 1000;
+    background: var(--frost-primary-color);
+    box-shadow: var(--frost-shadow-sm);
+}
+
+.header-logo img {
+    max-height: 60px;
+    width: auto;
+}
+
+.header-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--frost-space-md) 0;
+}
+
+.header-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: var(--frost-space-lg);
+}
+
+.header-menu li a {
+    text-decoration: none;
+    color: var(--frost-white-color);
+    font-weight: 500;
+    padding: var(--frost-space-sm) var(--frost-space-md);
+    border-radius: var(--frost-radius-md);
+    transition: all var(--frost-transition-base);
+}
+
+.header-menu li a:hover,
+.header-menu li a:focus {
+    background-color: var(--frost-info-color);
+    color: var(--frost-white-color);
+}
+
+/* Navbar Toggle Button Styles */
+.navbar-toggler {
+    border: none;
+    background: transparent;
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    border-radius: 0.375rem;
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.navbar-toggler:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.navbar-toggler .fa-bars {
+    color: var(--frost-primary-color);
+    font-size: 1.5rem;
+}
+
+.navbar-toggler:hover .fa-bars {
+    color: var(--frost-info-color);
+}
+
+/* Header Area Improvements */
+.header-area {
+    padding: 0.75rem 0;
+    background: var(--frost-white-color);
+    border-bottom: 1px solid var(--frost-border-color);
+}
+
+.header-area .navbar-nav .nav-link {
+    padding: 0.5rem 1rem;
+    color: var(--frost-primary-color);
+    font-weight: 500;
+    transition: all var(--frost-transition-base);
+}
+
+.header-area .navbar-nav .nav-link:hover,
+.header-area .navbar-nav .nav-link.active {
+    color: var(--frost-info-color);
+}
+
+/* Mobile header styles */
+@media (max-width: 768px) {
+    .header-navigation {
+        flex-direction: column;
+        gap: var(--frost-space-md);
+    }
+
+    .header-menu {
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+    }
+
+    .header-menu li a {
+        display: block;
+        width: 100%;
+        padding: var(--frost-space-md);
+    }
+
+    .navbar-collapse {
+        background: var(--frost-white-color);
+        border-top: 1px solid var(--frost-border-color);
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+    }
+
+    .header-area {
+        padding: 0.5rem 0;
+    }
+}
+
+/* Desktop - hide toggle */
+@media (min-width: 992px) {
+    .navbar-toggler {
+        display: none !important;
+    }
+}

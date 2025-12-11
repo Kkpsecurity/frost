@@ -1,0 +1,51 @@
+
+
+.table-responsive {
+    overflow-x: unset !important;
+}
+
+.table-responsive {
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.table-responsive .table {
+    margin-bottom: 0;
+}
+
+.table-responsive .table-dark thead tr th {
+    border-color: rgba(0, 0, 0, 0.05);
+    font-weight: 700;
+    color: #fff !important;
+    text-transform: uppercase;x
+}
+
+.table-responsive .table-bordered {
+    border: 0;
+}
+
+.table-responsive .table-bordered tr,
+.table-responsive .table-bordered td,
+.table-responsive .table-bordered th {
+    border: 0;
+    vertical-align: middle;        
+}
+
+.table-responsive .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.table-responsive .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075);
+}
+
+.table-responsive .table-dark {
+    color: inherit;
+}
+
+.table-responsive .table-dark tbody+tbody,
+.table-responsive .table-dark td,
+.table-responsive .table-dark th,
+.table-responsive .table-dark thead th {
+    border-color: rgba(0, 0, 0, 0.05);
+}

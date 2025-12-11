@@ -1,0 +1,79 @@
+/**
+ * ============================================================================
+ * FROST - MAIN STYLESHEET
+ * ============================================================================
+ *
+ * Centralized CSS architecture for Frost theme
+ * Organized structure with clear hierarchy and no duplicates
+ */
+
+/* ===== ROOT & BASE STYLES ===== */
+@import url('root.css');
+
+/* ===== LAYOUT COMPONENTS ===== */
+@import url('components/topbar.css');
+@import url('components/bottombar.css');
+@import url('components/header.css');
+@import url('components/footer.css');
+@import url('components/loader.css');
+@import url('components/scroll-up.css');
+
+/* ===== UI COMPONENTS (Global Only) ===== */
+@import url('components/login-form.css');
+@import url('components/top-right-nav.css');
+
+/* ===== PAGE SPECIFIC STYLES ===== */
+@import url('pages/auth.css');
+@import url('pages/dashboard.css');
+@import url('pages/admin.css');
+@import url('pages/site.css');
+
+/* ===== UTILITIES ===== */
+@import url('utilities.css');
+
+/* ===== VENDOR OVERRIDES ===== */
+@import url('vendor/bootstrap-overrides.css');
+@import url('vendor/filepond.css');
+
+/**
+ * ============================================================================
+ * GLOBAL LAYOUT STYLES
+ * ============================================================================
+ */
+
+/* Main content positioning */
+.main-content {
+    position: relative;
+    width: 100%;
+    min-height: calc(100vh - var(--frost-topbar-height) - var(--frost-bottombar-height));
+    padding-top: 0;
+    margin-top: 0;
+}
+
+/* Eliminate any unwanted gaps after header */
+.header-area + * {
+    margin-top: 0 !important;
+}
+
+.main-content > *:first-child {
+    margin-top: 0 !important;
+    padding-top: 0;
+}
+
+/* Container adjustments */
+.container-fluid {
+    position: relative;
+    z-index: 1;
+}
+
+/* Page transitions */
+.page-transition {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all var(--frost-transition-base);
+}
+
+.page-transition.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}

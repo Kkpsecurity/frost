@@ -1,0 +1,189 @@
+/*----------------------------------------*/
+/*  Course Status Panel
+/*----------------------------------------*/
+
+.course-status {
+    padding: 60px 0;
+    background: white;
+}
+
+.course-status .container {
+    max-width: 1000px;
+}
+
+.status-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--frost-accent-color);
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.status-title {
+    color: var(--frost-primary-color);
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.status-badge.enrolled {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-badge.in-progress {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.status-badge.completed {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+
+.status-badge.pending {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.progress-section {
+    margin-bottom: 1.5rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: between;
+    margin-bottom: 0.5rem;
+}
+
+.progress-text {
+    color: var(--frost-secondary-text);
+    font-weight: 600;
+}
+
+.progress-percentage {
+    color: var(--frost-accent-color);
+    font-weight: 700;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #e9ecef;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--frost-accent-color), var(--frost-primary-color));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.course-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--frost-light-background, #f8f9fa);
+    border-radius: 8px;
+}
+
+.detail-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--frost-primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.detail-label {
+    color: var(--frost-secondary-text);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-continue,
+.btn-start {
+    background: var(--frost-primary-color);
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-continue:hover,
+.btn-start:hover {
+    background: var(--frost-secondary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 2px solid var(--frost-primary-color);
+    color: var(--frost-primary-color);
+    padding: 0.75rem 2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--frost-primary-color);
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .course-status {
+        padding: 40px 0;
+    }
+
+    .status-card {
+        padding: 1.5rem;
+    }
+
+    .status-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .course-details {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+}

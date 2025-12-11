@@ -1,0 +1,122 @@
+
+/*----------------------------------------
+ 24. Login And Register page
+----------------------------------------*/
+.login-area {
+    background: var(--frost-secondary-color);
+    position: relative;
+    padding: 4rem 1rem; /* Adjusted padding for better responsiveness */
+    min-height: 680px; /* Ensures full viewport height coverasliderge */
+    margin-top: -10px;
+    z-index: 0;
+}
+
+.login-area .login-overlay {
+    position: absolute;
+    background-color: rgba(7, 11, 41, 0.3);
+    top: 0;
+    width: 100%;
+    left: 0;
+    height: 100%;
+    z-index: 1;
+}
+ 
+.login-area .container {
+    z-index: 2;
+    position: relative;
+}
+
+.login-area div.login-form-container {
+    box-sizing: border-box;
+    background-color: var(--frost-primary-color);
+    padding: 20px 30px;
+}
+
+.login-area form#login-form {
+    margin-bottom: 0;
+}
+
+.login-area .login-title {
+    text-align: left;
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #F1F3F5;
+}
+
+.login-area form#login-form input.form-control {
+    height: 50px;
+    padding: 7px 15px;
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: #fff;
+    background-color: transparent;
+    background-image: none;
+    border: 1px solid var(--frost-light-gray-color);
+    border-radius: 3px;
+    margin-bottom: 20px;
+}
+
+
+.login-area .check-group {
+    margin: 5px 0px;
+}
+
+.login-area .check-box {
+    color: #444;
+    font-weight: 300;
+    letter-spacing: 0;
+    margin-bottom: 0;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    padding-left: 0;
+}
+
+.login-area .form-check-input input {
+    width: 30px;
+    height: 30px;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+
+.login-area .remember-text {
+    color: var(--frost-light-color);
+    font-weight: 300;
+    font-size: 14px;
+    left: 25px;
+    position: absolute;
+    top: 0px;
+}
+
+.login-area .text-muted {
+    font-size: 12px;
+    float: right;
+    margin-top: 2px;
+    color: var(--frost-light-color);
+}
+
+.login-area .text-muted:hover {
+    color: var(--frost-warning-color);
+}
+
+@media (max-width: 767.98px) {
+    .login-area .container {
+        padding: 0;
+        margin: 0;
+    }
+
+    .login-area .login-form-container {
+        padding: 0;
+        padding: 10px 15px;
+    }
+
+    .login-area .container {
+        margin-left: -40px;
+        width: 100%;
+    }
+
+}
+
