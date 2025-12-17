@@ -370,11 +370,6 @@ return [
 
         ['header' => 'ADMINISTRATION'],
         [
-            'text' => 'Admin Center',
-            'route' => 'admin.admin-center.dashboard',
-            'icon' => 'fas fa-fw fa-cogs',
-        ],
-        [
             'text' => 'Frost Support',
             'url' => 'admin/frost-support',
             'icon' => 'fas fa-fw fa-life-ring',

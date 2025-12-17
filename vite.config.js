@@ -21,17 +21,11 @@ export default defineConfig({
                 // Laravel JavaScript components
                 "resources/js/alert-manager.js",
 
-                // React Shared Components
-                "resources/js/React/Shared/Components/UploadModalManager.tsx",
-
-                // Instructor entry
-                "resources/js/React/Instructor/app.tsx",
-
                 // Student Offline Video Room
-                "resources/js/React/Student/Offline/OfflineVideoRoom.tsx",
+                // "resources/js/React/Student/Offline/OfflineVideoRoom.tsx",
 
                 // Games
-                "resources/js/games/SpeedTicTacToe.tsx",
+                // "resources/js/games/SpeedTicTacToe.tsx",
 
                 // CSS files (consolidated structure)
                 "resources/css/style.css", // Main stylesheet with all imports

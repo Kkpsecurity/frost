@@ -1,5 +1,5 @@
 
-@extends('layouts.admin')
+@extends('adminlte::page')
 
 @section('title', $content['page_title'] ?? 'Admin Dashboard')
 
@@ -15,16 +15,6 @@
     {{-- Load dashboard widgets/components. These components live under resources/views/components/admin --}}
 
     @if(isset($content['widgets']))
-        {{-- Class and Student Statistics Dashboard --}}
-        @if(view()->exists('components.admin.dashboard.class-stats'))
-            <x-admin.dashboard.class-stats />
-        @endif
-
-        {{-- 7-Day Daily Summary with Trends --}}
-        @if(view()->exists('components.admin.dashboard.daily-summary'))
-            <x-admin.dashboard.daily-summary />
-        @endif
-
         {{-- User Stats Component --}}
         @if(view()->exists('components.admin.dashboard.user-stats'))
             <x-admin.dashboard.user-stats :widgets="$content['widgets']" />

@@ -23,19 +23,9 @@ require __DIR__ . '/auth.routes.php';
 require __DIR__ . '/frontend/student.php';
 
 /**
- * Classroom Section Routes
- */
-require __DIR__ . '/classroom.php';
-
-/**
  * Courses Section Routes
  */
 require __DIR__ . '/frontend/courses.php';
-
-/**
- * Payment Processing Routes
- */
-require __DIR__ . '/frontend/payments.php';
 
 /**
  * Blog Section Routes

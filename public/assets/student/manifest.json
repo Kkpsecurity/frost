@@ -1,0 +1,81 @@
+{
+  "generated_at": "2025-12-17T16:55:37.526Z",
+  "build_info": {
+    "vite_version": "4.5.14",
+    "environment": "production",
+    "timestamp": 1765990537527
+  },
+  "assets": {
+    "student": {
+      "resources/js/React/Student/app.tsx": {
+        "file": "assets/app-ca76f880.js",
+        "imports": [
+          "_QueryClientProvider-d42beec3.js",
+          "_PageLoader-b55925aa.js"
+        ],
+        "isDynamicEntry": true,
+        "src": "resources/js/React/Student/app.tsx"
+      },
+      "resources/js/student.ts": {
+        "dynamicImports": [
+          "resources/js/React/Student/app.tsx"
+        ],
+        "file": "assets/student-2f554207.js",
+        "imports": [
+          "_routeUtils-5470b6f5.js",
+          "_bootstrap-39f03ff0.js"
+        ],
+        "isEntry": true,
+        "src": "resources/js/student.ts"
+      }
+    },
+    "dashboard": {},
+    "components": {
+      "resources/css/components/alerts.css": {
+        "file": "assets/alerts-bebfaeea.css",
+        "isEntry": true,
+        "src": "resources/css/components/alerts.css"
+      },
+      "resources/css/components/blog.css": {
+        "file": "assets/blog-999cf20e.css",
+        "isEntry": true,
+        "src": "resources/css/components/blog.css"
+      },
+      "resources/css/components/courses.css": {
+        "file": "assets/courses-732b586b.css",
+        "isEntry": true,
+        "src": "resources/css/components/courses.css"
+      },
+      "resources/css/components/footer.css": {
+        "file": "assets/footer-362064f8.css",
+        "isEntry": true,
+        "src": "resources/css/components/footer.css"
+      },
+      "resources/css/components/getting-started.css": {
+        "file": "assets/getting-started-0814fb92.css",
+        "isEntry": true,
+        "src": "resources/css/components/getting-started.css"
+      },
+      "resources/css/components/header.css": {
+        "file": "assets/header-cdcf47d6.css",
+        "isEntry": true,
+        "src": "resources/css/components/header.css"
+      },
+      "resources/css/components/loader.css": {
+        "file": "assets/loader-53639cfc.css",
+        "isEntry": true,
+        "src": "resources/css/components/loader.css"
+      },
+      "resources/css/components/topbar.css": {
+        "file": "assets/topbar-9126510b.css",
+        "isEntry": true,
+        "src": "resources/css/components/topbar.css"
+      },
+      "resources/css/components/welcome-hero.css": {
+        "file": "assets/welcome-hero-7862b59a.css",
+        "isEntry": true,
+        "src": "resources/css/components/welcome-hero.css"
+      }
+    }
+  }
+}

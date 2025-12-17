@@ -19,11 +19,6 @@ use Illuminate\Support\Facades\Route;
  */
 require __DIR__ . '/frontend.php';
 
-// Debug routes for development
-if (app()->environment(['local', 'development'])) {
-    require __DIR__ . '/debug.php';
-}
-
 /**
  * Games Routes for Testing
  */

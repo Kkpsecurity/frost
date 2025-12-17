@@ -5,15 +5,16 @@ namespace App\Http\Controllers\Admin\Instructors;
 use App\Http\Controllers\Controller;
 use App\Traits\PageMetaDataTrait;
 use App\Traits\StoragePathTrait;
+use App\Models\CourseDate;
 use App\Services\Frost\Instructors\InstructorDashboardService;
 use App\Services\Frost\Instructors\CourseDatesService;
 use App\Services\Frost\Instructors\ClassroomService;
 use App\Services\Frost\Students\BackendStudentService;
-use App\Services\ClassroomSessionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Http\Request;
+use Exception;
 
 class InstructorDashboardController extends Controller
 {
@@ -28,20 +29,17 @@ class InstructorDashboardController extends Controller
     protected CourseDatesService $courseDatesService;
     protected ClassroomService $classroomService;
     protected BackendStudentService $studentService;
-    protected ClassroomSessionService $sessionService;
 
     public function __construct(
         InstructorDashboardService $dashboardService,
         CourseDatesService $courseDatesService,
         ClassroomService $classroomService,
-        BackendStudentService $studentService,
-        ClassroomSessionService $sessionService
+        BackendStudentService $studentService
     ) {
         $this->dashboardService = $dashboardService;
         $this->courseDatesService = $courseDatesService;
         $this->classroomService = $classroomService;
         $this->studentService = $studentService;
-        $this->sessionService = $sessionService;
 
         // Make sure that the validation directories are created
         $idcardsPath = config('storage.paths.idcards', 'idcards');
@@ -73,6 +71,54 @@ class InstructorDashboardController extends Controller
         }
 
         return response()->json($sessionData);
+    }
+
+    /**
+     * Poll: Get instructor-specific data (30 sec interval)
+     * Returns: instructor info, today's lessons, stats
+     */
+    public function getInstructorData()
+    {
+        try {
+            $user = Auth::user('admin');
+
+            if (!$user) {
+                return response()->json([
+                    'instructor' => null,
+                    'instUnit' => null,
+                    'instLessons' => [],
+                ], 401);
+            }
+
+            // Get instructor's active course date (if any)
+            $courseDate = CourseDate::where('is_active', true)
+                ->where('starts_at', '<=', now())
+                ->where('ends_at', '>=', now()->subHours(6))
+                ->with(['instUnit', 'instUnit.instLessons'])
+                ->orderBy('starts_at', 'desc')
+                ->first();
+
+            return response()->json([
+                'instructor' => [
+                    'id' => $user->id,
+                    'fname' => $user->fname,
+                    'lname' => $user->lname,
+                    'email' => $user->email,
+                    'avatar' => $user->avatar,
+                    'use_gravatar' => $user->use_gravatar,
+                    'is_active' => $user->is_active,
+                    'role_id' => $user->role_id,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ],
+                'instUnit' => $courseDate?->instUnit,
+                'instLessons' => $courseDate?->instUnit?->instLessons ?? [],
+            ]);
+        } catch (Exception $e) {
+            Log::error('Instructor poll data error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**

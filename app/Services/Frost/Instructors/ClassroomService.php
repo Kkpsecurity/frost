@@ -24,28 +24,49 @@ class ClassroomService
         if (!$admin) {
             return [
                 'error' => 'Unauthenticated',
-                'classroom' => null
+                'courseDates' => [],
+                'courses' => [],
+                'lessons' => [],
             ];
         }
 
-        // For admin viewing - return overview data
+        // Get ALL active course dates for today (instructor can choose which to teach)
+        $courseDates = \App\Models\CourseDate::where('is_active', true)
+            ->whereDate('starts_at', today())
+            ->with(['courseUnit', 'courseUnit.course', 'courseUnit.lessons', 'studentUnits'])
+            ->withCount(['studentUnits'])
+            ->orderBy('starts_at', 'asc')
+            ->get();
+
+        // Get upcoming course dates for the next 7 days (tomorrow onwards)
+        $upcomingDates = \App\Models\CourseDate::where('is_active', true)
+            ->whereDate('starts_at', '>', today())
+            ->whereDate('starts_at', '<=', today()->addDays(7))
+            ->with(['courseUnit', 'courseUnit.course', 'courseUnit.lessons', 'studentUnits'])
+            ->withCount(['studentUnits'])
+            ->orderBy('starts_at', 'asc')
+            ->get();
+
+        \Log::info('ClassroomService::getClassroomData', [
+            'user_id' => $admin->id,
+            'courseDates_count' => $courseDates->count(),
+            'upcomingDates_count' => $upcomingDates->count(),
+            'today' => today()->toDateString(),
+        ]);
+
+        // Get all unique courses from the course dates
+        $courses = $courseDates->map(function ($cd) {
+            return $cd->courseUnit?->course;
+        })->filter()->unique('id')->values();
+
         return [
-            'classroom' => [
-                'id' => 'admin-view',
-                'name' => 'Admin Classroom View',
-                'course_name' => 'Course Management Overview',
-                'status' => 'admin_access',
-                'capacity' => null,
-                'current_enrollment' => 0,
-                'start_date' => null,
-                'end_date' => null,
-                'schedule' => null
-            ],
-            'metadata' => [
-                'view_type' => 'admin',
-                'permissions' => ['view_all', 'manage_all'],
-                'last_updated' => now()->format('c')
-            ]
+            'courseDates' => $courseDates->toArray(), // Convert to array
+            'upcomingDates' => $upcomingDates->toArray(), // Upcoming week schedule
+            'courses' => $courses->toArray(),
+            'lessons' => [],
+            'instUnit' => null,
+            'instLessons' => [],
+            'students' => [],
         ];
     }
 

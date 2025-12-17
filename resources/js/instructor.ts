@@ -22,7 +22,7 @@ logRouteInfo();
  */
 if (RouteCheckers.isAdminInstructors()) {
     console.log("Loading Instructor Dashboard components for /admin/instructors route");
-    import("./React/Instructor/app").catch((err) =>
+    import("./React/Admin/Instructor/app.tsx").catch((err) =>
         console.error("Failed to load Instructor Dashboard:", err)
     );
 }

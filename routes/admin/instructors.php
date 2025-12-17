@@ -203,4 +203,14 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::post('/toggle', [InstructorDashboardController::class, 'toggleZoomStatus'])
             ->name('toggle');
     });
+
+    // =====================================================
+    // POLLING ROUTES - Instructor Dashboard Real-time Data
+    // =====================================================
+    Route::get('/instructor/data', [InstructorDashboardController::class, 'getInstructorData'])
+        ->name('instructor.data');
+    Route::get('/classroom/data', [InstructorDashboardController::class, 'getClassroomData'])
+        ->name('classroom.data');
+    Route::get('/classroom/chat', [InstructorDashboardController::class, 'getChatMessages'])
+        ->name('classroom.chat');
 });
