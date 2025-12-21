@@ -17,39 +17,10 @@ export const fetchClassroomPollData = async (
     courseAuthId: number,
     courseDateId?: number
 ): Promise<ClassroomPollDataType> => {
-    // If no courseDateId provided, fetch available dates first
-    let dateIdToUse = courseDateId;
-
-    if (!dateIdToUse) {
-        try {
-            const datesResponse = await fetch(
-                `/classroom/available-dates?course_auth_id=${courseAuthId}`
-            );
-            if (datesResponse.ok) {
-                const datesData = await datesResponse.json();
-                if (datesData.success && datesData.course_date_id) {
-                    dateIdToUse = datesData.course_date_id;
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to fetch available dates:", e);
-        }
-    }
-
-    // If still no date, return empty classroom data
-    if (!dateIdToUse) {
-        return {
-            success: false,
-            courseDate: null,
-            courseUnit: null,
-            course: null,
-            lessons: [],
-            instUnit: null,
-            config: {},
-        };
-    }
-
-    const response = await fetch(`/classroom/classroom/poll?course_date_id=${dateIdToUse}`);
+    // Use the existing /classroom/class/data endpoint
+    const response = await fetch(
+        `/classroom/class/data?course_auth_id=${courseAuthId}`
+    );
 
     if (!response.ok) {
         throw new Error(
@@ -60,7 +31,7 @@ export const fetchClassroomPollData = async (
     const data = await response.json();
 
     if (!data.success) {
-        throw new Error(data.message || 'Failed to fetch classroom data');
+        throw new Error(data.message || "Failed to fetch classroom data");
     }
 
     return data.data;

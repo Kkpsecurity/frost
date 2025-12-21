@@ -15,13 +15,13 @@ const SchoolDashboardTitleBar = ({
                 background:
                     "linear-gradient(135deg, var(--frost-primary-color), var(--frost-secondary-color))",
                 color: "white",
-                padding: "20px 30px",
+                padding: "12px 30px",
                 boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
                 position: "relative",
-                marginTop: "10px",
+                margin: 0,
             }}
         >
-            <div className="d-flex align-items-center justify-content-between mt-2">
+            <div className="d-flex align-items-center justify-content-between">
                 <div>
                     <h4 className="mb-0 fw-semibold text-white">
                         {icon && <span className="me-2">{icon}</span>}
@@ -66,15 +66,23 @@ const SchoolDashboardTitleBar = ({
                 <div className="d-flex align-items-center gap-3">
                     <button
                         type="button"
-                        className="btn btn-outline-light btn-sm d-flex align-items-center"
+                        className="btn btn-light btn-sm d-flex align-items-center gap-2"
                         onClick={onBackToDashboard}
                         title="Back to Dashboard"
                         aria-label="Back to Dashboard"
+                        style={{
+                            backgroundColor: "white",
+                            color: "var(--frost-primary-color)",
+                            fontWeight: "600",
+                            border: "2px solid white",
+                            padding: "8px 16px"
+                        }}
                     >
                         <i
-                            className="fas fa-tachometer-alt"
+                            className="fas fa-arrow-left"
                             aria-hidden="true"
                         />
+                        <span>Dashboard</span>
                     </button>
                 </div>
             </div>

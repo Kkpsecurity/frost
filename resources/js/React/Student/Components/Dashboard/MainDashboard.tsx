@@ -1,40 +1,50 @@
 import React from "react";
-import { useClassroom } from "../../hooks/useClassroom";
-import OnlineDashboard from "./OnlineDashboard";
-import OfflineDashboard from "./OfflineDashboard";
+import { useStudent } from "../../context/StudentContext";
+import { useClassroom } from "../../context/ClassroomContext";
+import OrderDashboard from "./OrderDashboard";
+import MainClassroom from "../Classroom/MainClassroom";
 
 interface MainDashboardProps {
     courseAuthId?: number | null;
 }
 
 /**
- * MainDashboard - Orchestrator component
+ * MainDashboard - Top-level orchestrator
  *
- * Responsibilities:
- * - Determine if classroom session exists (courseDate)
- * - Route to appropriate dashboard
- * - If courseDate exists → OnlineDashboard (live session)
- * - If no courseDate → OfflineDashboard (waiting/materials)
- *
- * Does NOT handle:
- * - Data fetching (handled by StudentDataLayer)
- * - Polling logic (handled by StudentDataLayer)
+ * Routes between:
+ * 1. OrderDashboard - Shows purchased courses (default view, 12-hour session)
+ * 2. MainClassroom - Handles classroom experience (online/offline logic)
  */
 const MainDashboard: React.FC<MainDashboardProps> = ({ courseAuthId }) => {
-    const classroom = useClassroom();
+    // Get student data from context
+    const studentContext = useStudent();
 
-    // Determine based on whether we have a scheduled course date
-    const hasScheduledClass = !!classroom?.courseDate;
+    // Handler to go back to order dashboard
+    const handleBackToDashboard = () => {
+        studentContext.setSelectedCourseAuthId(null);
+    };
 
-    // Render appropriate dashboard based on course date existence
+    // Pass the entire context data to OrderDashboard
+    const dashboardData = {
+        student: studentContext.student,
+        courses: studentContext.courses,
+        progress: studentContext.progress,
+        notifications: studentContext.notifications,
+        assignments: studentContext.assignments,
+    };
+
+    // No courseAuthId = Show order dashboard (purchased courses list)
+    if (!courseAuthId) {
+        return <OrderDashboard data={dashboardData} courseAuthId={courseAuthId} />;
+    }
+
+    // Has courseAuthId = Show classroom (MainClassroom handles online/offline)
     return (
-        <>
-            {hasScheduledClass ? (
-                <OnlineDashboard courseAuthId={courseAuthId} />
-            ) : (
-                <OfflineDashboard courseAuthId={courseAuthId} />
-            )}
-        </>
+        <MainClassroom 
+            courseAuthId={courseAuthId} 
+            student={studentContext.student}
+            onBackToDashboard={handleBackToDashboard}
+        />
     );
 };
 

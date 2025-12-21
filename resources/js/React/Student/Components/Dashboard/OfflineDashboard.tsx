@@ -1,6 +1,6 @@
 import React from "react";
 import { Container, Row, Col, Card, Alert } from "react-bootstrap";
-import { useClassroom } from "../../hooks/useClassroom";
+import { useStudent } from "../../context/StudentContext";
 
 interface OfflineDashboardProps {
     courseAuthId?: number | null;
@@ -26,10 +26,9 @@ interface OfflineDashboardProps {
  * - Route switching (MainDashboard handles that)
  */
 const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => {
-    const classroom = useClassroom();
+    const student = useStudent();
 
-    const course = classroom?.course;
-    const config = classroom?.config;
+    const course = student?.courses?.[0]; // First course from student data
 
     return (
         <Container fluid className="py-4">
@@ -48,7 +47,7 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
             {/* Course Information */}
             <Row className="mb-4">
                 <Col>
-                    <h1>📚 {course?.title || "Course"}</h1>
+                    <h1>📚 {course?.name || "Course"}</h1>
                     <p className="lead text-muted">
                         {course?.description || "No description available"}
                     </p>
@@ -66,19 +65,11 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
                             {course ? (
                                 <>
                                     <p>
-                                        <strong>Total Duration:</strong> {course.total_minutes} minutes
+                                        <strong>Course Name:</strong> {course.name}
                                     </p>
-                                    <p>
-                                        <strong>Category:</strong> {course.category === 'D' ? 'Desktop' : 'Web'}
-                                    </p>
-                                    <p>
-                                        <strong>Expiration Days:</strong> {course.policy_expire_days} days
-                                    </p>
-                                    <p>
+                                    <p className="mb-0">
                                         <strong>Status:</strong>{" "}
-                                        <span className={`badge ${course.is_active ? 'bg-success' : 'bg-secondary'}`}>
-                                            {course.is_active ? 'Active' : 'Inactive'}
-                                        </span>
+                                        <span className="badge bg-success">Enrolled</span>
                                     </p>
                                 </>
                             ) : (
@@ -87,69 +78,28 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
                         </Card.Body>
                     </Card>
                 </Col>
-
-                {/* Classroom Settings */}
-                <Col md={6}>
-                    <Card className="bg-light">
-                        <Card.Header>
-                            <Card.Title className="mb-0">⚙️ Classroom Settings</Card.Title>
-                        </Card.Header>
-                        <Card.Body>
-                            {config?.features ? (
-                                <>
-                                    <p>
-                                        <strong>Face Verification:</strong>{" "}
-                                        <span className={`badge ${config.features.faceVerificationEnabled ? 'bg-warning' : 'bg-secondary'}`}>
-                                            {config.features.faceVerificationEnabled ? 'Enabled' : 'Disabled'}
-                                        </span>
-                                    </p>
-                                    <p>
-                                        <strong>Attendance Tracking:</strong>{" "}
-                                        <span className={`badge ${config.features.attendanceTrackingEnabled ? 'bg-success' : 'bg-secondary'}`}>
-                                            {config.features.attendanceTrackingEnabled ? 'Enabled' : 'Disabled'}
-                                        </span>
-                                    </p>
-                                    <p>
-                                        <strong>Chat:</strong>{" "}
-                                        <span className={`badge ${config.features.chatEnabled ? 'bg-info' : 'bg-secondary'}`}>
-                                            {config.features.chatEnabled ? 'Enabled' : 'Disabled'}
-                                        </span>
-                                    </p>
-                                    <p>
-                                        <strong>Video Calls:</strong>{" "}
-                                        <span className={`badge ${config.features.videoCallEnabled ? 'bg-primary' : 'bg-secondary'}`}>
-                                            {config.features.videoCallEnabled ? 'Enabled' : 'Disabled'}
-                                        </span>
-                                    </p>
-                                </>
-                            ) : (
-                                <p className="text-muted">No configuration data available</p>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
             </Row>
 
-            {/* Debug Info */}
+            {/* Student Info */}
             <Row>
                 <Col>
                     <Card className="bg-light">
                         <Card.Header>
-                            <Card.Title className="mb-0">🔍 Debug Info</Card.Title>
+                            <Card.Title className="mb-0">👤 Student Info</Card.Title>
                         </Card.Header>
                         <Card.Body>
-                            <p>
-                                <strong>courseAuthId:</strong> {courseAuthId || 'Not provided'}
-                            </p>
-                            <p>
-                                <strong>Has courseDate:</strong> {classroom?.courseDate ? 'Yes' : 'No'}
-                            </p>
-                            <p>
-                                <strong>Has instUnit:</strong> {classroom?.instUnit ? 'Yes' : 'No'}
-                            </p>
-                            <p>
-                                <strong>Classroom Loading:</strong> {classroom?.loading ? 'Loading...' : 'Done'}
-                            </p>
+                            {student?.student ? (
+                                <>
+                                    <p>
+                                        <strong>Name:</strong> {student.student.name}
+                                    </p>
+                                    <p className="mb-0">
+                                        <strong>Email:</strong> {student.student.email}
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-muted">No student data available</p>
+                            )}
                         </Card.Body>
                     </Card>
                 </Col>
@@ -159,3 +109,4 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
 };
 
 export default OfflineDashboard;
+

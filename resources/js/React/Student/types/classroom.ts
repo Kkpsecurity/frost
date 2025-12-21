@@ -18,10 +18,32 @@ export type InstructorId = number;
 export type SessionStatus = "active" | "scheduled" | "completed" | "cancelled";
 export type TimeZone = string;
 export type MeetingUrl = string;
+export type LessonStatus =
+    | "incomplete"
+    | "completed"
+    | "active_live"
+    | "active_fstb";
+export type LessonId = number;
 
 // =============================================================================
 // DOMAIN MODELS (interface)
 // =============================================================================
+
+/**
+ * Lesson Domain Model
+ * References: App\Models\Lesson
+ * Database: lessons table
+ */
+export interface LessonType {
+    id: LessonId;
+    title: string;
+    description: string;
+    duration_minutes: number;
+    order: number;
+    status: LessonStatus;
+    is_completed: boolean;
+    is_active: boolean;
+}
 
 /**
  * CourseDate Domain Model

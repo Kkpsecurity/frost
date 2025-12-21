@@ -15,90 +15,97 @@ interface StudentDataLayerProps {
 /**
  * StudentDataLayer - Handles all API polling for student portal
  *
+ * SPA ROUTING:
+ * - URL stays /classroom (no query parameters)
+ * - courseAuthId managed internally via React state
+ * - State changes trigger different views (course list vs classroom)
+ *
  * Responsibilities:
  * - Poll /classroom/student/poll endpoint every 5 seconds
  * - Poll /classroom/classroom/poll endpoint for classroom data
  * - Combine both datasets into contexts
  * - Pass data down via Context providers
  * - Handle loading and error states
+ * - Manage courseAuthId state internally
  *
  * Does NOT handle:
  * - Business logic (that's in StudentDashboard)
  * - UI rendering beyond loaders/errors
  * - Conditional rendering logic
- * - User interactions
  */
 const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
-    courseAuthId,
+    courseAuthId: initialCourseAuthId,
 }) => {
+    // Internal state for selected courseAuthId (SPA routing)
+    // PERSISTENCE: Restore from localStorage on mount, save on changes
+    const [selectedCourseAuthId, setSelectedCourseAuthId] = useState<number | null>(() => {
+        // Try to restore from localStorage first
+        const saved = localStorage.getItem('frost_selected_course_auth_id');
+        if (saved) {
+            const parsedId = parseInt(saved, 10);
+            if (!isNaN(parsedId)) {
+                console.log('📦 StudentDataLayer: Restored courseAuthId from localStorage:', parsedId);
+                return parsedId;
+            }
+        }
+        // Fallback to initialCourseAuthId or null
+        console.log('📦 StudentDataLayer: Using initial courseAuthId:', initialCourseAuthId);
+        return initialCourseAuthId || null;
+    });
+
+    // Save to localStorage whenever selectedCourseAuthId changes
+    useEffect(() => {
+        if (selectedCourseAuthId !== null) {
+            localStorage.setItem('frost_selected_course_auth_id', selectedCourseAuthId.toString());
+            console.log('💾 StudentDataLayer: Saved courseAuthId to localStorage:', selectedCourseAuthId);
+        } else {
+            localStorage.removeItem('frost_selected_course_auth_id');
+            console.log('🗑️ StudentDataLayer: Cleared courseAuthId from localStorage');
+        }
+    }, [selectedCourseAuthId]);
+    
     // Fetch student polling data
     const {
         data: studentData,
         isLoading: studentLoading,
         error: studentError,
     } = useQuery({
-        queryKey: ["student-poll", courseAuthId],
+        queryKey: ["student-poll"],
         queryFn: async () => {
-            const response = await fetch(`/classroom/student/poll?course_auth_id=${courseAuthId}`);
+            const response = await fetch(`/classroom/student/poll`);
             if (!response.ok) {
                 throw new Error(`Failed to fetch student data: ${response.status}`);
             }
             return response.json();
         },
-        enabled: !!courseAuthId,
         refetchInterval: 5000, // Poll every 5 seconds
         staleTime: 4000, // Data is stale after 4 seconds
     });
 
-    // Fetch classroom polling data
+    // Enable classroom polling when selectedCourseAuthId is present
     const {
         data: classroomData,
         isLoading: classroomLoading,
         error: classroomError,
     } = useQuery({
-        queryKey: ["classroom-poll", courseAuthId],
+        queryKey: ["classroom-poll", selectedCourseAuthId],
         queryFn: async () => {
-            if (!courseAuthId) throw new Error("courseAuthId is required");
-            return fetchClassroomPollData(courseAuthId);
+            const url = selectedCourseAuthId
+                ? `/classroom/class/data?course_auth_id=${selectedCourseAuthId}`
+                : "/classroom/class/data";
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch classroom data: ${response.status}`);
+            }
+            return response.json();
         },
-        enabled: !!courseAuthId,
+        enabled: !!selectedCourseAuthId, // Only poll when we have a selectedCourseAuthId
         refetchInterval: 5000, // Poll every 5 seconds
         staleTime: 4000, // Data is stale after 4 seconds
     });
 
     const isLoading = studentLoading || classroomLoading;
     const error = studentError || classroomError;
-
-    // Show loading spinner
-    if (isLoading) {
-        return <PageLoader />;
-    }
-
-    // Show error if polling failed
-    if (error) {
-        return (
-            <Alert variant="danger" className="m-4">
-                <Alert.Heading>⚠️ Data Loading Error</Alert.Heading>
-                <p>
-                    {error instanceof Error
-                        ? error.message
-                        : "Unable to load student data"}
-                </p>
-                <p className="mb-0">Please refresh the page or contact support.</p>
-            </Alert>
-        );
-    }
-
-    // No courseAuthId provided
-    if (!courseAuthId) {
-        return (
-            <Alert variant="warning" className="m-4">
-                <Alert.Heading>Missing Course Information</Alert.Heading>
-                <p>Unable to identify your course enrollment.</p>
-                <p className="mb-0">Please return to your dashboard and try again.</p>
-            </Alert>
-        );
-    }
 
     // Create student context data
     const studentContextValue: StudentContextType = {
@@ -107,38 +114,61 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         progress: studentData?.data?.progress || null,
         notifications: studentData?.data?.notifications || [],
         assignments: studentData?.data?.assignments || [],
-        loading: false,
-        error: null,
+        selectedCourseAuthId: selectedCourseAuthId,
+        setSelectedCourseAuthId: setSelectedCourseAuthId,
+        loading: isLoading,
+        error: error instanceof Error ? error.message : null,
     };
 
     // Create classroom context data from poll response
-    const classroomContextValue: ClassroomContextType = {
-        data: classroomData || null,
-        course: classroomData?.course || null,
-        courseDate: classroomData?.courseDate || null,
-        instructor: classroomData?.courseDate?.instructor || null,
-        instUnit: classroomData?.instUnit || null,
-        courseUnits: classroomData?.courseUnit?.course_units || [],
-        courseLessons: classroomData?.lessons || [],
-        instLessons: classroomData?.instUnit?.inst_lessons || [],
-        config: classroomData?.config || null,
-        isClassroomActive: classroomData ? isInstructorTeaching(classroomData) : false,
-        isInstructorOnline: classroomData?.courseDate?.instructor?.online_status === 'online' || false,
-        classroomStatus: classroomData ? (getClassroomStatus(classroomData) as any) : 'not_started',
-        loading: false,
-        error: null,
-    };
+    const classroomContextValue: ClassroomContextType = classroomData?.data ? {
+        data: classroomData.data,
+        course: classroomData.data.course || null,
+        courseDate: classroomData.data.courseDate || null,
+        instructor: classroomData.data.courseDate?.instructor || null,
+        instUnit: classroomData.data.instUnit || null,
+        studentUnit: classroomData.data.studentUnit || null,
+        courseUnits: classroomData.data.courseUnit?.course_units || [],
+        courseLessons: classroomData.data.lessons || [],
+        instLessons: classroomData.data.instUnit?.inst_lessons || [],
+        config: classroomData.data.config || null,
+        isClassroomActive: isInstructorTeaching(classroomData.data),
+        isInstructorOnline: classroomData.data.courseDate?.instructor?.online_status === 'online' || false,
+        classroomStatus: getClassroomStatus(classroomData.data) as any,
+        loading: classroomLoading,
+        error: classroomError instanceof Error ? classroomError.message : null,
+    } : null;
 
-    console.log("🎓 StudentDataLayer: Polling data received", {
+    console.log("🎓 StudentDataLayer: Rendering with contexts", {
+        selectedCourseAuthId,
+        isLoading,
+        hasError: !!error,
         studentData: studentContextValue,
         classroomData: classroomContextValue,
     });
 
-    // Render with both contexts providing data down the tree
+    // ALWAYS render with both contexts - let MainDashboard handle state display
     return (
         <StudentContextProvider value={studentContextValue}>
             <ClassroomContextProvider value={classroomContextValue}>
-                <MainDashboard courseAuthId={courseAuthId} />
+                {isLoading ? (
+                    <PageLoader />
+                ) : error ? (
+                    <Alert variant="danger" className="m-4">
+                        <Alert.Heading>⚠️ Data Loading Error</Alert.Heading>
+                        <p>
+                            {error instanceof Error
+                                ? error.message
+                                : "Unable to load student data"}
+                        </p>
+                        <p className="mb-0">Please refresh the page or contact support.</p>
+                    </Alert>
+                ) : (
+                    // Render MainDashboard with selectedCourseAuthId from internal state
+                    // Dashboard will show course list if no selectedCourseAuthId
+                    // Dashboard will show specific classroom if selectedCourseAuthId is set
+                    <MainDashboard courseAuthId={selectedCourseAuthId} />
+                )}
             </ClassroomContextProvider>
         </StudentContextProvider>
     );

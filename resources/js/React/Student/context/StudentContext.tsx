@@ -21,6 +21,8 @@ export interface StudentContextType {
     } | null;
     notifications: any[];
     assignments: any[];
+    selectedCourseAuthId: number | null;
+    setSelectedCourseAuthId: (id: number | null) => void;
     loading: boolean;
     error: string | null;
 }
