@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import { useClassroom } from "../../context/ClassroomContext";
 import { LessonType } from "../../types/classroom";
+import { useVideoQuota } from "../../hooks/useVideoQuota";
 
 interface MainOfflineProps {
     courseAuthId: number;
@@ -27,6 +28,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
     // View mode: 'list' (default), 'preview' (lesson details), 'player' (video player)
     const [viewMode, setViewMode] = useState<'list' | 'preview' | 'player'>('list');
     const [previewLessonId, setPreviewLessonId] = useState<number | null>(null);
+    
+    // Video quota hook - manages student watch time
+    const { quota, isLoading: isLoadingQuota, error: quotaError } = useVideoQuota();
 
     // Load lessons from API (offline mode gets all course lessons)
     useEffect(() => {
@@ -931,13 +935,25 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                     const lesson = lessons.find(l => l.id === previewLessonId);
                                     if (!lesson) return null;
                                     
-                                    // Mock quota data - TODO: Get from API
-                                    const quotaTotal = 10.0; // 10 hours total
-                                    const quotaUsed = 3.5; // Used hours  
-                                    const quotaRemaining = quotaTotal - quotaUsed;
+                                    // Get quota from hook - use mock data as fallback
+                                    const quotaTotal = quota?.total_hours || 10.0;
+                                    const quotaUsed = quota?.used_hours || 0.0;
+                                    const quotaRemaining = quota?.remaining_hours || (quotaTotal - quotaUsed);
                                     const lessonHours = (lesson.duration_minutes || 0) / 60;
                                     const quotaAfterLesson = quotaRemaining - lessonHours;
                                     const quotaPercentage = (quotaRemaining / quotaTotal) * 100;
+                                    
+                                    // Show loading state if quota is still loading
+                                    if (isLoadingQuota) {
+                                        return (
+                                            <div className="text-center py-5">
+                                                <div className="spinner-border text-light" role="status">
+                                                    <span className="visually-hidden">Loading quota...</span>
+                                                </div>
+                                                <p className="mt-3" style={{ color: "#95a5a6" }}>Loading quota information...</p>
+                                            </div>
+                                        );
+                                    }
                                     
                                     // Color coding for quota
                                     const getQuotaColor = (percentage: number) => {

@@ -2,6 +2,8 @@
     <x-slot:head>
         <meta name="description" content="{{ $content['description'] ?? 'Student Classroom' }}">
         <meta name="keywords" content="{{ $content['keywords'] ?? 'classroom,student' }}">
+        <link rel="stylesheet" href="{{ asset('themes/frost/bultifore/css/account-dashboard.css') }}">
+        <link rel="stylesheet" href="{{ asset('themes/frost/bultifore/css/table.css') }}">
     </x-slot:head>
 
     <x-frontend.site.partials.header />
@@ -11,7 +13,7 @@
     @endphp
 
     <main class="main-page-content frost-secondary-bg">
-        <div class="container-fluid gap-0 p-0" style="min-height: 60vh; padding-top: 90px;">
+        <div class="container-fluid gap-0 p-0" style="min-height: 60vh;">
             {{-- DEBUG: Check if Lesson 1 data exists and its status --}}
             @php
                 $lesson1Status = 'NOT_FOUND';

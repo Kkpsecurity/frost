@@ -211,4 +211,226 @@ class ClassroomDashboardService
             ]);
         }
     }
+
+    // =========================================================================
+    // SESSION MANAGEMENT METHODS
+    // =========================================================================
+
+    /**
+     * Find or create student session (StudentUnit)
+     * Checks for existing session within 12-hour window
+     * 
+     * @param int $courseAuthId
+     * @param int $courseDateId
+     * @return \App\Models\StudentUnit
+     * @throws Exception
+     */
+    public function findOrCreateSession(int $courseAuthId, int $courseDateId): \App\Models\StudentUnit
+    {
+        $userId = $this->user?->id ?? auth()->id();
+
+        if (!$userId) {
+            throw new Exception('No authenticated user found');
+        }
+
+        // Check for existing session within 12-hour window
+        $existingSession = \App\Models\StudentUnit::where('user_id', $userId)
+            ->where('course_date_id', $courseDateId)
+            ->whereNull('completed_at')
+            ->where('created_at', '>', now()->subHours(12))
+            ->first();
+
+        if ($existingSession) {
+            // Resume existing session
+            $existingSession->update([
+                'last_heartbeat_at' => now(),
+            ]);
+
+            Log::info('ClassroomDashboardService: Resumed existing session', [
+                'student_unit_id' => $existingSession->id,
+                'user_id' => $userId,
+                'session_age_minutes' => $existingSession->created_at->diffInMinutes(now()),
+            ]);
+
+            return $existingSession;
+        }
+
+        // Create new session
+        $sessionExpiresAt = now()->addHours(12);
+
+        $studentUnit = \App\Models\StudentUnit::create([
+            'user_id' => $userId,
+            'course_date_id' => $courseDateId,
+            'last_heartbeat_at' => now(),
+            'session_expires_at' => $sessionExpiresAt,
+            'created_at' => now(),
+        ]);
+
+        Log::info('ClassroomDashboardService: Created new session', [
+            'student_unit_id' => $studentUnit->id,
+            'user_id' => $userId,
+            'course_date_id' => $courseDateId,
+            'expires_at' => $sessionExpiresAt,
+        ]);
+
+        return $studentUnit;
+    }
+
+    /**
+     * Update heartbeat for active session
+     * Called every 30 seconds from frontend
+     * 
+     * @param int $studentUnitId
+     * @return void
+     */
+    public function updateHeartbeat(int $studentUnitId): void
+    {
+        try {
+            $studentUnit = \App\Models\StudentUnit::find($studentUnitId);
+
+            if (!$studentUnit) {
+                Log::warning('ClassroomDashboardService: StudentUnit not found for heartbeat', [
+                    'student_unit_id' => $studentUnitId,
+                ]);
+                return;
+            }
+
+            $studentUnit->update([
+                'last_heartbeat_at' => now(),
+            ]);
+
+            Log::debug('ClassroomDashboardService: Heartbeat updated', [
+                'student_unit_id' => $studentUnitId,
+                'timestamp' => now(),
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('ClassroomDashboardService: Error updating heartbeat', [
+                'student_unit_id' => $studentUnitId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Check if session has expired (12+ hours old)
+     * 
+     * @param int $studentUnitId
+     * @return bool
+     */
+    public function checkSessionExpiration(int $studentUnitId): bool
+    {
+        try {
+            $studentUnit = \App\Models\StudentUnit::find($studentUnitId);
+
+            if (!$studentUnit) {
+                return true; // Consider missing session as expired
+            }
+
+            // Check if session_expires_at has passed
+            if ($studentUnit->session_expires_at && now()->gt($studentUnit->session_expires_at)) {
+                return true;
+            }
+
+            // Fallback: check if created_at is older than 12 hours
+            if ($studentUnit->created_at->lt(now()->subHours(12))) {
+                return true;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            Log::error('ClassroomDashboardService: Error checking session expiration', [
+                'student_unit_id' => $studentUnitId,
+                'error' => $e->getMessage(),
+            ]);
+            return true; // Consider error as expired for safety
+        }
+    }
+
+    /**
+     * Fail the current active lesson due to disconnect/timeout
+     * 
+     * @param int $studentUnitId
+     * @param string $reason (connection_lost, timeout, left_intentionally)
+     * @return void
+     */
+    public function failActiveLesson(int $studentUnitId, string $reason): void
+    {
+        try {
+            // Find active lesson (started but not completed/failed)
+            $activeLesson = \App\Models\StudentLesson::where('student_unit_id', $studentUnitId)
+                ->whereNull('completed_at')
+                ->whereNull('failed_at')
+                ->first();
+
+            if (!$activeLesson) {
+                Log::info('ClassroomDashboardService: No active lesson to fail', [
+                    'student_unit_id' => $studentUnitId,
+                ]);
+                return;
+            }
+
+            // Mark lesson as failed
+            $activeLesson->update([
+                'failed_at' => now(),
+                'failure_reason' => $reason,
+            ]);
+
+            Log::info('ClassroomDashboardService: Failed active lesson', [
+                'student_unit_id' => $studentUnitId,
+                'student_lesson_id' => $activeLesson->id,
+                'lesson_id' => $activeLesson->lesson_id,
+                'reason' => $reason,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('ClassroomDashboardService: Error failing active lesson', [
+                'student_unit_id' => $studentUnitId,
+                'reason' => $reason,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Record intentional student leave
+     * 
+     * @param int $studentUnitId
+     * @param string|null $reason
+     * @return void
+     */
+    public function recordStudentLeave(int $studentUnitId, ?string $reason = null): void
+    {
+        try {
+            $studentUnit = \App\Models\StudentUnit::find($studentUnitId);
+
+            if (!$studentUnit) {
+                Log::warning('ClassroomDashboardService: StudentUnit not found for leave', [
+                    'student_unit_id' => $studentUnitId,
+                ]);
+                return;
+            }
+
+            // Mark as left
+            $studentUnit->update([
+                'left_at' => now(),
+            ]);
+
+            // Fail any active lesson
+            $this->failActiveLesson($studentUnitId, 'left_intentionally');
+
+            Log::info('ClassroomDashboardService: Recorded student leave', [
+                'student_unit_id' => $studentUnitId,
+                'user_id' => $studentUnit->user_id,
+                'reason' => $reason,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('ClassroomDashboardService: Error recording student leave', [
+                'student_unit_id' => $studentUnitId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 }

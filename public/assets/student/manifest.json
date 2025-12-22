@@ -1,17 +1,17 @@
 {
-  "generated_at": "2025-12-17T16:55:37.526Z",
+  "generated_at": "2025-12-21T21:39:03.385Z",
   "build_info": {
     "vite_version": "4.5.14",
     "environment": "production",
-    "timestamp": 1765990537527
+    "timestamp": 1766353143387
   },
   "assets": {
     "student": {
       "resources/js/React/Student/app.tsx": {
-        "file": "assets/app-ca76f880.js",
+        "file": "assets/app-ef2aa6c7.js",
         "imports": [
-          "_QueryClientProvider-d42beec3.js",
-          "_PageLoader-b55925aa.js"
+          "_QueryClientProvider-e836b0e1.js",
+          "_PageLoader-3caefd0a.js"
         ],
         "isDynamicEntry": true,
         "src": "resources/js/React/Student/app.tsx"
@@ -20,7 +20,7 @@
         "dynamicImports": [
           "resources/js/React/Student/app.tsx"
         ],
-        "file": "assets/student-2f554207.js",
+        "file": "assets/student-59dc7990.js",
         "imports": [
           "_routeUtils-5470b6f5.js",
           "_bootstrap-39f03ff0.js"

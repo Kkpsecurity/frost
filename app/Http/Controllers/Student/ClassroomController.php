@@ -316,4 +316,191 @@ class ClassroomController extends Controller
             ], 500);
         }
     }
+
+    // =========================================================================
+    // SESSION MANAGEMENT ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Heartbeat - Update last_heartbeat_at timestamp
+     * 
+     * Called every 30 seconds from frontend
+     * Keeps session alive and detects disconnects
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function heartbeat(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'student_unit_id' => 'required|integer|exists:student_unit,id',
+            ]);
+
+            $this->classroomDashboardService->updateHeartbeat($validated['student_unit_id']);
+
+            return response()->json([
+                'success' => true,
+                'timestamp' => now()->toIso8601String(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in heartbeat:', [
+                'exception' => $e->getMessage(),
+                'student_unit_id' => $request->input('student_unit_id'),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update heartbeat',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get Session Status
+     * 
+     * Returns session information including expiration and status
+     * 
+     * @param int $studentUnitId
+     * @return JsonResponse
+     */
+    public function sessionStatus(int $studentUnitId): JsonResponse
+    {
+        try {
+            $studentUnit = \App\Models\StudentUnit::find($studentUnitId);
+
+            if (!$studentUnit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Session not found',
+                ], 404);
+            }
+
+            $isExpired = $this->classroomDashboardService->checkSessionExpiration($studentUnitId);
+            $inGracePeriod = $studentUnit->created_at->gt(now()->subMinutes(5));
+
+            $minutesRemaining = null;
+            if ($studentUnit->session_expires_at) {
+                $minutesRemaining = max(0, now()->diffInMinutes($studentUnit->session_expires_at, false));
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $studentUnit->id,
+                    'is_expired' => $isExpired,
+                    'in_grace_period' => $inGracePeriod,
+                    'created_at' => $studentUnit->created_at->toIso8601String(),
+                    'last_heartbeat_at' => $studentUnit->last_heartbeat_at?->toIso8601String(),
+                    'session_expires_at' => $studentUnit->session_expires_at?->toIso8601String(),
+                    'minutes_remaining' => $minutesRemaining,
+                    'left_at' => $studentUnit->left_at?->toIso8601String(),
+                    'completed_at' => $studentUnit->completed_at?->toIso8601String(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in sessionStatus:', [
+                'exception' => $e->getMessage(),
+                'student_unit_id' => $studentUnitId,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get session status',
+            ], 500);
+        }
+    }
+
+    /**
+     * Leave Classroom (Intentional)
+     * 
+     * Records intentional student departure
+     * Different from disconnect - this is a button click
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function leaveClassroom(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'student_unit_id' => 'required|integer|exists:student_unit,id',
+                'reason' => 'nullable|string|max:255',
+            ]);
+
+            $this->classroomDashboardService->recordStudentLeave(
+                $validated['student_unit_id'],
+                $validated['reason'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully left classroom',
+                'redirect' => '/dashboard',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in leaveClassroom:', [
+                'exception' => $e->getMessage(),
+                'student_unit_id' => $request->input('student_unit_id'),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to leave classroom',
+            ], 500);
+        }
+    }
+
+    /**
+     * Check or Create Session
+     * 
+     * Checks for existing session within 12-hour window
+     * Creates new session if none exists or previous expired
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function checkOrCreateSession(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'course_date_id' => 'required|integer|exists:course_dates,id',
+                'course_auth_id' => 'required|integer|exists:course_auths,id',
+            ]);
+
+            $studentUnit = $this->classroomDashboardService->findOrCreateSession(
+                $validated['course_auth_id'],
+                $validated['course_date_id']
+            );
+
+            $isExpired = $this->classroomDashboardService->checkSessionExpiration($studentUnit->id);
+            $inGracePeriod = $studentUnit->created_at->gt(now()->subMinutes(5));
+            $isResumed = $studentUnit->wasRecentlyCreated === false;
+
+            return response()->json([
+                'success' => true,
+                'action' => $isExpired ? 'expired' : ($isResumed ? 'resumed' : 'created'),
+                'data' => [
+                    'student_unit' => [
+                        'id' => $studentUnit->id,
+                        'is_expired' => $isExpired,
+                        'in_grace_period' => $inGracePeriod,
+                        'created_at' => $studentUnit->created_at->toIso8601String(),
+                        'session_expires_at' => $studentUnit->session_expires_at?->toIso8601String(),
+                    ],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in checkOrCreateSession:', [
+                'exception' => $e->getMessage(),
+                'course_date_id' => $request->input('course_date_id'),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to check or create session',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

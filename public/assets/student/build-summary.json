@@ -1,13 +1,13 @@
 {
-  "build_time": "2025-12-17T16:55:37.537Z",
-  "total_assets": 27,
+  "build_time": "2025-12-21T21:39:03.390Z",
+  "total_assets": 25,
   "student_assets": 2,
   "dashboard_assets": 0,
   "component_assets": 9,
   "build_size": {
-    "bytes": 460785,
-    "kb": 450,
-    "mb": 0.44
+    "bytes": 498957,
+    "kb": 487,
+    "mb": 0.48
   },
   "status": "completed"
 }

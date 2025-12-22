@@ -107,6 +107,20 @@ Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(functi
         ->name('onboarding.identity');
     Route::post('/onboarding/{studentUnit}/enter', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'enterClassroom'])
         ->name('onboarding.enter');
+
+    // SESSION MANAGEMENT ROUTES
+    Route::post('/session/heartbeat', [App\Http\Controllers\Student\ClassroomController::class, 'heartbeat'])
+        ->name('session.heartbeat');
+    Route::get('/session/status/{studentUnitId}', [App\Http\Controllers\Student\ClassroomController::class, 'sessionStatus'])
+        ->name('session.status');
+    Route::post('/session/leave', [App\Http\Controllers\Student\ClassroomController::class, 'leaveClassroom'])
+        ->name('session.leave');
+    Route::post('/session/check-or-create', [App\Http\Controllers\Student\ClassroomController::class, 'checkOrCreateSession'])
+        ->name('session.check-or-create');
+
+    // VIDEO QUOTA MANAGEMENT ROUTES
+    Route::get('/video-quota', [App\Http\Controllers\Student\StudentDashboardController::class, 'getVideoQuota'])
+        ->name('video-quota');
 });
 
 /**

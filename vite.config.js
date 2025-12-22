@@ -8,7 +8,6 @@ export default defineConfig({
         laravel({
             input: [
                 // Core Laravel TypeScript files
-                "resources/js/app.ts",
                 "resources/js/admin.ts",
                 "resources/js/instructor.ts",
                 "resources/js/support.ts",
@@ -17,9 +16,6 @@ export default defineConfig({
                 // Laravel JavaScript modules
                 "resources/js/modules/filepond.js",
                 "resources/js/modules/site.js",
-
-                // Laravel JavaScript components
-                "resources/js/alert-manager.js",
 
                 // Student Offline Video Room
                 // "resources/js/React/Student/Offline/OfflineVideoRoom.tsx",
