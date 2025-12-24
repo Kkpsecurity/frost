@@ -205,6 +205,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(StudentIdVerification::class, 'student_id');
     }
 
+    public function studentVideoQuota()
+    {
+        return $this->hasOne(StudentVideoQuota::class, 'user_id');
+    }
+
     public function zoomCreds()
     {
         return $this->belongsTo(ZoomCreds::class, 'zoom_creds_id');

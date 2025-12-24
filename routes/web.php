@@ -27,6 +27,13 @@ Route::get('/games/speed-tictactoe', function () {
 })->name('games.speed-tictactoe');
 
 /**
+ * API Testing Routes
+ */
+Route::middleware('auth')->get('/test-lesson-session', function () {
+    return view('test-lesson-session');
+})->name('test.lesson-session');
+
+/**
  * Account Profile Routes
  */
 Route::middleware('auth')->group(function () {

@@ -3,6 +3,8 @@ import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import { useClassroom } from "../../context/ClassroomContext";
 import { LessonType } from "../../types/classroom";
 import { useVideoQuota } from "../../hooks/useVideoQuota";
+import { useLessonSession } from "../../hooks/useLessonSession";
+import SessionInfoPanel from "./SessionInfoPanel";
 
 interface MainOfflineProps {
     courseAuthId: number;
@@ -31,6 +33,18 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
     
     // Video quota hook - manages student watch time
     const { quota, isLoading: isLoadingQuota, error: quotaError } = useVideoQuota();
+    
+    // Lesson session hook - manages active session with locking
+    const { 
+        session, 
+        isActive: hasActiveSession, 
+        isLocked: areLessonsLocked, 
+        timeRemaining, 
+        pauseRemaining,
+        startSession,
+        completeSession,
+        terminateSession 
+    } = useLessonSession();
 
     // Load lessons from API (offline mode gets all course lessons)
     useEffect(() => {
@@ -148,6 +162,23 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                             </span>
                         </div>
                         
+                        {/* Session Info Panel - Shows when session is active */}
+                        {hasActiveSession && session && (
+                            <div className="mb-3">
+                                <SessionInfoPanel
+                                    session={session}
+                                    timeRemaining={timeRemaining}
+                                    pauseRemaining={pauseRemaining}
+                                    onEndSession={() => {
+                                        if (confirm('Are you sure you want to end this session? Your progress will be lost.')) {
+                                            terminateSession();
+                                            setViewMode('list');
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
+                        
                         {/* Real lesson data from API */}
                         <div className="lesson-list">
                             {isLoadingLessons ? (
@@ -226,41 +257,75 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                         )}
                                                     </div>
                                                     
-                                                    {/* Start Button - Only visible on Self Study tab */}
-                                                    {activeTab === 'self-study' && !lesson.is_completed && (
+                                                    {/* Start/Resume/Locked Button - Only visible on Self Study tab */}
+                                                    {activeTab === 'self-study' && (
                                                         <button
-                                                            className="btn btn-sm mt-2 w-100"
+                                                            className={`btn btn-sm mt-2 w-100 ${
+                                                                hasActiveSession && session?.lessonId === lesson.id
+                                                                    ? 'btn-info'  // Active lesson - Resume
+                                                                    : lesson.is_completed
+                                                                    ? 'btn-outline-success'  // Completed - Review
+                                                                    : 'btn-outline-info'  // Available - Start
+                                                            }`}
                                                             style={{
-                                                                backgroundColor: '#3498db',
-                                                                color: 'white',
-                                                                border: 'none',
                                                                 padding: '0.375rem 0.75rem',
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 borderRadius: '0.25rem',
+                                                                cursor: areLessonsLocked && session?.lessonId !== lesson.id 
+                                                                    ? 'not-allowed' 
+                                                                    : 'pointer',
+                                                                opacity: areLessonsLocked && session?.lessonId !== lesson.id 
+                                                                    ? 0.5 
+                                                                    : 1,
                                                                 transition: 'all 0.2s',
                                                             }}
+                                                            disabled={areLessonsLocked && session?.lessonId !== lesson.id}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                console.log('Start lesson:', lesson.id, lesson.title);
-                                                                // Update selected lesson and show preview screen
-                                                                setSelectedLessonId(lesson.id);
-                                                                setPreviewLessonId(lesson.id);
-                                                                setViewMode('preview');
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.backgroundColor = '#2980b9';
-                                                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.backgroundColor = '#3498db';
-                                                                e.currentTarget.style.transform = 'translateY(0)';
-                                                                e.currentTarget.style.boxShadow = 'none';
+                                                                
+                                                                if (hasActiveSession && session?.lessonId === lesson.id) {
+                                                                    // Resume active lesson - go to player
+                                                                    console.log('Resume lesson:', lesson.id);
+                                                                    setSelectedLessonId(lesson.id);
+                                                                    setPreviewLessonId(lesson.id);
+                                                                    setViewMode('player');
+                                                                } else if (lesson.is_completed) {
+                                                                    // Review completed lesson
+                                                                    console.log('Review lesson:', lesson.id);
+                                                                    setSelectedLessonId(lesson.id);
+                                                                    setPreviewLessonId(lesson.id);
+                                                                    setViewMode('preview');
+                                                                } else if (!areLessonsLocked) {
+                                                                    // Start new lesson - show preview first
+                                                                    console.log('Start lesson:', lesson.id);
+                                                                    setSelectedLessonId(lesson.id);
+                                                                    setPreviewLessonId(lesson.id);
+                                                                    setViewMode('preview');
+                                                                }
                                                             }}
                                                         >
-                                                            <i className="fas fa-play me-1"></i>
-                                                            Start Lesson
+                                                            {areLessonsLocked && session?.lessonId !== lesson.id ? (
+                                                                <>
+                                                                    <i className="fas fa-lock me-1"></i>
+                                                                    Locked
+                                                                </>
+                                                            ) : hasActiveSession && session?.lessonId === lesson.id ? (
+                                                                <>
+                                                                    <i className="fas fa-play-circle me-1"></i>
+                                                                    Resume
+                                                                </>
+                                                            ) : lesson.is_completed ? (
+                                                                <>
+                                                                    <i className="fas fa-eye me-1"></i>
+                                                                    Review
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <i className="fas fa-play me-1"></i>
+                                                                    Start Lesson
+                                                                </>
+                                                            )}
                                                         </button>
                                                     )}
                                                     
@@ -1369,9 +1434,27 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             <button
                                                                 className="btn btn-lg w-100 mb-3"
                                                                 disabled={quotaAfterLesson < 0}
-                                                                onClick={() => {
+                                                                onClick={async () => {
                                                                     console.log('Begin lesson:', lesson.id, lesson.title);
-                                                                    setViewMode('player');
+                                                                    
+                                                                    // Convert duration_minutes to seconds
+                                                                    const videoDurationSeconds = lesson.duration_minutes * 60;
+                                                                    
+                                                                    // Start session via hook
+                                                                    const result = await startSession(
+                                                                        lesson.id,
+                                                                        courseAuthId,
+                                                                        videoDurationSeconds,
+                                                                        lesson.title
+                                                                    );
+                                                                    
+                                                                    if (result.success) {
+                                                                        // Session started - go to player
+                                                                        setViewMode('player');
+                                                                    } else {
+                                                                        // Show error
+                                                                        alert(`Failed to start session: ${result.error}`);
+                                                                    }
                                                                 }}
                                                                 style={{
                                                                     backgroundColor: quotaAfterLesson < 0 ? "#7f8c8d" : "#2ecc71",

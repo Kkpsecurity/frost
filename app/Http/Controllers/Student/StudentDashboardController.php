@@ -229,7 +229,7 @@ class StudentDashboardController extends Controller
                     'id' => $lessonId,
                     'title' => $lesson['name'] ?? $lesson['title'] ?? 'Lesson ' . $lessonId,
                     'description' => $lesson['description'] ?? '',
-                    'duration_minutes' => $lesson['duration_minutes'] ?? $lesson['progress_minutes'] ?? 0,
+                    'duration_minutes' => $lesson['credit_minutes'] ?? $lesson['duration_minutes'] ?? $lesson['progress_minutes'] ?? 0,
                     'order' => $lesson['order'] ?? $lesson['order_by'] ?? 0,
                     'status' => $status,
                     'is_completed' => in_array($lessonId, $completedLessons),

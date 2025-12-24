@@ -111,6 +111,26 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/classroom/lesson/complete', [StudentDashboardController::class, 'completeLessonSession'])
         ->name('classroom.lesson.complete');
 
+    /**
+     * Self-Study Lesson Session Management Routes (Phase 5)
+     * Controller: StudentLessonSessionController
+     */
+    Route::post('/classroom/lesson/start-session', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'startSession'])
+        ->name('classroom.lesson.start-session');
+
+    Route::post('/classroom/lesson/update-progress', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'updateProgress'])
+        ->name('classroom.lesson.update-progress');
+
+    Route::post('/classroom/lesson/track-pause', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'trackPause'])
+        ->name('classroom.lesson.track-pause');
+
+    Route::post('/classroom/lesson/complete-session', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'completeSession'])
+        ->name('classroom.lesson.complete-session');
+
+    Route::get('/classroom/lesson/session-status/{sessionId}', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'getSessionStatus'])
+        ->where('sessionId', '[0-9a-f\-]{36}')  // UUID format
+        ->name('classroom.lesson.session-status');
+
     // Main student classroom dashboard
     Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
         ->name('classroom.dashboard');
