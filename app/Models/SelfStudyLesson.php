@@ -40,17 +40,17 @@ class SelfStudyLesson extends Model
         'course_auth_id'    => 'integer',
         'lesson_id'         => 'integer',
 
-        'created_at'        => 'timestamp',
-        'updated_at'        => 'timestamp',
-        'agreed_at' => 'timestamp',
-        'completed_at'      => 'timestamp',
-        'dnc_at' => 'timestamp', // Did Not Complete - for failed lessons
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'agreed_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'dnc_at' => 'datetime', // Did Not Complete - for failed lessons
 
         'seconds_viewed'    => 'integer',
         'credit_minutes' => 'integer',
 
         // Session management
-        'session_expires_at' => 'timestamp',
+        'session_expires_at' => 'datetime',
         'session_duration_minutes' => 'integer',
 
         // Pause tracking

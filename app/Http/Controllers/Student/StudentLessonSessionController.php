@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 
 /**
  * StudentLessonSessionController
- * 
+ *
  * Handles lesson session management for self-study students:
  * - Start session with quota validation
  * - Update playback progress
@@ -34,14 +34,14 @@ class StudentLessonSessionController extends Controller
 
     /**
      * Start a new lesson session
-     * 
+     *
      * POST /classroom/lesson/start-session
-     * 
+     *
      * Validates:
      * - Student has sufficient quota
      * - No duplicate active session
      * - Lesson exists and belongs to student's course
-     * 
+     *
      * Creates:
      * - Session ID and expiration time
      * - Pause time allowance
@@ -67,6 +67,7 @@ class StudentLessonSessionController extends Controller
                 'lesson_id' => $lessonId,
                 'course_auth_id' => $courseAuthId,
                 'video_duration_seconds' => $videoDurationSeconds,
+                'auth_user' => Auth::user() ? Auth::user()->toArray() : null,
             ]);
 
             // Check for duplicate active session
@@ -114,15 +115,21 @@ class StudentLessonSessionController extends Controller
             }
 
             // Start session using service
-            $selfStudyLesson = $this->sessionService->startSession(
-                studentId: $studentId,
-                lessonId: $lessonId,
+            $result = $this->sessionService->startSession(
+                student: Auth::user(),
                 courseAuthId: $courseAuthId,
+                lessonId: $lessonId,
                 videoDurationSeconds: $videoDurationSeconds
             );
 
-            // Get session summary
-            $sessionData = $this->sessionService->getSessionSummary($selfStudyLesson);
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $result['message'],
+                ], 400);
+            }
+
+            $selfStudyLesson = $result['session'];
 
             Log::info('Lesson session started successfully', [
                 'student_id' => $studentId,
@@ -177,9 +184,9 @@ class StudentLessonSessionController extends Controller
 
     /**
      * Update playback progress
-     * 
+     *
      * POST /classroom/lesson/update-progress
-     * 
+     *
      * Updates:
      * - playback_progress_seconds
      * - completion_percentage
@@ -261,9 +268,9 @@ class StudentLessonSessionController extends Controller
 
     /**
      * Track pause time usage
-     * 
+     *
      * POST /classroom/lesson/track-pause
-     * 
+     *
      * Updates:
      * - total_pause_minutes_used
      * - pause_intervals (JSON array)
@@ -348,9 +355,9 @@ class StudentLessonSessionController extends Controller
 
     /**
      * Complete lesson session
-     * 
+     *
      * POST /classroom/lesson/complete-session
-     * 
+     *
      * Finalizes:
      * - Rounds quota consumption
      * - Checks 80% completion threshold
@@ -434,14 +441,14 @@ class StudentLessonSessionController extends Controller
 
     /**
      * Get session status
-     * 
+     *
      * GET /classroom/lesson/session-status/{sessionId}
-     * 
+     *
      * Returns:
      * - Current session state
      * - Progress and pause usage
      * - Time remaining
-     * 
+     *
      * Used for:
      * - Resuming after browser refresh
      * - Checking session validity

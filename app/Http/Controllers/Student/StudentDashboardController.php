@@ -237,6 +237,16 @@ class StudentDashboardController extends Controller
                 ];
             })->sortBy('order')->values()->toArray();
 
+            // Check for active self-study session
+            $activeSelfStudySession = null;
+            if (!$isOnline && $courseAuth) {
+                $activeSelfStudySession = \App\Models\SelfStudyLesson::where('course_auth_id', $courseAuth->id)
+                    ->whereNotNull('session_id')
+                    ->where('session_expires_at', '>', now())
+                    ->where('quota_status', '!=', 'consumed')
+                    ->first();
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -271,6 +281,15 @@ class StudentDashboardController extends Controller
                     'active_lesson_id' => $activeLessonId,
                     'completed_lessons_count' => count($completedLessons),
                     'total_lessons_count' => count($lessons),
+                    'active_self_study_session' => $activeSelfStudySession ? [
+                        'session_id' => $activeSelfStudySession->session_id,
+                        'lesson_id' => $activeSelfStudySession->lesson_id,
+                        'started_at' => $activeSelfStudySession->created_at,
+                        'expires_at' => $activeSelfStudySession->session_expires_at,
+                        'time_remaining_minutes' => max(0, now()->diffInMinutes($activeSelfStudySession->session_expires_at, false)),
+                        'pause_remaining_minutes' => $activeSelfStudySession->total_pause_minutes_allowed - $activeSelfStudySession->total_pause_minutes_used,
+                        'completion_percentage' => $activeSelfStudySession->completion_percentage ?? 0,
+                    ] : null,
                 ],
             ]);
 
@@ -409,7 +428,7 @@ class StudentDashboardController extends Controller
     /**
      * Get student video quota
      * Returns current quota status for self-study video lessons
-     * 
+     *
      * @return JsonResponse
      */
     public function getVideoQuota(): JsonResponse

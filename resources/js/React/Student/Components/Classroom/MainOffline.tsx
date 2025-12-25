@@ -14,7 +14,7 @@ interface MainOfflineProps {
 
 /**
  * MainOffline - Self-study classroom mode
- * 
+ *
  * Layout:
  * - Title Bar: Student tools and information (SchoolDashboardTitleBar component)
  * - Sidebar: All lessons for selected course
@@ -26,24 +26,30 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
     const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
     const [isLoadingLessons, setIsLoadingLessons] = useState(true);
     const [courseName, setCourseName] = useState<string>('Loading...');
-    
+
     // View mode: 'list' (default), 'preview' (lesson details), 'player' (video player)
     const [viewMode, setViewMode] = useState<'list' | 'preview' | 'player'>('list');
     const [previewLessonId, setPreviewLessonId] = useState<number | null>(null);
-    
+
+    // Active session data from classroom poll
+    const [activeSession, setActiveSession] = useState<any>(null);
+
+    // Derive selected lesson from selectedLessonId
+    const selectedLesson = selectedLessonId ? lessons.find(l => l.id === selectedLessonId) : null;
+
     // Video quota hook - manages student watch time
     const { quota, isLoading: isLoadingQuota, error: quotaError } = useVideoQuota();
-    
+
     // Lesson session hook - manages active session with locking
-    const { 
-        session, 
-        isActive: hasActiveSession, 
-        isLocked: areLessonsLocked, 
-        timeRemaining, 
+    const {
+        session,
+        isActive: hasActiveSession,
+        isLocked: areLessonsLocked,
+        timeRemaining,
         pauseRemaining,
         startSession,
         completeSession,
-        terminateSession 
+        terminateSession
     } = useLessonSession();
 
     // Load lessons from API (offline mode gets all course lessons)
@@ -65,13 +71,18 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
 
                 const data = await response.json();
                 console.log('Lessons loaded:', data); // Debug log
-                
+
                 if (data.success && data.data) {
                     // Set course name from response
                     if (data.data.courseAuth?.course_name) {
                         setCourseName(data.data.courseAuth.course_name);
                     }
-                    
+
+                    // Set active session if exists
+                    if (data.data.active_self_study_session) {
+                        setActiveSession(data.data.active_self_study_session);
+                    }
+
                     // Set lessons if available
                     if (data.data.lessons) {
                         setLessons(data.data.lessons);
@@ -93,7 +104,26 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
         fetchLessons();
     }, [courseAuthId]);
 
-    // Get lesson status color based on status
+    // Auto-navigate to active session on mount
+    useEffect(() => {
+        if (activeSession?.lesson_id && lessons.length > 0) {
+            console.log('🎯 Auto-navigating to active session:', activeSession.lesson_id);
+
+            // Check if the lesson exists in our lessons list
+            const activeLesson = lessons.find(l => l.id === activeSession.lesson_id);
+            if (activeLesson) {
+                // Automatically switch to self-study tab
+                setActiveTab('self-study');
+
+                // Select the active lesson
+                setSelectedLessonId(activeSession.lesson_id);
+                setPreviewLessonId(activeSession.lesson_id);
+
+                // Go directly to player view
+                setViewMode('player');
+            }
+        }
+    }, [activeSession, lessons]);
     const getLessonStatusColor = (status: string) => {
         const colors = {
             'active_live': '#0ea5e9',    // cyan - live with instructor
@@ -118,7 +148,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
     };
 
     return (
-        <div 
+        <div
             className="offline-classroom"
             style={{
                 backgroundColor: "#1a1f2e",
@@ -130,7 +160,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
             }}
         >
             {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
-            <SchoolDashboardTitleBar 
+            <SchoolDashboardTitleBar
                 title={courseName}
                 subtitle={`Self-Study Mode | Student: ${student?.name || "N/A"}`}
                 icon={<i className="fas fa-book-reader"></i>}
@@ -141,7 +171,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
             {/* Main Layout: Sidebar + Content */}
             <div className="d-flex flex-grow-1" style={{ overflow: "hidden" }}>
                 {/* Sidebar - Lessons */}
-                <div 
+                <div
                     className="lessons-sidebar"
                     style={{
                         width: "280px",
@@ -161,7 +191,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                 {lessons.filter(l => l.is_completed).length} / {lessons.length}
                             </span>
                         </div>
-                        
+
                         {/* Session Info Panel - Shows when session is active */}
                         {hasActiveSession && session && (
                             <div className="mb-3">
@@ -178,7 +208,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                 />
                             </div>
                         )}
-                        
+
                         {/* Real lesson data from API */}
                         <div className="lesson-list">
                             {isLoadingLessons ? (
@@ -197,9 +227,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                     const isSelected = selectedLessonId === lesson.id;
                                     const baseColor = getLessonStatusColor(lesson.status);
                                     const selectedColor = '#2563eb';
-                                    
+
                                     return (
-                                        <div 
+                                        <div
                                             key={lesson.id}
                                             className="lesson-item mb-2 p-2"
                                             onClick={() => handleLessonClick(lesson.id)}
@@ -234,8 +264,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                     </div>
                                                     {lesson.description && (
                                                         <small style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.7rem", display: 'block', marginTop: '0.25rem' }}>
-                                                            {lesson.description.length > 60 
-                                                                ? lesson.description.substring(0, 60) + '...' 
+                                                            {lesson.description.length > 60
+                                                                ? lesson.description.substring(0, 60) + '...'
                                                                 : lesson.description}
                                                         </small>
                                                     )}
@@ -256,7 +286,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             </small>
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Start/Resume/Locked Button - Only visible on Self Study tab */}
                                                     {activeTab === 'self-study' && (
                                                         <button
@@ -272,18 +302,18 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                 fontSize: '0.75rem',
                                                                 fontWeight: '600',
                                                                 borderRadius: '0.25rem',
-                                                                cursor: areLessonsLocked && session?.lessonId !== lesson.id 
-                                                                    ? 'not-allowed' 
+                                                                cursor: areLessonsLocked && session?.lessonId !== lesson.id
+                                                                    ? 'not-allowed'
                                                                     : 'pointer',
-                                                                opacity: areLessonsLocked && session?.lessonId !== lesson.id 
-                                                                    ? 0.5 
+                                                                opacity: areLessonsLocked && session?.lessonId !== lesson.id
+                                                                    ? 0.5
                                                                     : 1,
                                                                 transition: 'all 0.2s',
                                                             }}
                                                             disabled={areLessonsLocked && session?.lessonId !== lesson.id}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                
+
                                                                 if (hasActiveSession && session?.lessonId === lesson.id) {
                                                                     // Resume active lesson - go to player
                                                                     console.log('Resume lesson:', lesson.id);
@@ -328,7 +358,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             )}
                                                         </button>
                                                     )}
-                                                    
+
                                                     {/* Review Button - Only visible on Self Study tab for completed lessons */}
                                                     {activeTab === 'self-study' && lesson.is_completed && (
                                                         <button
@@ -379,7 +409,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                 {/* Content Area */}
                 <div className="content-area flex-grow-1 d-flex flex-column" style={{ overflow: "hidden" }}>
                     {/* Tabs Navigation */}
-                    <div 
+                    <div
                         className="tabs-navigation"
                         style={{
                             backgroundColor: "#2c3e50",
@@ -450,7 +480,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                     <i className="fas fa-tachometer-alt me-2" style={{ color: "#3498db" }}></i>
                                     Learning Dashboard
                                 </h4>
-                                
+
                                 {/* Quick Stats Row */}
                                 <div className="row g-3 mb-4">
                                     <div className="col-md-3">
@@ -528,9 +558,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                         </span>
                                                     </div>
                                                     <div style={{ width: "100%", height: "8px", backgroundColor: "#34495e", borderRadius: "4px", overflow: "hidden" }}>
-                                                        <div style={{ 
-                                                            width: `${lessons.length > 0 ? (lessons.filter(l => l.is_completed).length / lessons.length) * 100 : 0}%`, 
-                                                            height: "100%", 
+                                                        <div style={{
+                                                            width: `${lessons.length > 0 ? (lessons.filter(l => l.is_completed).length / lessons.length) * 100 : 0}%`,
+                                                            height: "100%",
                                                             backgroundColor: "#3498db",
                                                             transition: "width 0.3s ease"
                                                         }}></div>
@@ -628,10 +658,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                             </div>
                                             <div className="card-body d-grid gap-2">
                                                 {selectedLessonId && !lessons.find(l => l.id === selectedLessonId)?.is_completed && (
-                                                    <button 
+                                                    <button
                                                         className="btn btn-primary w-100"
-                                                        style={{ 
-                                                            backgroundColor: "#3498db", 
+                                                        style={{
+                                                            backgroundColor: "#3498db",
                                                             border: "none",
                                                             padding: "0.75rem",
                                                             fontWeight: "600"
@@ -642,9 +672,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                         Resume Current Lesson
                                                     </button>
                                                 )}
-                                                <button 
+                                                <button
                                                     className="btn btn-outline-light w-100"
-                                                    style={{ 
+                                                    style={{
                                                         borderColor: "#3498db",
                                                         color: "#3498db",
                                                         padding: "0.75rem",
@@ -668,9 +698,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                             </div>
                                             <div className="card-body">
                                                 <div className="text-center mb-3">
-                                                    <div style={{ 
-                                                        width: "80px", 
-                                                        height: "80px", 
+                                                    <div style={{
+                                                        width: "80px",
+                                                        height: "80px",
                                                         margin: "0 auto",
                                                         borderRadius: "50%",
                                                         backgroundColor: "#3498db",
@@ -702,8 +732,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                 </div>
 
                                 {/* Info Alert */}
-                                <div className="alert mt-3 mb-0" style={{ 
-                                    backgroundColor: "rgba(52, 152, 219, 0.1)", 
+                                <div className="alert mt-3 mb-0" style={{
+                                    backgroundColor: "rgba(52, 152, 219, 0.1)",
                                     border: "1px solid rgba(52, 152, 219, 0.3)",
                                     borderRadius: "0.5rem"
                                 }}>
@@ -723,7 +753,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                             <i className="fas fa-graduation-cap me-2" style={{ color: "#3498db" }}></i>
                                             Self-Study Mode
                                         </h4>
-                                
+
                                 {/* Welcome and Instructions */}
                                 <div className="row mb-4">
                                     <div className="col-12">
@@ -734,7 +764,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                     What is Self-Study Mode?
                                                 </h5>
                                                 <p style={{ color: "#ecf0f1", fontSize: "1rem", lineHeight: "1.6", marginBottom: "1.5rem" }}>
-                                                    Self-study mode allows you to watch recorded video lessons independently, outside of live instructor-led classes. 
+                                                    Self-study mode allows you to watch recorded video lessons independently, outside of live instructor-led classes.
                                                     This feature is designed to help you succeed in your coursework.
                                                 </p>
                                             </div>
@@ -943,7 +973,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                 Your Video Time Quota
                                             </div>
                                             <div style={{ color: "#ecf0f1", fontSize: "0.9rem" }}>
-                                                You have a total of <strong>10 hours</strong> of video watch time. Monitor your usage carefully and prioritize remediation 
+                                                You have a total of <strong>10 hours</strong> of video watch time. Monitor your usage carefully and prioritize remediation
                                                 to earn hour refunds. Check your remaining time in the sidebar before starting each lesson.
                                             </div>
                                         </div>
@@ -957,7 +987,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                         Select a lesson from the sidebar to begin your self-study session
                                     </div>
                                 </div>
-                                
+
                                 <div className="row">
                                     <div className="col-12 mb-4" style={{ display: "none" }}>
                                         <div className="card" style={{ backgroundColor: "#2c3e50", border: "none" }}>
@@ -994,12 +1024,12 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                 </div>
                                     </>
                                 )}
-                                
+
                                 {/* Lesson Preview Screen - Shows when Start Lesson button is clicked */}
                                 {viewMode === 'preview' && previewLessonId !== null && (() => {
                                     const lesson = lessons.find(l => l.id === previewLessonId);
                                     if (!lesson) return null;
-                                    
+
                                     // Get quota from hook - use mock data as fallback
                                     const quotaTotal = quota?.total_hours || 10.0;
                                     const quotaUsed = quota?.used_hours || 0.0;
@@ -1007,7 +1037,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                     const lessonHours = (lesson.duration_minutes || 0) / 60;
                                     const quotaAfterLesson = quotaRemaining - lessonHours;
                                     const quotaPercentage = (quotaRemaining / quotaTotal) * 100;
-                                    
+
                                     // Show loading state if quota is still loading
                                     if (isLoadingQuota) {
                                         return (
@@ -1019,14 +1049,14 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                             </div>
                                         );
                                     }
-                                    
+
                                     // Color coding for quota
                                     const getQuotaColor = (percentage: number) => {
                                         if (percentage >= 60) return '#2ecc71';
                                         if (percentage >= 30) return '#f39c12';
                                         return '#e74c3c';
                                     };
-                                    
+
                                     return (
                                         <div className="lesson-preview">
                                             {/* Back Button */}
@@ -1044,12 +1074,12 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                 <i className="fas fa-arrow-left me-2"></i>
                                                 Back to Lesson List
                                             </button>
-                                            
+
                                             <h4 className="mb-4" style={{ color: "white", fontSize: "1.75rem", fontWeight: "600" }}>
                                                 <i className="fas fa-eye me-2" style={{ color: "#3498db" }}></i>
                                                 Lesson Preview
                                             </h4>
-                                            
+
                                             {/* Quota Warning Banner - Show at top if insufficient */}
                                             {quotaAfterLesson < 0 && (
                                                 <div className="alert mb-4" style={{
@@ -1059,37 +1089,37 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                     padding: "1.25rem"
                                                 }}>
                                                     <div className="d-flex align-items-center">
-                                                        <i className="fas fa-exclamation-triangle" style={{ 
-                                                            color: "#e74c3c", 
-                                                            fontSize: "2rem", 
-                                                            marginRight: "1rem" 
+                                                        <i className="fas fa-exclamation-triangle" style={{
+                                                            color: "#e74c3c",
+                                                            fontSize: "2rem",
+                                                            marginRight: "1rem"
                                                         }}></i>
                                                         <div>
                                                             <h6 style={{ color: "#e74c3c", fontWeight: "600", marginBottom: "0.25rem" }}>
                                                                 Insufficient Video Quota
                                                             </h6>
                                                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.95rem" }}>
-                                                                You need <strong>{Math.abs(quotaAfterLesson).toFixed(2)} more hours</strong> to complete this lesson. 
+                                                                You need <strong>{Math.abs(quotaAfterLesson).toFixed(2)} more hours</strong> to complete this lesson.
                                                                 Consider completing remediation lessons to earn quota refunds.
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </div>
                                             )}
-                                            
+
                                             {/* Main Content Row */}
                                             <div className="row g-4">
                                                 {/* Left Column - Lesson Details */}
                                                 <div className="col-md-8">
                                                     {/* Lesson Header Card */}
-                                                    <div className="card mb-4" style={{ 
-                                                        backgroundColor: "#2c3e50", 
-                                                        border: "none", 
+                                                    <div className="card mb-4" style={{
+                                                        backgroundColor: "#2c3e50",
+                                                        border: "none",
                                                         borderRadius: "0.5rem",
                                                         boxShadow: "0 4px 6px rgba(0,0,0,0.2)"
                                                     }}>
-                                                        <div className="card-header" style={{ 
-                                                            backgroundColor: "#34495e", 
+                                                        <div className="card-header" style={{
+                                                            backgroundColor: "#34495e",
                                                             borderBottom: "2px solid rgba(52, 152, 219, 0.3)",
                                                             borderRadius: "0.5rem 0.5rem 0 0",
                                                             padding: "1.25rem"
@@ -1102,10 +1132,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                         <div className="card-body" style={{ padding: "1.5rem" }}>
                                                             {/* Description */}
                                                             <div className="mb-4">
-                                                                <h6 style={{ 
-                                                                    color: "#95a5a6", 
-                                                                    fontSize: "0.75rem", 
-                                                                    fontWeight: "600", 
+                                                                <h6 style={{
+                                                                    color: "#95a5a6",
+                                                                    fontSize: "0.75rem",
+                                                                    fontWeight: "600",
                                                                     marginBottom: "0.75rem",
                                                                     letterSpacing: "0.05em",
                                                                     textTransform: "uppercase"
@@ -1113,36 +1143,36 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     <i className="fas fa-align-left me-2"></i>
                                                                     Description
                                                                 </h6>
-                                                                <p style={{ 
-                                                                    color: "#ecf0f1", 
-                                                                    fontSize: "1rem", 
-                                                                    lineHeight: "1.7", 
-                                                                    marginBottom: 0 
+                                                                <p style={{
+                                                                    color: "#ecf0f1",
+                                                                    fontSize: "1rem",
+                                                                    lineHeight: "1.7",
+                                                                    marginBottom: 0
                                                                 }}>
                                                                     {lesson.description || 'This lesson covers important concepts and skills that will help you progress in your coursework.'}
                                                                 </p>
                                                             </div>
-                                                            
+
                                                             {/* Lesson Stats Grid */}
                                                             <div className="row g-3">
                                                                 <div className="col-md-4">
-                                                                    <div style={{ 
-                                                                        backgroundColor: "#34495e", 
-                                                                        padding: "1rem", 
+                                                                    <div style={{
+                                                                        backgroundColor: "#34495e",
+                                                                        padding: "1rem",
                                                                         borderRadius: "0.375rem",
                                                                         border: '1px solid rgba(255,255,255,0.1)',
                                                                         textAlign: "center"
                                                                     }}>
-                                                                        <div style={{ 
-                                                                            color: "#3498db", 
-                                                                            fontSize: "1.75rem", 
-                                                                            marginBottom: "0.5rem" 
+                                                                        <div style={{
+                                                                            color: "#3498db",
+                                                                            fontSize: "1.75rem",
+                                                                            marginBottom: "0.5rem"
                                                                         }}>
                                                                             <i className="far fa-clock"></i>
                                                                         </div>
-                                                                        <div style={{ 
-                                                                            color: "white", 
-                                                                            fontSize: "1.25rem", 
+                                                                        <div style={{
+                                                                            color: "white",
+                                                                            fontSize: "1.25rem",
                                                                             fontWeight: "600",
                                                                             marginBottom: "0.25rem"
                                                                         }}>
@@ -1154,23 +1184,23 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     </div>
                                                                 </div>
                                                                 <div className="col-md-4">
-                                                                    <div style={{ 
-                                                                        backgroundColor: "#34495e", 
-                                                                        padding: "1rem", 
+                                                                    <div style={{
+                                                                        backgroundColor: "#34495e",
+                                                                        padding: "1rem",
                                                                         borderRadius: "0.375rem",
                                                                         border: '1px solid rgba(255,255,255,0.1)',
                                                                         textAlign: "center"
                                                                     }}>
-                                                                        <div style={{ 
+                                                                        <div style={{
                                                                             color: lesson.is_completed ? "#2ecc71" : "#f39c12",
-                                                                            fontSize: "1.75rem", 
-                                                                            marginBottom: "0.5rem" 
+                                                                            fontSize: "1.75rem",
+                                                                            marginBottom: "0.5rem"
                                                                         }}>
                                                                             <i className={lesson.is_completed ? "fas fa-check-circle" : "fas fa-circle-notch"}></i>
                                                                         </div>
-                                                                        <div style={{ 
-                                                                            color: "white", 
-                                                                            fontSize: "1.25rem", 
+                                                                        <div style={{
+                                                                            color: "white",
+                                                                            fontSize: "1.25rem",
                                                                             fontWeight: "600",
                                                                             marginBottom: "0.25rem"
                                                                         }}>
@@ -1182,23 +1212,23 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     </div>
                                                                 </div>
                                                                 <div className="col-md-4">
-                                                                    <div style={{ 
-                                                                        backgroundColor: "#34495e", 
-                                                                        padding: "1rem", 
+                                                                    <div style={{
+                                                                        backgroundColor: "#34495e",
+                                                                        padding: "1rem",
                                                                         borderRadius: "0.375rem",
                                                                         border: '1px solid rgba(255,255,255,0.1)',
                                                                         textAlign: "center"
                                                                     }}>
-                                                                        <div style={{ 
+                                                                        <div style={{
                                                                             color: "#9b59b6",
-                                                                            fontSize: "1.75rem", 
-                                                                            marginBottom: "0.5rem" 
+                                                                            fontSize: "1.75rem",
+                                                                            marginBottom: "0.5rem"
                                                                         }}>
                                                                             <i className="fas fa-video"></i>
                                                                         </div>
-                                                                        <div style={{ 
-                                                                            color: "white", 
-                                                                            fontSize: "1.25rem", 
+                                                                        <div style={{
+                                                                            color: "white",
+                                                                            fontSize: "1.25rem",
                                                                             fontWeight: "600",
                                                                             marginBottom: "0.25rem"
                                                                         }}>
@@ -1212,16 +1242,16 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* What You'll Learn */}
-                                                    <div className="card mb-4" style={{ 
-                                                        backgroundColor: "#2c3e50", 
-                                                        border: "none", 
+                                                    <div className="card mb-4" style={{
+                                                        backgroundColor: "#2c3e50",
+                                                        border: "none",
                                                         borderRadius: "0.5rem",
                                                         boxShadow: "0 4px 6px rgba(0,0,0,0.2)"
                                                     }}>
-                                                        <div className="card-header" style={{ 
-                                                            backgroundColor: "#34495e", 
+                                                        <div className="card-header" style={{
+                                                            backgroundColor: "#34495e",
                                                             borderBottom: "1px solid rgba(255,255,255,0.1)",
                                                             borderRadius: "0.5rem 0.5rem 0 0",
                                                             padding: "1rem"
@@ -1232,9 +1262,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             </h6>
                                                         </div>
                                                         <div className="card-body" style={{ padding: "1.25rem" }}>
-                                                            <ul style={{ 
-                                                                color: "#ecf0f1", 
-                                                                fontSize: "0.95rem", 
+                                                            <ul style={{
+                                                                color: "#ecf0f1",
+                                                                fontSize: "0.95rem",
                                                                 lineHeight: "1.8",
                                                                 paddingLeft: "1.5rem",
                                                                 marginBottom: 0
@@ -1254,16 +1284,16 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             </ul>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Prerequisites & Requirements */}
-                                                    <div className="card" style={{ 
-                                                        backgroundColor: "#2c3e50", 
-                                                        border: "none", 
+                                                    <div className="card" style={{
+                                                        backgroundColor: "#2c3e50",
+                                                        border: "none",
                                                         borderRadius: "0.5rem",
                                                         boxShadow: "0 4px 6px rgba(0,0,0,0.2)"
                                                     }}>
-                                                        <div className="card-header" style={{ 
-                                                            backgroundColor: "#34495e", 
+                                                        <div className="card-header" style={{
+                                                            backgroundColor: "#34495e",
                                                             borderBottom: "1px solid rgba(255,255,255,0.1)",
                                                             borderRadius: "0.5rem 0.5rem 0 0",
                                                             padding: "1rem"
@@ -1303,17 +1333,17 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 {/* Right Column - Quota & Actions */}
                                                 <div className="col-md-4">
                                                     {/* Quota Status Card */}
-                                                    <div className="card mb-4" style={{ 
-                                                        backgroundColor: "#34495e", 
+                                                    <div className="card mb-4" style={{
+                                                        backgroundColor: "#34495e",
                                                         border: "3px solid " + getQuotaColor(quotaPercentage),
                                                         borderRadius: "0.5rem",
                                                         boxShadow: "0 4px 6px rgba(0,0,0,0.2)"
                                                     }}>
-                                                        <div className="card-header" style={{ 
+                                                        <div className="card-header" style={{
                                                             backgroundColor: "#2c3e50",
                                                             borderBottom: "2px solid " + getQuotaColor(quotaPercentage),
                                                             borderRadius: "0.5rem 0.5rem 0 0",
@@ -1335,17 +1365,17 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                         {quotaRemaining.toFixed(1)}h
                                                                     </span>
                                                                 </div>
-                                                                <div style={{ 
-                                                                    width: "100%", 
-                                                                    height: "12px", 
-                                                                    backgroundColor: "#1e293b", 
-                                                                    borderRadius: "6px", 
+                                                                <div style={{
+                                                                    width: "100%",
+                                                                    height: "12px",
+                                                                    backgroundColor: "#1e293b",
+                                                                    borderRadius: "6px",
                                                                     overflow: "hidden",
                                                                     border: '1px solid rgba(255,255,255,0.2)'
                                                                 }}>
-                                                                    <div style={{ 
-                                                                        width: `${quotaPercentage}%`, 
-                                                                        height: "100%", 
+                                                                    <div style={{
+                                                                        width: `${quotaPercentage}%`,
+                                                                        height: "100%",
                                                                         backgroundColor: getQuotaColor(quotaPercentage),
                                                                         transition: "width 0.3s ease"
                                                                     }}></div>
@@ -1356,9 +1386,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     </small>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             <hr style={{ borderColor: "rgba(255,255,255,0.1)", margin: "1rem 0" }} />
-                                                            
+
                                                             {/* Quota Breakdown */}
                                                             <div className="mb-2">
                                                                 <div className="d-flex justify-content-between mb-2">
@@ -1375,8 +1405,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                         <i className="fas fa-minus-circle me-1" style={{ color: "#e74c3c" }}></i>
                                                                         After Completion
                                                                     </span>
-                                                                    <span style={{ 
-                                                                        color: quotaAfterLesson >= 0 ? "#2ecc71" : "#e74c3c", 
+                                                                    <span style={{
+                                                                        color: quotaAfterLesson >= 0 ? "#2ecc71" : "#e74c3c",
                                                                         fontWeight: "600",
                                                                         fontSize: "0.95rem"
                                                                     }}>
@@ -1384,12 +1414,12 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            
+
                                                             {/* Quota Status Message */}
                                                             <div className="mt-3 p-2" style={{
-                                                                backgroundColor: quotaAfterLesson < 0 
-                                                                    ? "rgba(231, 76, 60, 0.15)" 
-                                                                    : quotaPercentage < 30 
+                                                                backgroundColor: quotaAfterLesson < 0
+                                                                    ? "rgba(231, 76, 60, 0.15)"
+                                                                    : quotaPercentage < 30
                                                                         ? "rgba(243, 156, 18, 0.15)"
                                                                         : "rgba(46, 204, 113, 0.15)",
                                                                 borderRadius: "0.375rem",
@@ -1397,23 +1427,23 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                 border: "1px solid " + (quotaAfterLesson < 0 ? "#e74c3c" : quotaPercentage < 30 ? "#f39c12" : "#2ecc71")
                                                             }}>
                                                                 <i className={
-                                                                    quotaAfterLesson < 0 
-                                                                        ? "fas fa-exclamation-triangle" 
-                                                                        : quotaPercentage < 30 
+                                                                    quotaAfterLesson < 0
+                                                                        ? "fas fa-exclamation-triangle"
+                                                                        : quotaPercentage < 30
                                                                             ? "fas fa-exclamation-circle"
                                                                             : "fas fa-check-circle"
-                                                                } style={{ 
+                                                                } style={{
                                                                     color: quotaAfterLesson < 0 ? "#e74c3c" : quotaPercentage < 30 ? "#f39c12" : "#2ecc71",
                                                                     fontSize: "1.5rem",
                                                                     display: "block",
                                                                     marginBottom: "0.5rem"
                                                                 }}></i>
-                                                                <div style={{ 
+                                                                <div style={{
                                                                     color: quotaAfterLesson < 0 ? "#e74c3c" : quotaPercentage < 30 ? "#f39c12" : "#2ecc71",
                                                                     fontWeight: "600",
                                                                     fontSize: "0.85rem"
                                                                 }}>
-                                                                    {quotaAfterLesson < 0 
+                                                                    {quotaAfterLesson < 0
                                                                         ? "Insufficient Quota"
                                                                         : quotaPercentage < 30
                                                                             ? "Low Quota"
@@ -1422,11 +1452,11 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Action Buttons */}
-                                                    <div className="card" style={{ 
-                                                        backgroundColor: "#2c3e50", 
-                                                        border: "none", 
+                                                    <div className="card" style={{
+                                                        backgroundColor: "#2c3e50",
+                                                        border: "none",
                                                         borderRadius: "0.5rem",
                                                         boxShadow: "0 4px 6px rgba(0,0,0,0.2)"
                                                     }}>
@@ -1436,10 +1466,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                 disabled={quotaAfterLesson < 0}
                                                                 onClick={async () => {
                                                                     console.log('Begin lesson:', lesson.id, lesson.title);
-                                                                    
+
                                                                     // Convert duration_minutes to seconds
                                                                     const videoDurationSeconds = lesson.duration_minutes * 60;
-                                                                    
+
                                                                     // Start session via hook
                                                                     const result = await startSession(
                                                                         lesson.id,
@@ -1447,7 +1477,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                         videoDurationSeconds,
                                                                         lesson.title
                                                                     );
-                                                                    
+
                                                                     if (result.success) {
                                                                         // Session started - go to player
                                                                         setViewMode('player');
@@ -1486,7 +1516,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                 <i className="fas fa-play-circle me-2"></i>
                                                                 Begin Lesson
                                                             </button>
-                                                            
+
                                                             <button
                                                                 className="btn btn-lg w-100"
                                                                 onClick={() => {
@@ -1515,13 +1545,13 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                 <i className="fas fa-times me-2"></i>
                                                                 Cancel
                                                             </button>
-                                                            
+
                                                             {quotaAfterLesson < 0 && (
                                                                 <div className="mt-3 text-center">
-                                                                    <small style={{ 
-                                                                        color: "#e74c3c", 
+                                                                    <small style={{
+                                                                        color: "#e74c3c",
                                                                         fontSize: "0.8rem",
-                                                                        fontStyle: "italic" 
+                                                                        fontStyle: "italic"
                                                                     }}>
                                                                         <i className="fas fa-info-circle me-1"></i>
                                                                         Complete remediation lessons to earn quota refunds
@@ -1530,10 +1560,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             )}
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Tips Card */}
-                                                    <div className="card mt-4" style={{ 
-                                                        backgroundColor: "#34495e", 
+                                                    <div className="card mt-4" style={{
+                                                        backgroundColor: "#34495e",
                                                         border: "1px solid rgba(52, 152, 219, 0.3)",
                                                         borderRadius: "0.5rem"
                                                     }}>
@@ -1542,9 +1572,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                 <i className="fas fa-lightbulb me-2"></i>
                                                                 Study Tips
                                                             </h6>
-                                                            <ul style={{ 
-                                                                color: "#ecf0f1", 
-                                                                fontSize: "0.8rem", 
+                                                            <ul style={{
+                                                                color: "#ecf0f1",
+                                                                fontSize: "0.8rem",
                                                                 lineHeight: "1.6",
                                                                 paddingLeft: "1.25rem",
                                                                 marginBottom: 0
@@ -1561,20 +1591,103 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                         </div>
                                     );
                                 })()}
-                                
+
                                 {/* Video Player Mode */}
-                                {viewMode === 'player' && (
-                                    <div className="video-player-mode">
-                                        <h4 style={{ color: "white" }}>Video Player Coming Soon...</h4>
-                                        <button
-                                            className="btn btn-primary"
-                                            onClick={() => {
-                                                setViewMode('list');
-                                                setPreviewLessonId(null);
+                                {viewMode === 'player' && selectedLesson && (
+                                    <div className="video-player-mode" style={{ padding: '20px' }}>
+                                        {/* Video Player Header */}
+                                        <div className="d-flex justify-content-between align-items-center mb-3">
+                                            <h4 style={{ color: "white", margin: 0 }}>
+                                                <i className="fas fa-play-circle me-2"></i>
+                                                {selectedLesson.title}
+                                            </h4>
+                                            <button
+                                                className="btn btn-outline-light btn-sm"
+                                                onClick={() => {
+                                                    setViewMode('list');
+                                                    setPreviewLessonId(null);
+                                                }}
+                                            >
+                                                <i className="fas fa-arrow-left me-2"></i>
+                                                Back to Lessons
+                                            </button>
+                                        </div>
+
+                                        {/* Video Player Container */}
+                                        <div
+                                            className="video-container mb-3"
+                                            style={{
+                                                backgroundColor: '#000',
+                                                borderRadius: '8px',
+                                                overflow: 'hidden',
+                                                position: 'relative',
+                                                paddingTop: '56.25%', // 16:9 aspect ratio
                                             }}
                                         >
-                                            Back to Lessons
-                                        </button>
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'white',
+                                                    fontSize: '1.5rem'
+                                                }}
+                                            >
+                                                <div className="text-center">
+                                                    <i className="fas fa-video fa-3x mb-3"></i>
+                                                    <p>Video Player Placeholder</p>
+                                                    <small style={{ color: '#95a5a6' }}>Duration: {selectedLesson.duration_minutes} minutes</small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Session Info Display */}
+                                        {activeSession && (
+                                            <div className="alert alert-success" style={{ backgroundColor: 'rgba(40, 167, 69, 0.1)', borderColor: '#28a745' }}>
+                                                <div className="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i className="fas fa-check-circle me-2"></i>
+                                                        <strong>Active Session</strong>
+                                                    </div>
+                                                    <div className="text-end">
+                                                        <small className="d-block">Time Remaining: {activeSession.time_remaining_minutes} min</small>
+                                                        <small className="d-block">Pause Time Left: {activeSession.pause_remaining_minutes} min</small>
+                                                        <small className="d-block">Progress: {activeSession.completion_percentage}%</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Video Controls Placeholder */}
+                                        <div className="video-controls d-flex gap-2 mb-3">
+                                            <button className="btn btn-primary">
+                                                <i className="fas fa-play me-2"></i>
+                                                Play
+                                            </button>
+                                            <button className="btn btn-secondary">
+                                                <i className="fas fa-pause me-2"></i>
+                                                Pause
+                                            </button>
+                                            <button className="btn btn-warning">
+                                                <i className="fas fa-backward me-2"></i>
+                                                Rewind
+                                            </button>
+                                        </div>
+
+                                        {/* Lesson Description */}
+                                        {selectedLesson.description && (
+                                            <div className="card" style={{ backgroundColor: '#2c3e50', border: 'none' }}>
+                                                <div className="card-body">
+                                                    <h6 style={{ color: 'white' }}>Lesson Description</h6>
+                                                    <p style={{ color: '#95a5a6' }}>{selectedLesson.description}</p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1583,7 +1696,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                         {activeTab === 'documentation' && (
                             <div className="documentation-tab">
                                 <h4 className="mb-4" style={{ color: "white" }}>Course Documentation</h4>
-                                
+
                                 <div className="card" style={{ backgroundColor: "#2c3e50", border: "none" }}>
                                     <div className="card-header" style={{ backgroundColor: "#34495e", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                                         <h6 className="mb-0" style={{ color: "white" }}>
@@ -1598,7 +1711,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                         <div className="list-group" style={{ backgroundColor: "transparent" }}>
                                             {/* TODO: Replace with real document data */}
                                             {['Course Syllabus', 'Study Guide', 'Reference Materials', 'Additional Resources'].map((doc, idx) => (
-                                                <div 
+                                                <div
                                                     key={idx}
                                                     className="list-group-item d-flex justify-content-between align-items-center"
                                                     style={{ backgroundColor: "#34495e", border: "1px solid rgba(255,255,255,0.1)", color: "white", marginBottom: "0.5rem" }}

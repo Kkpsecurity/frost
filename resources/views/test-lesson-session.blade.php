@@ -7,10 +7,10 @@
     <title>Test Lesson Session API</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .test-result { 
-            margin-top: 10px; 
-            padding: 10px; 
-            border-radius: 5px; 
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
             font-family: monospace;
             white-space: pre-wrap;
         }
@@ -38,6 +38,7 @@
             <div class="card-header bg-primary text-white">
                 <h5>Test Setup</h5>
             </div>
+
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
@@ -153,17 +154,17 @@
             try {
                 const response = await fetch('/classroom/debug/student');
                 const data = await response.json();
-                
+
                 if (data.courseAuth) {
                     document.getElementById('courseAuthId').value = data.courseAuth.id;
                 }
-                
+
                 if (data.lessons && data.lessons.length > 0) {
                     const lesson = data.lessons[0];
                     document.getElementById('lessonId').value = lesson.id;
                     document.getElementById('videoDuration').value = lesson.video_seconds || 600;
                 }
-                
+
                 alert('Test data loaded! Please verify the values and click "Start Lesson Session"');
             } catch (error) {
                 alert('Error loading test data: ' + error.message);
@@ -174,7 +175,7 @@
             const lessonId = document.getElementById('lessonId').value;
             const courseAuthId = document.getElementById('courseAuthId').value;
             const videoDuration = document.getElementById('videoDuration').value;
-            
+
             const resultDiv = document.getElementById('startResult');
             resultDiv.className = 'test-result info';
             resultDiv.classList.remove('d-none');
@@ -196,11 +197,11 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.className = 'test-result success';
                     resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
-                    
+
                     // Auto-fill session ID for other tests
                     if (data.session && data.session.sessionId) {
                         document.getElementById('sessionId').value = data.session.sessionId;
@@ -219,7 +220,7 @@
             const sessionId = document.getElementById('sessionId').value;
             const playbackSeconds = document.getElementById('progressSeconds').value;
             const completionPercent = document.getElementById('completionPercent').value;
-            
+
             const resultDiv = document.getElementById('progressResult');
             resultDiv.className = 'test-result info';
             resultDiv.classList.remove('d-none');
@@ -240,7 +241,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.className = 'test-result success';
                     resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
@@ -257,7 +258,7 @@
         async function testTrackPause() {
             const sessionId = document.getElementById('sessionId').value;
             const pauseMinutes = document.getElementById('pauseMinutes').value;
-            
+
             const resultDiv = document.getElementById('pauseResult');
             resultDiv.className = 'test-result info';
             resultDiv.classList.remove('d-none');
@@ -277,7 +278,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.className = 'test-result success';
                     resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
@@ -293,7 +294,7 @@
 
         async function testSessionStatus() {
             const sessionId = document.getElementById('sessionId').value;
-            
+
             const resultDiv = document.getElementById('statusResult');
             resultDiv.className = 'test-result info';
             resultDiv.classList.remove('d-none');
@@ -302,7 +303,7 @@
             try {
                 const response = await fetch(`/classroom/lesson/session-status/${sessionId}`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.className = 'test-result success';
                     resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
@@ -318,7 +319,7 @@
 
         async function testCompleteSession() {
             const sessionId = document.getElementById('sessionId').value;
-            
+
             const resultDiv = document.getElementById('completeResult');
             resultDiv.className = 'test-result info';
             resultDiv.classList.remove('d-none');
@@ -337,7 +338,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.className = 'test-result success';
                     resultDiv.textContent = `✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`;
@@ -366,7 +367,7 @@
                 log('\n[1/5] Starting session...');
                 await testStartSession();
                 await sleep(1000);
-                
+
                 // Step 2: Update Progress to 85%
                 log('\n[2/5] Updating progress to 85%...');
                 document.getElementById('completionPercent').value = 85;
@@ -374,24 +375,24 @@
                 document.getElementById('progressSeconds').value = Math.floor(videoDuration * 0.85);
                 await testUpdateProgress();
                 await sleep(1000);
-                
+
                 // Step 3: Track Pause
                 log('\n[3/5] Tracking pause time...');
                 await testTrackPause();
                 await sleep(1000);
-                
+
                 // Step 4: Get Status
                 log('\n[4/5] Getting session status...');
                 await testSessionStatus();
                 await sleep(1000);
-                
+
                 // Step 5: Complete Session
                 log('\n[5/5] Completing session...');
                 await testCompleteSession();
-                
+
                 resultDiv.className = 'test-result success';
                 log('\n✅ FULL WORKFLOW COMPLETE! Check individual test results above.');
-                
+
             } catch (error) {
                 resultDiv.className = 'test-result error';
                 log(`\n❌ WORKFLOW FAILED: ${error.message}`);
