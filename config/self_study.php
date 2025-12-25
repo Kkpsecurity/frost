@@ -34,7 +34,7 @@ return [
     |
     | Additional time (in minutes) added to lesson length for session duration.
     | This provides buffer for pauses, interruptions, and completing the lesson.
-    | 
+    |
     | Example: 2-hour video + 15 min buffer = 135 min total session time
     |
     */
@@ -54,18 +54,39 @@ return [
     'pause_time' => [
         // Base pause minutes per hour of video
         // Example: 10 min/hour means 6-hour video = 60 minutes pause
-        'minutes_per_hour' => env('SELF_STUDY_PAUSE_PER_HOUR', 10),
-        
+        'minutes_per_hour' => env('SELF_STUDY_PAUSE_PER_HOUR', 5),
+
         // Maximum total pause time (minutes) regardless of video length
         'max_total_minutes' => env('SELF_STUDY_MAX_PAUSE', 60),
-        
+
         // Minimum pause interval (minutes)
         // Smaller intervals won't be included in distribution
         'min_interval_minutes' => 5,
-        
-        // Preferred pause intervals for distribution (minutes)
-        // Example: 30 min total might be distributed as [15, 10, 5]
-        'interval_distribution' => [5, 10, 15],
+
+        // Pause allocation rules based on course duration
+        // Automatically distributes pause time into multiple breaks
+        'allocation_rules' => [
+            // 6+ hour courses: 30 min total → 3 pauses (15, 10, 5)
+            ['min_hours' => 6, 'total_minutes' => 30, 'distribution' => [15, 10, 5]],
+
+            // 4-5.9 hour courses: 20 min total → 2 pauses (12, 8)
+            ['min_hours' => 4, 'total_minutes' => 20, 'distribution' => [12, 8]],
+
+            // 2-3.9 hour courses: 15 min total → 2 pauses (10, 5)
+            ['min_hours' => 2, 'total_minutes' => 15, 'distribution' => [10, 5]],
+
+            // 1-1.9 hour courses: 10 min total → 1 pause (10)
+            ['min_hours' => 1, 'total_minutes' => 10, 'distribution' => [10]],
+
+            // Under 1 hour: 5 min total → 1 pause (5)
+            ['min_hours' => 0, 'total_minutes' => 5, 'distribution' => [5]],
+        ],
+
+        // Pause warning - seconds before pause expires to show alert
+        'warning_seconds' => 30,
+
+        // Sound alert file path (relative to public/)
+        'alert_sound' => '/sounds/pause-warning.mp3',
     ],
 
     /*
@@ -76,7 +97,7 @@ return [
     | Standard increments for rounding up quota consumption.
     | Prevents inflated session durations from pause time.
     |
-    | Example: 
+    | Example:
     | - 12 minutes watched → rounds to 15 minutes
     | - 18 minutes watched → rounds to 30 minutes
     | - 45 minutes watched → rounds to 60 minutes
@@ -97,10 +118,10 @@ return [
     'session_expiration' => [
         // Grace period before hard session cutoff (minutes)
         'grace_period_minutes' => 5,
-        
+
         // Show warning N minutes before expiration
         'warning_minutes' => 5,
-        
+
         // Auto-save progress interval (seconds)
         'auto_save_interval_seconds' => 30,
     ],
@@ -117,13 +138,13 @@ return [
     'video_player' => [
         // Prevent forward seeking (rewind only)
         'allow_forward_seek' => false,
-        
+
         // Allow pause (can be disabled if needed)
         'allow_pause' => true,
-        
+
         // Allow playback speed changes
         'allow_speed_change' => false,
-        
+
         // Allowed playback speeds (if speed change enabled)
         'allowed_speeds' => [0.75, 1.0, 1.25, 1.5],
     ],
@@ -141,10 +162,10 @@ return [
     'quota_refund' => [
         // Automatically refund quota when online lesson passes
         'auto_refund_enabled' => true,
-        
+
         // Refund full amount or prorated based on usage
         'refund_strategy' => 'full', // 'full' or 'prorated'
-        
+
         // Log refund activities
         'log_refunds' => true,
     ],

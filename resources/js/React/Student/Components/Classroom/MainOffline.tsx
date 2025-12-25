@@ -37,6 +37,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
 
     // Settings from API
     const [completionThreshold, setCompletionThreshold] = useState<number>(80);
+    const [pauseWarningSeconds, setPauseWarningSeconds] = useState<number>(30);
+    const [pauseAlertSound, setPauseAlertSound] = useState<string>('/sounds/pause-warning.mp3');
 
     // Derive selected lesson from selectedLessonId
     const selectedLesson = selectedLessonId ? lessons.find(l => l.id === selectedLessonId) : null;
@@ -90,6 +92,14 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                     // Set completion threshold from settings
                     if (data.data.settings?.completion_threshold) {
                         setCompletionThreshold(data.data.settings.completion_threshold);
+                    }
+
+                    // Set pause settings from API
+                    if (data.data.settings?.pause_warning_seconds) {
+                        setPauseWarningSeconds(data.data.settings.pause_warning_seconds);
+                    }
+                    if (data.data.settings?.pause_alert_sound) {
+                        setPauseAlertSound(data.data.settings.pause_alert_sound);
                     }
 
                     // Set lessons if available
@@ -1644,6 +1654,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                             completionThreshold={completionThreshold}
                                             simulationMode={true}
                                             simulationSpeed={10}
+                                            pauseWarningSeconds={pauseWarningSeconds}
+                                            pauseAlertSound={pauseAlertSound}
                                             onComplete={() => {
                                                 // Handle lesson completion
                                                 completeSession();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
+import PauseModal from './PauseModal';
 
 interface SecureVideoPlayerProps {
     activeSession: {
@@ -8,6 +9,14 @@ interface SecureVideoPlayerProps {
         time_remaining_minutes: number;
         pause_remaining_minutes: number;
         completion_percentage: number;
+        pause_allocation?: {
+            total_minutes: number;
+            pauses: Array<{
+                duration_minutes: number;
+                label: string;
+            }>;
+            current_pause_index: number;
+        };
     };
     lesson: {
         id: number;
@@ -15,10 +24,12 @@ interface SecureVideoPlayerProps {
         description?: string;
         duration_minutes: number;
     };
-    videoUrl: string; // URL to the video file
-    completionThreshold?: number; // Percentage (0-100) required for completion, defaults to 80
-    simulationMode?: boolean; // Enable simulation mode for testing without actual video
-    simulationSpeed?: number; // Playback speed multiplier for simulation (default 1x, use 10x for faster testing)
+    videoUrl: string;
+    completionThreshold?: number;
+    simulationMode?: boolean;
+    simulationSpeed?: number;
+    pauseWarningSeconds?: number;
+    pauseAlertSound?: string;
     onComplete: () => void;
     onProgress: (data: { playedSeconds: number; percentage: number }) => void;
     onError: (error: string) => void;
@@ -29,8 +40,10 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     lesson,
     videoUrl,
     completionThreshold = 80,
-    simulationMode = true, // Default to simulation mode until videos are available
-    simulationSpeed = 10, // Default to 10x speed for faster testing
+    simulationMode = true,
+    simulationSpeed = 10,
+    pauseWarningSeconds = 30,
+    pauseAlertSound = '/sounds/pause-warning.mp3',
     onComplete,
     onProgress,
     onError
@@ -46,6 +59,9 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // Pause tracking
     const [pauseStartTime, setPauseStartTime] = useState<number | null>(null);
     const [totalPauseTime, setTotalPauseTime] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+    const [pauseRemainingSeconds, setPauseRemainingSeconds] = useState(0);
+    const [currentPauseIndex, setCurrentPauseIndex] = useState(0);
 
     // Progress tracking
     const [lastSavedProgress, setLastSavedProgress] = useState(0);
@@ -54,6 +70,15 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // Settings - Convert threshold from percentage (0-100) to decimal (0-1)
     const completionThresholdDecimal = completionThreshold / 100;
     const rewindSeconds = 10; // Rewind button skips back 10 seconds
+
+    // Get pause allocation data
+    const pauseAllocation = activeSession.pause_allocation || {
+        total_minutes: 10,
+        pauses: [{ duration_minutes: 10, label: 'Break' }],
+        current_pause_index: 0,
+    };
+
+    const currentPause = pauseAllocation.pauses[currentPauseIndex] || pauseAllocation.pauses[0];
 
     // Initialize duration from lesson duration_minutes in simulation mode
     useEffect(() => {
@@ -135,22 +160,67 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // Handle play/pause
     const handlePlayPause = () => {
         if (playing) {
-            // Pausing - record pause start time
-            setPauseStartTime(Date.now());
+            // Pausing - show pause modal
             setPlaying(false);
-        } else {
-            // Playing - calculate pause duration if was paused
-            if (pauseStartTime) {
-                const pauseDuration = (Date.now() - pauseStartTime) / 1000; // Convert to seconds
-                setTotalPauseTime(prev => prev + pauseDuration);
-                setPauseStartTime(null);
+            setIsPaused(true);
 
-                // TODO: Send pause duration to backend
-                trackPauseTime(Math.floor(pauseDuration));
+            // Set pause duration from current pause allocation
+            const pauseDurationSeconds = currentPause.duration_minutes * 60;
+            setPauseRemainingSeconds(pauseDurationSeconds);
+            setPauseStartTime(Date.now());
+        } else {
+            // Can only resume if not in pause modal
+            if (!isPaused) {
+                setPlaying(true);
             }
-            setPlaying(true);
         }
     };
+
+    // Handle resume from pause modal
+    const handleResume = () => {
+        if (pauseStartTime) {
+            const pauseDuration = (Date.now() - pauseStartTime) / 1000; // Convert to seconds
+            setTotalPauseTime(prev => prev + pauseDuration);
+            setPauseStartTime(null);
+
+            // Track pause time in backend
+            trackPauseTime(Math.floor(pauseDuration));
+        }
+
+        setIsPaused(false);
+        setPauseRemainingSeconds(0);
+        setPlaying(true);
+
+        // Move to next pause if available
+        if (currentPauseIndex < pauseAllocation.pauses.length - 1) {
+            setCurrentPauseIndex(prev => prev + 1);
+        }
+    };
+
+    // Handle pause time expired
+    const handlePauseTimeExpired = () => {
+        // Automatically resume
+        handleResume();
+    };
+
+    // Countdown timer for pause modal
+    useEffect(() => {
+        if (!isPaused || pauseRemainingSeconds <= 0) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setPauseRemainingSeconds(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isPaused, pauseRemainingSeconds]);
 
     // Handle rewind button
     const handleRewind = () => {
@@ -452,6 +522,18 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                     </small>
                 </div>
             </div>
+
+            {/* Pause Modal */}
+            <PauseModal
+                isVisible={isPaused}
+                pauseDurationMinutes={currentPause.duration_minutes}
+                pauseLabel={currentPause.label}
+                remainingSeconds={pauseRemainingSeconds}
+                warningSeconds={pauseWarningSeconds}
+                alertSoundPath={pauseAlertSound}
+                onResume={handleResume}
+                onTimeExpired={handlePauseTimeExpired}
+            />
         </div>
     );
 };

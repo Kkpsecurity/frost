@@ -30,6 +30,7 @@ use App\Services\ClassroomDataArrayService;
 use App\Services\ClassroomDashboardService;
 use App\Services\StudentUnitService;
 use App\Services\SelfStudyLessonService;
+use App\Services\PauseAllocationService;
 
 // New refactored services
 use App\Services\Student\StudentAttendanceService;
@@ -289,9 +290,12 @@ class StudentDashboardController extends Controller
                         'time_remaining_minutes' => max(0, now()->diffInMinutes($activeSelfStudySession->session_expires_at, false)),
                         'pause_remaining_minutes' => $activeSelfStudySession->total_pause_minutes_allowed - $activeSelfStudySession->total_pause_minutes_used,
                         'completion_percentage' => $activeSelfStudySession->completion_percentage ?? 0,
+                        'pause_allocation' => PauseAllocationService::calculatePauseAllocation($activeSelfStudySession->lesson_duration_minutes ?? 60),
                     ] : null,
                     'settings' => [
                         'completion_threshold' => config('self_study.completion_threshold', 80),
+                        'pause_warning_seconds' => PauseAllocationService::getWarningSeconds(),
+                        'pause_alert_sound' => PauseAllocationService::getAlertSoundPath(),
                     ],
                 ],
             ]);
