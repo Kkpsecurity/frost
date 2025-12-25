@@ -323,7 +323,8 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // API call to track pause time
     const trackPauseTime = async (pauseSeconds: number) => {
         try {
-            const response = await fetch('/api/student/lesson-session/pause', {
+            const pauseMinutes = pauseSeconds / 60; // Convert to minutes
+            const response = await fetch('/classroom/lesson/track-pause', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -331,15 +332,19 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 },
                 body: JSON.stringify({
                     session_id: activeSession.session_id,
-                    pause_seconds: pauseSeconds,
+                    pause_minutes: pauseMinutes,
                 }),
             });
 
             if (!response.ok) {
-                console.error('Failed to track pause time:', await response.text());
+                const errorText = await response.text();
+                console.error('Failed to track pause time:', errorText);
+            } else {
+                const data = await response.json();
+                console.log('✅ Pause time tracked:', data);
             }
         } catch (error) {
-            console.error('Error tracking pause time:', error);
+            console.error('❌ Error tracking pause time:', error);
         }
     };
 
