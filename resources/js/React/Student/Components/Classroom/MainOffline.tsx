@@ -5,6 +5,7 @@ import { LessonType } from "../../types/classroom";
 import { useVideoQuota } from "../../hooks/useVideoQuota";
 import { useLessonSession } from "../../hooks/useLessonSession";
 import SessionInfoPanel from "./SessionInfoPanel";
+import SecureVideoPlayer from "./SecureVideoPlayer";
 
 interface MainOfflineProps {
     courseAuthId: number;
@@ -33,6 +34,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
 
     // Active session data from classroom poll
     const [activeSession, setActiveSession] = useState<any>(null);
+
+    // Settings from API
+    const [completionThreshold, setCompletionThreshold] = useState<number>(80);
 
     // Derive selected lesson from selectedLessonId
     const selectedLesson = selectedLessonId ? lessons.find(l => l.id === selectedLessonId) : null;
@@ -81,6 +85,11 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                     // Set active session if exists
                     if (data.data.active_self_study_session) {
                         setActiveSession(data.data.active_self_study_session);
+                    }
+
+                    // Set completion threshold from settings
+                    if (data.data.settings?.completion_threshold) {
+                        setCompletionThreshold(data.data.settings.completion_threshold);
                     }
 
                     // Set lessons if available
@@ -1593,7 +1602,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                 })()}
 
                                 {/* Video Player Mode */}
-                                {viewMode === 'player' && selectedLesson && (
+                                {viewMode === 'player' && selectedLesson && activeSession && (
                                     <div className="video-player-mode" style={{ padding: '20px' }}>
                                         {/* Video Player Header */}
                                         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -1613,75 +1622,46 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                             </button>
                                         </div>
 
-                                        {/* Video Player Container */}
-                                        <div
-                                            className="video-container mb-3"
-                                            style={{
-                                                backgroundColor: '#000',
-                                                borderRadius: '8px',
-                                                overflow: 'hidden',
-                                                position: 'relative',
-                                                paddingTop: '56.25%', // 16:9 aspect ratio
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: 'white',
-                                                    fontSize: '1.5rem'
-                                                }}
-                                            >
-                                                <div className="text-center">
-                                                    <i className="fas fa-video fa-3x mb-3"></i>
-                                                    <p>Video Player Placeholder</p>
-                                                    <small style={{ color: '#95a5a6' }}>Duration: {selectedLesson.duration_minutes} minutes</small>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         {/* Session Info Display */}
-                                        {activeSession && (
-                                            <div className="alert alert-success" style={{ backgroundColor: 'rgba(40, 167, 69, 0.1)', borderColor: '#28a745' }}>
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <i className="fas fa-check-circle me-2"></i>
-                                                        <strong>Active Session</strong>
-                                                    </div>
-                                                    <div className="text-end">
-                                                        <small className="d-block">Time Remaining: {activeSession.time_remaining_minutes} min</small>
-                                                        <small className="d-block">Pause Time Left: {activeSession.pause_remaining_minutes} min</small>
-                                                        <small className="d-block">Progress: {activeSession.completion_percentage}%</small>
-                                                    </div>
+                                        <div className="alert alert-info mb-3" style={{ backgroundColor: 'rgba(52, 152, 219, 0.1)', borderColor: '#3498db' }}>
+                                            <div className="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i className="fas fa-clock me-2"></i>
+                                                    <strong>Active Session</strong>
+                                                </div>
+                                                <div className="text-end">
+                                                    <small className="d-block">Time Remaining: {activeSession.time_remaining_minutes} min</small>
+                                                    <small className="d-block">Pause Time Left: {activeSession.pause_remaining_minutes} min</small>
                                                 </div>
                                             </div>
-                                        )}
-
-                                        {/* Video Controls Placeholder */}
-                                        <div className="video-controls d-flex gap-2 mb-3">
-                                            <button className="btn btn-primary">
-                                                <i className="fas fa-play me-2"></i>
-                                                Play
-                                            </button>
-                                            <button className="btn btn-secondary">
-                                                <i className="fas fa-pause me-2"></i>
-                                                Pause
-                                            </button>
-                                            <button className="btn btn-warning">
-                                                <i className="fas fa-backward me-2"></i>
-                                                Rewind
-                                            </button>
                                         </div>
+
+                                        {/* Secure Video Player */}
+                                        <SecureVideoPlayer
+                                            activeSession={activeSession}
+                                            lesson={selectedLesson}
+                                            videoUrl={`/storage/lessons/${selectedLesson.id}/video.mp4`}
+                                            completionThreshold={completionThreshold}
+                                            simulationMode={true}
+                                            simulationSpeed={10}
+                                            onComplete={() => {
+                                                // Handle lesson completion
+                                                completeSession();
+                                                setViewMode('list');
+                                                // Refresh lessons to update status
+                                                window.location.reload();
+                                            }}
+                                            onProgress={(data) => {
+                                                console.log('Progress update:', data);
+                                            }}
+                                            onError={(error) => {
+                                                alert(error);
+                                            }}
+                                        />
 
                                         {/* Lesson Description */}
                                         {selectedLesson.description && (
-                                            <div className="card" style={{ backgroundColor: '#2c3e50', border: 'none' }}>
+                                            <div className="card mt-3" style={{ backgroundColor: '#2c3e50', border: 'none' }}>
                                                 <div className="card-body">
                                                     <h6 style={{ color: 'white' }}>Lesson Description</h6>
                                                     <p style={{ color: '#95a5a6' }}>{selectedLesson.description}</p>

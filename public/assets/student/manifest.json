@@ -1,17 +1,30 @@
 {
-  "generated_at": "2025-12-25T14:58:19.196Z",
+  "generated_at": "2025-12-25T17:44:37.091Z",
   "build_info": {
     "vite_version": "4.5.14",
     "environment": "production",
-    "timestamp": 1766674699199
+    "timestamp": 1766684677093
   },
   "assets": {
     "student": {
       "resources/js/React/Student/app.tsx": {
-        "file": "assets/app-ddcff6f4.js",
+        "dynamicImports": [
+          "node_modules/hls-video-element/dist/react.js",
+          "node_modules/dash-video-element/dist/react.js",
+          "node_modules/@mux/mux-player-react/dist/index.mjs",
+          "node_modules/youtube-video-element/dist/react.js",
+          "node_modules/vimeo-video-element/dist/react.js",
+          "node_modules/wistia-video-element/dist/react.js",
+          "node_modules/spotify-audio-element/dist/react.js",
+          "node_modules/twitch-video-element/dist/react.js",
+          "node_modules/tiktok-video-element/dist/react.js",
+          "node_modules/react-player/dist/Preview.js"
+        ],
+        "file": "assets/app-82ebd52c.js",
         "imports": [
           "_QueryClientProvider-e836b0e1.js",
-          "_PageLoader-3caefd0a.js"
+          "_PageLoader-3caefd0a.js",
+          "_routeUtils-5470b6f5.js"
         ],
         "isDynamicEntry": true,
         "src": "resources/js/React/Student/app.tsx"
@@ -20,7 +33,7 @@
         "dynamicImports": [
           "resources/js/React/Student/app.tsx"
         ],
-        "file": "assets/student-41b5be3a.js",
+        "file": "assets/student-6cb77300.js",
         "imports": [
           "_routeUtils-5470b6f5.js",
           "_bootstrap-39f03ff0.js"

@@ -290,6 +290,9 @@ class StudentDashboardController extends Controller
                         'pause_remaining_minutes' => $activeSelfStudySession->total_pause_minutes_allowed - $activeSelfStudySession->total_pause_minutes_used,
                         'completion_percentage' => $activeSelfStudySession->completion_percentage ?? 0,
                     ] : null,
+                    'settings' => [
+                        'completion_threshold' => config('self_study.completion_threshold', 80),
+                    ],
                 ],
             ]);
 
