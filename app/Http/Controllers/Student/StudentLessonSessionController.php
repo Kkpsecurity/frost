@@ -391,8 +391,8 @@ class StudentLessonSessionController extends Controller
                 ], 404);
             }
 
-            // Complete session using service
-            $result = $this->sessionService->completeSession($selfStudyLesson);
+            // Complete session using service - pass both session and student
+            $result = $this->sessionService->completeSession($selfStudyLesson, Auth::user());
 
             if (!$result['success']) {
                 return response()->json([
