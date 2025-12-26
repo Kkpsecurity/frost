@@ -143,21 +143,30 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
             }
         }
     }, [activeSession, lessons]);
+
+    // Get lesson status color based on completion status
     const getLessonStatusColor = (status: string) => {
         const colors = {
-            'active_live': '#0ea5e9',    // cyan - live with instructor
-            'active_fstb': '#3b82f6',    // blue - active self-study
-            'completed': '#059669',      // green - completed
-            'incomplete': '#1e293b',     // dark slate - not started
+            'passed': '#10b981',         // green - completed successfully (80%+)
+            'failed': '#ef4444',         // red - failed (< 80%)
+            'in-progress': '#3b82f6',    // blue - currently in progress
+            'not-started': '#6b7280',    // gray - not started yet
         };
-        return colors[status as keyof typeof colors] || colors.incomplete;
+        return colors[status as keyof typeof colors] || colors['not-started'];
     };
 
-    // Get lesson status icon
+    // Get lesson status icon based on completion status
     const getLessonStatusIcon = (lesson: LessonType) => {
-        if (lesson.is_completed) return <i className="fas fa-check-circle" style={{ color: '#059669' }}></i>;
-        if (lesson.is_active) return <i className="fas fa-play-circle" style={{ color: '#0ea5e9' }}></i>;
-        return <i className="far fa-circle" style={{ color: '#64748b' }}></i>;
+        if (lesson.status === 'passed') {
+            return <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>;
+        }
+        if (lesson.status === 'failed') {
+            return <i className="fas fa-times-circle" style={{ color: '#ef4444' }}></i>;
+        }
+        if (lesson.status === 'in-progress') {
+            return <i className="fas fa-play-circle" style={{ color: '#3b82f6' }}></i>;
+        }
+        return <i className="far fa-circle" style={{ color: '#6b7280' }}></i>;
     };
 
     // Handle lesson click
@@ -293,10 +302,22 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             <i className="far fa-clock me-1"></i>
                                                             {lesson.duration_minutes} min
                                                         </small>
-                                                        {lesson.is_completed && (
-                                                            <small className="ms-2" style={{ color: '#059669', fontSize: "0.7rem" }}>
+                                                        {lesson.status === 'passed' && (
+                                                            <small className="ms-2" style={{ color: '#10b981', fontSize: "0.7rem" }}>
                                                                 <i className="fas fa-check me-1"></i>
-                                                                Complete
+                                                                Passed
+                                                            </small>
+                                                        )}
+                                                        {lesson.status === 'failed' && (
+                                                            <small className="ms-2" style={{ color: '#ef4444', fontSize: "0.7rem" }}>
+                                                                <i className="fas fa-times me-1"></i>
+                                                                Failed
+                                                            </small>
+                                                        )}
+                                                        {lesson.status === 'in-progress' && (
+                                                            <small className="ms-2" style={{ color: '#3b82f6', fontSize: "0.7rem" }}>
+                                                                <i className="fas fa-spinner me-1"></i>
+                                                                In Progress
                                                             </small>
                                                         )}
                                                         {isSelected && (
@@ -312,7 +333,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                             className={`btn btn-sm mt-2 w-100 ${
                                                                 hasActiveSession && session?.lessonId === lesson.id
                                                                     ? 'btn-info'  // Active lesson - Resume
-                                                                    : lesson.is_completed
+                                                                    : lesson.status === 'passed' || lesson.status === 'failed'
                                                                     ? 'btn-outline-success'  // Completed - Review
                                                                     : 'btn-outline-info'  // Available - Start
                                                             }`}
@@ -339,7 +360,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     setSelectedLessonId(lesson.id);
                                                                     setPreviewLessonId(lesson.id);
                                                                     setViewMode('player');
-                                                                } else if (lesson.is_completed) {
+                                                                } else if (lesson.status === 'passed' || lesson.status === 'failed') {
                                                                     // Review completed lesson
                                                                     console.log('Review lesson:', lesson.id);
                                                                     setSelectedLessonId(lesson.id);
@@ -364,7 +385,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                                     <i className="fas fa-play-circle me-1"></i>
                                                                     Resume
                                                                 </>
-                                                            ) : lesson.is_completed ? (
+                                                            ) : lesson.status === 'passed' || lesson.status === 'failed' ? (
                                                                 <>
                                                                     <i className="fas fa-eye me-1"></i>
                                                                     Review
@@ -379,11 +400,11 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                                     )}
 
                                                     {/* Review Button - Only visible on Self Study tab for completed lessons */}
-                                                    {activeTab === 'self-study' && lesson.is_completed && (
+                                                    {activeTab === 'self-study' && (lesson.status === 'passed' || lesson.status === 'failed') && (
                                                         <button
                                                             className="btn btn-sm mt-2 w-100"
                                                             style={{
-                                                                backgroundColor: '#27ae60',
+                                                                backgroundColor: lesson.status === 'passed' ? '#10b981' : '#ef4444',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 padding: '0.375rem 0.75rem',
