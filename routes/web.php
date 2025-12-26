@@ -56,19 +56,20 @@ Route::middleware('auth')->group(function () {
  * Student Classroom Onboarding Routes
  */
 Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(function () {
+    // TODO: Create ClassroomOnboardingController or remove these routes
     // Attendance detection and auto-creation
-    Route::get('/check-attendance', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'checkAttendanceRequired'])
-        ->name('check-attendance');
+    // Route::get('/check-attendance', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'checkAttendanceRequired'])
+    //     ->name('check-attendance');
 
     // Attendance marking page
-    Route::get('/attendance/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'showAttendance'])
-        ->name('attendance');
-    Route::post('/attendance/{studentUnit}/mark', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'markAttendance'])
-        ->name('attendance.mark');
+    // Route::get('/attendance/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'showAttendance'])
+    //     ->name('attendance');
+    // Route::post('/attendance/{studentUnit}/mark', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'markAttendance'])
+    //     ->name('attendance.mark');
 
     // Onboarding process
-    Route::get('/onboarding/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'show'])
-        ->name('onboarding');
+    // Route::get('/onboarding/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'show'])
+    //     ->name('onboarding');
 
     // Terms and conditions acceptance
     Route::post('/student/onboarding/accept-terms', [App\Http\Controllers\Student\StudentDashboardController::class, 'acceptTerms'])
@@ -106,14 +107,14 @@ Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(functi
     Route::post('/student/offline-onboarding', [App\Http\Controllers\Student\StudentDashboardController::class, 'completeOfflineOnboarding'])
         ->name('student.offline-onboarding');
 
-    Route::post('/onboarding/{studentUnit}/agreement', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acceptAgreement'])
-        ->name('onboarding.agreement');
-    Route::post('/onboarding/{studentUnit}/rules', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acknowledgeRules'])
-        ->name('onboarding.rules');
-    Route::post('/onboarding/{studentUnit}/identity', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'verifyIdentity'])
-        ->name('onboarding.identity');
-    Route::post('/onboarding/{studentUnit}/enter', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'enterClassroom'])
-        ->name('onboarding.enter');
+    // Route::post('/onboarding/{studentUnit}/agreement', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acceptAgreement'])
+    //     ->name('onboarding.agreement');
+    // Route::post('/onboarding/{studentUnit}/rules', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acknowledgeRules'])
+    //     ->name('onboarding.rules');
+    // Route::post('/onboarding/{studentUnit}/identity', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'verifyIdentity'])
+    //     ->name('onboarding.identity');
+    // Route::post('/onboarding/{studentUnit}/enter', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'enterClassroom'])
+    //     ->name('onboarding.enter');
 
     // SESSION MANAGEMENT ROUTES
     Route::post('/session/heartbeat', [App\Http\Controllers\Student\ClassroomController::class, 'heartbeat'])

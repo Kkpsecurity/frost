@@ -36,11 +36,56 @@ const BulletinBoard: React.FC<BulletinBoardProps> = ({
     console.log("📋 BulletinBoard upcomingDates (future):", upcomingDates);
     console.log("📋 BulletinBoard courses:", courses);
 
+    // Handle start class action
+    const handleStartClass = async (course: any) => {
+        console.log("🎯 BulletinBoard: Starting class for course:", course.id);
+
+        try {
+            const response = await fetch(
+                `/admin/instructors/classroom/start-class/${course.id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || "",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                alert(
+                    `Failed to start class: ${
+                        result.message || "Unknown error"
+                    }`
+                );
+                return;
+            }
+
+            console.log("✅ Class started successfully:", result);
+            alert(`Class started successfully! Redirecting to classroom...`);
+
+            // Reload to get updated data and switch to active classroom view
+            window.location.reload();
+        } catch (error: any) {
+            console.error("❌ Error starting class:", error);
+            alert(`Error starting class: ${error.message || "Unknown error"}`);
+        }
+    };
+
     // Loading state
     if (isLoading) {
         return (
             <div className="bulletin-board">
-                <div style={{ minHeight: '200px' }} className="d-flex justify-content-center align-items-center">
+                <div
+                    style={{ minHeight: "200px" }}
+                    className="d-flex justify-content-center align-items-center"
+                >
                     <Loader size={32} label="Loading bulletin board..." />
                 </div>
             </div>
@@ -65,7 +110,7 @@ const BulletinBoard: React.FC<BulletinBoardProps> = ({
     return (
         <div className="bulletin-board">
             {/* Content */}
-            <div className="container-fluid" style={{ padding: '1rem' }}>
+            <div className="container-fluid" style={{ padding: "1rem" }}>
                 {/* Today's Schedule - Display ALL course cards */}
                 <div className="row mb-4">
                     <div className="col-12 mb-3">
@@ -75,7 +120,10 @@ const BulletinBoard: React.FC<BulletinBoardProps> = ({
                         </h4>
                     </div>
                     <div className="col-12">
-                        <CoursesGrid courses={courseDates} />
+                        <CoursesGrid
+                            courses={courseDates}
+                            onStartClass={handleStartClass}
+                        />
                     </div>
                 </div>
 

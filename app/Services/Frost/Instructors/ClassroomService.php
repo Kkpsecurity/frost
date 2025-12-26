@@ -12,8 +12,16 @@ use Illuminate\Support\Facades\DB;
  */
 class ClassroomService
 {
+    protected CourseDatesService $courseDatesService;
+
+    public function __construct(CourseDatesService $courseDatesService)
+    {
+        $this->courseDatesService = $courseDatesService;
+    }
+
     /**
      * Get classroom data for instructor dashboard
+     * Now uses CourseDatesService to properly format course dates with buttons
      *
      * @return array
      */
@@ -30,13 +38,9 @@ class ClassroomService
             ];
         }
 
-        // Get ALL active course dates for today (instructor can choose which to teach)
-        $courseDates = \App\Models\CourseDate::where('is_active', true)
-            ->whereDate('starts_at', today())
-            ->with(['courseUnit', 'courseUnit.course', 'courseUnit.lessons', 'studentUnits'])
-            ->withCount(['studentUnits'])
-            ->orderBy('starts_at', 'asc')
-            ->get();
+        // Use CourseDatesService to get properly formatted today's lessons with buttons
+        $todaysData = $this->courseDatesService->getTodaysLessons();
+        $courseDates = $todaysData['lessons'] ?? [];
 
         // Get upcoming course dates for the next 7 days (tomorrow onwards)
         $upcomingDates = \App\Models\CourseDate::where('is_active', true)
@@ -49,18 +53,23 @@ class ClassroomService
 
         \Log::info('ClassroomService::getClassroomData', [
             'user_id' => $admin->id,
-            'courseDates_count' => $courseDates->count(),
+            'courseDates_count' => count($courseDates),
             'upcomingDates_count' => $upcomingDates->count(),
             'today' => today()->toDateString(),
+            'first_course_buttons' => $courseDates[0]['buttons'] ?? 'no_buttons',
         ]);
 
         // Get all unique courses from the course dates
-        $courses = $courseDates->map(function ($cd) {
-            return $cd->courseUnit?->course;
+        $courses = collect($courseDates)->map(function ($cd) {
+            return [
+                'id' => $cd['id'] ?? null,
+                'title' => $cd['course_name'] ?? 'Unknown',
+                'code' => $cd['course_code'] ?? 'N/A',
+            ];
         })->filter()->unique('id')->values();
 
         return [
-            'courseDates' => $courseDates->toArray(), // Convert to array
+            'courseDates' => $courseDates, // Already formatted with buttons by CourseDatesService
             'upcomingDates' => $upcomingDates->toArray(), // Upcoming week schedule
             'courses' => $courses->toArray(),
             'lessons' => [],
