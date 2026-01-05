@@ -90,12 +90,11 @@ class InstructorDashboardController extends Controller
                 ], 401);
             }
 
-            // Get instructor's active course date (if any)
-            $courseDate = CourseDate::where('is_active', true)
-                ->where('starts_at', '<=', now())
-                ->where('ends_at', '>=', now()->subHours(6))
-                ->with(['instUnit', 'instUnit.instLessons'])
-                ->orderBy('starts_at', 'desc')
+            // Find the instructor's active InstUnit (class they're currently teaching)
+            $instUnit = \App\Models\InstUnit::where('created_by', $user->id)
+                ->whereNull('completed_at')
+                ->with(['instLessons', 'courseDate'])
+                ->orderBy('created_at', 'desc')
                 ->first();
 
             return response()->json([
@@ -112,8 +111,8 @@ class InstructorDashboardController extends Controller
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
-                'instUnit' => $courseDate?->instUnit,
-                'instLessons' => $courseDate?->instUnit?->instLessons ?? [],
+                'instUnit' => $instUnit,
+                'instLessons' => $instUnit?->instLessons ?? [],
             ]);
         } catch (Exception $e) {
             Log::error('Instructor poll data error: ' . $e->getMessage());
@@ -2030,6 +2029,7 @@ class InstructorDashboardController extends Controller
             return response()->json([
                 'success' => true,
                 'status' => $zoomCreds->zoom_status ?? 'disabled',
+                'is_active' => ($zoomCreds->zoom_status ?? 'disabled') === 'enabled',
                 'meeting_id' => $zoomCreds->pmi,
                 'passcode' => $decryptedPasscode,
                 'password' => $decryptedPassword,
@@ -2171,6 +2171,7 @@ class InstructorDashboardController extends Controller
             return response()->json([
                 'success' => true,
                 'status' => $newStatus,
+                'is_active' => $newStatus === 'enabled',
                 'message' => $newStatus === 'enabled'
                     ? 'Screen sharing activated'
                     : 'Screen sharing deactivated',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
+import LessonProgressBar from "./LessonProgressBar";
 import { LessonType } from "../../types/classroom";
 
 interface MainOnlineProps {
@@ -281,6 +282,12 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, onBackToDas
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Lesson Progress Bar - Shows elapsed time and progress */}
+                                <LessonProgressBar
+                                    selectedLesson={lessons.find(l => l.id === selectedLessonId) || null}
+                                    startTime={lessons.find(l => l.id === selectedLessonId)?.started_at || null}
+                                />
                             </div>
 
                             {/* Right Sidebar - Students */}

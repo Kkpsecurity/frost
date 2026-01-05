@@ -77,18 +77,14 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 
                     {/* Teaching Content */}
                     <div className="teaching-area">
-                        {!isZoomReady && (
-                            <div className="zoom-setup-top">
-                                <ZoomSetupPanel
-                                    instUnit={instUnit}
-                                    courseName={courseName}
-                                    onZoomReadyChange={setIsZoomReady}
-                                />
-                            </div>
-                        )}
-
-                        {/* Screen-share / video stage (not a panel) */}
-                        <div className="video-stage" />
+                        {/* Zoom Setup Card - Always visible */}
+                        <div className="zoom-card-container" style={{ padding: '20px' }}>
+                            <ZoomSetupPanel
+                                instUnit={instUnit}
+                                courseName={courseName}
+                                onZoomReadyChange={setIsZoomReady}
+                            />
+                        </div>
                     </div>
                 </main>
 

@@ -33,6 +33,13 @@ class AdminDashboardController extends Controller
         // Get class and student statistics
         $classStats = $this->getClassStatistics();
         $studentStats = $this->getStudentStatistics();
+        $instructorStats = $this->getInstructorStatistics();
+        $supportStats = $this->getSupportStatistics();
+
+        // Get chart data
+        $attendanceTrend = $this->getAttendanceTrend();
+        $coursesDistribution = $this->getCoursesDistribution();
+        $progressMetrics = $this->getProgressMetrics();
 
         // Scan for available widgets
         $available_widgets = [];
@@ -42,6 +49,11 @@ class AdminDashboardController extends Controller
         $widgets['available_widgets'] = $available_widgets;
         $widgets['class_stats'] = $classStats;
         $widgets['student_stats'] = $studentStats;
+        $widgets['instructor_stats'] = $instructorStats;
+        $widgets['support_stats'] = $supportStats;
+        $widgets['attendance_trend'] = $attendanceTrend;
+        $widgets['courses_distribution'] = $coursesDistribution;
+        $widgets['progress_metrics'] = $progressMetrics;
 
         // Check if a specific widget exists, then execute the respective query
         if (in_array('1_new-users.blade.php', $available_widgets)) {
@@ -121,6 +133,8 @@ class AdminDashboardController extends Controller
                 'offline_today' => DB::table('student_unit')->whereDate('created_at', $today)->where('attendance_type', 'offline')->count(),
                 'total_students' => DB::table('users')->where('role_id', '>=', 5)->count(),
                 'active_students' => DB::table('users')->where('role_id', '>=', 5)->where('is_active', true)->count(),
+                'completed_courses' => DB::table('course_auths')->whereNotNull('completed_at')->count(),
+                'in_progress' => DB::table('course_auths')->whereNull('completed_at')->whereNotNull('agreed_at')->count(),
             ];
         } catch (\Exception $e) {
             Log::error('Error getting student statistics: ' . $e->getMessage());
@@ -131,7 +145,222 @@ class AdminDashboardController extends Controller
                 'online_today' => 0,
                 'offline_today' => 0,
                 'total_students' => 0,
-                'active_students' => 0
+                'active_students' => 0,
+                'completed_courses' => 0,
+                'in_progress' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Get instructor statistics
+     */
+    private function getInstructorStatistics(): array
+    {
+        try {
+            $today = date('Y-m-d');
+            $thisWeek = date('Y-m-d', strtotime('monday this week'));
+            $thisMonth = date('Y-m-01');
+
+            $totalInstructors = DB::table('users')->where('role_id', 3)->count();
+            $activeInstructors = DB::table('users')
+                ->where('role_id', 3)
+                ->where('is_active', true)
+                ->count();
+
+            // Instructors who taught today
+            $activeToday = DB::table('inst_unit')
+                ->whereDate('created_at', $today)
+                ->distinct('created_by')
+                ->count('created_by');
+
+            // Average students per class this month
+            $avgStudentsPerClass = DB::table('student_unit')
+                ->join('inst_unit', 'student_unit.inst_unit_id', '=', 'inst_unit.id')
+                ->whereDate('inst_unit.created_at', '>=', $thisMonth)
+                ->select(DB::raw('COUNT(student_unit.id) / COUNT(DISTINCT inst_unit.id) as avg'))
+                ->value('avg') ?? 0;
+
+            return [
+                'total' => $totalInstructors,
+                'active' => $activeInstructors,
+                'teaching_today' => $activeToday,
+                'classes_today' => DB::table('inst_unit')->whereDate('created_at', $today)->count(),
+                'classes_week' => DB::table('inst_unit')->whereDate('created_at', '>=', $thisWeek)->count(),
+                'classes_month' => DB::table('inst_unit')->whereDate('created_at', '>=', $thisMonth)->count(),
+                'avg_students_per_class' => round($avgStudentsPerClass, 1),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error getting instructor statistics: ' . $e->getMessage());
+            return [
+                'total' => 0,
+                'active' => 0,
+                'teaching_today' => 0,
+                'classes_today' => 0,
+                'classes_week' => 0,
+                'classes_month' => 0,
+                'avg_students_per_class' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Get support statistics
+     */
+    private function getSupportStatistics(): array
+    {
+        try {
+            $today = date('Y-m-d');
+            $thisWeek = date('Y-m-d', strtotime('monday this week'));
+
+            // Support staff count
+            $totalSupport = DB::table('users')->where('role_id', 4)->count();
+            $activeSupport = DB::table('users')
+                ->where('role_id', 4)
+                ->where('is_active', true)
+                ->count();
+
+            // Student issues/verifications needing attention
+            $pendingVerifications = DB::table('student_unit')
+                ->where('onboarding_completed', false)
+                ->whereNotNull('inst_unit_id')
+                ->count();
+
+            // Recent student attendance requiring verification
+            $todayAttendance = DB::table('student_unit')
+                ->whereDate('created_at', $today)
+                ->count();
+
+            return [
+                'total_staff' => $totalSupport,
+                'active_staff' => $activeSupport,
+                'pending_verifications' => $pendingVerifications,
+                'today_attendance' => $todayAttendance,
+                'students_needing_help' => DB::table('student_unit')
+                    ->whereDate('created_at', '>=', $thisWeek)
+                    ->where('terms_accepted', false)
+                    ->count(),
+                'verification_rate' => $todayAttendance > 0
+                    ? round((($todayAttendance - $pendingVerifications) / $todayAttendance) * 100, 1)
+                    : 100,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error getting support statistics: ' . $e->getMessage());
+            return [
+                'total_staff' => 0,
+                'active_staff' => 0,
+                'pending_verifications' => 0,
+                'today_attendance' => 0,
+                'students_needing_help' => 0,
+                'verification_rate' => 100,
+            ];
+        }
+    }
+
+    /**
+     * Get attendance trend data for chart (last 7 days)
+     */
+    private function getAttendanceTrend(): array
+    {
+        try {
+            $days = [];
+            $onlineData = [];
+            $offlineData = [];
+
+            for ($i = 6; $i >= 0; $i--) {
+                $date = date('Y-m-d', strtotime("-$i days"));
+                $dayName = date('D', strtotime("-$i days"));
+
+                $online = DB::table('student_unit')
+                    ->whereDate('created_at', $date)
+                    ->where('attendance_type', 'online')
+                    ->count();
+
+                $offline = DB::table('student_unit')
+                    ->whereDate('created_at', $date)
+                    ->where('attendance_type', 'offline')
+                    ->count();
+
+                $days[] = $dayName;
+                $onlineData[] = $online;
+                $offlineData[] = $offline;
+            }
+
+            return [
+                'labels' => $days,
+                'online' => $onlineData,
+                'offline' => $offlineData,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error getting attendance trend: ' . $e->getMessage());
+            return [
+                'labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                'online' => [0, 0, 0, 0, 0, 0, 0],
+                'offline' => [0, 0, 0, 0, 0, 0, 0],
+            ];
+        }
+    }
+
+    /**
+     * Get courses distribution for chart
+     */
+    private function getCoursesDistribution(): array
+    {
+        try {
+            $courses = DB::table('inst_unit')
+                ->join('course_dates', 'inst_unit.course_date_id', '=', 'course_dates.id')
+                ->join('course_units', 'course_dates.course_unit_id', '=', 'course_units.id')
+                ->join('courses', 'course_units.course_id', '=', 'courses.id')
+                ->select('courses.title', DB::raw('COUNT(inst_unit.id) as count'))
+                ->whereDate('inst_unit.created_at', '>=', date('Y-m-01'))
+                ->groupBy('courses.id', 'courses.title')
+                ->orderByDesc('count')
+                ->limit(10)
+                ->get();
+
+            return [
+                'labels' => $courses->pluck('title')->toArray(),
+                'data' => $courses->pluck('count')->toArray(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error getting courses distribution: ' . $e->getMessage());
+            return [
+                'labels' => [],
+                'data' => [],
+            ];
+        }
+    }
+
+    /**
+     * Get student progress metrics
+     */
+    private function getProgressMetrics(): array
+    {
+        try {
+            $totalEnrollments = DB::table('course_auths')->count();
+            $completed = DB::table('course_auths')->whereNotNull('completed_at')->count();
+            $inProgress = DB::table('course_auths')->whereNull('completed_at')->whereNotNull('agreed_at')->count();
+            $notStarted = DB::table('course_auths')->whereNull('agreed_at')->count();
+
+            return [
+                'labels' => ['Completed', 'In Progress', 'Not Started'],
+                'data' => [$completed, $inProgress, $notStarted],
+                'percentages' => [
+                    'completed' => $totalEnrollments > 0 ? round(($completed / $totalEnrollments) * 100, 1) : 0,
+                    'in_progress' => $totalEnrollments > 0 ? round(($inProgress / $totalEnrollments) * 100, 1) : 0,
+                    'not_started' => $totalEnrollments > 0 ? round(($notStarted / $totalEnrollments) * 100, 1) : 0,
+                ],
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error getting progress metrics: ' . $e->getMessage());
+            return [
+                'labels' => ['Completed', 'In Progress', 'Not Started'],
+                'data' => [0, 0, 0],
+                'percentages' => [
+                    'completed' => 0,
+                    'in_progress' => 0,
+                    'not_started' => 0,
+                ],
             ];
         }
     }

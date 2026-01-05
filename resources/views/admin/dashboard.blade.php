@@ -15,8 +15,13 @@
     {{-- Load dashboard widgets/components. These components live under resources/views/components/admin --}}
 
     @if(isset($content['widgets']))
-        {{-- User Stats Component --}}
-        @if(view()->exists('components.admin.dashboard.user-stats'))
+        {{-- Enhanced Dashboard with Charts and Metrics --}}
+        @if(view()->exists('components.admin.dashboard.enhanced-stats'))
+            <x-admin.dashboard.enhanced-stats :widgets="$content['widgets']" />
+        @endif
+
+        {{-- Legacy User Stats Component (fallback) --}}
+        @if(!view()->exists('components.admin.dashboard.enhanced-stats') && view()->exists('components.admin.dashboard.user-stats'))
             <x-admin.dashboard.user-stats :widgets="$content['widgets']" />
         @endif
     @else
@@ -32,31 +37,46 @@
         </div>
     @endif
 
-    {{-- React mount points for instructor/support apps --}}
-    @include('admin.partials.react-mounts')
-
 @endsection
 
 @section('css')
-    {{-- custom admin css can be added here --}}
+    {{-- Chart.js --}}
+    <style>
+        .small-box .icon {
+            font-size: 70px;
+        }
+        .info-box-icon {
+            font-size: 3rem;
+        }
+        .progress-group {
+            padding: 10px 0;
+        }
+        .progress-text {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .progress-number {
+            font-size: 1.25rem;
+        }
+    </style>
 @endsection
 
 @section('js')
-    {{-- custom admin js can be added here --}}
+    {{-- Chart.js CDN --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    {{-- Custom admin js --}}
     <script>
         $(document).ready(function() {
-            console.log('🏠 DASHBOARD DEBUG:');
-            console.log('- Body classes on load:', $('body').attr('class'));
-            console.log('- Control sidebar elements:', $('.control-sidebar').length);
-            console.log('- Control sidebar visible:', $('.control-sidebar').is(':visible'));
-            console.log('- Control sidebar classes:', $('.control-sidebar').attr('class'));
+            console.log('🏠 ADMIN DASHBOARD LOADED');
+            console.log('📊 Charts initialized');
 
-            // Check if sidebar is auto-opened
-            setTimeout(function() {
-                console.log('🏠 DASHBOARD AFTER 2s:');
-                console.log('- Body classes:', $('body').attr('class'));
-                console.log('- Sidebar visible:', $('.control-sidebar').is(':visible'));
-            }, 2000);
+            // Refresh data every 5 minutes
+            setInterval(function() {
+                console.log('🔄 Refreshing dashboard data...');
+                location.reload();
+            }, 300000); // 5 minutes
         });
     </script>
 @endsection

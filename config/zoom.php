@@ -13,6 +13,6 @@ return [
     'screen_share_url' => 'portal/zoom/screen_share',
 
     // Zoom Meeting SDK Web credentials
-    'sdk_key' => env('ZOOM_SDK_KEY', env('ZOOM_MEETING_SDK')),
-    'sdk_secret' => env('ZOOM_SDK_SECRET', env('ZOOM_MEETING_SECRET')),
+    'sdk_key' => env('ZOOM_SDK_KEY') ?: env('ZOOM_MEETING_SDK'),
+    'sdk_secret' => env('ZOOM_SDK_SECRET') ?: env('ZOOM_MEETING_SECRET'),
 ];

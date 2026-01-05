@@ -4,6 +4,7 @@ import axios from "axios";
 interface ZoomStatusResponse {
   success: boolean;
   status?: "enabled" | "disabled" | string;
+  is_active?: boolean;
   meeting_id?: string;
   passcode?: string;
   password?: string;
@@ -30,7 +31,8 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
   const [zoom, setZoom] = useState<ZoomStatusResponse | null>(null);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
 
-  const isZoomReady = zoom?.status === "enabled";
+  // Check if Zoom is active - credentials are enabled for sharing
+  const isZoomActive = zoom?.is_active === true;
 
   useEffect(() => {
     let mounted = true;
@@ -63,22 +65,22 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
 
   useEffect(() => {
     if (!onZoomReadyChange) return;
-    onZoomReadyChange(isZoomReady);
-  }, [isZoomReady, onZoomReadyChange]);
+    onZoomReadyChange(isZoomActive);
+  }, [isZoomActive, onZoomReadyChange]);
 
   const derivedCourseName = useMemo(() => {
     return courseName || zoom?.course_name || "Live Class";
   }, [courseName, zoom?.course_name]);
 
-  const canComplete = useMemo(() => {
-    if (isZoomReady) return false;
+  const canStartSharing = useMemo(() => {
+    if (isZoomActive) return false; // Already active
     if (loading) return false;
     if (saving) return false;
     return true;
-  }, [isZoomReady, loading, saving]);
+  }, [isZoomActive, loading, saving]);
 
   const handleComplete = async () => {
-    if (!canComplete) return;
+    if (!canStartSharing) return;
 
     setSaving(true);
     setError(null);
@@ -93,6 +95,7 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
         ...(prev || {}),
         success: true,
         status: "enabled",
+        is_active: true,
         meeting_id: toggleRes?.data?.meeting_id ?? prev?.meeting_id,
         passcode: toggleRes?.data?.passcode ?? prev?.passcode,
         password: toggleRes?.data?.password ?? prev?.password,
@@ -103,23 +106,26 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
       // Collapse to a single-line status after completing.
       setDetailsExpanded(false);
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "Failed to complete Zoom setup");
+      setError(err?.response?.data?.message || err?.message || "Failed to activate Zoom sharing");
     } finally {
       setSaving(false);
     }
   };
 
-  if (isZoomReady) {
+  if (isZoomActive) {
     return (
       <div className="w-100 p-0 m-0">
-        <div className="bg-dark text-light px-3 py-2 border-bottom border-secondary d-flex align-items-center justify-content-between">
-          <div className="d-flex align-items-center gap-2">
-            <span className="badge bg-success">enabled</span>
-            <strong>Active Screenshare Session</strong>
+        <div className="bg-success text-white px-3 py-3 border-bottom border-light d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center gap-3">
+            <i className="fas fa-check-circle fa-2x"></i>
+            <div>
+              <strong className="d-block" style={{ fontSize: '1.1rem' }}>Zoom Screen Sharing Active</strong>
+              <small className="text-white-50">Students can now see your screen</small>
+            </div>
           </div>
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary"
+            className="btn btn-sm btn-outline-light"
             onClick={() => setDetailsExpanded((v) => !v)}
           >
             {detailsExpanded ? (
@@ -136,14 +142,20 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
 
         {detailsExpanded && (
           <div className="card m-0 bg-dark text-light border-0 rounded-0">
-            <div className="card-body py-2 px-3">
-              <div className="row g-2">
+            <div className="card-body py-3 px-3">
+              <h6 className="text-muted mb-3">
+                <i className="fas fa-info-circle mr-2"></i>
+                Zoom Session Details
+              </h6>
+              <div className="row g-3">
                 <div className="col-12 col-lg-6">
                   <label className="form-label small text-muted mb-1">Zoom Account</label>
                   <input
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.email || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
@@ -153,6 +165,8 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.meeting_id || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
@@ -162,6 +176,8 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.passcode || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
@@ -171,6 +187,8 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.password || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
               </div>
@@ -183,25 +201,29 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
 
   return (
     <div className="w-100 p-0 m-0">
-      <div className="card m-0 bg-dark text-light border-0 rounded-0">
-        <div className="card-header d-flex justify-content-between align-items-center bg-dark text-light py-2 px-3 border-bottom border-secondary">
+      <div className="card m-0 bg-dark text-light border-secondary rounded shadow-sm">
+        <div className="card-header d-flex justify-content-between align-items-center bg-dark text-light py-3 px-3 border-bottom border-secondary">
           <div>
-            <strong>Zoom Setup</strong>
+            <h5 className="mb-1">
+              <i className="fas fa-video mr-2" style={{ color: '#3498db' }}></i>
+              <strong>Zoom Setup & Review</strong>
+            </h5>
             <div className="text-muted small">{derivedCourseName}</div>
           </div>
           {zoom?.status && (
             <span
-              className={`badge ${zoom.status === "enabled" ? "bg-success" : "bg-secondary"}`}
+              className={`badge ${zoom.status === "enabled" ? "bg-success" : "bg-warning"}`}
             >
-              {zoom.status}
+              {zoom.status === "enabled" ? "Active" : "Pending"}
             </span>
           )}
         </div>
 
-        <div className="card-body py-2 px-3">
+        <div className="card-body py-3 px-3">
           {loading && (
-            <div className="text-center py-3 text-light">
-              <i className="fas fa-spinner fa-spin me-2" /> Loading Zoom connection...
+            <div className="text-center py-4 text-light">
+              <i className="fas fa-spinner fa-spin fa-2x mb-3" style={{ color: '#3498db' }} />
+              <p>Loading Zoom credentials...</p>
             </div>
           )}
 
@@ -214,13 +236,21 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
 
           {!loading && !error && (
             <>
-              <div className="row g-2">
+              <div className="alert alert-info mb-3">
+                <i className="fas fa-info-circle mr-2"></i>
+                <strong>Review your Zoom credentials</strong> before starting screen sharing.
+                Make sure the details are correct, then click "Start Sharing" to activate.
+              </div>
+
+              <div className="row g-3">
                 <div className="col-12 col-lg-6">
                   <label className="form-label small text-muted mb-1">Zoom Account</label>
                   <input
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.email || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
@@ -230,6 +260,8 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.meeting_id || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
@@ -239,6 +271,8 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.passcode || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
@@ -248,18 +282,30 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                     className="form-control form-control-sm bg-dark text-light border-secondary"
                     value={zoom?.password || ""}
                     readOnly
+                    disabled={!isZoomActive}
+                    style={{ opacity: isZoomActive ? 1 : 0.5 }}
                   />
                 </div>
 
               </div>
 
-              <div className="d-flex justify-content-end mt-2">
+              <div className="d-flex justify-content-end mt-3 gap-2">
                 <button
-                  className="btn btn-sm btn-primary"
-                  disabled={!canComplete || saving}
+                  className="btn btn-sm btn-success"
+                  disabled={!canStartSharing || saving}
                   onClick={handleComplete}
                 >
-                  {saving ? "Saving..." : "Completed"}
+                  {saving ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2" />
+                      Activating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-share-square mr-2" />
+                      Start Sharing
+                    </>
+                  )}
                 </button>
               </div>
             </>

@@ -1519,6 +1519,17 @@ class StudentDashboardController extends Controller
             $sdkKey = (string) config('zoom.sdk_key');
             $sdkSecret = (string) config('zoom.sdk_secret');
 
+            Log::info('Zoom signature generation attempt', [
+                'user_id' => $user->id,
+                'meeting_number' => $validated['meeting_number'],
+                'sdk_key_present' => !empty($sdkKey),
+                'sdk_secret_present' => !empty($sdkSecret),
+                'sdk_key_value' => $sdkKey,
+                'config_zoom_sdk_key' => config('zoom.sdk_key'),
+                'env_zoom_sdk_key' => env('ZOOM_SDK_KEY'),
+                'env_zoom_meeting_sdk' => env('ZOOM_MEETING_SDK'),
+            ]);
+
             if ($sdkKey === '' || $sdkSecret === '') {
                 return response()->json([
                     'success' => false,

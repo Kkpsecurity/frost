@@ -328,6 +328,10 @@ class CourseDatesService
                 'message' => "No courses scheduled for today ({$today})",
                 'has_lessons' => false,
                 'assignment_history' => $this->getCourseDateAssignmentHistory(),
+                'settings' => [
+                    'instructor_pre_start_minutes' => (int) config('setting.instructor.pre_start_minutes', 60),
+                    'instructor_post_end_hours' => 8,
+                ],
                 'metadata' => [
                     'date' => $today,
                     'timezone' => $tz,
@@ -465,10 +469,16 @@ class CourseDatesService
                                 $instUnit = null;
 
                                 // Treat as unassigned
-                                if ($now->lt($startTime)) {
+                                // Get the pre-start window from settings (default: 60 minutes)
+                                $preStartMinutes = (int) (config('setting.instructor.pre_start_minutes', 60));
+                                $postEndHours = 1; // Allow starting up to 1 hour after for stale cases
+
+                                if ($now->lt($startTime->copy()->subMinutes($preStartMinutes))) {
+                                    // Before the allowed pre-start window
                                     $classStatus = 'scheduled';
                                     $buttons = ['info' => 'Class starts at ' . $startTime->format('g:i A')];
-                                } elseif ($now->between($startTime, $endTime) || $now->between($startTime->copy()->subHours(1), $endTime->copy()->addHours(1))) {
+                                } elseif ($now->between($startTime->copy()->subMinutes($preStartMinutes), $endTime->copy()->addHours($postEndHours))) {
+                                    // Within allowed window - allow starting
                                     $classStatus = 'unassigned';
                                     $buttons = ['start_class' => 'Start Class'];
                                 } else {
@@ -517,16 +527,16 @@ class CourseDatesService
                             'current_time' => $now->toDateTimeString()
                         ]);
                         // No InstUnit exists - check time to determine what actions are available
-                        if ($now->lt($startTime)) {
-                            // Before class time
+                        // Get the pre-start window from settings (default: 60 minutes)
+                        $preStartMinutes = (int) (config('setting.instructor.pre_start_minutes', 60));
+                        $postEndHours = 8; // Allow late starts up to 8 hours after class ends
+
+                        if ($now->lt($startTime->copy()->subMinutes($preStartMinutes))) {
+                            // Before the allowed pre-start window
                             $classStatus = 'scheduled';
                             $buttons = ['info' => 'Class starts at ' . $startTime->format('g:i A')];
-                        } elseif ($now->between($startTime, $endTime)) {
-                            // During class time and no InstUnit - class is unassigned
-                            $classStatus = 'unassigned';
-                            $buttons = ['start_class' => 'Start Class'];
-                        } elseif ($now->between($startTime->copy()->subHours(2), $endTime->copy()->addHours(8))) {
-                            // Within extended window (2 hours before, 8 hours after) - allow starting
+                        } elseif ($now->between($startTime->copy()->subMinutes($preStartMinutes), $endTime->copy()->addHours($postEndHours))) {
+                            // Within allowed window (pre-start minutes before, 8 hours after) - allow starting
                             $classStatus = 'unassigned';
                             $buttons = ['start_class' => 'Start Class'];
                         } else {
@@ -612,6 +622,10 @@ class CourseDatesService
                 'message' => count($formattedLessons) . ' lessons scheduled for today',
                 'has_lessons' => true,
                 'assignment_history' => $assignmentHistory,
+                'settings' => [
+                    'instructor_pre_start_minutes' => (int) config('setting.instructor.pre_start_minutes', 60),
+                    'instructor_post_end_hours' => 8,
+                ],
                 'metadata' => [
                     'date' => $today,
                     'count' => count($formattedLessons),
@@ -629,6 +643,10 @@ class CourseDatesService
                 'message' => 'Error loading today\'s lessons: ' . $e->getMessage(),
                 'has_lessons' => false,
                 'assignment_history' => [],
+                'settings' => [
+                    'instructor_pre_start_minutes' => (int) config('setting.instructor.pre_start_minutes', 60),
+                    'instructor_post_end_hours' => 8,
+                ],
                 'metadata' => [
                     'date' => $today,
                     'count' => 0,
