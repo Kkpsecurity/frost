@@ -201,8 +201,29 @@ trait PresentsTimeStamps
         }
 
 
-        if (! in_array($this->casts[$field], ['date', 'timestamp', 'timestamptz'])) {
-            throw new Exception(get_class($this) . " '{$field}' is not a date or timestamp : '{$this->casts[$field]}'");
+        $castType = $this->casts[$field];
+
+        // Laravel commonly uses 'date' and 'datetime' (optionally with a format suffix like 'datetime:Y-m-d').
+        // Older parts of this codebase also refer to 'timestamp' / 'timestamptz'.
+        $allowedCastTypes = [
+            'date',
+            'datetime',
+            'immutable_date',
+            'immutable_datetime',
+            'timestamp',
+            'timestamptz',
+        ];
+
+        $isAllowed = false;
+        foreach ($allowedCastTypes as $allowed) {
+            if ($castType === $allowed || str_starts_with((string) $castType, $allowed . ':')) {
+                $isAllowed = true;
+                break;
+            }
+        }
+
+        if (!$isAllowed) {
+            throw new Exception(get_class($this) . " '{$field}' is not a date or timestamp : '{$castType}'");
         }
 
 

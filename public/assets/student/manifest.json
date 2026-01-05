@@ -1,9 +1,9 @@
 {
-  "generated_at": "2025-12-26T18:55:50.341Z",
+  "generated_at": "2026-01-04T23:58:00.094Z",
   "build_info": {
     "vite_version": "4.5.14",
     "environment": "production",
-    "timestamp": 1766775350344
+    "timestamp": 1767571080097
   },
   "assets": {
     "student": {
@@ -20,11 +20,11 @@
           "node_modules/tiktok-video-element/dist/react.js",
           "node_modules/react-player/dist/Preview.js"
         ],
-        "file": "assets/app-6ad583b4.js",
+        "file": "assets/app-9c25cd10.js",
         "imports": [
-          "_QueryClientProvider-e836b0e1.js",
-          "_PageLoader-3caefd0a.js",
-          "_routeUtils-5470b6f5.js"
+          "_QueryClientProvider-72c2bde2.js",
+          "_PageLoader-3b03139c.js",
+          "_routeUtils-a0638e1e.js"
         ],
         "isDynamicEntry": true,
         "src": "resources/js/React/Student/app.tsx"
@@ -33,9 +33,9 @@
         "dynamicImports": [
           "resources/js/React/Student/app.tsx"
         ],
-        "file": "assets/student-ca7b7e29.js",
+        "file": "assets/student-f48d068e.js",
         "imports": [
-          "_routeUtils-5470b6f5.js",
+          "_routeUtils-a0638e1e.js",
           "_bootstrap-39f03ff0.js"
         ],
         "isEntry": true,

@@ -110,12 +110,16 @@ class CourseController extends Controller
             $eventsForThisCourse = MiscQueries::CalenderDates($course);
 
             foreach ($eventsForThisCourse as $event) {
+                $start = \Illuminate\Support\Carbon::parse($event->starts_at, 'UTC');
+                $end = \Illuminate\Support\Carbon::parse($event->ends_at, 'UTC');
+
                 $allEvents[] = [
                     'title' => $event->CalendarTitle(),
-                    'start' => $event->StartsAt('YYYY-MM-DD HH:mm'),
-                    'end'   => $event->EndsAt('YYYY-MM-DD HH:mm'),
+                    // Use ISO-8601 for reliable browser parsing (Date(...))
+                    'start' => $start->toIso8601String(),
+                    'end' => $end->toIso8601String(),
                     'url' => route('courses.show', $course->id),
-                    'course_type' => strpos(strtolower($course->title), 'armed') !== false ? 'D40' : 'G28',
+                    'course_type' => $course->getCourseType() === 'D' ? 'D40' : 'G28',
                     'course_id' => $course->id,
                     'course_title' => $course->title
                 ];

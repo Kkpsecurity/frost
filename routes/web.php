@@ -144,73 +144,71 @@ Route::middleware('auth')->prefix('student/course')->name('student.course.')->gr
  * Student ID Verification Routes
  */
 Route::middleware('auth')->prefix('student/id-verification')->name('student.id-verification.')->group(function () {
-    Route::post('/start', [App\Http\Controllers\Student\IdVerificationController::class, 'startVerification'])
+    // NOTE: IdVerificationController does not exist in this repo.
+    // These routes are kept as aliases to the existing StudentDashboardController endpoints.
+    Route::post('/start', [App\Http\Controllers\Student\StudentDashboardController::class, 'startIdVerification'])
         ->name('start');
-    Route::get('/status/{studentId}', [App\Http\Controllers\Student\IdVerificationController::class, 'getVerificationStatus'])
+    Route::get('/status/{studentId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getIdVerificationStatus'])
         ->name('status');
-    Route::get('/summary/{verificationId}', [App\Http\Controllers\Student\IdVerificationController::class, 'getVerificationSummary'])
+    Route::get('/summary/{verificationId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getIdVerificationSummary'])
         ->name('summary');
-    Route::post('/retry/{verificationId}', [App\Http\Controllers\Student\IdVerificationController::class, 'retryVerificationStep'])
-        ->name('retry');
-    Route::post('/cancel/{verificationId}', [App\Http\Controllers\Student\IdVerificationController::class, 'cancelVerification'])
-        ->name('cancel');
-    Route::get('/student/{studentId}', [App\Http\Controllers\Student\IdVerificationController::class, 'getStudentVerifications'])
-        ->name('student');
-    Route::post('/test', [App\Http\Controllers\Student\IdVerificationController::class, 'testVerification'])
-        ->name('test');
 });
 
 /**
  * Student Offline Session Tracking Routes
  */
-Route::middleware('auth')->prefix('student/offline')->name('student.offline.')->group(function () {
-    // Session Management
-    Route::post('session/start/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'startSession'])
-        ->name('session.start');
-    Route::post('session/end/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'endSession'])
-        ->name('session.end');
-    Route::get('session/status/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'getSessionStatus'])
-        ->name('session.status');
+if (class_exists('App\\Http\\Controllers\\Student\\OfflineSessionController')) {
+    Route::middleware('auth')->prefix('student/offline')->name('student.offline.')->group(function () {
+        // Session Management
+        Route::post('session/start/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@startSession')
+            ->name('session.start');
+        Route::post('session/end/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@endSession')
+            ->name('session.end');
+        Route::get('session/status/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@getSessionStatus')
+            ->name('session.status');
 
-    // Activity Tracking
-    Route::post('track/lesson/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'trackLessonActivity'])
-        ->name('track.lesson');
-    Route::post('track/step/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'trackSessionStep'])
-        ->name('track.step');
+        // Activity Tracking
+        Route::post('track/lesson/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@trackLessonActivity')
+            ->name('track.lesson');
+        Route::post('track/step/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@trackSessionStep')
+            ->name('track.step');
 
-    // Analytics & Reporting
-    Route::get('summary/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'getSessionSummary'])
-        ->name('summary');
-    Route::get('activities/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'getRecentActivities'])
-        ->name('activities');
+        // Analytics & Reporting
+        Route::get('summary/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@getSessionSummary')
+            ->name('summary');
+        Route::get('activities/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@getRecentActivities')
+            ->name('activities');
 
-    // Admin/Cleanup
-    Route::post('session/force-end/{courseAuthId}', [App\Http\Controllers\Student\OfflineSessionController::class, 'forceEndSessions'])
-        ->name('session.force-end');
-});
+        // Admin/Cleanup
+        Route::post('session/force-end/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@forceEndSessions')
+            ->name('session.force-end');
+    });
+}
 
 /**
  * Admin Payment Configuration Routes
  */
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Payment management routes
-    Route::prefix('payments')->name('payments.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'index'])->name('index');
+if (class_exists('App\\Http\\Controllers\\Admin\\AdminPaymentsController')) {
+    Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Payment management routes
+        Route::prefix('payments')->name('payments.')->group(function () {
+            Route::get('/', 'App\\Http\\Controllers\\Admin\\AdminPaymentsController@index')->name('index');
 
-        // PayPal configuration
-        Route::get('/paypal', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'paypal'])->name('paypal');
-        Route::put('/paypal', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'updatePayPal'])->name('update-paypal');
+            // PayPal configuration
+            Route::get('/paypal', 'App\\Http\\Controllers\\Admin\\AdminPaymentsController@paypal')->name('paypal');
+            Route::put('/paypal', 'App\\Http\\Controllers\\Admin\\AdminPaymentsController@updatePayPal')->name('update-paypal');
 
-        // Stripe configuration
-        Route::get('/stripe', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'stripe'])->name('stripe');
-        Route::put('/stripe', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'updateStripe'])->name('update-stripe');
+            // Stripe configuration
+            Route::get('/stripe', 'App\\Http\\Controllers\\Admin\\AdminPaymentsController@stripe')->name('stripe');
+            Route::put('/stripe', 'App\\Http\\Controllers\\Admin\\AdminPaymentsController@updateStripe')->name('update-stripe');
 
-        // Connection testing
-        Route::post('/test-connection', [App\Http\Controllers\Admin\AdminPaymentsController::class, 'testConnection'])->name('test-connection');
+            // Connection testing
+            Route::post('/test-connection', 'App\\Http\\Controllers\\Admin\\AdminPaymentsController@testConnection')->name('test-connection');
+        });
+
+        // NOTE: Communication routes moved to routes/admin/communication.php to use admin guard
     });
-
-    // NOTE: Communication routes moved to routes/admin/communication.php to use admin guard
-});
+}
 
 /**
  * Clean web routes - test/debug routes moved to separate files

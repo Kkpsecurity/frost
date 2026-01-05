@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Frost\Instructors;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service for managing classroom data and operations for instructors
@@ -42,20 +44,30 @@ class ClassroomService
         $todaysData = $this->courseDatesService->getTodaysLessons();
         $courseDates = $todaysData['lessons'] ?? [];
 
-        // Get upcoming course dates for the next 7 days (tomorrow onwards)
-        $upcomingDates = \App\Models\CourseDate::where('is_active', true)
-            ->whereDate('starts_at', '>', today())
-            ->whereDate('starts_at', '<=', today()->addDays(7))
+        $tz = 'America/New_York';
+        $todayEt = Carbon::now($tz)->startOfDay();
+        $tomorrowEt = $todayEt->copy()->addDay();
+        $startUtc = $tomorrowEt->copy()->tz('UTC');
+        $endUtc = $todayEt->copy()->addDays(7)->endOfDay()->tz('UTC');
+
+        // Get upcoming course dates for the next 7 days (tomorrow onwards, ET)
+        $upcomingDates = \App\Models\CourseDate::query()
+            ->where('is_active', true)
+            ->whereBetween('starts_at', [$startUtc, $endUtc])
             ->with(['courseUnit', 'courseUnit.course', 'courseUnit.lessons', 'studentUnits'])
             ->withCount(['studentUnits'])
             ->orderBy('starts_at', 'asc')
             ->get();
 
-        \Log::info('ClassroomService::getClassroomData', [
+        Log::info('ClassroomService::getClassroomData', [
             'user_id' => $admin->id,
             'courseDates_count' => count($courseDates),
             'upcomingDates_count' => $upcomingDates->count(),
-            'today' => today()->toDateString(),
+            'today_et' => $todayEt->toDateString(),
+            'upcoming_window_utc' => [
+                'start' => $startUtc->toIso8601String(),
+                'end' => $endUtc->toIso8601String(),
+            ],
             'first_course_buttons' => $courseDates[0]['buttons'] ?? 'no_buttons',
         ]);
 

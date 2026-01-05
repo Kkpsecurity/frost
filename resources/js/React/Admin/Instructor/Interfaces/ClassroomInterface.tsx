@@ -1,292 +1,320 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
+import LessonsPanel from "../components/LessonsPanel";
+import ZoomSetupPanel from "../components/ZoomSetupPanel";
+import StudentsPanel from "../Classroom/StudentsPanel";
 
 interface ClassroomInterfaceProps {
-  instructorData?: any;
-  classroomData?: any;
-  chatData?: any;
+    instructorData?: any;
+    classroomData?: any;
+    chatData?: any;
 }
 
 /**
- * Layout-only attempt (Bootstrap + FontAwesome):
- * - Left sidebar: 280px (collapsed 60px)
- * - Center: flex
- * - Right sidebar: 300px (collapsed 60px)
- * - Bottom chat: full width
- *
- * NOTE: This is just the frame. No data wiring.
+ * Instructor Classroom Interface - Full-height 3-column layout
+ * - NO padding, NO margin
+ * - Left sidebar: 280px (collapsed 60px) - Lessons
+ * - Center: flex - Teaching area with titlebar
+ * - Right sidebar: 300px (collapsed 60px) - Students
  */
 const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
-  instructorData,
-  classroomData,
-  chatData,
+    instructorData,
+    classroomData,
+    chatData,
 }) => {
-  const instUnit = instructorData?.instUnit;
-  const instructor = instructorData?.instructor_user;
+    const instUnit = instructorData?.instUnit;
+    const instructor = instructorData?.instructor_user;
+    const courseDateId = instUnit?.course_date_id;
 
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+    const currentCourseDate = classroomData?.courseDates?.[0];
+    const courseName = currentCourseDate?.course_name;
 
-  const studentCount = useMemo(
-    () => classroomData?.student_count || 0,
-    [classroomData]
-  );
+    const [leftCollapsed, setLeftCollapsed] = useState(false);
+    const [rightCollapsed, setRightCollapsed] = useState(false);
+    const [isZoomReady, setIsZoomReady] = useState(false);
 
-  if (!instUnit) {
-    return (
-      <div className="alert alert-warning m-4">
-        <h4>No Active Classroom</h4>
-        <p className="mb-0">Please start a class to enter the classroom interface.</p>
-      </div>
-    );
-  }
+    const studentCount = classroomData?.student_count || 0;
 
-  return (
-    <div className="classroom-interface container-fluid p-0">
-      {/* Header */}
-      <div className="row g-0 mb-3 px-3">
-        <div className="col-12 d-flex align-items-start justify-content-between gap-3">
-          <div>
-            <h2 className="mb-1">🎓 Live Classroom - {instUnit?.course_unit_name}</h2>
-            <div className="text-muted">
-              Instructor: {instructor?.fname} {instructor?.lname}
-            </div>
-          </div>
-
-          {/* Quick toggles */}
-          <div className="d-flex gap-2">
-            <button
-              type="button"
-              className={`btn btn-sm ${leftCollapsed ? "btn-outline-secondary" : "btn-secondary"}`}
-              onClick={() => setLeftCollapsed((v) => !v)}
-              title={leftCollapsed ? "Expand lessons" : "Collapse lessons"}
-            >
-              <i className="fas fa-book" />
-              <span className="ms-2 d-none d-md-inline">Lessons</span>
-            </button>
-
-            <button
-              type="button"
-              className={`btn btn-sm ${rightCollapsed ? "btn-outline-secondary" : "btn-secondary"}`}
-              onClick={() => setRightCollapsed((v) => !v)}
-              title={rightCollapsed ? "Expand students" : "Collapse students"}
-            >
-              <i className="fas fa-users" />
-              <span className="ms-2 d-none d-md-inline">Students</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main 3-panel row */}
-      <div className="row g-0 mb-3">
-        <div className="col-12">
-          <div className="classroom-grid">
-            {/* LEFT: Lessons */}
-            <aside className={`panel panel-left ${leftCollapsed ? "is-collapsed" : ""}`}>
-              <div className="card h-100">
-                <div className="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="fas fa-book" />
-                    {!leftCollapsed && <h6 className="mb-0">Lessons</h6>}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-light"
-                    onClick={() => setLeftCollapsed((v) => !v)}
-                    title={leftCollapsed ? "Expand" : "Collapse"}
-                  >
-                    <i className={`fas ${leftCollapsed ? "fa-angle-right" : "fa-angle-left"}`} />
-                  </button>
-                </div>
-
-                <div className="card-body panel-scroll">
-                  {leftCollapsed ? (
-                    <div className="collapsed-hint">
-                      <i className="fas fa-list-check" />
-                      <div className="small text-muted mt-2">Lessons</div>
-                    </div>
-                  ) : (
-                    <div className="alert alert-info py-2 px-3 mb-0">
-                      <small>Lesson progression and tracking will be displayed here.</small>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </aside>
-
-            {/* CENTER: Tools */}
-            <main className="panel panel-center">
-              <div className="card h-100">
-                <div className="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="fas fa-tv" />
-                    <h6 className="mb-0">Teaching Tools</h6>
-                  </div>
-
-                  <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-sm btn-light" title="Screen share">
-                      <i className="fas fa-display" />
-                    </button>
-                    <button type="button" className="btn btn-sm btn-light" title="Camera">
-                      <i className="fas fa-video" />
-                    </button>
-                    <button type="button" className="btn btn-sm btn-light" title="Mic">
-                      <i className="fas fa-microphone" />
-                    </button>
-                    <button type="button" className="btn btn-sm btn-light" title="Settings">
-                      <i className="fas fa-gear" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="card-body">
-                  <div className="stage">
-                    <i className="fas fa-video fa-4x text-muted mb-3" />
-                    <p className="text-muted text-center mb-0">
-                      <strong>Screen Share / Video Area</strong>
-                      <br />
-                      <small>Teaching tools and presentation area</small>
+    if (!instUnit) {
+        return (
+            <div style={{ padding: "20px" }}>
+                <div className="alert alert-warning">
+                    <h4>No Active Classroom</h4>
+                    <p className="mb-0">
+                        Please start a class to enter the classroom interface.
                     </p>
-                  </div>
                 </div>
-              </div>
-            </main>
-
-            {/* RIGHT: Students */}
-            <aside className={`panel panel-right ${rightCollapsed ? "is-collapsed" : ""}`}>
-              <div className="card h-100">
-                <div className="card-header bg-secondary text-white d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="fas fa-users" />
-                    {!rightCollapsed && <h6 className="mb-0">Students ({studentCount})</h6>}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-light"
-                    onClick={() => setRightCollapsed((v) => !v)}
-                    title={rightCollapsed ? "Expand" : "Collapse"}
-                  >
-                    <i className={`fas ${rightCollapsed ? "fa-angle-left" : "fa-angle-right"}`} />
-                  </button>
-                </div>
-
-                <div className="card-body panel-scroll">
-                  {rightCollapsed ? (
-                    <div className="collapsed-hint">
-                      <i className="fas fa-user-check" />
-                      <div className="small text-muted mt-2">Roster</div>
-                    </div>
-                  ) : (
-                    <div className="alert alert-info py-2 px-3 mb-0">
-                      <small>Student list and real-time status will appear here.</small>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom: Live Chat */}
-      <div className="row g-0">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-secondary text-white d-flex align-items-center gap-2">
-              <i className="fas fa-comments" />
-              <h6 className="mb-0">💬 Live Chat</h6>
             </div>
-            <div className="card-body" style={{ minHeight: 200 }}>
-              <div className="alert alert-info py-2 px-3 mb-0">
-                <small>Real-time chat messages will appear here.</small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        );
+    }
 
-      {/* Layout CSS (inline for now; move to SCSS later) */}
-      <style>{`
-        .classroom-grid{
-          display:grid;
-          grid-template-columns: 280px 1fr 300px;
-          gap: 0;
+    return (
+        <>
+            <div className="classroom-container">
+                {/* LEFT SIDEBAR - Lessons */}
+                <LessonsPanel
+                    courseDateId={courseDateId}
+                    collapsed={leftCollapsed}
+                    onToggle={() => setLeftCollapsed(!leftCollapsed)}
+                    instUnit={instUnit}
+                    zoomReady={isZoomReady}
+                />
+
+                {/* CENTER - Teaching Area */}
+                <main className="main-content">
+                    <div className="titlebar">
+                        <div className="titlebar-left">
+                            <div className="d-flex align-items-center gap-2">
+                                <i className="fas fa-chalkboard-teacher text-light mr-2" />
+                                <span className="text-light">
+                                    Teaching Area
+                                </span>
+                            </div>
+                        </div>
+                        <div className="titlebar-right">
+                            {/* End Class control intentionally not shown yet */}
+                        </div>
+                    </div>
+
+                    {/* Teaching Content */}
+                    <div className="teaching-area">
+                        {!isZoomReady && (
+                            <div className="zoom-setup-top">
+                                <ZoomSetupPanel
+                                    instUnit={instUnit}
+                                    courseName={courseName}
+                                    onZoomReadyChange={setIsZoomReady}
+                                />
+                            </div>
+                        )}
+
+                        {/* Screen-share / video stage (not a panel) */}
+                        <div className="video-stage" />
+                    </div>
+                </main>
+
+                {/* RIGHT SIDEBAR - Students */}
+                <aside
+                    className={`sidebar sidebar-right ${
+                        rightCollapsed ? "collapsed" : ""
+                    }`}
+                >
+                    <div className="sidebar-header">
+                        <div className="sidebar-title">
+                            {!rightCollapsed && (
+                                <>
+                                    <i className="fas fa-users" />
+                                    <span>Students ({studentCount})</span>
+                                </>
+                            )}
+                            {rightCollapsed && <i className="fas fa-users" />}
+                        </div>
+                        <button
+                            className="btn-collapse"
+                            onClick={() => setRightCollapsed(!rightCollapsed)}
+                            title={rightCollapsed ? "Expand" : "Collapse"}
+                        >
+                            <i
+                                className={`fas ${
+                                    rightCollapsed
+                                        ? "fa-chevron-left"
+                                        : "fa-chevron-right"
+                                }`}
+                            />
+                        </button>
+                    </div>
+                    <div className="sidebar-content">
+                        {!rightCollapsed && (
+                            <div className="p-2">
+                                <StudentsPanel
+                                    courseDateId={courseDateId}
+                                    instUnitId={instUnit?.id}
+                                />
+                            </div>
+                        )}
+                        {rightCollapsed && (
+                            <div className="collapsed-icons">
+                                <i
+                                    className="fas fa-user-friends"
+                                    title="Students"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </aside>
+            </div>
+
+            {/* CSS - Clean full-height 3-column layout */}
+            <style>{`
+        .classroom-container {
+          display: flex;
+          min-height: calc(100vh - 57px); /* AdminLTE navbar height */
+          margin: 0;
+          padding: 0;
+          overflow: visible;
+        }
+
+        .sidebar {
+          display: flex;
+          flex-direction: column;
+          background: #343a40;
+          color: white;
+          transition: width 0.3s ease;
+        }
+
+        .sidebar-left {
+          width: ${leftCollapsed ? "60px" : "280px"};
+          border-right: 1px solid #dee2e6;
+        }
+
+        .sidebar-right {
+          width: ${rightCollapsed ? "60px" : "300px"};
+          border-left: 1px solid #dee2e6;
+        }
+
+        .sidebar-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 15px;
+          background: #212529;
+          border-bottom: 1px solid #495057;
+          min-height: 60px;
+        }
+
+        .sidebar-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 600;
+          font-size: 16px;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+
+        .btn-collapse {
+          background: transparent;
+          border: none;
+          color: white;
+          padding: 5px 8px;
+          cursor: pointer;
+          border-radius: 4px;
+          transition: background 0.2s;
+        }
+
+        .btn-collapse:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-content {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        .collapsed-icons {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          padding: 20px 0;
+        }
+
+        .collapsed-icons i {
+          font-size: 24px;
+          color: #adb5bd;
+          cursor: pointer;
+        }
+
+        .collapsed-icons i:hover {
+          color: white;
+        }
+
+        .main-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          background: #343a40;
+          overflow: hidden;
+        }
+
+        .titlebar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 15px 20px;
+          background: #212529;
+          border-bottom: 1px solid #495057;
+          min-height: 60px;
+        }
+
+        .titlebar-left {
+          display: flex;
+          align-items: center;
+        }
+
+        .titlebar-right {
+          display: flex;
+          align-items: center;
+        }
+
+        .teaching-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
           align-items: stretch;
-          min-height: 620px;
+          justify-content: flex-start;
+          background: #343a40;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
         }
 
-        .panel{ min-width: 0; }
-
-        .panel-left.is-collapsed{ width: 60px; }
-        .panel-right.is-collapsed{ width: 60px; }
-
-        /* When collapsed, clamp the grid columns */
-        .panel-left.is-collapsed{ grid-column: 1; }
-        .panel-center{ grid-column: 2; }
-        .panel-right.is-collapsed{ grid-column: 3; }
-
-        .panel-left.is-collapsed ~ .panel-center{ }
-
-        .panel-left.is-collapsed{ }
-
-        /* Use CSS variables for simpler width control */
-        .classroom-grid{
-          --leftW: ${leftCollapsed ? "60px" : "280px"};
-          --rightW: ${rightCollapsed ? "60px" : "300px"};
-          grid-template-columns: var(--leftW) 1fr var(--rightW);
+        .zoom-setup-top {
+          flex-shrink: 0;
+          border-bottom: 1px solid #495057;
         }
 
-        .panel-scroll{
-          max-height: 600px;
-          overflow: auto;
+        .video-stage {
+          flex: 1;
+          background: #343a40;
         }
 
-        .stage{
-          min-height: 560px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border: 1px solid rgba(0,0,0,.06);
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          flex-direction:column;
-          padding: 24px;
+        .placeholder-content {
+          text-align: center;
+          padding: 40px 20px;
         }
 
-        .collapsed-hint{
-          height: 100%;
-          min-height: 520px;
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-          justify-content:center;
-          text-align:center;
+        /* Scrollbar styling */
+        .sidebar-content::-webkit-scrollbar {
+          width: 6px;
         }
 
-        /* Small screens: stack panels */
-        @media (max-width: 991.98px){
-          .classroom-grid{
-            grid-template-columns: 1fr;
+        .sidebar-content::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+          .classroom-container {
+            flex-direction: column;
           }
-          .panel-left,.panel-center,.panel-right{ grid-column: auto; }
+          .sidebar {
+            width: 100% !important;
+            height: auto !important;
+          }
         }
       `}</style>
-
-      {/* Debug strip (optional) */}
-      <div className="row mt-3">
-        <div className="col-12">
-          <div className="text-muted small">
-            Layout state: left={leftCollapsed ? "collapsed" : "open"}, right={
-              rightCollapsed ? "collapsed" : "open"
-            }
-            {chatData ? " • chatData present" : ""}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        </>
+    );
 };
 
 export default ClassroomInterface;

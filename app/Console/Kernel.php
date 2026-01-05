@@ -14,13 +14,14 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
-        // Activate CourseDate records daily at 06:00 AM ET (before classroom creation)
-        $schedule->command('course:activate-dates')
-            ->dailyAt('06:00')
+        // Ensure today's (or next class day) CourseDate exists before other classroom automation.
+        // NOTE: With --simulate-weekend-monday, weekends can still have a "today" class date for testing.
+        $schedule->command('course:ensure-today-date')
+            ->dailyAt('05:30')
             ->timezone('America/New_York')
             ->withoutOverlapping()
             ->runInBackground()
-            ->appendOutputTo(storage_path('logs/course-date-activation.log'));
+            ->appendOutputTo(storage_path('logs/course-date-ensure-today.log'));
 
         // Auto-create classrooms daily at 07:00 AM ET
         $schedule->command('classrooms:auto-create-today')
@@ -50,12 +51,14 @@ class Kernel extends ConsoleKernel
 
         // Close classroom sessions at midnight - Official end of class day
         // Even if class ends at 6 PM, schedule officially ends at 12:00 AM
-        $schedule->command('classrooms:close-sessions')
-            ->dailyAt('00:00') // Daily at midnight
-            ->timezone('America/New_York')
-            ->withoutOverlapping()
-            ->runInBackground()
-            ->appendOutputTo(storage_path('logs/classroom-session-closure.log'));
+        if (app()->environment(['production', 'staging'])) {
+            $schedule->command('classrooms:close-sessions')
+                ->dailyAt('00:00') // Daily at midnight
+                ->timezone('America/New_York')
+                ->withoutOverlapping()
+                ->runInBackground()
+                ->appendOutputTo(storage_path('logs/classroom-session-closure.log'));
+        }
 
         // Timeout abandoned offline sessions every 5 minutes
         // Marks sessions as failed, creates StudentLesson with dnc_at, deducts credits

@@ -525,7 +525,7 @@ class InstructorDashboardController extends Controller
     }
 
     /**
-     * Start a class session - Create InstUnit and redirect to classroom
+     * Start a class session - Create InstUnit and mark as active
      */
     public function startClass($courseDateId, Request $request)
     {
@@ -539,18 +539,74 @@ class InstructorDashboardController extends Controller
             // Get assistant_id from request if provided
             $assistantId = $request->input('assistant_id');
 
-            // Create InstUnit using ClassroomSessionService
-            $instUnit = $this->sessionService->startClassroomSession((int) $courseDateId, $assistantId);
-
-            if (!$instUnit) {
+            // Verify the course date exists
+            $courseDate = \App\Models\CourseDate::find($courseDateId);
+            if (!$courseDate) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to start class session. Please check the logs.'
-                ], 500);
+                    'message' => 'Course date not found'
+                ], 404);
             }
 
-            // Get session info including instructor and assistant details
-            $sessionInfo = $this->sessionService->getClassroomSession((int) $courseDateId);
+            // Check if InstUnit already exists
+            $instUnit = $courseDate->InstUnit;
+
+            if ($instUnit) {
+                // InstUnit exists - check if it's the current instructor trying to take control
+                if ($instUnit->created_by == $admin->id) {
+                    // Same instructor - just return existing session info
+                    $instructor = \App\Models\User::find($instUnit->created_by);
+                    $assistant = $instUnit->assistant_id ? \App\Models\User::find($instUnit->assistant_id) : null;
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Class session already started - taking control',
+                        'data' => [
+                            'inst_unit_id' => $instUnit->id,
+                            'course_date_id' => $courseDateId,
+                            'instructor' => [
+                                'id' => $instructor->id,
+                                'name' => trim(($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) ?: $instructor->email
+                            ],
+                            'assistant' => $assistant ? [
+                                'id' => $assistant->id,
+                                'name' => trim(($assistant->fname ?? '') . ' ' . ($assistant->lname ?? '')) ?: $assistant->email
+                            ] : null,
+                            'created_at' => \Carbon\Carbon::parse($instUnit->created_at)->format('c'),
+                            'is_existing' => true
+                        ]
+                    ]);
+                } else {
+                    // Different instructor already assigned
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Course already has a different instructor assigned'
+                    ], 400);
+                }
+            }
+
+            // Create new InstUnit for this classroom session
+            $instUnit = \App\Models\InstUnit::create([
+                'course_date_id' => $courseDateId,
+                'created_by' => $admin->id,
+                'assistant_id' => $assistantId,
+                // Note: created_at will be set automatically by Laravel
+                // completed_at remains null until class is finished
+            ]);
+
+            // Refresh to get the created_at timestamp
+            $instUnit->refresh();
+
+            // Get instructor and assistant names
+            $instructor = \App\Models\User::find($admin->id);
+            $assistant = $assistantId ? \App\Models\User::find($assistantId) : null;
+
+            Log::info('InstructorDashboardController: Class started successfully', [
+                'inst_unit_id' => $instUnit->id,
+                'course_date_id' => $courseDateId,
+                'instructor_id' => $admin->id,
+                'assistant_id' => $assistantId
+            ]);
 
             // Return success with classroom session data
             return response()->json([
@@ -559,10 +615,16 @@ class InstructorDashboardController extends Controller
                 'data' => [
                     'inst_unit_id' => $instUnit->id,
                     'course_date_id' => $courseDateId,
-                    'instructor' => $sessionInfo['instructor'] ?? null,
-                    'assistant' => $sessionInfo['assistant'] ?? null,
-                    'created_at' => $this->formatDateSafely($instUnit->created_at),
-                    'is_existing' => $instUnit->wasRecentlyCreated ? false : true
+                    'instructor' => [
+                        'id' => $instructor->id,
+                        'name' => trim(($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) ?: $instructor->email
+                    ],
+                    'assistant' => $assistant ? [
+                        'id' => $assistant->id,
+                        'name' => trim(($assistant->fname ?? '') . ' ' . ($assistant->lname ?? '')) ?: $assistant->email
+                    ] : null,
+                    'created_at' => \Carbon\Carbon::parse($instUnit->created_at)->format('c'),
+                    'is_existing' => false
                 ]
             ]);
 
@@ -576,6 +638,91 @@ class InstructorDashboardController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error starting class: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * End/close the active class session.
+     *
+     * - Marks inst_unit as completed
+     * - Disables the Zoom credential (zoom_creds.zoom_status = disabled)
+     */
+    public function endClass(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        $request->validate([
+            'inst_unit_id' => 'required|integer',
+        ]);
+
+        try {
+            $instUnit = \App\Models\InstUnit::with(['CourseDate.CourseUnit.Course'])
+                ->where('id', $request->input('inst_unit_id'))
+                ->whereNull('completed_at')
+                ->first();
+
+            if (!$instUnit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Active class session not found',
+                ], 404);
+            }
+
+            // Mark class as completed
+            $instUnit->completed_at = now();
+            $instUnit->completed_by = $admin->id;
+            $instUnit->save();
+
+            // Disable the Zoom credential used for this course type
+            $course = $instUnit->CourseDate?->CourseUnit?->Course;
+            $courseTitle = strtoupper($course->title ?? '');
+
+            $zoomEmail = null;
+            if (in_array($admin->role_id, [1, 2])) {
+                $zoomEmail = 'instructor_admin@stgroupusa.com';
+            } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
+                $zoomEmail = 'instructor_d@stgroupusa.com';
+            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
+                $zoomEmail = 'instructor_g@stgroupusa.com';
+            } else {
+                $zoomEmail = 'instructor_admin@stgroupusa.com';
+            }
+
+            $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
+            if ($zoomCreds) {
+                $zoomCreds->zoom_status = 'disabled';
+                $zoomCreds->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Class ended successfully',
+                'data' => [
+                    'inst_unit_id' => $instUnit->id,
+                    'course_date_id' => $instUnit->course_date_id,
+                    'completed_at' => \Carbon\Carbon::parse($instUnit->completed_at)->format('c'),
+                    'zoom_email' => $zoomEmail,
+                    'zoom_status' => $zoomCreds?->zoom_status ?? 'unknown',
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('InstructorDashboardController: Error ending class', [
+                'admin_id' => $admin->id,
+                'request_data' => $request->all(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error ending class: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -652,28 +799,36 @@ class InstructorDashboardController extends Controller
             }
 
             // Assign the current admin as assistant
-            $success = $this->sessionService->assignAssistant($instUnitId, $admin->id);
+            $instUnit = \App\Models\InstUnit::find($instUnitId);
 
-            if (!$success) {
+            if (!$instUnit) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to assign assistant. Please check the logs.'
-                ], 500);
+                    'message' => 'InstUnit not found'
+                ], 404);
             }
 
-            // Get updated session info
-            $sessionInfo = $this->sessionService->getClassroomSession((int) ($courseDateId ?? 0));
+            // Update assistant_id
+            $instUnit->assistant_id = $admin->id;
+            $instUnit->save();
+
+            // Get instructor and assistant info
+            $instructor = \App\Models\User::find($instUnit->created_by);
+            $assistant = \App\Models\User::find($admin->id);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully joined the class as an assistant!',
                 'data' => [
                     'inst_unit_id' => $instUnitId,
-                    'assistant' => [
-                        'id' => $admin->id,
-                        'name' => $admin->name ?? ($admin->fname . ' ' . $admin->lname)
+                    'instructor' => [
+                        'id' => $instructor->id,
+                        'name' => trim(($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) ?: $instructor->email
                     ],
-                    'session_info' => $sessionInfo
+                    'assistant' => [
+                        'id' => $assistant->id,
+                        'name' => trim(($assistant->fname ?? '') . ' ' . ($assistant->lname ?? '')) ?: $assistant->email
+                    ]
                 ]
             ]);
 
@@ -1804,7 +1959,7 @@ class InstructorDashboardController extends Controller
     public function getZoomStatus()
     {
         try {
-            $instructor = Auth::user();
+            $instructor = auth('admin')->user();
 
             if (!$instructor) {
                 return response()->json([
@@ -1887,7 +2042,7 @@ class InstructorDashboardController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to get zoom status', [
                 'error' => $e->getMessage(),
-                'instructor_id' => Auth::id(),
+                'instructor_id' => auth('admin')->id(),
             ]);
 
             return response()->json([
@@ -1905,7 +2060,7 @@ class InstructorDashboardController extends Controller
     public function toggleZoomStatus(Request $request)
     {
         try {
-            $instructor = Auth::user();
+            $instructor = auth('admin')->user();
 
             if (!$instructor) {
                 return response()->json([
@@ -2029,7 +2184,7 @@ class InstructorDashboardController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to toggle zoom status', [
                 'error' => $e->getMessage(),
-                'instructor_id' => Auth::id(),
+                'instructor_id' => auth('admin')->id(),
                 'request_data' => $request->all(),
             ]);
 

@@ -27,6 +27,3 @@ if (RouteCheckers.isStudentClassroom() || RouteCheckers.isStudentDashboard()) {
 }
 
 console.log("Student.ts loaded for route:", window.location.pathname);
-
-
-console.log("Student.ts loaded for route:", window.location.pathname);

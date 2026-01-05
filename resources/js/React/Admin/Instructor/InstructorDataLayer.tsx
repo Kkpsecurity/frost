@@ -29,7 +29,7 @@ const InstructorDataLayer: React.FC = () => {
         data: classroomData,
         isLoading: loadingClassroom,
         error: classroomError,
-    } = useClassroomDataPolling(hasActiveClassroom);
+    } = useClassroomDataPolling(true);
 
     // Poll chat messages every 3 seconds (only if classroom is active)
     const {

@@ -283,12 +283,17 @@ class CourseDatesService
      */
     public function getTodaysLessons(): array
     {
-        $today = now()->format('Y-m-d');
+        $tz = 'America/New_York';
+        $todayEt = Carbon::now($tz)->startOfDay();
+        $today = $todayEt->toDateString();
+        $startUtc = $todayEt->copy()->tz('UTC');
+        $endUtc = $todayEt->copy()->endOfDay()->tz('UTC');
 
         try {
             // Query today's ACTIVE CourseDate records
-            $todaysCourseDates = \App\Models\CourseDate::whereDate('starts_at', $today)
+            $todaysCourseDates = \App\Models\CourseDate::query()
                 ->where('is_active', true)
+                ->whereBetween('starts_at', [$startUtc, $endUtc])
                 ->with(['courseUnit.course', 'instUnit.createdBy', 'instUnit.assistant'])
                 ->orderBy('starts_at')
                 ->get();
@@ -305,6 +310,11 @@ class CourseDatesService
                 'assignment_history' => [],
                 'metadata' => [
                     'date' => $today,
+                    'timezone' => $tz,
+                    'window_utc' => [
+                        'start' => $startUtc->toIso8601String(),
+                        'end' => $endUtc->toIso8601String(),
+                    ],
                     'count' => 0,
                     'generated_at' => now()->format('c'),
                     'error' => true
@@ -320,6 +330,11 @@ class CourseDatesService
                 'assignment_history' => $this->getCourseDateAssignmentHistory(),
                 'metadata' => [
                     'date' => $today,
+                    'timezone' => $tz,
+                    'window_utc' => [
+                        'start' => $startUtc->toIso8601String(),
+                        'end' => $endUtc->toIso8601String(),
+                    ],
                     'count' => 0,
                     'generated_at' => now()->format('c')
                 ]
@@ -347,7 +362,7 @@ class CourseDatesService
                     // If no InstUnit exists, class hasn't started, so student_count = 0
 
                     // DEBUG: Log what we found for this course date
-                    \Log::info('CourseDatesService: Using model relationships', [
+                    Log::info('CourseDatesService: Using model relationships', [
                         'course_date_id' => $courseDate->id,
                         'course_name' => $course->title ?? 'Unknown Course',
                         'start_time' => $courseDate->starts_at,
@@ -381,7 +396,7 @@ class CourseDatesService
                     // PRIMARY LOGIC: Check InstUnit state first
                     if ($instUnit) {
                         // Log InstUnit details for debugging
-                        \Log::info('CourseDatesService: InstUnit found', [
+                        Log::info('CourseDatesService: InstUnit found', [
                             'course_date_id' => $courseDate->id,
                             'inst_unit_id' => $instUnit->id,
                             'created_by' => $instUnit->created_by,
@@ -399,14 +414,14 @@ class CourseDatesService
                                 // InstUnit was completed TODAY - class actually finished
                                 $classStatus = 'completed';
                                 $buttons = ['info' => 'Class completed at ' . $completedAt->format('g:i A')];
-                                \Log::info('CourseDatesService: Course marked as completed (same day)', [
+                                Log::info('CourseDatesService: Course marked as completed (same day)', [
                                     'course_date_id' => $courseDate->id,
                                     'completed_at' => $instUnit->completed_at,
                                     'buttons' => $buttons
                                 ]);
                             } else {
                                 // InstUnit completed on DIFFERENT day - treat as if no InstUnit exists
-                                \Log::warning('CourseDatesService: InstUnit completed on different day', [
+                                Log::warning('CourseDatesService: InstUnit completed on different day', [
                                     'course_date_id' => $courseDate->id,
                                     'course_date_day' => $courseDateDay,
                                     'completed_day' => $completedDay,
@@ -437,7 +452,7 @@ class CourseDatesService
 
                             if ($instUnitCreatedDay !== $courseDateDay) {
                                 // Stale InstUnit from different day - treat as unassigned
-                                \Log::warning('CourseDatesService: Uncompleted InstUnit from different day', [
+                                Log::warning('CourseDatesService: Uncompleted InstUnit from different day', [
                                     'course_date_id' => $courseDate->id,
                                     'course_date_day' => $courseDateDay,
                                     'inst_unit_created_day' => $instUnitCreatedDay,
@@ -495,7 +510,7 @@ class CourseDatesService
                         }
                     } else {
                         // Log that no InstUnit was found
-                        \Log::info('CourseDatesService: No InstUnit found', [
+                        Log::info('CourseDatesService: No InstUnit found', [
                             'course_date_id' => $courseDate->id,
                             'start_time' => $startTime->toDateTimeString(),
                             'end_time' => $endTime->toDateTimeString(),

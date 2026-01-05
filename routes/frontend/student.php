@@ -59,6 +59,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('classroom.zoom.generate-signature');
 
     /**
+     * Student Portal Agreement Route (legacy/original flow)
+     */
+    Route::post('/classroom/portal/student/agreement', [StudentDashboardController::class, 'postStudentAgreement'])
+        ->name('classroom.portal.student.agreement');
+
+    /**
      * Student Attendance Routes
      */
     Route::post('/classroom/enter-class', [StudentDashboardController::class, 'enterClass'])
@@ -72,10 +78,23 @@ Route::middleware(['auth'])->group(function () {
         ->name('classroom.attendance.class');
 
     /**
+     * Class Status Routes for Waiting Room / Onboarding Flow
+     */
+    Route::get('/api/student/class-status/{courseDateId}', [StudentDashboardController::class, 'getClassStatus'])
+        ->where('courseDateId', '[0-9]+')
+        ->name('api.student.class-status');
+
+    Route::get('/api/student/find-active-class', [StudentDashboardController::class, 'findActiveClass'])
+        ->name('api.student.find-active-class');
+
+    /**
      * Student ID Verification Routes
      */
     Route::post('/classroom/id-verification/start', [StudentDashboardController::class, 'startIdVerification'])
         ->name('classroom.id-verification.start');
+
+    Route::post('/classroom/id-verification/upload-headshot', [StudentDashboardController::class, 'uploadHeadshot'])
+        ->name('classroom.id-verification.upload-headshot');
 
     Route::get('/classroom/id-verification/status/{studentId}', [StudentDashboardController::class, 'getIdVerificationStatus'])
         ->where('studentId', '[0-9]+')

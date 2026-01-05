@@ -35,7 +35,9 @@ export const useClassroomDataPolling = (enabled: boolean = true) => {
     return useQuery({
         queryKey: ["classroom-data"],
         queryFn: async () => {
-            console.log("📡 Fetching classroom data from /admin/instructors/classroom/data");
+            console.log(
+                "📡 Fetching classroom data from /admin/instructors/classroom/data"
+            );
             const response = await axios.get<ClassroomPollResponse>(
                 "/admin/instructors/classroom/data"
             );
@@ -44,10 +46,10 @@ export const useClassroomDataPolling = (enabled: boolean = true) => {
             console.log("🔍 courseDates field:", response.data.courseDates);
             return response.data;
         },
-        refetchInterval: 15000, // Poll every 15 seconds
+        refetchInterval: enabled ? 15000 : false, // Only poll when enabled
         refetchOnWindowFocus: false,
         retry: true,
-        enabled: true,
+        enabled: enabled, // Respect the enabled parameter
     });
 };
 

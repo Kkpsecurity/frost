@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "./Dashboard/MainDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
 import { StudentContextProvider, StudentContextType } from "../context/StudentContext";
 import { ClassroomContextProvider, ClassroomContextType } from "../context/ClassroomContext";
-import { fetchClassroomPollData, isInstructorTeaching, getClassroomStatus } from "../services/classroomService";
-import { ClassroomPollDataType } from "../types/classroom";
+import { isInstructorTeaching, getClassroomStatus } from "../services/classroomService";
 
 interface StudentDataLayerProps {
     courseAuthId?: number | null;
@@ -22,12 +21,10 @@ interface StudentDataLayerProps {
  *
  * Responsibilities:
  * - Poll /classroom/student/poll endpoint every 5 seconds
- * - Poll /classroom/classroom/poll endpoint for classroom data
- * - Combine both datasets into contexts
+ * - Poll /classroom/class/data endpoint every 5 seconds
  * - Pass data down via Context providers
  * - Handle loading and error states
  * - Manage courseAuthId state internally
- *
  * Does NOT handle:
  * - Business logic (that's in StudentDashboard)
  * - UI rendering beyond loaders/errors
@@ -63,7 +60,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             console.log('🗑️ StudentDataLayer: Cleared courseAuthId from localStorage');
         }
     }, [selectedCourseAuthId]);
-    
+
     // Fetch student polling data
     const {
         data: studentData,
@@ -78,11 +75,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             }
             return response.json();
         },
+        placeholderData: keepPreviousData,
         refetchInterval: 5000, // Poll every 5 seconds
         staleTime: 4000, // Data is stale after 4 seconds
     });
 
-    // Enable classroom polling when selectedCourseAuthId is present
+    // Classroom poll is the authoritative source of whether a CourseDate exists today.
+    // It must run even before a courseAuthId is selected.
     const {
         data: classroomData,
         isLoading: classroomLoading,
@@ -99,10 +98,65 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             }
             return response.json();
         },
-        enabled: !!selectedCourseAuthId, // Only poll when we have a selectedCourseAuthId
+        enabled: true,
+        placeholderData: keepPreviousData,
         refetchInterval: 5000, // Poll every 5 seconds
         staleTime: 4000, // Data is stale after 4 seconds
     });
+
+    // If the classroom poll detects a scheduled class, auto-select the matching courseAuthId so
+    // subsequent requests include student-owned data.
+    useEffect(() => {
+        if (selectedCourseAuthId) return;
+
+        const classroomCourseDateId = classroomData?.data?.courseDate?.id ?? null;
+        if (!classroomCourseDateId) return;
+
+        // Prefer the explicit course_auth_id from the backend when available.
+        const resolvedCourseAuthId = classroomData?.data?.course_auth_id ?? null;
+        if (resolvedCourseAuthId) {
+            const nextId = Number(resolvedCourseAuthId);
+            if (!Number.isNaN(nextId) && nextId > 0) {
+                console.log(
+                    "🎯 StudentDataLayer: Auto-selecting courseAuthId from classroom poll:",
+                    nextId
+                );
+                setSelectedCourseAuthId(nextId);
+                return;
+            }
+        }
+
+        // Fallback: map classroom course_id to the student's enrollment list.
+        const classroomCourseId = classroomData?.data?.course?.course_id ?? null;
+        if (!classroomCourseId) return;
+
+        const courses = studentData?.data?.courses ?? [];
+        const match = courses.find(
+            (c: any) => Number(c?.course_id) === Number(classroomCourseId)
+        );
+        if (!match?.course_auth_id) return;
+
+        const nextId = Number(match.course_auth_id);
+        if (!Number.isNaN(nextId) && nextId > 0) {
+            console.log(
+                "🎯 StudentDataLayer: Auto-selecting courseAuthId from classroom poll (mapped):",
+                {
+                    courseAuthId: nextId,
+                    courseId: classroomCourseId,
+                    courseDateId: classroomCourseDateId,
+                }
+            );
+            setSelectedCourseAuthId(nextId);
+        }
+    }, [classroomData, studentData, selectedCourseAuthId]);
+
+    // IMPORTANT UX BEHAVIOR:
+    // - Show the full-page loader ONLY on the initial load when we have no data yet.
+    // - During polling/background refetches, keep rendering with the last known data.
+    const isInitialStudentLoad = studentLoading && !studentData;
+    const isInitialClassroomLoad =
+        !!selectedCourseAuthId && classroomLoading && !classroomData;
+    const isInitialLoading = isInitialStudentLoad || isInitialClassroomLoad;
 
     const isLoading = studentLoading || classroomLoading;
     const error = studentError || classroomError;
@@ -121,7 +175,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     };
 
     // Create classroom context data from poll response
-    const classroomContextValue: ClassroomContextType = classroomData?.data ? {
+    const classroomContextValue: ClassroomContextType | null = classroomData?.data ? {
         data: classroomData.data,
         course: classroomData.data.course || null,
         courseDate: classroomData.data.courseDate || null,
@@ -151,9 +205,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     return (
         <StudentContextProvider value={studentContextValue}>
             <ClassroomContextProvider value={classroomContextValue}>
-                {isLoading ? (
+                {isInitialLoading ? (
                     <PageLoader />
-                ) : error ? (
+                ) : error && !studentData ? (
                     <Alert variant="danger" className="m-4">
                         <Alert.Heading>⚠️ Data Loading Error</Alert.Heading>
                         <p>

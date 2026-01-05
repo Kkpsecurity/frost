@@ -13,10 +13,12 @@ import { ClassroomContext, ClassroomContextType } from '../context/ClassroomCont
  * @returns ClassroomContextType
  * @throws Error if used outside ClassroomContextProvider
  */
-export const useClassroom = (): ClassroomContextType => {
+export const useClassroom = (): ClassroomContextType | null => {
     const context = useContext(ClassroomContext);
-    if (!context) {
-        throw new Error('useClassroom must be used within ClassroomContextProvider');
+    if (context === undefined) {
+        throw new Error(
+            "useClassroom must be used within ClassroomContextProvider"
+        );
     }
     return context;
 };

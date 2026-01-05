@@ -44,6 +44,9 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::post('/start-class/{courseDateId}', [InstructorDashboardController::class, 'startClass'])
             ->name('start-class');
 
+        Route::post('/end-class', [InstructorDashboardController::class, 'endClass'])
+            ->name('end-class');
+
         Route::post('/take-over', [InstructorDashboardController::class, 'takeOverClass'])
             ->name('take-over');
 

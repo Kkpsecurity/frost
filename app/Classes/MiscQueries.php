@@ -29,11 +29,15 @@ class MiscQueries
     public static function CalenderDates( Course $Course ) : \Illuminate\Database\Eloquent\Collection
     {
 
-    return CourseDate::// Remove is_active filter - show ALL CourseDate records
-      where('starts_at', '>=', date('Y-m-01'))
-                       ->whereIn( 'course_unit_id', $Course->GetCourseUnits()->pluck( 'id' ) )
-                       ->orderBy( 'starts_at' )
-                           ->get();
+    // The frontend month grid includes spillover days from the previous month.
+    // Include at least the previous month in the query so those days can display events.
+    $fromUtc = \Illuminate\Support\Carbon::now('UTC')->startOfMonth()->subMonth();
+
+    return CourseDate::query()
+      ->where('starts_at', '>=', $fromUtc->toIso8601String())
+      ->whereIn('course_unit_id', $Course->GetCourseUnits()->pluck('id'))
+      ->orderBy('starts_at')
+      ->get();
 
     }
 

@@ -2,8 +2,6 @@
     <x-slot:head>
         <meta name="description" content="{{ $content['description'] ?? 'Student Classroom' }}">
         <meta name="keywords" content="{{ $content['keywords'] ?? 'classroom,student' }}">
-        <link rel="stylesheet" href="{{ asset('themes/frost/bultifore/css/account-dashboard.css') }}">
-        <link rel="stylesheet" href="{{ asset('themes/frost/bultifore/css/table.css') }}">
     </x-slot:head>
 
     <x-frontend.site.partials.header />
@@ -14,22 +12,6 @@
 
     <main class="main-page-content frost-secondary-bg">
         <div class="container-fluid gap-0 p-0" style="min-height: 60vh;">
-            {{-- DEBUG: Check if Lesson 1 data exists and its status --}}
-            @php
-                $lesson1Status = 'NOT_FOUND';
-                if (isset($content['lessons'][2]['lessons'])) {
-                    foreach ($content['lessons'][2]['lessons'] as $lesson) {
-                        if ($lesson['id'] == 1) {
-                            $lesson1Status = $lesson['status'] ?? 'NO_STATUS';
-                            break;
-                        }
-                    }
-                }
-            @endphp
-            <div style="position: fixed; top: 0; left: 0; background: black; color: lime; padding: 5px; z-index: 99999; font-size: 11px;">
-                🐛 DEBUG: Page generated {{ now()->format('H:i:s') }} | Lesson 1 status: <strong>{{ $lesson1Status }}</strong>
-            </div>
-
             {{-- React App Mount Point --}}
             <div id="student-dashboard-container" data-content="{{ json_encode($content) }}"
                 data-course-auth-id="{{ $course_auth_id }}" class="w-100">
@@ -78,16 +60,9 @@
     <x-frontend.site.partials.footer />
 
     <x-slot:scripts>
-        {{-- Zoom Meeting SDK --}}
-        <link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.9.0/css/bootstrap.css" />
-        <link type="text/css" rel="stylesheet" href="https://source.zoom.us/3.9.0/css/react-select.css" />
-        <script src="https://source.zoom.us/3.9.0/lib/vendor/react.min.js"></script>
-        <script src="https://source.zoom.us/3.9.0/lib/vendor/react-dom.min.js"></script>
-        <script src="https://source.zoom.us/3.9.0/lib/vendor/redux.min.js"></script>
-        <script src="https://source.zoom.us/3.9.0/lib/vendor/redux-thunk.min.js"></script>
-        <script src="https://source.zoom.us/3.9.0/lib/vendor/lodash.min.js"></script>
-        <script src="https://source.zoom.us/zoom-meeting-3.9.0.min.js"></script>
-
+        {{-- NOTE: Do not load Zoom Meeting SDK assets here.
+             The Zoom SDK and its bootstrap stylesheet override the main site theme/nav.
+             Zoom should only load inside the dedicated portal iframe page. --}}
         @vite(['resources/js/React/Student/app.tsx'])
     </x-slot:scripts>
 </x-frontend.site.site-wrapper>

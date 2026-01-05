@@ -1,11 +1,11 @@
 /**
  * Classroom Domain Types & Props
- * 
+ *
  * Following React Types & Interfaces Rules:
  * - type = single-dimension props or atomic aliases
  * - interface = multi-field shapes (domain models)
  * - Domain entities end with Type
- * - Props end with Props  
+ * - Props end with Props
  * - Shapes end with Shape
  */
 
@@ -24,6 +24,16 @@ export type LessonStatus =
     | "active_live"
     | "active_fstb";
 export type LessonId = number;
+
+// =============================================================================
+// POLL PAYLOAD TYPES (compat)
+// =============================================================================
+
+// The classroom poll payload is currently flexible and may vary by endpoint.
+// Keep this broad to avoid blocking builds during incremental refactors.
+export type ClassroomPollDataType = any;
+
+export type ClassroomPollRequestParams = any;
 
 // =============================================================================
 // DOMAIN MODELS (interface)

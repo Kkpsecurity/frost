@@ -3,7 +3,7 @@
  * Handles all classroom-related API calls
  */
 
-import { ClassroomPollDataType, ClassroomPollRequestParams } from '../types/classroom';
+import type { ClassroomPollDataType } from "../types/classroom";
 
 /**
  * Fetch classroom polling data from /classroom/classroom/poll endpoint

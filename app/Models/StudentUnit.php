@@ -8,6 +8,8 @@ namespace App\Models;
  * @details This model represents a student's unit in a course, including attributes like course authorization ID,
  * course unit ID, inst unit ID, and various timestamps. It provides relationships to related models such as CourseAuth,
  * CourseDate, CourseUnit, InstUnit, StudentLessons, and Validation.
+ *
+ * @property mixed $verified
  */
 
 use Illuminate\Support\Collection;
@@ -59,6 +61,10 @@ class StudentUnit extends Model
 
         'unit_completed'    => 'boolean',
         'attendance_type' => 'string',
+
+        'terms_accepted' => 'boolean',
+        'rules_accepted' => 'boolean',
+        'onboarding_completed' => 'boolean',
 
     ];
 

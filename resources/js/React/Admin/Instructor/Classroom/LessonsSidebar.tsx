@@ -82,14 +82,22 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
             <div className="card">
                 <div className="card-header bg-secondary text-white">
                     <h5 className="mb-0">
-                        <i className="fas fa-book me-2"></i>
+                        <i className="fas fa-book mr-2"></i>
                         Lessons
                     </h5>
                 </div>
-                <div className="card-body d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                <div
+                    className="card-body d-flex justify-content-center align-items-center"
+                    style={{ minHeight: "400px" }}
+                >
                     <div className="text-center">
-                        <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading lessons...</span>
+                        <div
+                            className="spinner-border text-primary"
+                            role="status"
+                        >
+                            <span className="visually-hidden">
+                                Loading lessons...
+                            </span>
                         </div>
                         <p className="mt-2 text-muted">Loading lessons...</p>
                     </div>
@@ -103,14 +111,14 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
             <div className="card">
                 <div className="card-header bg-secondary text-white">
                     <h5 className="mb-0">
-                        <i className="fas fa-book me-2"></i>
+                        <i className="fas fa-book mr-2"></i>
                         Lessons
                     </h5>
                 </div>
                 <div className="card-body">
                     <div className="alert alert-danger alert-sm">
                         <small>
-                            <i className="fas fa-exclamation-circle me-2"></i>
+                            <i className="fas fa-exclamation-circle mr-2"></i>
                             Failed to load lessons
                         </small>
                     </div>
@@ -124,7 +132,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
             <div className="card">
                 <div className="card-header bg-secondary text-white">
                     <h5 className="mb-0">
-                        <i className="fas fa-book me-2"></i>
+                        <i className="fas fa-book mr-2"></i>
                         Lessons
                     </h5>
                 </div>
@@ -141,7 +149,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
         <div className="card h-100">
             <div className="card-header bg-secondary text-white">
                 <h5 className="mb-0">
-                    <i className="fas fa-book me-2"></i>
+                    <i className="fas fa-book mr-2"></i>
                     📚 Lessons
                 </h5>
                 <small className="text-white-50">
@@ -151,7 +159,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
 
             {/* Overall Progress Bar */}
             <div className="card-body pb-2">
-                <div className="progress" style={{ height: '6px' }}>
+                <div className="progress" style={{ height: "6px" }}>
                     <div
                         className="progress-bar bg-success"
                         style={{ width: `${progressPercent}%` }}
@@ -167,7 +175,14 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
             </div>
 
             {/* Lessons List */}
-            <div className="card-body" style={{ maxHeight: '500px', overflow: 'auto', paddingTop: '0.5rem' }}>
+            <div
+                className="card-body"
+                style={{
+                    maxHeight: "500px",
+                    overflow: "auto",
+                    paddingTop: "0.5rem",
+                }}
+            >
                 <div className="lessons-list">
                     {lessons.map((lesson, index) => {
                         const badge = getStatusBadge(lesson.status);
@@ -177,20 +192,28 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                             <div
                                 key={lesson.id}
                                 className={`lesson-item p-2 mb-2 border rounded cursor-pointer transition ${
-                                    isCurrentLesson ? 'bg-light border-primary border-2' : 'bg-white'
+                                    isCurrentLesson
+                                        ? "bg-light border-primary border-2"
+                                        : "bg-white"
                                 }`}
                                 style={{
-                                    cursor: 'pointer',
-                                    borderLeft: isCurrentLesson ? '4px solid #0d6efd' : '4px solid #ddd',
-                                    transition: 'all 0.3s ease'
+                                    cursor: "pointer",
+                                    borderLeft: isCurrentLesson
+                                        ? "4px solid #0d6efd"
+                                        : "4px solid #ddd",
+                                    transition: "all 0.3s ease",
                                 }}
                             >
                                 {/* Lesson Number & Status */}
                                 <div className="d-flex justify-content-between align-items-start mb-2">
                                     <div className="d-flex align-items-center gap-2">
-                                        <small className="badge bg-secondary">{index + 1}</small>
+                                        <small className="badge bg-secondary">
+                                            {index + 1}
+                                        </small>
                                         <small className={`badge ${badge.bg}`}>
-                                            <i className={`${badge.icon} me-1`}></i>
+                                            <i
+                                                className={`${badge.icon} me-1`}
+                                            ></i>
                                             {badge.text}
                                         </small>
                                     </div>
@@ -226,28 +249,52 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                 {(lesson.start_time || lesson.end_time) && (
                                     <small className="text-muted d-block">
                                         <i className="fas fa-calendar me-1"></i>
-                                        {lesson.start_time && new Date(lesson.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        {lesson.start_time && lesson.end_time && ' - '}
-                                        {lesson.end_time && new Date(lesson.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {lesson.start_time &&
+                                            new Date(
+                                                lesson.start_time
+                                            ).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        {lesson.start_time &&
+                                            lesson.end_time &&
+                                            " - "}
+                                        {lesson.end_time &&
+                                            new Date(
+                                                lesson.end_time
+                                            ).toLocaleTimeString([], {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
                                     </small>
                                 )}
 
                                 {/* Action Buttons */}
                                 <div className="mt-2 d-flex gap-1">
-                                    {lesson.status === 'not_started' && (
-                                        <button className="btn btn-sm btn-outline-primary" title="Start this lesson">
+                                    {lesson.status === "not_started" && (
+                                        <button
+                                            className="btn btn-sm btn-outline-primary"
+                                            title="Start this lesson"
+                                        >
                                             <i className="fas fa-play me-1"></i>
                                             <small>Start</small>
                                         </button>
                                     )}
-                                    {lesson.status === 'in_progress' && (
-                                        <button className="btn btn-sm btn-outline-danger" title="Complete this lesson">
+                                    {lesson.status === "in_progress" && (
+                                        <button
+                                            className="btn btn-sm btn-outline-danger"
+                                            title="Complete this lesson"
+                                        >
                                             <i className="fas fa-check me-1"></i>
                                             <small>Complete</small>
                                         </button>
                                     )}
-                                    {lesson.status === 'completed' && (
-                                        <button className="btn btn-sm btn-outline-secondary" disabled title="Lesson completed">
+                                    {lesson.status === "completed" && (
+                                        <button
+                                            className="btn btn-sm btn-outline-secondary"
+                                            disabled
+                                            title="Lesson completed"
+                                        >
                                             <i className="fas fa-check-circle me-1"></i>
                                             <small>Done</small>
                                         </button>
@@ -263,18 +310,35 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
             <div className="card-footer bg-light text-muted small">
                 <div className="row text-center">
                     <div className="col-4">
-                        <strong>{lessons.filter(l => l.status === 'completed').length}</strong>
-                        <br/>
+                        <strong>
+                            {
+                                lessons.filter((l) => l.status === "completed")
+                                    .length
+                            }
+                        </strong>
+                        <br />
                         Completed
                     </div>
                     <div className="col-4">
-                        <strong>{lessons.filter(l => l.status === 'in_progress').length}</strong>
-                        <br/>
+                        <strong>
+                            {
+                                lessons.filter(
+                                    (l) => l.status === "in_progress"
+                                ).length
+                            }
+                        </strong>
+                        <br />
                         In Progress
                     </div>
                     <div className="col-4">
-                        <strong>{lessons.filter(l => l.status === 'not_started').length}</strong>
-                        <br/>
+                        <strong>
+                            {
+                                lessons.filter(
+                                    (l) => l.status === "not_started"
+                                ).length
+                            }
+                        </strong>
+                        <br />
                         Pending
                     </div>
                 </div>

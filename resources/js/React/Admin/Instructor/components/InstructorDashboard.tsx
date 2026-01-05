@@ -1,8 +1,13 @@
 import React from "react";
 import InstructorTitlebar from "./Common/InstructorTitlebar";
 import BulletinBoard from "../Classroom/offline/BulletinBoard";
+import ClassroomInterface from "../Interfaces/ClassroomInterface";
 import { useClassRouter } from "../Hooks/useClassRouter";
-import { InstructorPollResponse, ClassroomPollResponse, ChatPollResponse } from "../types";
+import {
+    InstructorPollResponse,
+    ClassroomPollResponse,
+    ChatPollResponse,
+} from "../types";
 
 interface InstructorDashboardProps {
     instructorData?: InstructorPollResponse;
@@ -21,7 +26,7 @@ interface InstructorDashboardProps {
 const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
     instructorData,
     classroomData,
-    chatData
+    chatData,
 }) => {
     // Use hook to determine classroom state
     const { state, isClassroomActive, isClassroomPending } = useClassRouter(
@@ -40,31 +45,46 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
         hasInstUnit: !!instructorData?.instUnit,
     });
 
+    const activeCourseName =
+        classroomData?.courseDates?.[0]?.course_name ||
+        classroomData?.courseDates?.[0]?.course?.title ||
+        instructorData?.instUnit?.course_unit_name ||
+        "Live Class";
+
+    const title =
+        state === "online"
+            ? activeCourseName
+            : "Welcome: Florida Online Bulletin Board";
+
     return (
         <div className="m-0 p-0" style={{ margin: 0, padding: 0 }}>
-            {/* Titlebar - Always visible */}
-            <InstructorTitlebar instructor={instructor} title="Welcome: Florida Online Bulletin Board" />
-            
-    
+            {/* Titlebar - Sits above offline and online content */}
+            <InstructorTitlebar instructor={instructor} title={title} />
+
             {/* Content - Route based on state */}
-            {(state === 'offline' || state === 'pending') && (
+            {(state === "offline" || state === "pending") && (
                 <div>
-                    {state === 'pending' && (
+                    {state === "pending" && (
                         <div className="alert alert-info m-3" role="alert">
                             <i className="fas fa-chalkboard-teacher mr-2"></i>
-                            <strong>Ready to Teach</strong> - Select a course to begin your session
+                            <strong>Ready to Teach</strong> - Select a course to
+                            begin your session
                         </div>
                     )}
 
-                    <BulletinBoard classroomData={classroomData} instructorData={instructorData} />
+                    <BulletinBoard
+                        classroomData={classroomData}
+                        instructorData={instructorData}
+                    />
                 </div>
             )}
 
-            {state === 'online' && (
-                <div className="p-5">
-                    <h2>🎓 Online Classroom (Coming Soon)</h2>
-                    <p>Live classroom interface will display here</p>
-                </div>
+            {state === "online" && (
+                <ClassroomInterface
+                    instructorData={instructorData}
+                    classroomData={classroomData}
+                    chatData={chatData}
+                />
             )}
         </div>
     );

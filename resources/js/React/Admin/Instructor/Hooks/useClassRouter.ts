@@ -14,9 +14,9 @@ export interface ClassRouterResult {
  * Determines the current classroom state based on courseDates array and instUnit presence
  *
  * States:
- * - OFFLINE: No courseDates AND no instUnit (default, no class scheduled)
+ * - ONLINE: instUnit exists (class started, instructor active)
  * - PENDING: courseDates exist BUT no instUnit (classes scheduled, awaiting instructor start)
- * - ONLINE: courseDates exist AND instUnit exists (class started, instructor active)
+ * - OFFLINE: No courseDates AND no instUnit (default, no class scheduled)
  *
  * @param courseDates - Array of course dates from classroomData?.courseDates
  * @param instUnit - From instructorData?.instUnit
@@ -31,23 +31,25 @@ export const useClassRouter = (
 
     return useMemo(() => {
         // Determine state
-        let state: ClassroomState = 'offline';
+        let state: ClassroomState = "offline";
         const hasCourseDates = courseDates && courseDates.length > 0;
 
-        if (hasCourseDates && instUnit) {
-            // Both exist: class is ONLINE
-            state = 'online';
-        } else if (hasCourseDates && !instUnit) {
+        // ONLINE should be determined by instUnit, not courseDates.
+        // courseDates come from a separate poll and can be transiently empty;
+        // instUnit is the authoritative signal that class is live.
+        if (instUnit) {
+            state = "online";
+        } else if (hasCourseDates) {
             // CourseDates exist but no InstUnit: class is PENDING (awaiting start)
-            state = 'pending';
+            state = "pending";
         } else {
             // No courseDates: class is OFFLINE
-            state = 'offline';
+            state = "offline";
         }
 
         // Calculate flags
-        const isClassroomActive = state === 'online';
-        const isClassroomPending = state === 'pending';
+        const isClassroomActive = state === "online";
+        const isClassroomPending = state === "pending";
 
         console.log("🎓 useClassRouter:", {
             state,

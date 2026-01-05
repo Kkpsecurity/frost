@@ -299,7 +299,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     // API call to update progress
     const updateProgress = async (playedSeconds: number, percentage: number) => {
         try {
-            const response = await fetch('/api/student/lesson-session/progress', {
+            const response = await fetch('/classroom/lesson/update-progress', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -307,7 +307,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 },
                 body: JSON.stringify({
                     session_id: activeSession.session_id,
-                    progress_seconds: Math.floor(playedSeconds),
+                    playback_seconds: Math.floor(playedSeconds),
                     completion_percentage: Math.min(100, Math.floor(percentage)),
                 }),
             });
@@ -365,16 +365,21 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     const furthestProgressPercentage = duration > 0 ? (furthestPointReached / duration) * 100 : 0;
 
     return (
-        <div className="secure-video-player">
-            {/* Video Player Container */}
+        <div
+            className="secure-video-player"
+            style={{
+                maxWidth: '100%',
+                marginLeft: 0,
+                marginRight: 0,
+            }}
+        >
+            {/* Video Player Container (YouTube-style 16:9) */}
             <div
-                className="video-container mb-3"
+                className="video-container ratio ratio-16x9 mb-3"
                 style={{
                     backgroundColor: '#000',
                     borderRadius: '8px',
                     overflow: 'hidden',
-                    position: 'relative',
-                    paddingTop: '56.25%', // 16:9 aspect ratio
                 }}
             >
                 {simulationMode ? (

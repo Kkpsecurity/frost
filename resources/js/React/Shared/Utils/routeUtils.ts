@@ -15,7 +15,10 @@ export const RouteCheckers = {
      * Check if currently on /classroom route (student area)
      */
     isStudentClassroom(): boolean {
-        return window.location.pathname.includes("/classroom");
+        return (
+            window.location.pathname.includes("/classroom") &&
+            !window.location.pathname.includes("/classroom/portal/")
+        );
     },
 
     /**
