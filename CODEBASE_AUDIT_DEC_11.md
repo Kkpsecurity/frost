@@ -1,12 +1,150 @@
 # FROST CODEBASE AUDIT - December 11, 2025
-**Last Updated**: January 5, 2026 (Morning Session - Student Waiting Room Implementation)
+**Last Updated**: January 5, 2026 (Afternoon Session - Zoom Credentials Workflow + Lesson Progress)
 
 ## 🎯 AUDIT OBJECTIVE
 Complete read-only assessment of the current state. **NO CHANGES MADE**.
 
 ## 📝 RECENT UPDATES (Jan 5, 2026)
 
-### ✅ Student Waiting Room Implementation
+### ✅ Zoom Credentials Workflow (Afternoon Session)
+**Files Modified**:
+- `resources/js/React/Admin/Instructor/components/ZoomSetupPanel.tsx` - Credential review and activation workflow
+- `resources/js/React/Admin/Instructor/Interfaces/ClassroomInterface.tsx` - Always visible Zoom card
+- `app/Http/Controllers/Admin/Instructors/InstructorDashboardController.php` - Added is_active field to responses
+- `config/zoom.php` - Fixed config caching issue with env() defaults
+- `.env` - Added complete ZOOM configuration
+
+**New Instructor Workflow**:
+1. **Credential Review State** (Default):
+   - Zoom credentials displayed but disabled (opacity 0.5, disabled attribute)
+   - All 4 inputs blurred: Zoom Account, Meeting ID, Passcode, Password
+   - Info alert: "Review your Zoom credentials before starting screen sharing"
+   - Blue "Start Sharing" button with share icon
+   - is_active = false
+
+2. **Active Sharing State**:
+   - Click "Start Sharing" → POST to /admin/instructors/zoom/toggle
+   - Green success header: "Zoom Screen Sharing Active - Students can now see your screen"
+   - Credentials become visible (opacity 1, enabled)
+   - Collapsible details section with "Hide/Details" button
+   - Badge shows "Active" status
+   - is_active = true
+
+**Technical Implementation**:
+- Location: [ZoomSetupPanel.tsx](resources/js/React/Admin/Instructor/components/ZoomSetupPanel.tsx)
+- State Management: is_active field added to ZoomStatusResponse interface
+- API Endpoints:
+  - GET `/admin/instructors/zoom/status` - Returns is_active boolean
+  - POST `/admin/instructors/zoom/toggle` - Returns is_active boolean
+- Backend Logic:
+  - is_active = (zoom_status === 'enabled') in database
+  - zoom_status field controls enabled/disabled state
+- Always Visible: Zoom card no longer hides after activation (removed conditional rendering)
+- Card Position: Moved to zoom-card-container div in ClassroomInterface
+- Strict Checking: Removed status fallback, checks only is_active === true
+
+**User Experience Flow**:
+```
+Instructor starts class
+  ↓
+Zoom card visible with blurred credentials
+  ↓
+Reviews Meeting ID, Passcode, Password (all disabled)
+  ↓
+Clicks "Start Sharing" button
+  ↓
+API toggles zoom_status to 'enabled'
+  ↓
+is_active becomes true
+  ↓
+Green success header appears
+  ↓
+Credentials become clear and interactive
+  ↓
+Students can now join Zoom meeting
+```
+
+**Configuration Fixes**:
+- **Issue**: config('zoom.sdk_key') returning null after config:cache
+- **Root Cause**: Nested env() in default parameter: `env('ZOOM_SDK_KEY', env('ZOOM_MEETING_SDK'))`
+- **Solution**: Changed to ?: operator: `env('ZOOM_SDK_KEY') ?: env('ZOOM_MEETING_SDK')`
+- **Why**: Laravel only resolves first-level env() calls after config caching
+- **Result**: Config properly loads SDK keys with fallback chain
+
+**Environment Configuration**:
+```dotenv
+# Zoom API Configuration
+ZOOM_API_URL=https://api.zoom.us/v2/
+ZOOM_CLIENT_KEY=zVfLDuuKQMezJuzB6Y6leQ
+ZOOM_CLIENT_SECRET=8Hf8uHSJWLiuuKq6vK81QtotVl2Vg8GR
+
+# ZOOM MEETING SDK - For WebHooks Setup
+ZOOM_MEETING_SDK=zVfLDuuKQMezJuzB6Y6leQ
+ZOOM_MEETING_SECRET=8Hf8uHSJWLiuuKq6vK81QtotVl2Vg8GR
+
+# ZOOM SDK Keys (explicit for Meeting SDK Web)
+ZOOM_SDK_KEY=zVfLDuuKQMezJuzB6Y6leQ
+ZOOM_SDK_SECRET=8Hf8uHSJWLiuuKq6vK81QtotVl2Vg8GR
+```
+
+### ✅ Student Lesson Progress Component (Afternoon Session)
+**Files Modified**:
+- `resources/js/React/Student/Components/Classroom/LessonProgressBar.tsx` - NEW component (218 lines)
+- `resources/js/React/Student/Components/Classroom/MainOnline.tsx` - Integrated progress bar
+
+**New Feature - Real-Time Progress Tracking**:
+1. **Component Interface**:
+   - Props: selectedLesson (LessonType | null), startTime (ISO timestamp string | null)
+   - State: elapsedSeconds (updates every second via setInterval)
+   - Auto-cleanup: useEffect clears interval on unmount
+
+2. **Time Calculations**:
+   - Elapsed: Current time - startTime (updates every 1 second)
+   - Total: lesson.duration_minutes * 60
+   - Remaining: totalSeconds - elapsedSeconds (clamped to 0)
+   - Progress: (elapsedSeconds / totalSeconds) * 100 (capped at 100%)
+   - Overtime: elapsedSeconds > totalSeconds
+
+3. **UI Components**:
+   - **Empty State**: "Select a lesson to track progress" with clock icon
+   - **Header**: Lesson title + description + status badge (In Progress/Overtime)
+   - **Three-Column Time Display**:
+     - Elapsed (blue, MM:SS format, monospace font)
+     - Duration (white, MM:SS format, monospace font)
+     - Remaining (green/red, MM:SS format, shows + prefix if overtime)
+   - **Progress Bar**: 8px height, blue fill transitioning to red on overtime
+   - **Percentage Display**: Rounded percentage above progress bar
+   - **Info Alert**: "Waiting for instructor to start this lesson" when no startTime
+
+4. **Visual States**:
+   - Normal: Blue progress bar (#3498db), green remaining time (#2ecc71)
+   - Overtime: Red progress bar (#e74c3c), red remaining time with + prefix
+   - Badge: Blue "In Progress" or red "Overtime"
+
+**Technical Implementation**:
+- Location: [LessonProgressBar.tsx](resources/js/React/Student/Components/Classroom/LessonProgressBar.tsx)
+- Updates: Every 1000ms via setInterval in useEffect
+- Format Function: formatTime(seconds) → 'MM:SS' string with padStart(2, '0')
+- Layout: Card with dark theme (#34495e background, #2c3e50 header)
+- Responsive: Three columns stack on mobile, full width on desktop
+- Integrated: Below Zoom player card in MainOnline.tsx (lines 286-290)
+
+**Data Flow**:
+```
+Classroom Poll → lessons array → selectedLessonId
+  ↓
+MainOnline finds lesson: lessons.find(l => l.id === selectedLessonId)
+  ↓
+Passes to LessonProgressBar: selectedLesson + started_at timestamp
+  ↓
+LessonProgressBar calculates elapsed time from started_at
+  ↓
+Updates every second → shows MM:SS format → fills progress bar
+  ↓
+Detects overtime → changes color to red → shows + prefix
+```
+
+### ✅ Student Waiting Room Implementation (Morning Session)
 **Files Modified**:
 - `resources/js/React/Student/Components/Classroom/MainClassroom.tsx` - Added ternary routing logic for waiting room
 
