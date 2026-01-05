@@ -30,12 +30,53 @@ use App\Services\ClassroomDashboardService;
 use App\Services\StudentUnitService;
 use App\Services\SelfStudyLessonService;
 use App\Services\PauseAllocationService;
+use App\Models\ZoomCreds;
 
 // NOTE: Some legacy services were referenced here historically but do not exist in this repo.
 
 class StudentDashboardController extends Controller
 {
     use PageMetaDataTrait;
+
+    /**
+     * Infer Zoom credentials based on instructor role and course title pattern
+     * - instructor_admin@stgroupusa.com (id: 1) if instructor is admin/sysadmin
+     * - instructor_d@stgroupusa.com (id: 2) for "D" class courses
+     * - instructor_g@stgroupusa.com (id: 3) for "G" class courses
+     * - instructor_admin@stgroupusa.com (id: 1) for dev/admin/default
+     */
+    private function inferZoomCredentials($course, $instUnit = null): ?ZoomCreds
+    {
+        if (!$course) {
+            return null;
+        }
+
+        // If instructor is admin or sysadmin, always use admin Zoom credentials
+        if ($instUnit) {
+            $instructor = User::find($instUnit->created_by);
+            if ($instructor) {
+                $role = strtolower($instructor->role ?? '');
+                if (in_array($role, ['admin', 'sysadmin', 'sys admin', 'system admin'])) {
+                    return ZoomCreds::find(1); // instructor_admin@stgroupusa.com
+                }
+            }
+        }
+
+        $courseTitle = strtoupper($course->title ?? $course->title_long ?? '');
+
+        // Match Class D pattern
+        if (preg_match('/\bCLASS\s*D\b|\bD\s*CLASS\b|\b-D\b|\bD-\b/', $courseTitle)) {
+            return ZoomCreds::find(2); // instructor_d@stgroupusa.com
+        }
+
+        // Match Class G pattern
+        if (preg_match('/\bCLASS\s*G\b|\bG\s*CLASS\b|\b-G\b|\bG-\b/', $courseTitle)) {
+            return ZoomCreds::find(3); // instructor_g@stgroupusa.com
+        }
+
+        // Default to admin instructor for dev/testing
+        return ZoomCreds::find(1); // instructor_admin@stgroupusa.com
+    }
 
     private function getCsrfToken(Request $request): ?string
     {
@@ -477,7 +518,8 @@ class StudentDashboardController extends Controller
             $isOnline = $courseDate && $instUnit;
 
             // Zoom readiness (used by student iframe screen share)
-            $zoomCreds = $courseAuth->course?->ZoomCreds;
+            // Infer Zoom credentials based on instructor role and course title pattern
+            $zoomCreds = $this->inferZoomCredentials($courseAuth->course, $instUnit);
             $zoomStatus = $zoomCreds?->zoom_status ?? 'disabled';
             $isZoomReady = ($zoomStatus === 'enabled');
 
@@ -1425,7 +1467,11 @@ class StudentDashboardController extends Controller
             ]);
         }
 
-        $zoomCreds = $courseAuth->course?->ZoomCreds;
+        // Get instructor unit to check role
+        $instUnit = $courseDate->InstUnit;
+
+        // Infer Zoom credentials based on instructor role and course title pattern
+        $zoomCreds = $this->inferZoomCredentials($courseAuth->course, $instUnit);
         $zoomStatus = $zoomCreds?->zoom_status ?? 'disabled';
         $isZoomReady = ($zoomStatus === 'enabled');
 
