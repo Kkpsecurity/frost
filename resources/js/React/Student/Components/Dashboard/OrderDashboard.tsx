@@ -47,106 +47,32 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
             style={{
                 backgroundColor: "#1a1f2e",
                 minHeight: "100vh",
-                paddingTop: "6rem",
+                paddingTop: "3rem",
                 paddingBottom: "3rem",
             }}
         >
             <div className="container">
-                {/* Stats Cards Row */}
+                {/* Welcome Message */}
                 <div className="row mb-5">
-                    <div className="col-md-4 mb-3">
+                    <div className="col-12">
                         <div
-                            className="card border-0 shadow-sm text-center"
                             style={{
-                                background: "#2c3e50",
+                                background: "linear-gradient(135deg, #3498db 0%, #2980b9 100%)",
                                 color: "white",
-                                padding: "2rem",
+                                padding: "3rem",
+                                borderRadius: "8px",
+                                boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
                             }}
                         >
-                            <i
-                                className="fas fa-book mb-3"
-                                style={{ fontSize: "3rem", opacity: 0.3 }}
-                            ></i>
-                            <div
-                                style={{
-                                    fontSize: "0.75rem",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "1px",
-                                    opacity: 0.7,
-                                    marginBottom: "0.5rem",
-                                }}
-                            >
-                                Total Courses
-                            </div>
-                            <div
-                                style={{ fontSize: "3rem", fontWeight: "700" }}
-                            >
-                                {progress.total_courses}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                        <div
-                            className="card border-0 shadow-sm text-center"
-                            style={{
-                                background: "#17a2b8",
-                                color: "white",
-                                padding: "2rem",
-                            }}
-                        >
-                            <i
-                                className="fas fa-clock mb-3"
-                                style={{ fontSize: "3rem", opacity: 0.3 }}
-                            ></i>
-                            <div
-                                style={{
-                                    fontSize: "0.75rem",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "1px",
-                                    opacity: 0.7,
-                                    marginBottom: "0.5rem",
-                                }}
-                            >
-                                In Progress
-                            </div>
-                            <div
-                                style={{ fontSize: "3rem", fontWeight: "700" }}
-                            >
-                                {progress.in_progress}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-md-4 mb-3">
-                        <div
-                            className="card border-0 shadow-sm text-center"
-                            style={{
-                                background: "#28a745",
-                                color: "white",
-                                padding: "2rem",
-                            }}
-                        >
-                            <i
-                                className="fas fa-check-circle mb-3"
-                                style={{ fontSize: "3rem", opacity: 0.3 }}
-                            ></i>
-                            <div
-                                style={{
-                                    fontSize: "0.75rem",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "1px",
-                                    opacity: 0.7,
-                                    marginBottom: "0.5rem",
-                                }}
-                            >
-                                Completed
-                            </div>
-                            <div
-                                style={{ fontSize: "3rem", fontWeight: "700" }}
-                            >
-                                {progress.completed}
-                            </div>
+                            <h2 style={{ marginBottom: "1rem", fontWeight: "700" }}>
+                                Welcome back, {data?.student?.first_name || "Student"}!
+                            </h2>
+                            <p style={{ fontSize: "1.1rem", marginBottom: "0.5rem", opacity: 0.95 }}>
+                                You have {courses?.length || 0} course{courses?.length !== 1 ? "s" : ""} enrolled.
+                            </p>
+                            <p style={{ fontSize: "0.95rem", opacity: 0.85 }}>
+                                Select a course below to continue learning or access course materials.
+                            </p>
                         </div>
                     </div>
                 </div>

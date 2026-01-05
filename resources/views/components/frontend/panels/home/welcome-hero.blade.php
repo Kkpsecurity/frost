@@ -100,7 +100,7 @@
                                     <div class="main-wel">
                                         <div class="wel-img">
                                             <div class="big-icon">
-                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-d.png', 'media')"
+                                                <img src="{{ asset('themes/frost/images/online-course-icon-class-d.png') }}"
                                                     alt="Class D Security">
                                             </div>
                                         </div>
@@ -125,7 +125,7 @@
                                     <div class="main-wel">
                                         <div class="wel-img">
                                             <div class="big-icon">
-                                                <img src="@mediaUrl('assets/icons/online-course-icon-class-g.png', 'media')"
+                                                <img src="{{ asset('themes/frost/images/online-course-icon-class-g.png') }}"
                                                     alt="Class G Security">
                                             </div>
                                         </div>

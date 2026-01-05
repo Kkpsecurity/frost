@@ -11,10 +11,10 @@
     @endphp
 
     <main class="main-page-content frost-secondary-bg">
-        <div class="container-fluid gap-0 p-0" style="min-height: 60vh;">
+        <div class="container-fluid gap-0 p-0" >
             {{-- React App Mount Point --}}
             <div id="student-dashboard-container" data-content="{{ json_encode($content) }}"
-                data-course-auth-id="{{ $course_auth_id }}" class="w-100">
+                data-course-auth-id="{{ $course_auth_id }}" class="w-100" style="margin-top:-40px;">
                 {{-- React Component will be mounted here --}}
             </div>
 

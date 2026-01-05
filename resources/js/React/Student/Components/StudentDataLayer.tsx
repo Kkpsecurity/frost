@@ -33,10 +33,34 @@ interface StudentDataLayerProps {
 const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     courseAuthId: initialCourseAuthId,
 }) => {
+    // Session expiration: 12 hours
+    const SESSION_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+
+    // Check if session has expired
+    const isSessionExpired = (): boolean => {
+        const sessionTimestamp = localStorage.getItem('frost_session_timestamp');
+        if (!sessionTimestamp) return true;
+
+        const sessionTime = parseInt(sessionTimestamp, 10);
+        const now = Date.now();
+        const elapsed = now - sessionTime;
+
+        return elapsed > SESSION_DURATION_MS;
+    };
+
     // Internal state for selected courseAuthId (SPA routing)
     // PERSISTENCE: Restore from localStorage on mount, save on changes
+    // SESSION EXPIRATION: Clear after 12 hours
     const [selectedCourseAuthId, setSelectedCourseAuthId] = useState<number | null>(() => {
-        // Try to restore from localStorage first
+        // Check if session has expired
+        if (isSessionExpired()) {
+            console.log('⏰ StudentDataLayer: Session expired (12 hours), returning to dashboard');
+            localStorage.removeItem('frost_selected_course_auth_id');
+            localStorage.removeItem('frost_session_timestamp');
+            return null;
+        }
+
+        // Try to restore from localStorage if session is still valid
         const saved = localStorage.getItem('frost_selected_course_auth_id');
         if (saved) {
             const parsedId = parseInt(saved, 10);
@@ -50,16 +74,39 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         return initialCourseAuthId || null;
     });
 
+    // Track if user explicitly clicked Dashboard (to prevent auto-select)
+    // PERSISTENCE: Restore from localStorage on mount
+    const [userExplicitlySelectedDashboard, setUserExplicitlySelectedDashboard] = useState(() => {
+        const saved = localStorage.getItem('frost_user_on_dashboard');
+        return saved === 'true';
+    });
+
     // Save to localStorage whenever selectedCourseAuthId changes
     useEffect(() => {
         if (selectedCourseAuthId !== null) {
             localStorage.setItem('frost_selected_course_auth_id', selectedCourseAuthId.toString());
+            // Update session timestamp
+            localStorage.setItem('frost_session_timestamp', Date.now().toString());
             console.log('💾 StudentDataLayer: Saved courseAuthId to localStorage:', selectedCourseAuthId);
         } else {
             localStorage.removeItem('frost_selected_course_auth_id');
+            localStorage.removeItem('frost_session_timestamp');
             console.log('🗑️ StudentDataLayer: Cleared courseAuthId from localStorage');
         }
     }, [selectedCourseAuthId]);
+
+    // Wrap setSelectedCourseAuthId to track explicit dashboard selection
+    const handleSetSelectedCourseAuthId = (id: number | null) => {
+        if (id === null) {
+            setUserExplicitlySelectedDashboard(true);
+            localStorage.setItem('frost_user_on_dashboard', 'true');
+            console.log('👤 StudentDataLayer: User explicitly clicked Dashboard');
+        } else {
+            setUserExplicitlySelectedDashboard(false);
+            localStorage.removeItem('frost_user_on_dashboard');
+        }
+        setSelectedCourseAuthId(id);
+    };
 
     // Fetch student polling data
     const {
@@ -106,7 +153,14 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
     // If the classroom poll detects a scheduled class, auto-select the matching courseAuthId so
     // subsequent requests include student-owned data.
+    // BUT: Don't auto-select if user explicitly clicked Dashboard button
     useEffect(() => {
+        // If user explicitly clicked Dashboard, don't auto-select
+        if (userExplicitlySelectedDashboard) {
+            console.log('⏸️ StudentDataLayer: Skipping auto-select (user on Dashboard)');
+            return;
+        }
+
         if (selectedCourseAuthId) return;
 
         const classroomCourseDateId = classroomData?.data?.courseDate?.id ?? null;
@@ -148,7 +202,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             );
             setSelectedCourseAuthId(nextId);
         }
-    }, [classroomData, studentData, selectedCourseAuthId]);
+    }, [classroomData, studentData, selectedCourseAuthId, userExplicitlySelectedDashboard]);
 
     // IMPORTANT UX BEHAVIOR:
     // - Show the full-page loader ONLY on the initial load when we have no data yet.
@@ -169,7 +223,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         notifications: studentData?.data?.notifications || [],
         assignments: studentData?.data?.assignments || [],
         selectedCourseAuthId: selectedCourseAuthId,
-        setSelectedCourseAuthId: setSelectedCourseAuthId,
+        setSelectedCourseAuthId: handleSetSelectedCourseAuthId,
         loading: isLoading,
         error: error instanceof Error ? error.message : null,
     };

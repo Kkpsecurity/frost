@@ -2,7 +2,7 @@
     "private": true,
     "scripts": {
         "dev": "vite",
-        "build": "vite build && node scripts/update-student-assets.js",
+        "build": "vite build",
         "type-check": "tsc --noEmit"
     },
     "devDependencies": {

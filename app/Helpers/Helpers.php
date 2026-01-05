@@ -43,7 +43,7 @@ class Helpers
         // For everyone else (logged in or not), show "Enroll Now" that goes to payment page
         return view(
                     'frontend.shop.partials.enroll_buttons.enroll',
-            ['route' => route('payments.course', $Course)]
+            ['route' => route('courses.enroll', $Course)]
                )->render();
 
     }

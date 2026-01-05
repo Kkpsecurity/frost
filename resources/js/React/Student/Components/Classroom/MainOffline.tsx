@@ -27,6 +27,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
     const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
     const [isLoadingLessons, setIsLoadingLessons] = useState(true);
     const [courseName, setCourseName] = useState<string>('Loading...');
+    const [courseAuth, setCourseAuth] = useState<any>(null);
 
     // View mode: 'list' (default), 'preview' (lesson details), 'player' (video player)
     const [viewMode, setViewMode] = useState<'list' | 'preview' | 'player'>('list');
@@ -39,6 +40,44 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
     const [completionThreshold, setCompletionThreshold] = useState<number>(80);
     const [pauseWarningSeconds, setPauseWarningSeconds] = useState<number>(30);
     const [pauseAlertSound, setPauseAlertSound] = useState<string>('/sounds/pause-warning.mp3');
+
+    // Map courses to their document folders
+    const courseDocumentMap: { [key: number]: { folder: string; documents: string[] } } = {
+        1: { // Class D (course_id 1)
+            folder: 'florida-d40',
+            documents: [
+                'Questions and Answers Chapter 493.pdf',
+                'Private Security FAQ.pdf',
+                'Job Assistance 09.2023.pdf',
+                'Florida Security Officer Handbook.pdf',
+                'DOL Newsletter July 2023.pdf',
+                'D Certificate Of Completion - Sample - Rev 01.2023.pdf',
+                'D License Application.pdf'
+            ]
+        },
+        3: { // Class G (course_id 3)
+            folder: 'florida-g28',
+            documents: [
+                'FTM Firearm Training Manual Student Rev 01.2023.pdf',
+                'Certificate Firearms Proficiency Sample Rev 01.2023.pdf',
+                'Temporary G License Agency Character Certification.pdf',
+                'G License Application.pdf'
+            ]
+        }
+    };
+
+    // Get documents for current course
+    const getDocumentsForCourse = () => {
+        if (!courseAuth) return [];
+        const courseId = courseAuth.course_id;
+        const courseData = courseDocumentMap[courseId];
+        if (!courseData) return [];
+
+        return courseData.documents.map(doc => ({
+            name: doc,
+            url: `/docs/${courseData.folder}/${doc}`
+        }));
+    };
 
     // Derive selected lesson from selectedLessonId
     const selectedLesson = selectedLessonId ? lessons.find(l => l.id === selectedLessonId) : null;
@@ -79,6 +118,11 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                 console.log('Lessons loaded:', data); // Debug log
 
                 if (data.success && data.data) {
+                    // Set course auth data for document mapping
+                    if (data.data.courseAuth) {
+                        setCourseAuth(data.data.courseAuth);
+                    }
+
                     // Set course name from response
                     if (data.data.courseAuth?.course_name) {
                         setCourseName(data.data.courseAuth.course_name);
@@ -581,107 +625,189 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                 <div className="row g-3">
                                     {/* Left Column */}
                                     <div className="col-md-8">
-                                        {/* Student Progress Overview */}
-                                        <div className="card mb-3" style={{ backgroundColor: "#2c3e50", border: "none", borderRadius: "0.5rem" }}>
-                                            <div className="card-header" style={{ backgroundColor: "#34495e", borderBottom: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem 0.5rem 0 0" }}>
-                                                <h6 className="mb-0" style={{ color: "white", fontWeight: "600" }}>
-                                                    <i className="fas fa-chart-bar me-2" style={{ color: "#3498db" }}></i>
-                                                    Progress Overview
-                                                </h6>
+                                            {/* Today's Attendance */}
+                                            <div className="card mb-3" style={{ backgroundColor: "#2c3e50", border: "none", borderRadius: "0.5rem" }}>
+                                                <div className="card-header" style={{ backgroundColor: "#34495e", borderBottom: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem 0.5rem 0 0" }}>
+                                                    <h6 className="mb-0" style={{ color: "white", fontWeight: "600" }}>
+                                                        <i className="fas fa-calendar-check me-2" style={{ color: "#2ecc71" }}></i>
+                                                        Today's Attendance
+                                                    </h6>
+                                                </div>
+                                                <div className="card-body">
+                                                    <div className="row g-2">
+                                                        <div className="col-6">
+                                                            <div className="p-3" style={{ backgroundColor: "#34495e", borderRadius: "0.5rem", borderLeft: "4px solid #2ecc71" }}>
+                                                                <div className="d-flex align-items-center">
+                                                                    <div className="me-3">
+                                                                        <i className="fas fa-sign-in-alt" style={{ fontSize: "2rem", color: "#2ecc71" }}></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div style={{ color: "#95a5a6", fontSize: "0.75rem", marginBottom: "0.25rem" }}>Check-In Time</div>
+                                                                        <div style={{ color: "white", fontSize: "1.1rem", fontWeight: "600" }}>
+                                                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="col-6">
+                                                            <div className="p-3" style={{ backgroundColor: "#34495e", borderRadius: "0.5rem", borderLeft: "4px solid #3498db" }}>
+                                                                <div className="d-flex align-items-center">
+                                                                    <div className="me-3">
+                                                                        <i className="fas fa-clock" style={{ fontSize: "2rem", color: "#3498db" }}></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div style={{ color: "#95a5a6", fontSize: "0.75rem", marginBottom: "0.25rem" }}>Study Duration</div>
+                                                                        <div style={{ color: "white", fontSize: "1.1rem", fontWeight: "600" }}>
+                                                                            0h 0m
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="card-body">
-                                                <div className="mb-3">
-                                                    <div className="d-flex justify-content-between mb-2">
-                                                        <span style={{ color: "#95a5a6", fontSize: "0.875rem" }}>Overall Completion</span>
-                                                        <span style={{ color: "white", fontWeight: "600" }}>
-                                                            {lessons.length > 0 ? Math.round((lessons.filter(l => l.is_completed).length / lessons.length) * 100) : 0}%
+
+                                            {/* Student Units - Recent 5 */}
+                                            <div className="card mb-3" style={{ backgroundColor: "#2c3e50", border: "none", borderRadius: "0.5rem" }}>
+                                                <div className="card-header d-flex justify-content-between align-items-center" style={{ backgroundColor: "#34495e", borderBottom: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem 0.5rem 0 0" }}>
+                                                    <h6 className="mb-0" style={{ color: "white", fontWeight: "600" }}>
+                                                        <i className="fas fa-history me-2" style={{ color: "#f39c12" }}></i>
+                                                        Recent Study Sessions
+                                                    </h6>
+                                                    <span className="badge" style={{ backgroundColor: "#3498db" }}>Last 5</span>
+                                                </div>
+                                                <div className="card-body">
+                                                    <div className="table-responsive">
+                                                        <table className="table table-sm table-hover mb-0" style={{ color: "#95a5a6" }}>
+                                                            <thead>
+                                                                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                                                                    <th style={{ color: "white", fontWeight: "500", padding: "0.75rem", fontSize: "0.875rem" }}>Date</th>
+                                                                    <th style={{ color: "white", fontWeight: "500", padding: "0.75rem", fontSize: "0.875rem" }}>Course</th>
+                                                                    <th style={{ color: "white", fontWeight: "500", padding: "0.75rem", fontSize: "0.875rem" }}>Lessons</th>
+                                                                    <th style={{ color: "white", fontWeight: "500", padding: "0.75rem", fontSize: "0.875rem" }}>Duration</th>
+                                                                    <th style={{ color: "white", fontWeight: "500", padding: "0.75rem", fontSize: "0.875rem" }}>Status</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                                                                    <td style={{ padding: "0.75rem", color: "#95a5a6" }}>
+                                                                        {new Date().toLocaleDateString()}
+                                                                    </td>
+                                                                    <td style={{ padding: "0.75rem", color: "#95a5a6" }}>
+                                                                        {courseName}
+                                                                    </td>
+                                                                    <td style={{ padding: "0.75rem" }}>
+                                                                        <span style={{ color: "#3498db", fontWeight: "500" }}>
+                                                                            {lessons.filter(l => l.is_completed).length}/{lessons.length}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td style={{ padding: "0.75rem", color: "#95a5a6" }}>
+                                                                        0h 0m
+                                                                    </td>
+                                                                    <td style={{ padding: "0.75rem" }}>
+                                                                        <span className="badge" style={{ backgroundColor: "#2ecc71" }}>
+                                                                            <i className="fas fa-circle me-1" style={{ fontSize: "0.5rem" }}></i>
+                                                                            Active
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                                {[1, 2, 3, 4].map((item) => (
+                                                                    <tr key={item} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                                                                        <td style={{ padding: "0.75rem", color: "#7f8c8d" }}>
+                                                                            {new Date(Date.now() - item * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                                        </td>
+                                                                        <td style={{ padding: "0.75rem", color: "#7f8c8d" }}>
+                                                                            Previous Session
+                                                                        </td>
+                                                                        <td style={{ padding: "0.75rem", color: "#7f8c8d" }}>
+                                                                            -
+                                                                        </td>
+                                                                        <td style={{ padding: "0.75rem", color: "#7f8c8d" }}>
+                                                                            -
+                                                                        </td>
+                                                                        <td style={{ padding: "0.75rem" }}>
+                                                                            <span className="badge" style={{ backgroundColor: "#95a5a6" }}>
+                                                                                <i className="fas fa-check me-1" style={{ fontSize: "0.6rem" }}></i>
+                                                                                Completed
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div className="d-flex justify-content-between align-items-center mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                                                        <span style={{ color: "#95a5a6", fontSize: "0.875rem" }}>
+                                                            Showing 5 of 5 sessions
                                                         </span>
-                                                    </div>
-                                                    <div style={{ width: "100%", height: "8px", backgroundColor: "#34495e", borderRadius: "4px", overflow: "hidden" }}>
-                                                        <div style={{
-                                                            width: `${lessons.length > 0 ? (lessons.filter(l => l.is_completed).length / lessons.length) * 100 : 0}%`,
-                                                            height: "100%",
-                                                            backgroundColor: "#3498db",
-                                                            transition: "width 0.3s ease"
-                                                        }}></div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="row g-2">
-                                                    <div className="col-4">
-                                                        <div className="text-center p-2" style={{ backgroundColor: "#34495e", borderRadius: "0.375rem" }}>
-                                                            <div style={{ color: "#2ecc71", fontSize: "1.5rem", fontWeight: "600" }}>
-                                                                {lessons.filter(l => l.is_completed).length}
-                                                            </div>
-                                                            <div style={{ color: "#95a5a6", fontSize: "0.75rem" }}>Completed</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-4">
-                                                        <div className="text-center p-2" style={{ backgroundColor: "#34495e", borderRadius: "0.375rem" }}>
-                                                            <div style={{ color: "#3498db", fontSize: "1.5rem", fontWeight: "600" }}>
-                                                                {lessons.filter(l => l.is_active && !l.is_completed).length}
-                                                            </div>
-                                                            <div style={{ color: "#95a5a6", fontSize: "0.75rem" }}>In Progress</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-4">
-                                                        <div className="text-center p-2" style={{ backgroundColor: "#34495e", borderRadius: "0.375rem" }}>
-                                                            <div style={{ color: "#e74c3c", fontSize: "1.5rem", fontWeight: "600" }}>
-                                                                {lessons.filter(l => !l.is_completed && !l.is_active).length}
-                                                            </div>
-                                                            <div style={{ color: "#95a5a6", fontSize: "0.75rem" }}>Not Started</div>
+                                                        <div className="btn-group" role="group">
+                                                            <button className="btn btn-sm" style={{ backgroundColor: "#34495e", border: "none", color: "#95a5a6" }} disabled>
+                                                                <i className="fas fa-chevron-left"></i>
+                                                            </button>
+                                                            <button className="btn btn-sm" style={{ backgroundColor: "#34495e", border: "none", color: "#95a5a6" }} disabled>
+                                                                <i className="fas fa-chevron-right"></i>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* Current Enrollment Status */}
+                                        {/* ID Card Upload Section */}
                                         <div className="card mb-3" style={{ backgroundColor: "#2c3e50", border: "none", borderRadius: "0.5rem" }}>
                                             <div className="card-header" style={{ backgroundColor: "#34495e", borderBottom: "1px solid rgba(255,255,255,0.1)", borderRadius: "0.5rem 0.5rem 0 0" }}>
                                                 <h6 className="mb-0" style={{ color: "white", fontWeight: "600" }}>
-                                                    <i className="fas fa-certificate me-2" style={{ color: "#f39c12" }}></i>
-                                                    Enrollment Details
+                                                    <i className="fas fa-id-card me-2" style={{ color: "#f39c12" }}></i>
+                                                    ID Card Verification
                                                 </h6>
                                             </div>
                                             <div className="card-body">
-                                                <table style={{ width: "100%", color: "#95a5a6" }}>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td style={{ padding: "0.75rem 0", fontWeight: "500", color: "white", width: "40%" }}>
-                                                                <i className="fas fa-book me-2" style={{ color: "#3498db" }}></i>
-                                                                Course Name
-                                                            </td>
-                                                            <td style={{ padding: "0.75rem 0", color: "#95a5a6" }}>{courseName}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style={{ padding: "0.75rem 0", fontWeight: "500", color: "white" }}>
-                                                                <i className="fas fa-laptop me-2" style={{ color: "#2ecc71" }}></i>
-                                                                Study Mode
-                                                            </td>
-                                                            <td style={{ padding: "0.75rem 0" }}>
-                                                                <span className="badge" style={{ backgroundColor: "#3498db", fontSize: "0.8rem" }}>
-                                                                    <i className="fas fa-book-reader me-1"></i>
-                                                                    Self-Paced Learning
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style={{ padding: "0.75rem 0", fontWeight: "500", color: "white" }}>
-                                                                <i className="fas fa-id-card me-2" style={{ color: "#e74c3c" }}></i>
-                                                                Student ID
-                                                            </td>
-                                                            <td style={{ padding: "0.75rem 0", color: "#95a5a6" }}>{student?.id || "N/A"}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td style={{ padding: "0.75rem 0", fontWeight: "500", color: "white" }}>
-                                                                <i className="fas fa-hashtag me-2" style={{ color: "#9b59b6" }}></i>
-                                                                Course Auth ID
-                                                            </td>
-                                                            <td style={{ padding: "0.75rem 0", color: "#95a5a6" }}>#{courseAuthId}</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
+                                                <div className="text-center mb-3">
+                                                    <div style={{
+                                                        width: "100%",
+                                                        padding: "3rem 1rem",
+                                                        border: "2px dashed rgba(255,255,255,0.2)",
+                                                        borderRadius: "0.5rem",
+                                                        backgroundColor: "rgba(52, 152, 219, 0.1)",
+                                                        marginBottom: "1rem"
+                                                    }}>
+                                                        <i className="fas fa-cloud-upload-alt" style={{ fontSize: "3rem", color: "#3498db", marginBottom: "1rem", display: "block" }}></i>
+                                                        <p style={{ color: "#95a5a6", marginBottom: "0.5rem" }}>
+                                                            Upload your government-issued ID
+                                                        </p>
+                                                        <p style={{ color: "#7f8c8d", fontSize: "0.85rem" }}>
+                                                            Accepted formats: JPG, PNG, PDF (Max 5MB)
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-primary w-100"
+                                                        style={{
+                                                            backgroundColor: "#3498db",
+                                                            border: "none",
+                                                            padding: "0.75rem",
+                                                            fontWeight: "600"
+                                                        }}
+                                                        disabled
+                                                    >
+                                                        <i className="fas fa-upload me-2"></i>
+                                                        Select ID Card (Coming Soon)
+                                                    </button>
+                                                </div>
+                                                <div style={{
+                                                    backgroundColor: "rgba(231, 76, 60, 0.1)",
+                                                    padding: "1rem",
+                                                    borderRadius: "0.5rem",
+                                                    border: "1px solid rgba(231, 76, 60, 0.3)"
+                                                }}>
+                                                    <p style={{ color: "#e74c3c", fontSize: "0.9rem", marginBottom: "0.5rem", fontWeight: "600" }}>
+                                                        <i className="fas fa-exclamation-triangle me-2"></i>
+                                                        Required for Course Access
+                                                    </p>
+                                                    <p style={{ color: "#95a5a6", fontSize: "0.85rem", marginBottom: 0 }}>
+                                                        You must upload a valid ID card to complete your enrollment and access course materials.
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1718,27 +1844,38 @@ const MainOffline: React.FC<MainOfflineProps> = ({ courseAuthId, student, onBack
                                         </h6>
                                     </div>
                                     <div className="card-body">
-                                        <p style={{ color: "#95a5a6" }}>
-                                            Course documents, PDFs, and supplementary materials will appear here.
-                                        </p>
-                                        <div className="list-group" style={{ backgroundColor: "transparent" }}>
-                                            {/* TODO: Replace with real document data */}
-                                            {['Course Syllabus', 'Study Guide', 'Reference Materials', 'Additional Resources'].map((doc, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="list-group-item d-flex justify-content-between align-items-center"
-                                                    style={{ backgroundColor: "#34495e", border: "1px solid rgba(255,255,255,0.1)", color: "white", marginBottom: "0.5rem" }}
-                                                >
-                                                    <div>
-                                                        <i className="fas fa-file-pdf me-2" style={{ color: "#e74c3c" }}></i>
-                                                        {doc}
-                                                    </div>
-                                                    <button className="btn btn-sm btn-outline-light">
-                                                        <i className="fas fa-download"></i>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {getDocumentsForCourse().length > 0 ? (
+                                            <div className="list-group" style={{ backgroundColor: "transparent" }}>
+                                                {getDocumentsForCourse().map((doc, idx) => (
+                                                    <a
+                                                        key={idx}
+                                                        href={doc.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="list-group-item d-flex justify-content-between align-items-center"
+                                                        style={{ backgroundColor: "#34495e", border: "1px solid rgba(255,255,255,0.1)", color: "white", marginBottom: "0.5rem", textDecoration: "none" }}
+                                                    >
+                                                        <div style={{ flex: 1 }}>
+                                                            <i className="fas fa-file-pdf me-2" style={{ color: "#e74c3c" }}></i>
+                                                            {doc.name}
+                                                        </div>
+                                                        <button
+                                                            className="btn btn-sm btn-outline-light"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                window.open(doc.url, '_blank');
+                                                            }}
+                                                        >
+                                                            <i className="fas fa-download"></i>
+                                                        </button>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p style={{ color: "#95a5a6" }}>
+                                                No documents available for this course.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
