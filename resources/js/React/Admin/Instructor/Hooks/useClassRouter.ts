@@ -27,7 +27,15 @@ export const useClassRouter = (
     instUnit: any
 ): ClassRouterResult => {
 
-    console.log("🎓 useClassRouter: Inputs", { courseDates, courseDatesCount: courseDates?.length, instUnit });
+    console.log("🎓 useClassRouter: Inputs", {
+        courseDates,
+        courseDatesCount: courseDates?.length,
+        instUnit,
+        instUnitType: typeof instUnit,
+        instUnitIsNull: instUnit === null,
+        instUnitIsUndefined: instUnit === undefined,
+        instUnitIsFalsy: !instUnit,
+    });
 
     return useMemo(() => {
         // Determine state
@@ -55,6 +63,8 @@ export const useClassRouter = (
             state,
             hasCourseDate: hasCourseDates,
             hasInstUnit: !!instUnit,
+            instUnitValue: instUnit,
+            instUnitId: instUnit?.id,
             isClassroomActive,
             isClassroomPending,
         });

@@ -6,6 +6,147 @@ Complete read-only assessment of the current state. **NO CHANGES MADE**.
 
 ## 📝 RECENT UPDATES (Jan 5, 2026)
 
+### 🔄 Student Onboarding Integration (Afternoon Session - IN PROGRESS)
+**Status**: Planning and implementation phase
+**Files To Be Modified**:
+- `resources/js/React/Student/Components/Classroom/OnboardingFlow.tsx` - NEW main onboarding component
+- `resources/js/React/Student/Components/Classroom/Onboarding/AgreementStep.tsx` - NEW terms acceptance
+- `resources/js/React/Student/Components/Classroom/Onboarding/RulesStep.tsx` - NEW classroom rules
+- `resources/js/React/Student/Components/Classroom/Onboarding/IdentityStep.tsx` - NEW ID + headshot upload
+- `resources/js/React/Student/Components/Classroom/Onboarding/CompletionStep.tsx` - NEW completion screen
+- `resources/js/React/Student/Components/Classroom/MainOnline.tsx` - Add onboarding gate check
+
+**Current Problem**:
+Students entering online classroom (MainOnline) bypass onboarding completely. The system has full backend support for onboarding but no frontend UI to guide students through the required steps.
+
+**Existing Backend System** (Already Working):
+1. **Terms Acceptance**: `POST /student/onboarding/accept-terms`
+   - Marks `terms_accepted = true` in StudentUnit
+   - Or checks `CourseAuth.agreed_at` (course-level agreement)
+
+2. **Classroom Rules**: `POST /student/onboarding/accept-rules`
+   - Marks `rules_accepted = true` in StudentUnit
+   - Required per class session
+
+3. **ID Card Upload**: `POST /classroom/id-verification/start`
+   - One-time per CourseAuth (permanent identification)
+   - Stores in `verified` JSON field: `id_card_path`
+
+4. **Headshot Upload**: `POST /classroom/id-verification/upload-headshot`
+   - Required per StudentUnit (each class session)
+   - Stores in `verified` JSON field: `headshot_path`
+   - **Critical**: Per StudentUnit, not per CourseDate
+   - Verifies actual attendance for specific session
+
+5. **Complete Onboarding**: `POST /student/onboarding/complete`
+   - Validates: terms + rules + id_card + headshot all complete
+   - Sets `onboarding_completed = true` in StudentUnit
+   - Gates classroom access
+
+**Onboarding Gate Logic** (StudentDashboardController lines 1094-1156):
+```php
+// Complete when ALL are true:
+✓ terms_accepted (CourseAuth.agreed_at OR StudentUnit.terms_accepted)
+✓ rules_accepted (StudentUnit.rules_accepted)
+✓ id_card_path EXISTS (one-time per CourseAuth)
+✓ headshot_path EXISTS (per StudentUnit - this specific session)
+```
+
+**Implementation Plan**:
+
+**Phase 1: Onboarding Gate in MainOnline**
+- Check `studentUnit.onboarding_completed` before rendering classroom
+- If false → Show OnboardingFlow component
+- If true → Show normal classroom (Zoom, lessons, etc.)
+
+**Phase 2: OnboardingFlow Component Structure**
+```
+OnboardingFlow (main container)
+├── Step 1: AgreementStep (terms of service)
+│   ├── Scrollable agreement text
+│   ├── Checkbox: "I agree"
+│   └── Button: "Accept & Continue"
+├── Step 2: RulesStep (classroom rules)
+│   ├── FSTB rules display
+│   ├── Checkbox: "I understand"
+│   └── Button: "Accept & Continue"
+├── Step 3: IdentityStep (ID + headshot)
+│   ├── ID Card Upload (if not already uploaded)
+│   │   ├── File input
+│   │   ├── Image preview
+│   │   └── Upload button
+│   └── Headshot Upload (always required per session)
+│       ├── Webcam capture OR file upload
+│       ├── Image preview
+│       └── Upload button
+└── Step 4: CompletionStep (summary)
+    ├── Success checkmarks
+    ├── Summary of completed steps
+    └── Button: "Enter Classroom"
+```
+
+**Phase 3: Smart Skip Logic**
+- Skip terms if `CourseAuth.agreed_at` exists (already agreed at course level)
+- Skip ID upload if `id_card_path` exists from previous StudentUnit with same CourseAuth
+- Never skip rules (required each session)
+- Never skip headshot (required per StudentUnit for attendance verification)
+
+**Phase 4: State Management**
+```typescript
+interface OnboardingState {
+  currentStep: 1 | 2 | 3 | 4;
+  termsAccepted: boolean;
+  rulesAccepted: boolean;
+  idCardUploaded: boolean;
+  headshotUploaded: boolean;
+  identityVerified: boolean;
+  loading: boolean;
+  error: string | null;
+}
+```
+
+**Phase 5: UI/UX Design**
+- Match existing dark theme (#34495e, #2c3e50)
+- Progress indicator showing "Step X of 4"
+- Visual step completion (●○○○ dots)
+- Back/Next navigation
+- Error handling with retry
+- Loading states during uploads
+
+**Data Flow**:
+```
+Student enters classroom → MainOnline loads
+  ↓
+Check: studentUnit.onboarding_completed?
+  ↓
+NO → Show OnboardingFlow
+  ↓
+Step 1: Terms → API call → Mark complete
+Step 2: Rules → API call → Mark complete
+Step 3: Identity → Upload files → Mark complete
+Step 4: Complete → API call → Set onboarding_completed = true
+  ↓
+Reload classroom data → MainOnline shows classroom content
+```
+
+**Critical Notes**:
+- **Headshot is per StudentUnit**: Each class session requires new headshot for attendance verification
+- **ID Card is per CourseAuth**: One-time upload, reused across all sessions for that course
+- **Rules are per StudentUnit**: Must accept each time (acknowledge session rules)
+- **Terms are per CourseAuth**: Can be at course level or fallback to StudentUnit level
+
+**Security Rationale**:
+The per-session headshot requirement prevents account sharing and ensures the enrolled student is actually present for each class, not someone else using their credentials.
+
+**Next Steps**:
+1. Create OnboardingFlow component with stepper UI
+2. Build individual step components (Agreement, Rules, Identity, Completion)
+3. Integrate API calls for each step
+4. Add onboarding gate to MainOnline
+5. Test complete flow from start to classroom entry
+
+---
+
 ### ✅ Zoom Credentials Workflow (Afternoon Session)
 **Files Modified**:
 - `resources/js/React/Admin/Instructor/components/ZoomSetupPanel.tsx` - Credential review and activation workflow

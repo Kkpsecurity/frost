@@ -64,6 +64,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/classroom/portal/student/agreement', [StudentDashboardController::class, 'postStudentAgreement'])
         ->name('classroom.portal.student.agreement');
 
+    Route::post('/classroom/portal/student/rules', [StudentDashboardController::class, 'acceptRules'])
+        ->name('classroom.portal.student.rules');
+
     /**
      * Student Attendance Routes
      */

@@ -1170,7 +1170,7 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
-        $path = $request->file('id_document')->store('id-verification/id-cards', 'public');
+        $path = $request->file('id_document')->store('validations/idcards', 'public');
 
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
         $verified['id_card_uploaded'] = true;
@@ -1204,7 +1204,7 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
-        $path = $request->file('headshot')->store('id-verification/headshots', 'public');
+        $path = $request->file('headshot')->store('validations/headshots', 'public');
 
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
         $verified['headshot_uploaded'] = true;
@@ -1243,13 +1243,13 @@ class StudentDashboardController extends Controller
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
 
         if ($request->hasFile('id_document')) {
-            $idPath = $request->file('id_document')->store('id-verification/id-cards', 'public');
+            $idPath = $request->file('id_document')->store('validations/idcards', 'public');
             $verified['id_card_uploaded'] = true;
             $verified['id_card_path'] = $idPath;
             $verified['id_card_uploaded_at'] = now()->toISOString();
         }
 
-        $headshotPath = $request->file('headshot')->store('id-verification/headshots', 'public');
+        $headshotPath = $request->file('headshot')->store('validations/headshots', 'public');
         $verified['headshot_uploaded'] = true;
         $verified['headshot_path'] = $headshotPath;
         $verified['headshot_uploaded_at'] = now()->toISOString();

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useClassroom } from "../../context/ClassroomContext";
 import MainOffline from "./MainOffline";
 import MainOnline from "./MainOnline";
+import OnboardingFlow from "./OnboardingFlow";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 
 interface MainClassroomProps {
@@ -25,6 +26,7 @@ interface MainClassroomProps {
  */
 const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, onBackToDashboard }) => {
     const classroomContext = useClassroom();
+    const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
 
     // Loading classroom data
     if (!classroomContext) {
@@ -40,7 +42,34 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
         );
     }
 
-    const { courseDate, instUnit, course } = classroomContext;
+    const { courseDate, instUnit, studentUnit, course } = classroomContext;
+
+    // ONBOARDING GATE: Check if student needs to complete onboarding
+    // Only check when courseDate + instUnit exist (live classroom mode)
+    if (courseDate && instUnit && studentUnit) {
+        const needsOnboarding = !studentUnit.onboarding_completed;
+
+        if (needsOnboarding) {
+            return (
+                <OnboardingFlow
+                    key={onboardingKey}
+                    courseAuthId={courseAuthId}
+                    courseDateId={courseDate.id}
+                    studentUnitId={studentUnit.id}
+                    studentUnit={studentUnit}
+                    student={student}
+                    course={course}
+                    onComplete={() => {
+                        // Force classroom context to refresh by incrementing key
+                        // This will re-poll and get updated studentUnit with onboarding_completed = true
+                        setOnboardingKey(prev => prev + 1);
+                        // Trigger a manual reload or re-poll here if needed
+                        window.location.reload();
+                    }}
+                />
+            );
+        }
+    }
 
     // ONLINE: Live class in session (instructor has started)
     if (courseDate && instUnit) {

@@ -75,6 +75,9 @@ const InstructorDataLayer: React.FC = () => {
     console.log("🎓 InstructorDataLayer: Rendering with data:", {
         instructor: instructorData?.instructor,
         hasClassroom: hasActiveClassroom,
+        instUnit: instructorData?.instUnit,
+        instUnitId: instructorData?.instUnit?.id,
+        instUnitIsNull: instructorData?.instUnit === null,
         classroomData,
         chatData,
     });

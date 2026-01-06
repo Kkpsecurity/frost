@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useQuery } from '@tanstack/react-query';
 import LessonsPanel from "../components/LessonsPanel";
 import ZoomSetupPanel from "../components/ZoomSetupPanel";
 import StudentsPanel from "../Classroom/StudentsPanel";
+import InstructorLessonProgressBar from "../Components/InstructorLessonProgressBar";
+import FrostChatCard from "../Components/FrostChatCard";
 
 interface ClassroomInterfaceProps {
     instructorData?: any;
@@ -33,6 +36,37 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     const [isZoomReady, setIsZoomReady] = useState(false);
 
     const studentCount = classroomData?.student_count || 0;
+
+    // Fetch lessons for current course date
+    const { data: lessonsData, isLoading: lessonsLoading, error: lessonsError } = useQuery({
+        queryKey: ['lessons', courseDateId],
+        queryFn: async () => {
+            if (!courseDateId) return null;
+
+            const response = await fetch(`/admin/instructors/data/lessons/${courseDateId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch lessons: ${response.statusText}`);
+            }
+
+            return response.json();
+        },
+        staleTime: 30 * 1000, // 30 seconds
+        gcTime: 5 * 60 * 1000, // 5 minutes
+        enabled: !!courseDateId,
+        retry: 2,
+    });
+
+    // Get lessons data
+    const lessons = lessonsData?.lessons || [];
+    const currentLesson = lessons.find((l: any) => l.status === 'in_progress') || null;
 
     if (!instUnit) {
         return (
@@ -83,6 +117,31 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                                 instUnit={instUnit}
                                 courseName={courseName}
                                 onZoomReadyChange={setIsZoomReady}
+                            />
+                        </div>
+
+                        {/* Lesson Progress Bar - Shows current lesson progress */}
+                        <div className="progress-container" style={{ padding: '0 20px' }}>
+                            <InstructorLessonProgressBar
+                                currentLesson={currentLesson}
+                                lessons={lessons}
+                            />
+                        </div>
+
+                        {/* Chat Room - Instructor and student communication */}
+                        <div className="chat-container" style={{ padding: '0 20px' }}>
+                            <FrostChatCard
+                                course_date_id={courseDateId || 0}
+                                isChatEnabled={true}
+                                chatUser={{
+                                    id: instructor?.id || 0,
+                                    name: instructor?.fname + ' ' + instructor?.lname || 'Instructor',
+                                    email: instructor?.email || 'instructor@example.com',
+                                    user_type: 'instructor',
+                                    avatar: instructor?.avatar || '/images/default-avatar.png'
+                                }}
+                                darkMode={true}
+                                debug={true}
                             />
                         </div>
                     </div>

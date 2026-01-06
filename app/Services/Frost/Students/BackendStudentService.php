@@ -49,6 +49,102 @@ class BackendStudentService
     }
 
     /**
+     * Get online students for instructor (students in today's class)
+     *
+     * @return array
+     */
+    public function getOnlineStudentsForInstructor(): array
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return [
+                'error' => 'Unauthenticated',
+                'students' => []
+            ];
+        }
+
+        try {
+            $today = Carbon::today()->format('Y-m-d');
+
+            // Get student units for today's classes
+            $studentUnits = DB::table('student_units as su')
+                ->join('users as u', 'su.user_id', '=', 'u.id')
+                ->join('course_dates as cd', 'su.course_date_id', '=', 'cd.id')
+                ->join('courses as c', 'cd.course_id', '=', 'c.id')
+                ->join('inst_units as iu', 'su.course_date_id', '=', 'iu.course_date_id')
+                ->where('cd.lesson_date', $today)
+                ->where('su.deleted_at', null)
+                ->where('u.deleted_at', null)
+                ->select([
+                    'u.id as student_id',
+                    'u.name as student_name',
+                    'u.email as student_email',
+                    'su.id as student_unit_id',
+                    'su.status as enrollment_status',
+                    'su.created_at as enrolled_at',
+                    'c.id as course_id',
+                    'c.title as course_title',
+                    'cd.id as course_date_id',
+                    'cd.lesson_date',
+                    'iu.id as inst_unit_id'
+                ])
+                ->orderBy('u.name')
+                ->get();
+
+            $students = $studentUnits->map(function ($studentUnit) {
+                return [
+                    'student_id' => $studentUnit->student_id,
+                    'name' => $studentUnit->student_name,
+                    'email' => $studentUnit->student_email,
+                    'student_unit_id' => $studentUnit->student_unit_id,
+                    'enrollment_status' => $studentUnit->enrollment_status,
+                    'enrolled_at' => $studentUnit->enrolled_at,
+                    'course' => [
+                        'id' => $studentUnit->course_id,
+                        'title' => $studentUnit->course_title,
+                        'date_id' => $studentUnit->course_date_id,
+                        'lesson_date' => $studentUnit->lesson_date
+                    ],
+                    'inst_unit_id' => $studentUnit->inst_unit_id,
+                    'is_online' => true, // All students with student_units for today are considered "online"
+                    'last_activity' => now()->format('c') // Placeholder - can be enhanced with actual activity tracking
+                ];
+            });
+
+            return [
+                'students' => $students->toArray(),
+                'summary' => [
+                    'total_online' => $students->count(),
+                    'total_courses_today' => $studentUnits->unique('course_id')->count(),
+                    'lesson_date' => $today
+                ],
+                'metadata' => [
+                    'view_type' => 'online_students_today',
+                    'query_date' => $today,
+                    'last_updated' => now()->format('c')
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to get online students for instructor', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'error' => 'Failed to retrieve online students',
+                'students' => [],
+                'summary' => [
+                    'total_online' => 0,
+                    'total_courses_today' => 0,
+                    'lesson_date' => $today
+                ]
+            ];
+        }
+    }
+
+    /**
      * Get students enrolled in a specific course
      *
      * @param int $courseId

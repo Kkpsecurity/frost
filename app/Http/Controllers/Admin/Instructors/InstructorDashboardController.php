@@ -642,11 +642,102 @@ class InstructorDashboardController extends Controller
     }
 
     /**
-     * End/close the active class session.
-     *
-     * - Marks inst_unit as completed
-     * - Disables the Zoom credential (zoom_creds.zoom_status = disabled)
+     * Force end any active classes for the current instructor (emergency close)
+     * This will end all uncompleted InstUnits for the instructor
      */
+    public function forceEndActiveClasses(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        try {
+            // Find all active InstUnits for this instructor (not completed)
+            $activeInstUnits = \App\Models\InstUnit::whereNull('completed_at')
+                ->where(function ($query) use ($admin) {
+                    $query->where('created_by', $admin->id)
+                        ->orWhere('assistant_id', $admin->id);
+                })
+                ->with('courseDate')
+                ->get();
+
+            $endedCount = 0;
+            $endedClasses = [];
+
+            foreach ($activeInstUnits as $instUnit) {
+                // Mark as completed
+                $instUnit->completed_at = now();
+                $instUnit->completed_by = $admin->id;
+                $instUnit->save();
+
+                // Disable the Zoom credential used for this course type
+                $course = $instUnit->CourseDate?->CourseUnit?->Course;
+                $courseTitle = strtoupper($course->title ?? '');
+
+                $zoomEmail = null;
+                if (in_array($admin->role_id, [1, 2])) {
+                    $zoomEmail = 'instructor_admin@stgroupusa.com';
+                } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
+                    $zoomEmail = 'instructor_d@stgroupusa.com';
+                } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
+                    $zoomEmail = 'instructor_g@stgroupusa.com';
+                } else {
+                    $zoomEmail = 'instructor_admin@stgroupusa.com';
+                }
+
+                $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
+                if ($zoomCreds) {
+                    $zoomCreds->zoom_status = 'disabled';
+                    $zoomCreds->save();
+                }
+
+                $endedCount++;
+                $endedClasses[] = [
+                    'inst_unit_id' => $instUnit->id,
+                    'course_date_id' => $instUnit->course_date_id,
+                    'course_date' => $instUnit->courseDate ? $instUnit->courseDate->starts_at->format('Y-m-d H:i:s') : 'Unknown',
+                    'ended_at' => $instUnit->completed_at,
+                    'zoom_email' => $zoomEmail,
+                    'zoom_status' => $zoomCreds?->zoom_status ?? 'unknown'
+                ];
+
+                Log::info('InstructorDashboardController: Force ended active class with Zoom cleanup', [
+                    'inst_unit_id' => $instUnit->id,
+                    'course_date_id' => $instUnit->course_date_id,
+                    'instructor_id' => $admin->id,
+                    'force_ended_at' => $instUnit->completed_at,
+                    'zoom_email' => $zoomEmail,
+                    'zoom_disabled' => $zoomCreds?->zoom_status === 'disabled'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully ended {$endedCount} active class(es)",
+                'data' => [
+                    'ended_count' => $endedCount,
+                    'ended_classes' => $endedClasses,
+                    'instructor_id' => $admin->id
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('InstructorDashboardController: Error force ending classes', [
+                'admin_id' => $admin->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error ending classes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     public function endClass(Request $request)
     {
         $admin = auth('admin')->user();
@@ -1265,20 +1356,126 @@ class InstructorDashboardController extends Controller
     /**
      * Find active course date for current instructor
      *
+     * Priority:
+     * 1. Today's course date where instructor has an active InstUnit (ongoing class)
+     * 2. Today's available course date (new class to start)
+     * 3. Yesterday's course date if still within end time window (extended class)
+     *
+     * Also automatically ends overdue classes to prevent confusion
+     *
      * @return \App\Models\CourseDate|null
      */
     protected function findActiveCourseDateForInstructor(): ?\App\Models\CourseDate
     {
         $instructor = Auth::user();
 
-        return \App\Models\CourseDate::whereDate('starts_at', today())
+        // Auto-end any overdue classes first (more than 3 hours past end time)
+        $this->autoEndOverdueClasses($instructor);
+
+        // First: Look for today's course date where instructor has an active InstUnit
+        $activeToday = \App\Models\CourseDate::whereDate('starts_at', today())
             ->where('is_active', true)
             ->whereHas('TodaysInstUnit', function ($query) use ($instructor) {
                 $query->where('created_by', $instructor->id)
-                    ->orWhere('assistant_id', $instructor->id);
+                    ->orWhere('assistant_id', $instructor->id)
+                    ->whereNull('completed_at'); // Only active sessions
             })
             ->with(['TodaysInstUnit', 'CourseUnit'])
             ->first();
+
+        if ($activeToday) {
+            Log::info('InstructorDashboardController: Found active class for today', [
+                'course_date_id' => $activeToday->id,
+                'instructor_id' => $instructor->id
+            ]);
+            return $activeToday;
+        }
+
+        // Second: Look for today's available course date (no InstUnit yet)
+        $availableToday = \App\Models\CourseDate::whereDate('starts_at', today())
+            ->where('is_active', true)
+            ->whereDoesntHave('InstUnit')
+            ->with(['CourseUnit'])
+            ->orderBy('starts_at', 'asc')
+            ->first();
+
+        if ($availableToday) {
+            Log::info('InstructorDashboardController: Found available class for today (new class)', [
+                'course_date_id' => $availableToday->id,
+                'instructor_id' => $instructor->id,
+                'starts_at' => $availableToday->starts_at
+            ]);
+            return $availableToday;
+        }
+
+        // Third: Check yesterday's class if still within extended time window (instructor might be finishing up)
+        $extendedYesterday = \App\Models\CourseDate::whereDate('starts_at', today()->subDay())
+            ->where('is_active', true)
+            ->whereHas('InstUnit', function ($query) use ($instructor) {
+                $query->where('created_by', $instructor->id)
+                    ->orWhere('assistant_id', $instructor->id)
+                    ->whereNull('completed_at'); // Only uncompleted sessions
+            })
+            ->where('ends_at', '>', now()->subHours(2)) // Allow 2-hour grace period after end time
+            ->with(['InstUnit', 'CourseUnit'])
+            ->first();
+
+        if ($extendedYesterday) {
+            Log::warning('InstructorDashboardController: Instructor still in yesterday\'s class', [
+                'course_date_id' => $extendedYesterday->id,
+                'instructor_id' => $instructor->id,
+                'ends_at' => $extendedYesterday->ends_at,
+                'message' => 'Class session extended beyond normal end time'
+            ]);
+            return $extendedYesterday;
+        }
+
+        Log::warning('InstructorDashboardController: No active or available course dates found', [
+            'instructor_id' => $instructor->id,
+            'date' => today()
+        ]);
+
+        return null;
+    }
+
+    /**
+     * Automatically end classes that are significantly overdue to prevent confusion
+     *
+     * @param \App\Models\User $instructor
+     * @return int Number of classes auto-ended
+     */
+    protected function autoEndOverdueClasses($instructor): int
+    {
+        $overdueThreshold = now()->subHours(3); // 3 hours past end time
+        $ended = 0;
+
+        $overdueInstUnits = \App\Models\InstUnit::whereNull('completed_at')
+            ->where(function ($query) use ($instructor) {
+                $query->where('created_by', $instructor->id)
+                    ->orWhere('assistant_id', $instructor->id);
+            })
+            ->whereHas('courseDate', function ($query) use ($overdueThreshold) {
+                $query->where('ends_at', '<', $overdueThreshold);
+            })
+            ->with('courseDate')
+            ->get();
+
+        foreach ($overdueInstUnits as $instUnit) {
+            $instUnit->completed_at = now();
+            $instUnit->completed_by = $instructor->id;
+            $instUnit->save();
+            $ended++;
+
+            Log::info('InstructorDashboardController: Auto-ended overdue class', [
+                'inst_unit_id' => $instUnit->id,
+                'course_date_id' => $instUnit->course_date_id,
+                'instructor_id' => $instructor->id,
+                'original_end_time' => $instUnit->courseDate->ends_at,
+                'auto_ended_at' => $instUnit->completed_at
+            ]);
+        }
+
+        return $ended;
     }
 
     /**

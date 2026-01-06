@@ -47,6 +47,9 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::post('/end-class', [InstructorDashboardController::class, 'endClass'])
             ->name('end-class');
 
+        Route::post('/force-end-classes', [InstructorDashboardController::class, 'forceEndActiveClasses'])
+            ->name('force-end-classes');
+
         Route::post('/take-over', [InstructorDashboardController::class, 'takeOverClass'])
             ->name('take-over');
 

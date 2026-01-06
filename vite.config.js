@@ -99,8 +99,9 @@ export default defineConfig({
         alias: {
             "@": "/resources/js",
         },
-    },
-    build: {
+    },    optimizeDeps: {
+        exclude: ['vendor/**/*', 'node_modules/**/*']
+    },    build: {
         rollupOptions: {
             output: {
                 // Force new hash by including timestamp in manualChunks
