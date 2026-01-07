@@ -87,7 +87,7 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                 >
                     <div className="d-flex justify-content-between align-items-center">
                         <h6 className="mb-0" style={{ color: "white", fontSize: "0.875rem" }}>
-                            <i className="fas fa-chalkboard-teacher me-2"></i>
+                            <i className="fas fa-chalkboard-teacher mr-2"></i>
                             Lesson Progress
                         </h6>
                         <span
