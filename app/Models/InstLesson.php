@@ -16,6 +16,7 @@ use App\Services\RCache;
 use App\Models\User;
 use App\Models\Lesson;
 use App\Models\InstUnit;
+use App\Models\InstLessonBreak;
 
 use App\Models\Traits\InstLesson\InstCanClose;
 use App\Models\Traits\InstLesson\GetCourseUnitLesson;
@@ -84,6 +85,25 @@ class InstLesson extends Model
     public function CompletedBy()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+
+    public function Breaks()
+    {
+        return $this->hasMany(InstLessonBreak::class, 'inst_lesson_id');
+    }
+
+    public function CurrentBreak(): ?InstLessonBreak
+    {
+        return $this->Breaks()
+            ->whereNull('ended_at')
+            ->orderByDesc('break_number')
+            ->first();
+    }
+
+    public function BreaksTaken(): int
+    {
+        return (int) $this->Breaks()->count();
     }
 
 

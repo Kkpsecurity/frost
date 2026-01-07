@@ -12,6 +12,7 @@ interface UploadHeadshotViewProps {
     setCurrentStep: any;
     currentStep: any;
     isImageSet: any;
+    onUploaded?: () => void;
     debug?: boolean;
 }
 
@@ -24,6 +25,7 @@ const UploadHeadshotView = ({
     setCurrentStep,
     currentStep,
     isImageSet,
+    onUploaded,
     debug,
 }: UploadHeadshotViewProps) => {
     return (
@@ -57,6 +59,7 @@ const UploadHeadshotView = ({
                                 setShowCaptureType={setShowCaptureType}
                                 setCurrentStep={setCurrentStep}
                                 currentStep={currentStep}
+                                onUploaded={() => onUploaded?.()}
                                 debug={debug}
                             />
                         </div>
@@ -92,16 +95,9 @@ const UploadHeadshotView = ({
                         >
                             ← Back to ID Card
                         </StyledButton>
-                        <StyledButton
-                            onClick={() => setCurrentStep(4)}
-                            style={{
-                                background: "#3498db",
-                                color: "#ffffff",
-                                padding: "0.5rem 1rem"
-                            }}
-                        >
-                            Review & Confirm →
-                        </StyledButton>
+                        <div style={{ color: '#95a5a6', alignSelf: 'center', fontSize: '0.9rem' }}>
+                            Uploading your headshot will continue automatically
+                        </div>
                     </div>
                 </div>
             </div>

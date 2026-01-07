@@ -12,12 +12,15 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
+use Illuminate\Database\QueryException;
 
 use App\Models\CourseAuth;
 use App\Models\CourseDate;
 use App\Models\CourseUnit;
 use App\Models\StudentUnit;
 use App\Models\User;
+use App\Models\Validation;
 use App\Classes\ClassroomQueries;
 use App\Traits\PageMetaDataTrait;
 use App\Http\Controllers\Controller;
@@ -37,6 +40,158 @@ use App\Models\ZoomCreds;
 class StudentDashboardController extends Controller
 {
     use PageMetaDataTrait;
+
+    private function repairValidationsIdSequenceIfNeeded(): void
+    {
+        // This is a defensive fix for Postgres sequences getting out-of-sync
+        // (common after manual inserts/restores). It is a no-op for non-pgsql.
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        try {
+            DB::statement("SELECT setval(pg_get_serial_sequence('validations','id'), (SELECT COALESCE(MAX(id),0) FROM validations)+1, false)");
+        } catch (\Throwable $e) {
+            // If this fails, let the original error surface on retry.
+            \Log::warning('repairValidationsIdSequenceIfNeeded failed', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function saveNewValidationWithSequenceRepair(Validation $validation): void
+    {
+        try {
+            $validation->save();
+        } catch (QueryException $e) {
+            $sqlState = $e->errorInfo[0] ?? null;
+
+            // Postgres duplicate key violation.
+            if (DB::getDriverName() === 'pgsql'
+                && $sqlState === '23505'
+                && str_contains($e->getMessage(), 'validations_pkey')) {
+                $this->repairValidationsIdSequenceIfNeeded();
+                $validation->save();
+                return;
+            }
+
+            throw $e;
+        }
+    }
+
+    private function buildStudentValidationsForCourseAuth(CourseAuth $courseAuth): array
+    {
+        $idCardUrl = null;
+        $headshotUrl = null;
+        $headshotByDay = [];
+
+        // Prefer Validation model if present (admin review system).
+        $idCardValidation = Validation::where('course_auth_id', $courseAuth->id)->first();
+        if ($idCardValidation) {
+            $idCardUrl = $idCardValidation->URL(false);
+        }
+
+        // Fallback to any uploaded ID card path in verified JSON.
+        if (!$idCardUrl) {
+            $recentUnitWithId = StudentUnit::where('course_auth_id', $courseAuth->id)
+                ->orderByDesc('course_date_id')
+                ->limit(25)
+                ->get()
+                ->first(function ($unit) {
+                    $verified = $this->decodeVerifiedData($unit->getRawOriginal('verified'));
+                    return !empty($verified['id_card_path']);
+                });
+
+            if ($recentUnitWithId) {
+                $verified = $this->decodeVerifiedData($recentUnitWithId->getRawOriginal('verified'));
+                if (!empty($verified['id_card_path'])) {
+                    $idCardUrl = url('storage/' . ltrim((string) $verified['id_card_path'], '/'));
+                }
+            }
+        }
+
+        // Headshot: prefer today's StudentUnit for this courseAuth (onboarding is day-specific).
+        // Fallback to the most recent unit that actually has a headshot.
+        $todayKey = strtolower(now()->format('l'));
+        $headshotUnit = null;
+
+        try {
+            $today = now()->format('Y-m-d');
+            $todayCourseDate = CourseDate::with(['CourseUnit'])
+                ->whereDate('starts_at', $today)
+                ->whereHas('CourseUnit', function ($q) use ($courseAuth) {
+                    $q->where('course_id', (int) $courseAuth->course_id);
+                })
+                ->orderBy('starts_at', 'asc')
+                ->first();
+
+            if ($todayCourseDate) {
+                $headshotUnit = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+                    ->where('course_date_id', (int) $todayCourseDate->id)
+                    ->first();
+
+                // Use the class date for weekday key when available.
+                try {
+                    $todayKey = strtolower((string) optional($todayCourseDate->starts_at)->format('l'));
+                } catch (\Throwable $e) {
+                    // keep default
+                }
+            }
+        } catch (\Throwable $e) {
+            // Non-fatal; fallback below.
+        }
+
+        if (!$headshotUnit) {
+            $recentUnits = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+                ->orderByDesc('course_date_id')
+                ->limit(60)
+                ->get();
+
+            $headshotUnit = $recentUnits->first(function ($unit) {
+                // Prefer an actual Validation record.
+                $hasValidation = Validation::where('student_unit_id', (int) $unit->id)->exists();
+                if ($hasValidation) {
+                    return true;
+                }
+
+                $verified = $this->decodeVerifiedData($unit->getRawOriginal('verified'));
+                return !empty($verified['headshot_path']);
+            });
+        }
+
+        $headshotValidation = null;
+        if ($headshotUnit) {
+            $headshotValidation = Validation::where('student_unit_id', (int) $headshotUnit->id)->first();
+            if ($headshotValidation) {
+                $headshotUrl = $headshotValidation->URL(false);
+            }
+
+            if (!$headshotUrl) {
+                $verified = $this->decodeVerifiedData($headshotUnit->getRawOriginal('verified'));
+                if (!empty($verified['headshot_path'])) {
+                    $headshotUrl = url('storage/' . ltrim((string) $verified['headshot_path'], '/'));
+                }
+            }
+        }
+
+        // Keyed by weekday (frontend expects validations.headshot[today]).
+        $headshotByDay[$todayKey] = $headshotUrl;
+
+        return [
+            // Backward-compatible fields used by onboarding UI.
+            'idcard' => $idCardUrl,
+            'headshot' => $headshotByDay,
+
+            // Explicit review statuses (optional for now).
+            'idcard_status' => $idCardValidation
+                ? ($idCardValidation->status > 0 ? 'approved' : ($idCardValidation->status < 0 ? 'rejected' : 'pending'))
+                : ($idCardUrl ? 'uploaded' : 'missing'),
+            'headshot_status' => $headshotValidation
+                ? ($headshotValidation->status > 0 ? 'approved' : ($headshotValidation->status < 0 ? 'rejected' : 'pending'))
+                : ($headshotUrl ? 'uploaded' : 'missing'),
+            'message' => null,
+        ];
+    }
 
     /**
      * Infer Zoom credentials based on instructor role and course title pattern
@@ -101,19 +256,38 @@ class StudentDashboardController extends Controller
         return [];
     }
 
-    private function findOrCreateStudentUnitForCourseDate(CourseDate $courseDate, User $user): StudentUnit
+    private function findOrCreateStudentUnitForCourseDate(CourseDate $courseDate, User $user, ?CourseAuth $courseAuthOverride = null): StudentUnit
     {
-        // Ensure the CourseDate belongs to this student.
-        // CourseDates do not reliably carry course_auth_id; validate by CourseUnit->course_id.
-        $courseId = $courseDate->CourseUnit?->course_id;
-        if (!$courseId) {
-            abort(500, 'Course date is missing course unit relationship');
-        }
+        // Prefer an explicit CourseAuth when available (prevents mismatches on refresh).
+        if ($courseAuthOverride) {
+            if ((int) $courseAuthOverride->user_id !== (int) $user->id) {
+                abort(403, 'Course auth does not belong to this user');
+            }
 
-        $courseAuth = CourseAuth::where('user_id', $user->id)
-            ->where('course_id', $courseId)
-            ->orderByDesc('id')
-            ->firstOrFail();
+            $courseId = $courseDate->CourseUnit?->course_id;
+            if (!$courseId) {
+                abort(500, 'Course date is missing course unit relationship');
+            }
+
+            if ((int) $courseAuthOverride->course_id !== (int) $courseId) {
+                abort(422, 'Course auth does not match course date');
+            }
+
+            $courseAuth = $courseAuthOverride;
+        } else {
+            // Ensure the CourseDate belongs to this student.
+            // CourseDates do not reliably carry course_auth_id; validate by CourseUnit->course_id.
+            $courseId = $courseDate->CourseUnit?->course_id;
+            if (!$courseId) {
+                abort(500, 'Course date is missing course unit relationship');
+            }
+
+            // Fallback: pick the most recent CourseAuth for this user+course.
+            $courseAuth = CourseAuth::where('user_id', $user->id)
+                ->where('course_id', $courseId)
+                ->orderByDesc('id')
+                ->firstOrFail();
+        }
 
         // For onboarding, we require that the instructor has started the class.
         $instUnitId = $courseDate->InstUnit?->id;
@@ -196,6 +370,22 @@ class StudentDashboardController extends Controller
                         ($courseAuth->completed_at ? 'Completed' : 'In Progress'),
                 ];
             })->toArray();
+
+            // Student progress: validations per enrollment (courseAuth).
+            $validationsByCourseAuth = [];
+            foreach ($courseAuths as $courseAuth) {
+                try {
+                    $validationsByCourseAuth[(int) $courseAuth->id] = $this->buildStudentValidationsForCourseAuth($courseAuth);
+                } catch (\Throwable $e) {
+                    $validationsByCourseAuth[(int) $courseAuth->id] = [
+                        'idcard' => null,
+                        'headshot' => [strtolower(now()->format('l')) => null],
+                        'idcard_status' => 'unknown',
+                        'headshot_status' => 'unknown',
+                        'message' => 'Unable to load validations',
+                    ];
+                }
+            }
 
             // Count courses with classroom dates
             $coursesWithDates = $courseAuths->filter(function ($courseAuth) {
@@ -286,6 +476,7 @@ class StudentDashboardController extends Controller
                         'completed' => $courseAuths->where('completed_at', '!=', null)->count(),
                         'in_progress' => $coursesWithDates,
                     ],
+                    'validations_by_course_auth' => $validationsByCourseAuth,
                     'active_classroom' => $activeClassroom,
                     'notifications' => [],
                     'assignments' => [],
@@ -459,60 +650,12 @@ class StudentDashboardController extends Controller
             $studentUnit = null;
             if ($courseDate) {
                 try {
-                    $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
+                    // Use the selected courseAuth so validations.idcard aligns with uploads.
+                    $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user, $courseAuth);
                 } catch (\Throwable $e) {
                     $studentUnit = null;
                 }
             }
-
-            // -----------------------------------------------------------------
-            // Validations payload (polling is source of truth)
-            // - idcard: once per courseAuth (derive from any StudentUnit for this courseAuth)
-            // - headshot: daily per studentUnit/courseDate
-            // -----------------------------------------------------------------
-
-            $idCardUrl = null;
-            $headshotUrl = null;
-            $headshotByDay = [];
-
-            // Find any uploaded ID card for this courseAuth across all dates.
-            $recentUnitWithId = StudentUnit::where('course_auth_id', $courseAuth->id)
-                ->orderByDesc('course_date_id')
-                ->limit(25)
-                ->get()
-                ->first(function ($unit) {
-                    $verified = $this->decodeVerifiedData($unit->getRawOriginal('verified'));
-                    return !empty($verified['id_card_path']);
-                });
-
-            if ($recentUnitWithId) {
-                $verified = $this->decodeVerifiedData($recentUnitWithId->getRawOriginal('verified'));
-                if (!empty($verified['id_card_path'])) {
-                    $idCardUrl = Storage::disk('public')->url($verified['id_card_path']);
-                }
-            }
-
-            if ($studentUnit) {
-                $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
-                if (!empty($verified['headshot_path'])) {
-                    $headshotUrl = Storage::disk('public')->url($verified['headshot_path']);
-                }
-            }
-
-            // Provide headshot keyed by the class date's weekday (matches CaptureDevices.tsx expectation)
-            if ($courseDate) {
-                try {
-                    $dayKey = strtolower(now()->format('l'));
-                    if (!empty($courseDate->class_date)) {
-                        $dayKey = strtolower((string) \Carbon\Carbon::parse($courseDate->class_date)->format('l'));
-                    }
-                    $headshotByDay[$dayKey] = $headshotUrl;
-                } catch (\Throwable $e) {
-                    // fallback: no headshot mapping
-                }
-            }
-
-            $identityVerified = (bool) ($idCardUrl && $headshotUrl);
 
             // Determine modality: ONLINE (live class) or OFFLINE (self-study)
             $isOnline = $courseDate && $instUnit;
@@ -644,14 +787,10 @@ class StudentDashboardController extends Controller
                         'terms_accepted' => (bool) ($studentUnit->terms_accepted ?? false),
                         'rules_accepted' => (bool) ($studentUnit->rules_accepted ?? false),
                         'onboarding_completed' => (bool) ($studentUnit->onboarding_completed ?? false),
-                        // True only when (idcard once per courseAuth) AND (headshot for this course_date)
-                        'verified' => $identityVerified,
+                        // Classroom poll should stay focused on classroom/session context.
+                        // Identity validation is student progress and comes from the student poll.
+                        'verified' => (bool) ($studentUnit->verified ?? false),
                     ] : null,
-                    'validations' => [
-                        'idcard' => $idCardUrl,
-                        'headshot' => $headshotByDay,
-                        'message' => null,
-                    ],
                     'lessons' => $lessons,
                     'modality' => $isOnline ? 'online' : 'offline',
                     'active_lesson_id' => $activeLessonId,
@@ -1170,7 +1309,36 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
-        $path = $request->file('id_document')->store('validations/idcards', 'public');
+        $file = $request->file('id_document');
+        $extension = $file?->extension() ?: ($file?->getClientOriginalExtension() ?: 'jpg');
+
+        $validation = null;
+        if (!empty($studentUnit->course_auth_id)) {
+            $validation = Validation::where('course_auth_id', (int) $studentUnit->course_auth_id)->first();
+            if (!$validation) {
+                $validation = new Validation();
+                $validation->uuid = (string) Str::uuid();
+                $validation->course_auth_id = (int) $studentUnit->course_auth_id;
+                $validation->status = 0;
+                $this->saveNewValidationWithSequenceRepair($validation);
+            } else {
+                // Reset to pending on re-upload.
+                $validation->status = 0;
+                $validation->id_type = null;
+                $validation->reject_reason = null;
+                $validation->save();
+            }
+        }
+
+        $path = $validation
+            ? $validation->RelPathForExtension($extension)
+            : ('validations/idcards/' . $file->hashName());
+
+        Storage::disk('public')->putFileAs(
+            dirname($path),
+            $file,
+            basename($path)
+        );
 
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
         $verified['id_card_uploaded'] = true;
@@ -1204,7 +1372,30 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
-        $path = $request->file('headshot')->store('validations/headshots', 'public');
+        $file = $request->file('headshot');
+        $extension = $file?->extension() ?: ($file?->getClientOriginalExtension() ?: 'jpg');
+
+        $validation = Validation::where('student_unit_id', (int) $studentUnit->id)->first();
+        if (!$validation) {
+            $validation = new Validation();
+            $validation->uuid = (string) Str::uuid();
+            $validation->student_unit_id = (int) $studentUnit->id;
+            $validation->status = 0;
+            $this->saveNewValidationWithSequenceRepair($validation);
+        } else {
+            // Reset to pending on re-upload.
+            $validation->status = 0;
+            $validation->id_type = null;
+            $validation->reject_reason = null;
+            $validation->save();
+        }
+
+        $path = $validation->RelPathForExtension($extension);
+        Storage::disk('public')->putFileAs(
+            dirname($path),
+            $file,
+            basename($path)
+        );
 
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
         $verified['headshot_uploaded'] = true;
@@ -1222,6 +1413,417 @@ class StudentDashboardController extends Controller
                 'identity_verified' => (bool) (!empty($verified['id_card_path'] ?? null) && !empty($verified['headshot_path'] ?? null)),
             ],
         ]);
+    }
+
+    /**
+     * POST /classroom/upload-student-photo
+     * Handle student photo uploads from the React webcam capture component
+     */
+    public function uploadStudentPhoto(Request $request): JsonResponse
+    {
+        \Log::error('uploadStudentPhoto: METHOD STARTED');
+        try {
+            \Log::error('uploadStudentPhoto: Request received', [
+                'has_file' => $request->hasFile('file'),
+                'file_info' => $request->file('file') ? [
+                    'original_name' => $request->file('file')->getClientOriginalName(),
+                    'size' => $request->file('file')->getSize(),
+                    'mime_type' => $request->file('file')->getMimeType(),
+                ] : null,
+                'all_input' => $request->all(),
+            ]);
+
+            $validated = $request->validate([
+                'course_auth_id' => 'nullable|integer|exists:course_auths,id',
+                'course_date_id' => 'nullable|integer|exists:course_dates,id',
+                'student_id' => 'required|integer',
+                'photoType' => 'required|string|in:id_card,idcard,headshot',
+                'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:10240',
+            ]);
+
+            // Headshots are per-day (course_date_id / StudentUnit). Enforce course_date_id for headshot uploads.
+            if (($validated['photoType'] ?? null) === 'headshot' && empty($validated['course_date_id'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'course_date_id is required for headshot uploads',
+                ], 422);
+            }
+
+            \Log::error('uploadStudentPhoto: Validation passed', [
+                'validated_data' => $validated,
+            ]);
+
+            $file = $request->file('file');
+            if (!$file || !$file->isValid()) {
+                \Log::error('uploadStudentPhoto: Invalid file', [
+                    'file_exists' => $file ? true : false,
+                    'file_valid' => $file ? $file->isValid() : false,
+                    'file_errors' => $file ? $file->getError() : null,
+                    'file_error_message' => $file ? $file->getErrorMessage() : null,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file upload',
+                ], 400);
+            }
+
+            $user = Auth::user();
+
+            // Verify that the student_id matches the authenticated user
+            if ((int) $validated['student_id'] !== (int) $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized: Student ID mismatch',
+                ], 403);
+            }
+
+            // Find StudentUnit - prefer course_auth_id if available, otherwise use course_date_id
+            $studentUnit = null;
+            $courseAuth = null;
+            $courseDate = null;
+
+            // If the client didn't send course_auth_id, infer it from course_date_id + authenticated user.
+            // This keeps uploads aligned with the same courseAuth that polling uses for validations.idcard.
+            if (empty($validated['course_auth_id']) && !empty($validated['course_date_id'])) {
+                $courseDate = CourseDate::with(['CourseUnit', 'InstUnit'])->find((int) $validated['course_date_id']);
+                $courseId = $courseDate?->CourseUnit?->course_id;
+
+                if ($courseId) {
+                    $courseAuth = CourseAuth::where('user_id', $user->id)
+                        ->where('course_id', $courseId)
+                        ->orderByDesc('id')
+                        ->first();
+
+                    if ($courseAuth) {
+                        $validated['course_auth_id'] = $courseAuth->id;
+
+                        \Log::info('uploadStudentPhoto: Inferred course_auth_id from course_date_id', [
+                            'course_date_id' => (int) $validated['course_date_id'],
+                            'course_id' => (int) $courseId,
+                            'course_auth_id' => (int) $courseAuth->id,
+                            'user_id' => (int) $user->id,
+                        ]);
+                    }
+                }
+            }
+
+            if (!empty($validated['course_auth_id'])) {
+                // Try to find by course_auth_id
+                $courseAuth = CourseAuth::where('id', (int) $validated['course_auth_id'])
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                \Log::info('uploadStudentPhoto: CourseAuth lookup', [
+                    'course_auth_id' => $validated['course_auth_id'],
+                    'user_id' => $user->id,
+                    'course_auth_found' => $courseAuth ? true : false,
+                ]);
+
+                if ($courseAuth) {
+                    // If course_date_id is provided, ALWAYS target that specific day/session.
+                    if (!empty($validated['course_date_id'])) {
+                        $courseDate = CourseDate::with(['CourseUnit', 'InstUnit'])->find((int) $validated['course_date_id']);
+
+                        if ($courseDate) {
+                            $studentUnit = StudentUnit::where('course_auth_id', $courseAuth->id)
+                                ->where('course_date_id', (int) $validated['course_date_id'])
+                                ->first();
+
+                            if (!$studentUnit) {
+                                // Create/find the correct StudentUnit for this course date (ensures headshot persists correctly).
+                                $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user, $courseAuth);
+                            }
+                        }
+                    }
+
+                    // Fallback: without course_date_id, update the most recent unit for this course_auth_id.
+                    if (!$studentUnit) {
+                        $studentUnit = StudentUnit::where('course_auth_id', $courseAuth->id)
+                            ->orderByDesc('course_date_id')
+                            ->first();
+                    }
+
+                    \Log::info('uploadStudentPhoto: StudentUnit lookup by course_auth_id', [
+                        'course_auth_id' => $courseAuth->id,
+                        'student_unit_found' => $studentUnit ? true : false,
+                        'student_unit_id' => $studentUnit ? $studentUnit->id : null,
+                    ]);
+                }
+            } elseif (!empty($validated['course_date_id'])) {
+                // Fallback to course_date_id approach like uploadHeadshot
+                $courseDate = CourseDate::with(['instUnit'])->find((int) $validated['course_date_id']);
+                if ($courseDate) {
+                    $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
+                }
+
+                \Log::info('uploadStudentPhoto: StudentUnit lookup by course_date', [
+                    'course_date_id' => $validated['course_date_id'],
+                    'course_date_found' => $courseDate ? true : false,
+                    'student_unit_found' => $studentUnit ? true : false,
+                ]);
+            }
+
+            // Determine storage path based on photo type
+            $photoType = $validated['photoType'];
+            $storageFolder = 'validations/photos';
+            if ($photoType === 'headshot') {
+                $storageFolder = 'validations/headshots';
+            } elseif ($photoType === 'id_card' || $photoType === 'idcard') {
+                $storageFolder = 'validations/idcards';
+            }
+
+            \Log::error('uploadStudentPhoto: Storage folder determination', [
+                'photo_type' => $photoType,
+                'storage_folder' => $storageFolder,
+            ]);
+
+            // Store the uploaded file
+            \Log::error('uploadStudentPhoto: About to store file', [
+                'storage_folder' => $storageFolder,
+                'storage_folder_empty' => empty($storageFolder),
+                'photo_type' => $photoType,
+            ]);
+
+            if (empty($storageFolder)) {
+                \Log::error('uploadStudentPhoto: Storage folder is empty', [
+                    'photo_type' => $photoType,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid photo type configuration',
+                ], 500);
+            }
+
+            try {
+                $file = $request->file('file');
+                if (!$file) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No file uploaded',
+                    ], 400);
+                }
+
+                if (!$file->isValid()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid file: ' . $file->getErrorMessage(),
+                    ], 400);
+                }
+
+                $tmpPath = $file->getPathname();
+                if (!is_string($tmpPath) || $tmpPath === '' || !file_exists($tmpPath)) {
+                    \Log::error('uploadStudentPhoto: Uploaded file temp path missing', [
+                        'tmp_path' => $tmpPath,
+                        'original_name' => $file->getClientOriginalName(),
+                        'photo_type' => $validated['photoType'],
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Uploaded file is missing its temporary path. Please try again.',
+                    ], 400);
+                }
+
+                // If we have a real StudentUnit, store deterministically via Validation model.
+                $relativePath = null;
+                if ($studentUnit) {
+                    $extension = $file->extension() ?: ($file->getClientOriginalExtension() ?: 'png');
+
+                    if ($photoType === 'headshot') {
+                        $validation = Validation::where('student_unit_id', (int) $studentUnit->id)->first();
+                        if (!$validation) {
+                            $validation = new Validation();
+                            $validation->uuid = (string) Str::uuid();
+                            $validation->student_unit_id = (int) $studentUnit->id;
+                            $validation->status = 0;
+                            $this->saveNewValidationWithSequenceRepair($validation);
+                        } else {
+                            $validation->status = 0;
+                            $validation->id_type = null;
+                            $validation->reject_reason = null;
+                            $validation->save();
+                        }
+
+                        $relativePath = $validation->RelPathForExtension($extension);
+                    } elseif (in_array($photoType, ['id_card', 'idcard'])) {
+                        $courseAuthId = (int) ($studentUnit->course_auth_id ?? 0);
+                        if ($courseAuthId > 0) {
+                            $validation = Validation::where('course_auth_id', $courseAuthId)->first();
+                            if (!$validation) {
+                                $validation = new Validation();
+                                $validation->uuid = (string) Str::uuid();
+                                $validation->course_auth_id = $courseAuthId;
+                                $validation->status = 0;
+                                $this->saveNewValidationWithSequenceRepair($validation);
+                            } else {
+                                $validation->status = 0;
+                                $validation->id_type = null;
+                                $validation->reject_reason = null;
+                                $validation->save();
+                            }
+
+                            $relativePath = $validation->RelPathForExtension($extension);
+                        }
+                    }
+                }
+
+                if (!$relativePath) {
+                    $filename = $file->hashName();
+                    $relativePath = trim($storageFolder, '/\\') . '/' . $filename;
+                }
+
+                $stream = fopen($tmpPath, 'r');
+                if ($stream === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unable to read uploaded file. Please try again.',
+                    ], 400);
+                }
+
+                try {
+                    \Storage::disk('public')->put($relativePath, $stream);
+                } finally {
+                    fclose($stream);
+                }
+
+                $path = $relativePath;
+                \Log::info('uploadStudentPhoto: File stored successfully', [
+                    'storage_folder' => $storageFolder,
+                    'file_path' => $path,
+                    'photo_type' => $validated['photoType'],
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('uploadStudentPhoto: File storage failed', [
+                    'error' => $e->getMessage(),
+                    'exception' => $e,
+                    'storage_folder' => $storageFolder,
+                    'photo_type' => $validated['photoType'],
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File storage failed: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            // If we don't have a student unit, just store the file and return with warning
+            if (!$studentUnit) {
+                return response()->json([
+                    'success' => true,
+                    'message' => ucfirst($validated['photoType']) . ' uploaded successfully (no active session found)',
+                    'data' => [
+                        'file_path' => $path,
+                        'photo_type' => $validated['photoType'],
+                        'course_auth_id' => $validated['course_auth_id'] ?? null,
+                        'course_date_id' => $validated['course_date_id'] ?? null,
+                        'warning' => 'No active student unit found for this course',
+                    ],
+                ]);
+            }
+
+            // Update the StudentUnit's verified data
+            try {
+                $currentVerified = $studentUnit->getRawOriginal('verified');
+                $verified = $this->decodeVerifiedData($currentVerified);
+
+                // Lightweight tracker: keep an append-only audit trail in the verified JSON.
+                // This avoids relying on file existence checks and creates an explicit DB record.
+                $events = [];
+                if (isset($verified['events']) && is_array($verified['events'])) {
+                    $events = $verified['events'];
+                }
+
+                $events[] = [
+                    'event' => 'photo_uploaded',
+                    'photo_type' => $validated['photoType'],
+                    'path' => $path,
+                    'at' => now()->toISOString(),
+                    'course_auth_id' => $validated['course_auth_id'] ?? null,
+                    'course_date_id' => $validated['course_date_id'] ?? null,
+                    'student_unit_id' => $studentUnit->id,
+                    'source' => 'classroom.upload-student-photo',
+                ];
+
+                // Cap events to last 50 to avoid unbounded growth.
+                if (count($events) > 50) {
+                    $events = array_slice($events, -50);
+                }
+
+                $verified['events'] = $events;
+
+                if ($validated['photoType'] === 'headshot') {
+                    $verified['headshot_uploaded'] = true;
+                    $verified['headshot_path'] = $path;
+                    $verified['headshot_uploaded_at'] = now()->toISOString();
+                } elseif (in_array($validated['photoType'], ['id_card', 'idcard'])) {
+                    $verified['id_card_uploaded'] = true;
+                    $verified['id_card_path'] = $path;
+                    $verified['id_card_uploaded_at'] = now()->toISOString();
+                }
+
+                $studentUnit->verified = $verified;
+                $studentUnit->save();
+
+                \Log::info('uploadStudentPhoto: StudentUnit verified data updated', [
+                    'student_unit_id' => $studentUnit->id,
+                    'photo_type' => $validated['photoType'],
+                    'verified_data' => $verified,
+                ]);
+            } catch (\Exception $e) {
+                // If updating verified data fails, still save the file but log the error
+                \Log::error('uploadStudentPhoto: Failed to update StudentUnit verified data', [
+                    'student_unit_id' => $studentUnit->id,
+                    'photo_type' => $validated['photoType'],
+                    'error' => $e->getMessage(),
+                    'raw_verified' => $studentUnit->getRawOriginal('verified') ?? 'null',
+                ]);
+
+                // Return success but with warning about verification update failure
+                return response()->json([
+                    'success' => true,
+                    'message' => ucfirst($validated['photoType']) . ' uploaded successfully (verification update failed)',
+                    'data' => [
+                        'file_path' => $path,
+                        'photo_type' => $validated['photoType'],
+                        'student_unit_id' => $studentUnit->id,
+                        'course_auth_id' => $validated['course_auth_id'] ?? null,
+                        'course_date_id' => $validated['course_date_id'] ?? null,
+                        'warning' => 'File uploaded but verification status could not be updated',
+                    ],
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => ucfirst($validated['photoType']) . ' uploaded successfully',
+                'data' => [
+                    'file_path' => $path,
+                    'photo_type' => $validated['photoType'],
+                    'student_unit_id' => $studentUnit->id,
+                    'course_auth_id' => $validated['course_auth_id'] ?? null,
+                    'id_card_uploaded' => (bool) ($verified['id_card_uploaded'] ?? false),
+                    'headshot_uploaded' => (bool) ($verified['headshot_uploaded'] ?? false),
+                    'identity_verified' => (bool) (!empty($verified['id_card_path'] ?? null) && !empty($verified['headshot_path'] ?? null)),
+                ],
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Student photo upload failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'request_data' => $request->except(['file']),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -1243,13 +1845,55 @@ class StudentDashboardController extends Controller
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
 
         if ($request->hasFile('id_document')) {
-            $idPath = $request->file('id_document')->store('validations/idcards', 'public');
+            $file = $request->file('id_document');
+            $extension = $file?->extension() ?: ($file?->getClientOriginalExtension() ?: 'jpg');
+
+            $validation = null;
+            if (!empty($studentUnit->course_auth_id)) {
+                $validation = Validation::where('course_auth_id', (int) $studentUnit->course_auth_id)->first();
+                if (!$validation) {
+                    $validation = new Validation();
+                    $validation->uuid = (string) Str::uuid();
+                    $validation->course_auth_id = (int) $studentUnit->course_auth_id;
+                    $validation->status = 0;
+                    $this->saveNewValidationWithSequenceRepair($validation);
+                } else {
+                    $validation->status = 0;
+                    $validation->id_type = null;
+                    $validation->reject_reason = null;
+                    $validation->save();
+                }
+            }
+
+            $idPath = $validation
+                ? $validation->RelPathForExtension($extension)
+                : ('validations/idcards/' . $file->hashName());
+
+            Storage::disk('public')->putFileAs(dirname($idPath), $file, basename($idPath));
             $verified['id_card_uploaded'] = true;
             $verified['id_card_path'] = $idPath;
             $verified['id_card_uploaded_at'] = now()->toISOString();
         }
 
-        $headshotPath = $request->file('headshot')->store('validations/headshots', 'public');
+        $headshotFile = $request->file('headshot');
+        $headshotExt = $headshotFile?->extension() ?: ($headshotFile?->getClientOriginalExtension() ?: 'jpg');
+
+        $headshotValidation = Validation::where('student_unit_id', (int) $studentUnit->id)->first();
+        if (!$headshotValidation) {
+            $headshotValidation = new Validation();
+            $headshotValidation->uuid = (string) Str::uuid();
+            $headshotValidation->student_unit_id = (int) $studentUnit->id;
+            $headshotValidation->status = 0;
+            $this->saveNewValidationWithSequenceRepair($headshotValidation);
+        } else {
+            $headshotValidation->status = 0;
+            $headshotValidation->id_type = null;
+            $headshotValidation->reject_reason = null;
+            $headshotValidation->save();
+        }
+
+        $headshotPath = $headshotValidation->RelPathForExtension($headshotExt);
+        Storage::disk('public')->putFileAs(dirname($headshotPath), $headshotFile, basename($headshotPath));
         $verified['headshot_uploaded'] = true;
         $verified['headshot_path'] = $headshotPath;
         $verified['headshot_uploaded_at'] = now()->toISOString();
@@ -1409,26 +2053,189 @@ class StudentDashboardController extends Controller
 
     public function checkHeadshotStatus(Request $request): JsonResponse
     {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $courseAuthId = (int) $request->query('course_auth_id', 0);
+        $courseDateId = (int) $request->query('course_date_id', 0);
+
+        // If no explicit course_auth_id was provided, infer it from the course_date_id.
+        if ($courseAuthId <= 0 && $courseDateId > 0) {
+            $courseDate = CourseDate::with(['CourseUnit'])->find($courseDateId);
+            $courseId = (int) ($courseDate?->CourseUnit?->course_id ?? 0);
+            if ($courseId > 0) {
+                $courseAuthId = (int) (CourseAuth::where('user_id', $user->id)
+                    ->where('course_id', $courseId)
+                    ->orderByDesc('id')
+                    ->value('id') ?? 0);
+            }
+        }
+
+        if ($courseAuthId <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'course_auth_id is required',
+            ], 422);
+        }
+
+        $courseAuth = CourseAuth::where('id', $courseAuthId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $studentUnitQuery = StudentUnit::where('course_auth_id', $courseAuth->id);
+        if ($courseDateId > 0) {
+            $studentUnitQuery->where('course_date_id', $courseDateId);
+        }
+        $studentUnit = $studentUnitQuery->orderByDesc('course_date_id')->first();
+
+        $url = null;
+        $status = 'missing';
+        $rejectReason = null;
+
+        if ($studentUnit) {
+            $validation = Validation::where('student_unit_id', (int) $studentUnit->id)->first();
+            if ($validation) {
+                $url = $validation->URL(false);
+                $rejectReason = $validation->reject_reason;
+                $status = $validation->status > 0 ? 'approved' : ($validation->status < 0 ? 'rejected' : 'pending');
+            }
+
+            if (!$url) {
+                $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
+                if (!empty($verified['headshot_path'])) {
+                    $url = url('storage/' . ltrim((string) $verified['headshot_path'], '/'));
+                    $status = 'uploaded';
+                }
+            }
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Not implemented in this build',
-        ], 501);
+            'success' => true,
+            'data' => [
+                'course_auth_id' => (int) $courseAuth->id,
+                'course_date_id' => $courseDateId > 0 ? $courseDateId : null,
+                'headshot_url' => $url,
+                'status' => $status,
+                'reject_reason' => $rejectReason,
+            ],
+        ]);
     }
 
     public function checkIdCardStatus(int $courseAuthId): JsonResponse
     {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $courseAuth = CourseAuth::where('id', (int) $courseAuthId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $url = null;
+        $status = 'missing';
+        $rejectReason = null;
+
+        $validation = Validation::where('course_auth_id', (int) $courseAuth->id)->first();
+        if ($validation) {
+            $url = $validation->URL(false);
+            $rejectReason = $validation->reject_reason;
+            $status = $validation->status > 0 ? 'approved' : ($validation->status < 0 ? 'rejected' : 'pending');
+        }
+
+        if (!$url) {
+            $recentUnitWithId = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+                ->orderByDesc('course_date_id')
+                ->limit(25)
+                ->get()
+                ->first(function ($unit) {
+                    $verified = $this->decodeVerifiedData($unit->getRawOriginal('verified'));
+                    return !empty($verified['id_card_path']);
+                });
+
+            if ($recentUnitWithId) {
+                $verified = $this->decodeVerifiedData($recentUnitWithId->getRawOriginal('verified'));
+                if (!empty($verified['id_card_path'])) {
+                    $url = url('storage/' . ltrim((string) $verified['id_card_path'], '/'));
+                    $status = 'uploaded';
+                }
+            }
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Not implemented in this build',
-        ], 501);
+            'success' => true,
+            'data' => [
+                'course_auth_id' => (int) $courseAuth->id,
+                'id_card_url' => $url,
+                'status' => $status,
+                'reject_reason' => $rejectReason,
+            ],
+        ]);
     }
 
     public function getCourseDatesWithHeadshots(int $courseAuthId): JsonResponse
     {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $courseAuth = CourseAuth::where('id', (int) $courseAuthId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $units = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+            ->orderByDesc('course_date_id')
+            ->limit(60)
+            ->get();
+
+        $rows = $units->map(function ($unit) {
+            $url = null;
+            $status = 'missing';
+            $rejectReason = null;
+
+            $validation = Validation::where('student_unit_id', (int) $unit->id)->first();
+            if ($validation) {
+                $url = $validation->URL(false);
+                $rejectReason = $validation->reject_reason;
+                $status = $validation->status > 0 ? 'approved' : ($validation->status < 0 ? 'rejected' : 'pending');
+            }
+
+            if (!$url) {
+                $verified = $this->decodeVerifiedData($unit->getRawOriginal('verified'));
+                if (!empty($verified['headshot_path'])) {
+                    $url = url('storage/' . ltrim((string) $verified['headshot_path'], '/'));
+                    $status = 'uploaded';
+                }
+            }
+
+            return [
+                'student_unit_id' => (int) $unit->id,
+                'course_date_id' => (int) ($unit->course_date_id ?? 0),
+                'headshot_url' => $url,
+                'status' => $status,
+                'reject_reason' => $rejectReason,
+            ];
+        })->values()->toArray();
+
         return response()->json([
-            'success' => false,
-            'message' => 'Not implemented in this build',
-        ], 501);
+            'success' => true,
+            'data' => [
+                'course_auth_id' => (int) $courseAuth->id,
+                'course_dates' => $rows,
+            ],
+        ]);
     }
 
     /**

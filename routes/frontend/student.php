@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Student\StudentDashboardController;
+use App\Http\Controllers\Student\ClassroomChatController;
+use App\Http\Controllers\Student\AskInstructorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,6 +50,27 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/classroom/student/poll', [StudentDashboardController::class, 'getStudentPollData'])
         ->name('classroom.student.poll');
+
+    /**
+     * Classroom Chat Routes
+     */
+    Route::get('/classroom/chat', [ClassroomChatController::class, 'getChat'])
+        ->name('classroom.chat.get');
+
+    Route::post('/classroom/chat-messages', [ClassroomChatController::class, 'postChatMessage'])
+        ->name('classroom.chat.post-message');
+
+    /**
+     * Ask Instructor (private queue)
+     */
+    Route::post('/classroom/ask-instructor', [AskInstructorController::class, 'submit'])
+        ->name('classroom.ask-instructor.submit');
+
+    Route::get('/classroom/ask-instructor/my', [AskInstructorController::class, 'myQueue'])
+        ->name('classroom.ask-instructor.my');
+
+    Route::get('/classroom/session/mode', [AskInstructorController::class, 'getSessionMode'])
+        ->name('classroom.session.mode');
 
     /**
      * Zoom Portal Routes - Iframe isolated Zoom SDK
@@ -98,6 +121,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/classroom/id-verification/upload-headshot', [StudentDashboardController::class, 'uploadHeadshot'])
         ->name('classroom.id-verification.upload-headshot');
+
+    Route::post('/classroom/upload-student-photo', [StudentDashboardController::class, 'uploadStudentPhoto'])
+        ->name('classroom.upload-student-photo');
 
     Route::get('/classroom/id-verification/status/{studentId}', [StudentDashboardController::class, 'getIdVerificationStatus'])
         ->where('studentId', '[0-9]+')

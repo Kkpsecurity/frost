@@ -11,6 +11,7 @@ const UploadIDcardView = ({
     setShowCaptureType,
     setCurrentStep,
     currentStep,
+    onUploaded,
     debug,
 }) => {
     return (
@@ -44,6 +45,7 @@ const UploadIDcardView = ({
                                 setShowCaptureType={setShowCaptureType}
                                 setCurrentStep={setCurrentStep}
                                 currentStep={currentStep}
+                                onUploaded={() => onUploaded?.()}
                                 debug={debug}
                             />
                         </div>
@@ -79,16 +81,9 @@ const UploadIDcardView = ({
                         >
                             ← Back
                         </StyledButton>
-                        <StyledButton
-                            onClick={() => setCurrentStep(3)}
-                            style={{
-                                background: "#3498db",
-                                color: "#ffffff",
-                                padding: "0.5rem 1rem"
-                            }}
-                        >
-                            Next: Headshot →
-                        </StyledButton>
+                        <div style={{ color: '#95a5a6', alignSelf: 'center', fontSize: '0.9rem' }}>
+                            Uploading your ID will continue automatically
+                        </div>
                     </div>
                 </div>
             </div>

@@ -19,6 +19,8 @@ export interface StudentContextType {
         completed: number;
         in_progress: number;
     } | null;
+    // Student progress (not classroom progress): validation/upload state per courseAuth.
+    validationsByCourseAuth?: Record<number, any> | null;
     notifications: any[];
     assignments: any[];
     selectedCourseAuthId: number | null;

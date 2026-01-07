@@ -1,26 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 import ImageIDCapture from "./Webcam/ImageIDCapture";
 import ImageIDUpload from "./Upload/ImageIDUpload";
-import CapturedPreview from "./CapturedPreview";
 
-import extractFileName from "../../../../../Helpers/extractFileName";
-
-import { ClassDataShape, StudentType } from "../../../../../Config/types";
-
-import {
-    StyledCaputureDevices,
-    StyledCardHeader,
-    StyledRow,
-    StyledCol,
-    StyledDeviceTitle,
-    StyledButtonGroup,
-} from "../../../../../Styles.ts";
-import PageLoader from "../../../../../Components/Widgets/PageLoader";
+import { StudentType } from "@/React/Student/types/students.types";
 
 interface CaptureDevicesProps {
-    data: ClassDataShape | null;
+    data: any | null;
     photoType: string; // 'headshot' or 'idcard'
     student: StudentType; // StudentType is defined in types.ts
     validations: {
@@ -31,6 +19,7 @@ interface CaptureDevicesProps {
     setShowCaptureType: React.Dispatch<React.SetStateAction<CaptureTypes>>;
     setCurrentStep: React.Dispatch<React.SetStateAction<number>>;
     currentStep: number;
+    onUploaded?: (photoType: 'idcard' | 'headshot') => void;
     debug?: boolean;
 }
 
@@ -53,7 +42,8 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
     showCaptureType,
     setShowCaptureType,
     setCurrentStep,
-    currentStep: number,
+    currentStep,
+    onUploaded,
     debug = false,
 }) => {
     if (debug === true)
@@ -67,191 +57,362 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
     const [idcard, setIdcard] = useState<string | null>(null);
 
     /**
-     *
-     * WebCam Capture Button
-     * @returns
+     * Modern Take Photo Button
      */
-    const TakePhoto = ({ photoType, headshot, idcard, showCaptureType }) => {
+    const TakePhoto: React.FC<{
+        photoType: string;
+        headshot: string | null;
+        idcard: string | null;
+        showCaptureType: CaptureTypes;
+    }> = ({ photoType, headshot, idcard, showCaptureType }) => {
         const isActive = showCaptureType === "webcam";
         let isDisabled = false;
 
         // Check for the headshot case
         if (photoType === "headshot") {
-            // The button should be disabled if a valid headshot exists and it's not a placeholder.
-            isDisabled = headshot && headshot !== "" && typeof headshot === 'string' && !headshot.includes("no-image");
+            isDisabled = !!(headshot && headshot !== "" && typeof headshot === 'string' && !headshot.includes("no-image"));
         }
 
         // Check for the ID card case
         if (photoType === "idcard") {
-            // The button should be disabled if a valid ID card exists and it's not a placeholder.
-            isDisabled = idcard && idcard !== "" && typeof idcard === 'string' && !idcard.includes("no-image");
+            isDisabled = !!(idcard && idcard !== "" && typeof idcard === 'string' && !idcard.includes("no-image"));
         }
 
         return (
-            <Button
-                className={`btn btn-md m-1 ${isActive ? "active" : ""}`}
-                variant={isActive ? "success" : "outline-primary"}
+            <button
                 onClick={!isActive ? () => setShowCaptureType("webcam") : undefined}
                 disabled={isDisabled}
+                style={{
+                    background: isActive ? '#10b981' : 'rgba(255,255,255,0.1)',
+                    border: isActive ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: isActive ? '#ffffff' : '#374151',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.5 : 1,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    minWidth: '90px',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(4px)'
+                }}
+                onMouseEnter={(e) => {
+                    if (!isDisabled && !isActive) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.background = 'rgba(255,255,255,0.15)';
+                        target.style.borderColor = 'rgba(255,255,255,0.3)';
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    if (!isDisabled && !isActive) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.background = 'rgba(255,255,255,0.1)';
+                        target.style.borderColor = 'rgba(255,255,255,0.2)';
+                    }
+                }}
             >
-                Take Photo
-            </Button>
+                📸 Take Photo
+            </button>
         );
     };
 
 
     /**
-     *  Upload Photo Button
-     * @param param0
-     * @returns
+     * Modern Upload Photo Button
      */
-    const UploadPhoto = ({ photoType, headshot, idcard, showCaptureType }) => {
+    const UploadPhoto: React.FC<{
+        photoType: string;
+        headshot: string | null;
+        idcard: string | null;
+        showCaptureType: CaptureTypes;
+    }> = ({ photoType, headshot, idcard, showCaptureType }) => {
         const isActive = showCaptureType === "upload";
         let isDisabled = false;
 
         // Check for the headshot case
         if (photoType === "headshot") {
-            // The button should be disabled if a valid headshot exists and it's not a placeholder.
-            isDisabled = headshot && headshot !== "" && typeof headshot === 'string' && !headshot.includes("no-image");
+            isDisabled = !!(headshot && headshot !== "" && typeof headshot === 'string' && !headshot.includes("no-image"));
         }
 
         // Check for the ID card case
         if (photoType === "idcard") {
-            // The button should be disabled if a valid ID card exists and it's not a placeholder.
-            isDisabled = idcard && idcard !== "" && typeof idcard === 'string' && !idcard.includes("no-image");
+            isDisabled = !!(idcard && idcard !== "" && typeof idcard === 'string' && !idcard.includes("no-image"));
         }
 
         return (
-            <Button
-                className={`btn btn-md m-1 ${isActive ? "active" : ""}`}
-                variant={isActive ? "success" : "secondary"}
+            <button
                 onClick={!isActive ? () => setShowCaptureType("upload") : undefined}
                 disabled={isDisabled}
+                style={{
+                    background: isActive ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                    border: isActive ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: isActive ? '#ffffff' : '#374151',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.5 : 1,
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    minWidth: '95px',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(4px)'
+                }}
+                onMouseEnter={(e) => {
+                    if (!isDisabled && !isActive) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.background = 'rgba(255,255,255,0.15)';
+                        target.style.borderColor = 'rgba(255,255,255,0.3)';
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    if (!isDisabled && !isActive) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.background = 'rgba(255,255,255,0.1)';
+                        target.style.borderColor = 'rgba(255,255,255,0.2)';
+                    }
+                }}
             >
-                Upload Photo
-            </Button>
+                📁 Upload Photo
+            </button>
         );
     };
 
 
     useEffect(() => {
-        const today = new Date();
-        const todayISO = today.toISOString().slice(0, 10); // 'YYYY-MM-DD'
-        const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-
-        if (!validations || !student.currentStudentUnit) {
-            console.log("Validations or student unit not available.");
+        if (!validations) {
+            console.log("Validations not available.");
             return;
         }
 
-        // Handle headshots based on the day of the week
+        // Handle headshots
         const headshots = validations.headshot;
         let headshotToSet = null;
 
-        if (headshots && typeof headshots === 'object' && !(headshots instanceof Array)) {
-            if (headshots[dayOfWeek]) {
-                headshotToSet = headshots[dayOfWeek];
-                if (typeof headshotToSet === 'string' && headshotToSet && headshotToSet.includes("no-image")) {
-                    console.log("No valid headshot for today, need to upload.");
-                    headshotToSet = null;
+        if (headshots && typeof headshots === 'string') {
+            headshotToSet = headshots;
+        } else if (Array.isArray(headshots) && headshots.length > 0) {
+            headshotToSet = headshots[0];
+        } else if (headshots && typeof headshots === 'object') {
+            // Backend poll provides { monday: url|null, ... }
+            try {
+                const todayKey = new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+                const headshotMap = headshots as unknown as Record<string, unknown>;
+                const todayUrl = headshotMap[todayKey];
+                if (typeof todayUrl === 'string' && todayUrl.length > 0) {
+                    headshotToSet = todayUrl;
+                } else {
+                    const firstUrl = Object.values(headshotMap).find((v: any) => typeof v === 'string' && v.length > 0);
+                    headshotToSet = (firstUrl as string) || null;
                 }
+            } catch {
+                // ignore
             }
-        } else if (typeof headshots === 'string') {
-            headshotToSet = headshots; // Assume it's valid unless checked elsewhere
         }
 
         if (headshotToSet) {
             setHeadshot(headshotToSet);
         }
 
-        // After headshot handling, process ID card if headshot is set
+        // Handle ID card
         setIdcard(validations.idcard);
 
     }, [validations, student, setHeadshot, setIdcard]);
 
-    console.log("Validations22222", idcard);
-    console.log("showCaptureType:", showCaptureType);
-    console.log("photoType:", photoType);
-
     return (
-        <StyledCaputureDevices>
-            <StyledCardHeader>
-                {photoType === "headshot"
-                    ? "Student Head Shot"
-                    : "Student ID Card"}
-            </StyledCardHeader>
+        <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '12px',
+            padding: '0',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        }}>
+            {/* Modern Header with Icon */}
+            <div style={{
+                background: 'rgba(255,255,255,0.95)',
+                backdropFilter: 'blur(10px)',
+                padding: '16px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                borderBottom: '1px solid rgba(255,255,255,0.2)'
+            }}>
+                {/* Compact Icon */}
+                <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: photoType === "headshot" ? '#3b82f6' : '#10b981',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '16px'
+                }}>
+                    {photoType === "headshot" ? '👤' : '🆔'}
+                </div>
 
-            <StyledRow>
-                <StyledCol className="text-center" flexBasis="15%">
-                    <StyledDeviceTitle>
-                        {photoType === "headshot" ? (
-                            <img
-                                src={headShotIcon}
-                                alt="Head Shot"
-                                width="180px"
-                            />
-                        ) : (
-                            <img src={idCardIcon} alt="ID Card" width="180px" />
-                        )}
-                    </StyledDeviceTitle>
-                </StyledCol>
+                {/* Title and Description */}
+                <div style={{ flex: 1 }}>
+                    <h3 style={{
+                        margin: '0',
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        lineHeight: '1.2'
+                    }}>
+                        {photoType === "headshot" ? "Student Head Shot" : "Student ID Card"}
+                    </h3>
+                    <p style={{
+                        margin: '2px 0 0 0',
+                        fontSize: '13px',
+                        color: '#6b7280',
+                        lineHeight: '1.3'
+                    }}>
+                        {photoType === "headshot"
+                            ? "Take or upload a clear photo of yourself"
+                            : "Capture or upload your government-issued ID"
+                        }
+                    </p>
+                </div>
 
-                <StyledCol flexBasis="85%">
-                    <StyledButtonGroup>
-                        <TakePhoto
-                            photoType={photoType}
-                            headshot={headshot}
-                            idcard={idcard}
-                            showCaptureType={showCaptureType}
-                        />
-                        <UploadPhoto
-                            photoType={photoType}
-                            headshot={headshot}
-                            idcard={idcard}
-                            showCaptureType={showCaptureType}
-                        />
-                    </StyledButtonGroup>
-                </StyledCol>
-            </StyledRow>
+                {/* Compact Action Buttons */}
+                <div style={{
+                    display: 'flex',
+                    gap: '8px'
+                }}>
+                    <TakePhoto
+                        photoType={photoType}
+                        headshot={headshot}
+                        idcard={idcard}
+                        showCaptureType={showCaptureType}
+                    />
+                    <UploadPhoto
+                        photoType={photoType}
+                        headshot={headshot}
+                        idcard={idcard}
+                        showCaptureType={showCaptureType}
+                    />
+                </div>
+            </div>
 
-            <StyledRow id="viewport">
-                <StyledCol>
-                    {showCaptureType === "webcam" ? (
-                        <ImageIDCapture
-                            data={data}
-                            student={student}
-                            photoType={photoType}
-                            headshot={headshot}
-                            idcard={idcard}
-                            debug={debug}
-                        />
-                    ) : showCaptureType === "upload" ? (
-                        <ImageIDUpload
-                            data={data}
-                            student={student}
-                            photoType={photoType}
-                            headshot={headshot}
-                            idcard={idcard}
-                            debug={debug}
-                        />
-                    ) : showCaptureType === "preview" ? (
-                        <CapturedPreview
-                            photoType={photoType}
-                            headshot={headshot}
-                            idcard={idcard}
-                        />
-                    ) : (
-                        <div className="text-center p-5">
-                            <i className="fas fa-camera fa-3x mb-3" style={{color: '#3498db'}}></i>
-                            <h4>Choose Your Capture Method</h4>
-                            <p className="text-muted">
-                                Select "Take Photo" to use your webcam or "Upload Photo" to select a file from your device.
-                            </p>
+            {/* Main Content Area */}
+            <div style={{
+                padding: '24px',
+                background: 'rgba(255,255,255,0.02)'
+            }}>
+                {showCaptureType === "webcam" ? (
+                    <ImageIDCapture
+                        data={data}
+                        student={student}
+                        photoType={photoType}
+                        headshot={headshot}
+                        idcard={idcard}
+                        onStepComplete={() => {
+                            toast.success(
+                                photoType === "headshot"
+                                    ? "Headshot uploaded successfully"
+                                    : "ID card uploaded successfully"
+                            );
+                            setShowCaptureType(null);
+                            if (onUploaded) {
+                                onUploaded(photoType === 'headshot' ? 'headshot' : 'idcard');
+                                return;
+                            }
+                            if (photoType === "idcard") setCurrentStep(3);
+                            if (photoType === "headshot") setCurrentStep(4);
+                        }}
+                        debug={debug}
+                    />
+                ) : showCaptureType === "upload" ? (
+                    <ImageIDUpload
+                        data={data}
+                        student={student}
+                        photoType={photoType}
+                        headshot={headshot}
+                        idcard={idcard}
+                        onStepComplete={() => {
+                            toast.success(
+                                photoType === "headshot"
+                                    ? "Headshot uploaded successfully"
+                                    : "ID card uploaded successfully"
+                            );
+                            setShowCaptureType(null);
+                            if (onUploaded) {
+                                onUploaded(photoType === 'headshot' ? 'headshot' : 'idcard');
+                                return;
+                            }
+                            if (photoType === "idcard") setCurrentStep(3);
+                            if (photoType === "headshot") setCurrentStep(4);
+                        }}
+                        debug={debug}
+                    />
+                ) : showCaptureType === "preview" ? (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '40px 20px',
+                        color: 'rgba(255,255,255,0.9)'
+                    }}>
+                        <div style={{
+                            fontSize: '48px',
+                            marginBottom: '16px'
+                        }}>
+                            ✓
                         </div>
-                    )}
-                </StyledCol>
-            </StyledRow>
-        </StyledCaputureDevices>
+                        <h4 style={{
+                            fontSize: '18px',
+                            fontWeight: '600',
+                            margin: '0 0 8px 0',
+                            color: 'rgba(255,255,255,0.95)'
+                        }}>
+                            Image captured successfully!
+                        </h4>
+                    </div>
+                ) : (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '40px 20px',
+                        color: 'rgba(255,255,255,0.9)'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 16px',
+                            fontSize: '24px'
+                        }}>
+                            📸
+                        </div>
+                        <h4 style={{
+                            fontSize: '18px',
+                            fontWeight: '600',
+                            margin: '0 0 8px 0',
+                            color: 'rgba(255,255,255,0.95)'
+                        }}>
+                            Ready to capture your {photoType === "headshot" ? "photo" : "ID card"}?
+                        </h4>
+                        <p style={{
+                            fontSize: '14px',
+                            margin: '0',
+                            color: 'rgba(255,255,255,0.7)',
+                            lineHeight: '1.4'
+                        }}>
+                            Choose "Take Photo" to use your camera or "Upload Photo" to select from your device
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

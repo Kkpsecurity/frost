@@ -48,12 +48,24 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [lessonState, setLessonState] = useState<any>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Check if Zoom is setup (zoom_creds.zoom_status === enabled)
   const isZoomReady = !!zoomReady;
 
   // Get InstLesson records to track completion
   const instLessons = instUnit?.instLessons || [];
+
+  const activeInstLesson: InstLesson | undefined = instLessons.find(
+    (il: InstLesson) => il.completed_at == null
+  );
+  const activeLessonId = activeInstLesson?.lesson_id;
+  const isPaused = !!activeInstLesson?.is_paused;
+  const breaksRemaining = lessonState?.breaks?.breaks_remaining;
+  const breaksAllowed = lessonState?.breaks?.breaks_allowed;
+  const breaksTaken = lessonState?.breaks?.breaks_taken;
 
   useEffect(() => {
     if (!courseDateId) {
@@ -83,6 +95,56 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
 
     fetchLessons();
   }, [courseDateId]);
+
+  useEffect(() => {
+    if (!courseDateId) {
+      setLessonState(null);
+      return;
+    }
+
+    const fetchLessonState = async () => {
+      try {
+        const response = await axios.get(
+          `/admin/instructors/lessons/state/${courseDateId}`
+        );
+        setLessonState(response.data);
+      } catch (err) {
+        // non-fatal - UI still works with polling data
+      }
+    };
+
+    fetchLessonState();
+    const interval = window.setInterval(fetchLessonState, 5000);
+    return () => window.clearInterval(interval);
+  }, [courseDateId]);
+
+  const postLessonAction = async (path: string, lessonId: number) => {
+    if (!courseDateId) return;
+    setActionLoading(true);
+    setActionMessage(null);
+    try {
+      const res = await axios.post(path, {
+        course_date_id: courseDateId,
+        lesson_id: lessonId,
+      });
+      setActionMessage(res?.data?.message || "Success");
+      // Force refresh state quickly
+      try {
+        const stateRes = await axios.get(
+          `/admin/instructors/lessons/state/${courseDateId}`
+        );
+        setLessonState(stateRes.data);
+      } catch (e) {
+        // ignore
+      }
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || err?.message || "Action failed";
+      setActionMessage(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   /**
    * Check if a lesson is completed by looking at InstLesson records
@@ -278,6 +340,12 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                   ? "Complete previous lesson first"
                                   : "Start this lesson"
                               }
+                              onClick={() =>
+                                postLessonAction(
+                                  "/admin/instructors/lessons/start",
+                                  lesson.id
+                                )
+                              }
                             >
                               <i className="fas fa-play me-1" />
                               Start Lesson
@@ -286,13 +354,49 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                           {active && !completed && (
                             <div className="btn-group w-100 mt-2">
                               <button
-                                className="btn btn-sm btn-warning"
-                                title="Pause/resume handled in titlebar"
-                                disabled
+                                className={`btn btn-sm ${isPaused ? "btn-success" : "btn-warning"}`}
+                                title={isPaused ? "Resume lesson" : "Pause lesson"}
+                                disabled={
+                                  actionLoading ||
+                                  (!!breaksRemaining && breaksRemaining <= 0 && !isPaused)
+                                }
+                                onClick={() =>
+                                  postLessonAction(
+                                    isPaused
+                                      ? "/admin/instructors/lessons/resume"
+                                      : "/admin/instructors/lessons/pause",
+                                    lesson.id
+                                  )
+                                }
                               >
-                                <i className="fas fa-pause me-1" />
-                                Active
+                                <i className={`fas ${isPaused ? "fa-play" : "fa-pause"} me-1`} />
+                                {isPaused ? "Resume" : "Pause"}
                               </button>
+                              <button
+                                className="btn btn-sm btn-danger"
+                                title="Complete lesson"
+                                disabled={actionLoading}
+                                onClick={() =>
+                                  postLessonAction(
+                                    "/admin/instructors/lessons/complete",
+                                    lesson.id
+                                  )
+                                }
+                              >
+                                <i className="fas fa-check me-1" />
+                                Complete
+                              </button>
+                            </div>
+                          )}
+
+                          {active && !completed && typeof breaksAllowed === "number" && (
+                            <div className="mt-2">
+                              <small className="text-white-50">
+                                Breaks: {breaksTaken ?? 0}/{breaksAllowed}
+                                {typeof breaksRemaining === "number"
+                                  ? ` (${breaksRemaining} remaining)`
+                                  : ""}
+                              </small>
                             </div>
                           )}
                         </div>
@@ -300,6 +404,13 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                     );
                   })}
                 </div>
+
+                {actionMessage && (
+                  <div className="alert alert-info m-3">
+                    <i className="fas fa-info-circle mr-2" />
+                    {actionMessage}
+                  </div>
+                )}
               </>
             )}
           </>

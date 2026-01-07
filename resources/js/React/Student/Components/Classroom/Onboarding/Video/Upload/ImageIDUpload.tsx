@@ -19,6 +19,7 @@ interface ImageIDUploadProps {
     photoType: string;
     headshot: string | null;
     idcard: string | null;
+    onStepComplete?: () => void;
     debug: boolean;
 }
 
@@ -28,6 +29,7 @@ const ImageIDUpload: FC<ImageIDUploadProps> = ({
     photoType,
     headshot,
     idcard,
+    onStepComplete,
     debug = false,
 }) => {
     const {
@@ -103,7 +105,14 @@ const ImageIDUpload: FC<ImageIDUploadProps> = ({
                                         </Button>
                                         <button
                                             className="btn btn-sm btn-success float-end"
-                                            onClick={handleUploadImage}
+                                            onClick={async () => {
+                                                try {
+                                                    await handleUploadImage();
+                                                    onStepComplete?.();
+                                                } catch (error) {
+                                                    // Error state is handled inside the hook
+                                                }
+                                            }}
                                         >
                                             {isLoading ? "Uploading..." : "Upload"}
                                         </button>

@@ -26,10 +26,11 @@ interface CIDFVTYPE {
     data: ClassDataShape | null;
     student: StudentType;
     validations: {
-        headshot: string | string[] | null;
+        headshot: any;
         idcard: string | null;
     } | null;
     debug?: boolean;
+    onComplete?: () => void;
 }
 
 const FILE_DEFAULT = "no-image";
@@ -39,19 +40,20 @@ const ValidationConfirmationView: React.FC<{
     validations: any;
     student: StudentType;
     setCurrentStep: React.Dispatch<React.SetStateAction<number>>;
-}> = ({ validations, student, setCurrentStep }) => {
+    onComplete?: () => void;
+}> = ({ validations, student, setCurrentStep, onComplete }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleConfirmValidation = async () => {
         setIsSubmitting(true);
         try {
-            // Here you would submit the validation confirmation
-            // For now, we'll just show success
+            // Advance to the parent onboarding Step 4 confirm screen.
+            if (typeof onComplete === 'function') {
+                onComplete();
+                return;
+            }
+
             toast.success("Validation completed successfully!");
-            setTimeout(() => {
-                // This could trigger the onComplete callback
-                console.log("Validation process completed");
-            }, 2000);
         } catch (error) {
             toast.error("Failed to complete validation");
         } finally {
@@ -59,8 +61,25 @@ const ValidationConfirmationView: React.FC<{
         }
     };
 
-    const getImageUrl = (imageData: string | string[] | null) => {
+    const getTodayKey = () => {
+        try {
+            return new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+        } catch {
+            return 'monday';
+        }
+    };
+
+    const getImageUrl = (imageData: any) => {
         if (!imageData) return null;
+        if (typeof imageData === 'object' && !Array.isArray(imageData)) {
+            const todayKey = getTodayKey();
+            const todayUrl = imageData?.[todayKey];
+            if (typeof todayUrl === 'string' && todayUrl && !todayUrl.includes(FILE_DEFAULT)) {
+                return todayUrl;
+            }
+            const firstUrl = Object.values(imageData).find((v: any) => typeof v === 'string' && v && !v.includes(FILE_DEFAULT));
+            return (firstUrl as string) || null;
+        }
         if (Array.isArray(imageData)) {
             return imageData.find(url => url && !url.includes(FILE_DEFAULT));
         }
@@ -189,11 +208,14 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
     student,
     validations,
     debug = false,
+    onComplete,
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
-    const [validationMessage, setValidationMessage] = useState<string | null>(
-        null
-    );
+    const [validationMessage, setValidationMessage] = useState<string | null>(null);
+
+    const [autoAdvanceTo, setAutoAdvanceTo] = useState<number | null>(null);
+    const [countdown, setCountdown] = useState<number>(0);
+    const [pendingType, setPendingType] = useState<'idcard' | 'headshot' | null>(null);
 
     /**
      * Create a state to hold the capture type
@@ -216,70 +238,155 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
         return fileUrl.includes(FILE_DEFAULT);
     };
 
-    // useEffect to handle step flow - always go through all steps sequentially
+    const getTodayKey = () => {
+        try {
+            return new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+        } catch {
+            return 'monday';
+        }
+    };
+
+    const getIdCardUrl = (): string | null => {
+        const url = validations?.idcard;
+        if (!url) return null;
+        if (typeof url === 'string' && url.length > 0 && !url.includes(FILE_DEFAULT)) return url;
+        return null;
+    };
+
+    const getHeadshotUrl = (): string | null => {
+        const headshot = validations?.headshot;
+        if (!headshot) return null;
+
+        if (typeof headshot === 'string') {
+            return headshot && !headshot.includes(FILE_DEFAULT) ? headshot : null;
+        }
+        if (Array.isArray(headshot)) {
+            const found = headshot.find((v) => typeof v === 'string' && v && !v.includes(FILE_DEFAULT));
+            return found || null;
+        }
+        if (typeof headshot === 'object') {
+            const todayKey = getTodayKey();
+            const todayUrl = headshot?.[todayKey];
+            if (typeof todayUrl === 'string' && todayUrl && !todayUrl.includes(FILE_DEFAULT)) return todayUrl;
+            const firstUrl = Object.values(headshot).find((v: any) => typeof v === 'string' && v && !v.includes(FILE_DEFAULT));
+            return (firstUrl as string) || null;
+        }
+
+        return null;
+    };
+
+    const idCardUrl = getIdCardUrl();
+    const headshotUrl = getHeadshotUrl();
+
+    const beginCountdown = (nextStep: number, type: 'idcard' | 'headshot') => {
+        setPendingType(type);
+        setAutoAdvanceTo(nextStep);
+        setCountdown(5);
+    };
+
+    // Start the 5s countdown when an upload completes.
     useEffect(() => {
-        // Start with instructions, then go through ID card, headshot, and confirmation
-        if (currentStep === 1) {
-            // Stay on instructions until user clicks next
-            return;
-        }
-        // Let users progress through each step manually - no auto-skipping
-    }, [validations]);
+        if (!autoAdvanceTo || countdown <= 0) return;
 
-    /**
-     * If we are in step two check if set if so ether move to ext step or go back to step one
-     */
+        const timer = setTimeout(() => {
+            setCountdown((prev) => prev - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [autoAdvanceTo, countdown]);
+
+    // When countdown hits 0, advance.
     useEffect(() => {
-        // Check for headshot validation and manage the workflow accordingly
-        if (currentStep === 2) {
-            if (!hasDefault(validations.headshot)) {
-                setValidationMessage("Validating Headshot Please wait.");
-                setCurrentStep(null); // triggers loader
-                setTimeout(() => {
-                    setCurrentStep(3);
-                    setValidationMessage(null);
-                }, 2000);
-            }
-        } else {
-            setValidationMessage(
-                "Please upload a Headshot that matches your ID card."
-            );
-        }
+        if (!autoAdvanceTo) return;
+        if (countdown > 0) return;
 
-        // Check for ID card validation and manage the workflow accordingly
-        if (currentStep === 3) {
-            if (!hasDefault(validations.idcard)) {
-                setValidationMessage("Validating ID Card Please wait.");
-                setCurrentStep(null); // triggers loader
-                setTimeout(() => {
-                    setCurrentStep(1);
-                    setValidationMessage(null);
-                }, 2000);
-            }
-        } else {
-            setValidationMessage("Please upload a copy of your ID.");
-        }
-    }, [currentStep, validations]); // Include validations in the dependency array
+        setCurrentStep(autoAdvanceTo);
+        setAutoAdvanceTo(null);
+        setPendingType(null);
+        setValidationMessage(null);
+        setShowCaptureType(null);
+    }, [autoAdvanceTo, countdown]);
 
-    const isImageSet = () => {
-        switch (currentStep) {
-            case 1:
-                return true;
-            case 2:
-                return validations?.headshot === null;
-            case 3:
-                return validations?.idcard === null;
-            default:
-                return false;
+    // If we refresh and the poll already has the images, move forward automatically.
+    useEffect(() => {
+        if (currentStep === 2 && idCardUrl) {
+            // ID is already done, go to headshot
+            setCurrentStep(3);
         }
+        if (currentStep === 3 && headshotUrl) {
+            // Headshot already done for today, go to confirm
+            setCurrentStep(4);
+        }
+    }, [currentStep, idCardUrl, headshotUrl]);
+
+    const WaitingPanel: React.FC<{ type: 'idcard' | 'headshot' }> = ({ type }) => {
+        const title = type === 'idcard' ? 'ID Card Uploaded' : 'Headshot Uploaded';
+        const subtitle = type === 'idcard'
+            ? 'Waiting validation… then moving to Headshot.'
+            : 'Waiting validation… then moving to Review & Confirm.';
+
+        const imageUrl = type === 'idcard' ? idCardUrl : headshotUrl;
+
+        return (
+            <div className="container-fluid">
+                <div className="row justify-content-center">
+                    <div className="col-lg-10">
+                        <div
+                            className="p-3"
+                            style={{
+                                background: "#34495e",
+                                borderRadius: "0.5rem",
+                                minHeight: "220px",
+                                color: "#ecf0f1",
+                            }}
+                        >
+                            <div className="d-flex align-items-center gap-2 mb-2" style={{ fontSize: '1rem' }}>
+                                <span style={{ color: '#2ecc71', fontWeight: 700 }}>✅</span>
+                                <span style={{ fontWeight: 600 }}>{title}</span>
+                            </div>
+
+                            <div style={{ color: '#95a5a6', marginBottom: '12px' }}>{subtitle}</div>
+
+                            {imageUrl ? (
+                                <div className="d-flex justify-content-center mb-3">
+                                    <img
+                                        src={imageUrl}
+                                        alt={type === 'idcard' ? 'ID Card' : 'Headshot'}
+                                        style={{
+                                            maxWidth: '100%',
+                                            maxHeight: '220px',
+                                            borderRadius: '0.375rem',
+                                            border: '2px solid #3498db',
+                                        }}
+                                    />
+                                </div>
+                            ) : (
+                                <div
+                                    className="d-flex align-items-center justify-content-center mb-3"
+                                    style={{
+                                        minHeight: '120px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        borderRadius: '0.375rem',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        color: '#95a5a6',
+                                    }}
+                                >
+                                    Image will appear after poll refresh
+                                </div>
+                            )}
+
+                            <div className="text-center" style={{ fontSize: '0.95rem' }}>
+                                Auto-advancing in <span style={{ color: '#3498db', fontWeight: 700 }}>{countdown}</span>s
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const renderStepContent = () => {
         window.scrollTo(0, 0);
-        const getToNextStep = () => {
-            setCurrentStep(currentStep + 1);
-        };
-
         switch (currentStep) {
             case 1:
                 return (
@@ -289,6 +396,9 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                     />
                 );
             case 2:
+                if (pendingType === 'idcard' && autoAdvanceTo) {
+                    return <WaitingPanel type="idcard" />;
+                }
                 return (
                     <UploadIDcardView
                         data={data}
@@ -298,10 +408,17 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         setShowCaptureType={setShowCaptureType}
                         setCurrentStep={setCurrentStep}
                         currentStep={currentStep}
+                        onUploaded={() => {
+                            setValidationMessage('ID uploaded. Waiting validation…');
+                            beginCountdown(3, 'idcard');
+                        }}
                         debug={debug}
                     />
                 );
             case 3:
+                if (pendingType === 'headshot' && autoAdvanceTo) {
+                    return <WaitingPanel type="headshot" />;
+                }
                 return (
                     <UploadHeadshotView
                         data={data}
@@ -311,7 +428,11 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         setShowCaptureType={setShowCaptureType}
                         setCurrentStep={setCurrentStep}
                         currentStep={currentStep}
-                        isImageSet={isImageSet}
+                        isImageSet={() => true}
+                        onUploaded={() => {
+                            setValidationMessage('Headshot uploaded. Waiting validation…');
+                            beginCountdown(4, 'headshot');
+                        }}
                         debug={debug}
                     />
                 );
@@ -321,6 +442,7 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         validations={validations}
                         student={student}
                         setCurrentStep={setCurrentStep}
+                        onComplete={onComplete}
                     />
                 );
             default:

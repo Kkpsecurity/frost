@@ -54,7 +54,10 @@ class MiscQueries
 
         $message_limit = 50;
 
-        if ( $user_id == InstUnit::firstWhere( 'course_date_id', $course_date_id )->created_by )
+      $instUnit = InstUnit::firstWhere( 'course_date_id', $course_date_id );
+      $isInstructorForClass = $instUnit && ((int) $user_id === (int) $instUnit->created_by);
+
+      if ( $isInstructorForClass )
         {
 
             return ChatLog::where( 'course_date_id', $course_date_id )
@@ -68,16 +71,16 @@ class MiscQueries
         else
         {
 
+            // Student privacy rule:
+            // Student only sees the 1:1 thread where student_id matches.
+            // Instructor messages must be stored with the same student_id to appear.
             return ChatLog::where( 'course_date_id', $course_date_id )
                       ->whereNull( 'hidden_at')
-                          ->where( function ( $query ) use ( $user_id ) {
-                                $query->where( 'student_id', $user_id )
-                                      ->orWhereNotNull( 'inst_id' );
-                        })
-                        ->orderBy( 'id', 'desc' )
-                          ->limit( $message_limit )
-                            ->get()
-                        ->reverse();
+                      ->where( 'student_id', $user_id )
+                      ->orderBy( 'id', 'desc' )
+                      ->limit( $message_limit )
+                      ->get()
+                      ->reverse();
 
         }
 

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Instructors\InstructorDashboardController;
+use App\Http\Controllers\Admin\Instructors\InstructorQuestionsController;
 
 /**
  * Instructor classroom management routes
@@ -62,6 +63,21 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
 
         Route::post('/send-message', [InstructorDashboardController::class, 'sendMessage'])
             ->name('chat.send');
+
+        // Ask Instructor queue + session mode
+        Route::get('/questions', [InstructorQuestionsController::class, 'list'])
+            ->name('questions.list');
+        Route::post('/questions/mode/cycle', [InstructorQuestionsController::class, 'cycleMode'])
+            ->name('questions.mode.cycle');
+        Route::post('/questions/{id}/hold', [InstructorQuestionsController::class, 'hold'])
+            ->where('id', '[0-9]+')
+            ->name('questions.hold');
+        Route::post('/questions/{id}/answer', [InstructorQuestionsController::class, 'answer'])
+            ->where('id', '[0-9]+')
+            ->name('questions.answer');
+        Route::post('/questions/{id}/send-to-ai', [InstructorQuestionsController::class, 'sendToAi'])
+            ->where('id', '[0-9]+')
+            ->name('questions.send-to-ai');
     });
 
     // =====================================================
@@ -219,4 +235,13 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         ->name('classroom.data');
     Route::get('/classroom/chat', [InstructorDashboardController::class, 'getChatMessages'])
         ->name('classroom.chat');
+
+    // =====================================================
+    // CHAT API (compat for FrostChatHooks)
+    // =====================================================
+    Route::post('/chat-messages', [InstructorDashboardController::class, 'postChatMessage'])
+        ->name('chat-messages');
+
+    Route::post('/chat-enable', [InstructorDashboardController::class, 'toggleChatEnabled'])
+        ->name('chat-enable');
 });

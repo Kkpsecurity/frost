@@ -11,6 +11,7 @@ interface OnboardingFlowProps {
     studentUnit: any;
     student: any;
     course: any;
+    validations?: any;
     onComplete: () => void;
 }
 
@@ -42,14 +43,50 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     studentUnit,
     student,
     course,
+    validations,
     onComplete,
 }) => {
+    const getTodayKey = () => {
+        try {
+            return new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+        } catch {
+            return 'monday';
+        }
+    };
+
+    const getHeadshotUrlFromValidations = (): string | null => {
+        const headshot = validations?.headshot;
+        if (!headshot) return null;
+
+        if (typeof headshot === 'string') return headshot;
+        if (Array.isArray(headshot)) return headshot.find(Boolean) || null;
+
+        // Backend sends { monday: url|null, ... } (object)
+        if (typeof headshot === 'object') {
+            const todayKey = getTodayKey();
+            const todayUrl = headshot?.[todayKey];
+            if (typeof todayUrl === 'string' && todayUrl.length > 0) return todayUrl;
+            const firstUrl = Object.values(headshot).find((v: any) => typeof v === 'string' && v.length > 0);
+            return (firstUrl as string) || null;
+        }
+
+        return null;
+    };
+
+    const derivedIdCardUploaded = !!(validations?.idcard);
+    const derivedHeadshotUploaded = !!getHeadshotUrlFromValidations();
+
+    const idCardUrl: string | null = typeof validations?.idcard === 'string' ? validations.idcard : null;
+    const todayHeadshotUrl: string | null = getHeadshotUrlFromValidations();
+
     const [state, setState] = useState<OnboardingState>({
         currentStep: 1,
         termsAccepted: studentUnit?.terms_accepted || false,
         rulesAccepted: studentUnit?.rules_accepted || false,
-        idCardUploaded: !!studentUnit?.verified?.id_card_path,
-        headshotUploaded: !!studentUnit?.verified?.headshot_path,
+        // ID card: once per courseAuth (use poll validations.idcard)
+        idCardUploaded: derivedIdCardUploaded,
+        // Headshot: per-day (use poll validations.headshot[today])
+        headshotUploaded: derivedHeadshotUploaded,
         loading: false,
         error: null,
     });
@@ -68,6 +105,26 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             setState(prev => ({ ...prev, currentStep: initialStep }));
         }
     }, []);
+
+    // Keep onboarding status in sync with the classroom poll so refresh + polling reflect completion.
+    React.useEffect(() => {
+        const nextIdCardUploaded = !!(validations?.idcard);
+        const nextHeadshotUploaded = !!getHeadshotUrlFromValidations();
+
+        setState(prev => {
+            const shouldUpdate =
+                prev.idCardUploaded !== nextIdCardUploaded ||
+                prev.headshotUploaded !== nextHeadshotUploaded;
+
+            if (!shouldUpdate) return prev;
+
+            return {
+                ...prev,
+                idCardUploaded: nextIdCardUploaded,
+                headshotUploaded: nextHeadshotUploaded,
+            };
+        });
+    }, [validations]);
 
     const handleNextStep = () => {
         setState((prev) => ({
@@ -178,7 +235,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         setState((prev) => ({ ...prev, loading: true, error: null }));
 
         try {
-            await axios.post("/student/onboarding/complete", {
+            await axios.post("/classroom/student/onboarding/complete", {
                 course_date_id: courseDateId,
             });
 
@@ -302,12 +359,21 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     {/* Step 3: Identity Verification */}
                     {state.currentStep === 3 && (
                         <CaptureIDForValidation
-                            data={course}
-                            student={student}
-                            validations={{
-                                headshot: studentUnit?.verified?.headshot_path || null,
-                                idcard: studentUnit?.verified?.id_card_path || null
+                            data={{
+                                ...(course || {}),
+                                course_date_id: courseDateId,
+                                course_auth_id: courseAuthId,
                             }}
+                            student={{
+                                ...student,
+                                course_auth_id: courseAuthId,
+                                course_date_id: courseDateId,
+                            }}
+                            validations={{
+                                headshot: validations?.headshot ?? null,
+                                idcard: validations?.idcard ?? null,
+                            }}
+                            onComplete={handleNextStep}
                             debug={false}
                         />
                     )}
@@ -335,6 +401,76 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                             >
                                 You're all set to enter the classroom.
                             </p>
+
+                            {/* Confirmation images */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "1rem",
+                                    flexWrap: "wrap",
+                                    marginBottom: "2rem",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        flex: "1 1 320px",
+                                        backgroundColor: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: "0.75rem",
+                                        padding: "1rem",
+                                    }}
+                                >
+                                    <div style={{ color: "#ecf0f1", marginBottom: "0.75rem" }}>
+                                        <i className="fas fa-id-card me-2" style={{ color: "#3498db" }}></i>
+                                        ID Card
+                                    </div>
+                                    {idCardUrl ? (
+                                        <img
+                                            src={idCardUrl}
+                                            alt="ID Card"
+                                            style={{
+                                                width: "100%",
+                                                maxHeight: "260px",
+                                                objectFit: "contain",
+                                                backgroundColor: "rgba(0,0,0,0.25)",
+                                                borderRadius: "0.5rem",
+                                            }}
+                                        />
+                                    ) : (
+                                        <div style={{ color: "#95a5a6" }}>No ID card image found.</div>
+                                    )}
+                                </div>
+
+                                <div
+                                    style={{
+                                        flex: "1 1 320px",
+                                        backgroundColor: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: "0.75rem",
+                                        padding: "1rem",
+                                    }}
+                                >
+                                    <div style={{ color: "#ecf0f1", marginBottom: "0.75rem" }}>
+                                        <i className="fas fa-user-circle me-2" style={{ color: "#3498db" }}></i>
+                                        Headshot (Today)
+                                    </div>
+                                    {todayHeadshotUrl ? (
+                                        <img
+                                            src={todayHeadshotUrl}
+                                            alt="Headshot"
+                                            style={{
+                                                width: "100%",
+                                                maxHeight: "260px",
+                                                objectFit: "contain",
+                                                backgroundColor: "rgba(0,0,0,0.25)",
+                                                borderRadius: "0.5rem",
+                                            }}
+                                        />
+                                    ) : (
+                                        <div style={{ color: "#95a5a6" }}>No headshot image found for today.</div>
+                                    )}
+                                </div>
+                            </div>
 
                             <div style={{ marginBottom: "2rem" }}>
                                 <div

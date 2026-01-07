@@ -95,7 +95,7 @@ const StyledChatInput = styled(TextInput)`
         font-size: 0.9rem;
         padding: 10px 12px;
         border-radius: 6px;
-        
+
         &:focus {
             background-color: var(--frost-secondary-color, #394867) !important;
             border-color: var(--frost-highlight-color, #fede59) !important;

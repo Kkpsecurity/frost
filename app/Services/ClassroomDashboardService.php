@@ -219,7 +219,7 @@ class ClassroomDashboardService
     /**
      * Find or create student session (StudentUnit)
      * Checks for existing session within 12-hour window
-     * 
+     *
      * @param int $courseAuthId
      * @param int $courseDateId
      * @return \App\Models\StudentUnit
@@ -227,14 +227,19 @@ class ClassroomDashboardService
      */
     public function findOrCreateSession(int $courseAuthId, int $courseDateId): \App\Models\StudentUnit
     {
-        $userId = $this->user?->id ?? auth()->id();
+        $courseDate = \App\Models\CourseDate::find($courseDateId);
+        if (!$courseDate) {
+            throw new Exception('CourseDate not found');
+        }
 
-        if (!$userId) {
-            throw new Exception('No authenticated user found');
+        // Attendance sessions must be tied to an active InstUnit (instructor started class)
+        $instUnitId = $courseDate->InstUnit?->completed_at ? null : $courseDate->InstUnit?->id;
+        if (!$instUnitId) {
+            throw new Exception('Class is not active (no InstUnit).');
         }
 
         // Check for existing session within 12-hour window
-        $existingSession = \App\Models\StudentUnit::where('user_id', $userId)
+        $existingSession = \App\Models\StudentUnit::where('course_auth_id', $courseAuthId)
             ->where('course_date_id', $courseDateId)
             ->whereNull('completed_at')
             ->where('created_at', '>', now()->subHours(12))
@@ -244,11 +249,12 @@ class ClassroomDashboardService
             // Resume existing session
             $existingSession->update([
                 'last_heartbeat_at' => now(),
+                'inst_unit_id' => $instUnitId,
             ]);
 
             Log::info('ClassroomDashboardService: Resumed existing session', [
                 'student_unit_id' => $existingSession->id,
-                'user_id' => $userId,
+                'course_auth_id' => $courseAuthId,
                 'session_age_minutes' => $existingSession->created_at->diffInMinutes(now()),
             ]);
 
@@ -259,8 +265,10 @@ class ClassroomDashboardService
         $sessionExpiresAt = now()->addHours(12);
 
         $studentUnit = \App\Models\StudentUnit::create([
-            'user_id' => $userId,
+            'course_auth_id' => $courseAuthId,
+            'course_unit_id' => $courseDate->course_unit_id,
             'course_date_id' => $courseDateId,
+            'inst_unit_id' => $instUnitId,
             'last_heartbeat_at' => now(),
             'session_expires_at' => $sessionExpiresAt,
             'created_at' => now(),
@@ -268,8 +276,9 @@ class ClassroomDashboardService
 
         Log::info('ClassroomDashboardService: Created new session', [
             'student_unit_id' => $studentUnit->id,
-            'user_id' => $userId,
+            'course_auth_id' => $courseAuthId,
             'course_date_id' => $courseDateId,
+            'inst_unit_id' => $instUnitId,
             'expires_at' => $sessionExpiresAt,
         ]);
 
@@ -279,7 +288,7 @@ class ClassroomDashboardService
     /**
      * Update heartbeat for active session
      * Called every 30 seconds from frontend
-     * 
+     *
      * @param int $studentUnitId
      * @return void
      */
@@ -314,7 +323,7 @@ class ClassroomDashboardService
 
     /**
      * Check if session has expired (12+ hours old)
-     * 
+     *
      * @param int $studentUnitId
      * @return bool
      */
@@ -350,7 +359,7 @@ class ClassroomDashboardService
 
     /**
      * Fail the current active lesson due to disconnect/timeout
-     * 
+     *
      * @param int $studentUnitId
      * @param string $reason (connection_lost, timeout, left_intentionally)
      * @return void
@@ -395,7 +404,7 @@ class ClassroomDashboardService
 
     /**
      * Record intentional student leave
-     * 
+     *
      * @param int $studentUnitId
      * @param string|null $reason
      * @return void

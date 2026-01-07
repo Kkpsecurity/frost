@@ -102,13 +102,13 @@ export const useFileHandler = (): UseFileHandlerReturn => {
             // Add to files array
             setFiles(prev => [...prev, fileData]);
 
-            console.log('✅ File uploaded successfully:', fileData);
+            console.log('✅ File processed successfully:', fileData);
             return fileData;
 
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to upload file';
+            const errorMessage = err instanceof Error ? err.message : 'Failed to process file';
             setError(errorMessage);
-            console.error('❌ File upload error:', errorMessage);
+            console.error('❌ File processing error:', errorMessage);
             return null;
         } finally {
             setUploading(false);

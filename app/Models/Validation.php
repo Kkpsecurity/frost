@@ -136,18 +136,18 @@ class Validation extends Model
     //
 
 
-    public function RelPath(): string
+    public function RelPathBase(): string
     {
         $subfolder = $this->course_auth_id ? '/idcards/' : '/headshots/';
 
-        // For ID cards, use course_auth_id_fullname.jpg pattern
+        // For ID cards, use course_auth_id_fullname pattern
         if ($this->course_auth_id) {
             $courseAuth = $this->CourseAuth;
             if ($courseAuth && $courseAuth->User) {
                 $student = $courseAuth->User;
-                $filename = $this->course_auth_id . '_' .
-                    strtolower(str_replace(' ', '_', $student->name)) . '.jpg';
-                return 'media/' . self::PATH_PRE . $subfolder . $filename;
+                $filenameBase = $this->course_auth_id . '_' .
+                    strtolower(str_replace(' ', '_', $student->name));
+                return 'media/' . self::PATH_PRE . $subfolder . $filenameBase;
             }
         }
 
@@ -156,26 +156,72 @@ class Validation extends Model
             $studentUnit = $this->StudentUnit;
             if ($studentUnit && $studentUnit->Student) {
                 $student = $studentUnit->Student;
-                $filename = $this->student_unit_id . '_' .
-                    strtolower(str_replace(' ', '_', $student->name)) . '.jpg';
-                return 'media/' . self::PATH_PRE . $subfolder . $filename;
+                $filenameBase = $this->student_unit_id . '_' .
+                    strtolower(str_replace(' ', '_', $student->name));
+                return 'media/' . self::PATH_PRE . $subfolder . $filenameBase;
             }
         }
 
         // Fallback to UUID pattern
-        return self::PATH_PRE . $subfolder . $this->uuid . self::FILE_EXT;
+        return self::PATH_PRE . $subfolder . $this->uuid;
+    }
+
+
+    public function RelPathForExtension(string $extension): string
+    {
+        $ext = strtolower(trim($extension));
+        if ($ext === '') {
+            return $this->RelPathBase() . self::FILE_EXT;
+        }
+
+        if ($ext[0] !== '.') {
+            $ext = '.' . $ext;
+        }
+
+        return $this->RelPathBase() . $ext;
+    }
+
+
+    public function RelPathResolved(): string
+    {
+        $base = $this->RelPathBase();
+
+        $candidates = [
+            $base . self::FILE_EXT,
+            $base . '.jpg',
+            $base . '.jpeg',
+            $base . '.png',
+            $base . '.webp',
+        ];
+
+        foreach ($candidates as $rel) {
+            if (file_exists(storage_path('app/public/' . $rel))) {
+                return $rel;
+            }
+        }
+
+        return $base . self::FILE_EXT;
+    }
+
+
+    public function RelPath(): string
+    {
+        // Backward-compatible default path (may not exist if the file was stored with a different extension).
+        return $this->RelPathBase() . self::FILE_EXT;
     }
     public function AbsPath(): string
     {
-        return storage_path('app/public/' . $this->RelPath());
+        return storage_path('app/public/' . $this->RelPathResolved());
     }
 
 
     public function URL(bool $return_blank_img = false): ?string
     {
 
-        return file_exists($this->AbsPath())
-            ? url('storage/' . $this->RelPath())
+        $resolved = $this->RelPathResolved();
+
+        return file_exists(storage_path('app/public/' . $resolved))
+            ? url('storage/' . $resolved)
             : ($return_blank_img ? asset('assets/img/no-image-500x300.png') : null);
     }
 }

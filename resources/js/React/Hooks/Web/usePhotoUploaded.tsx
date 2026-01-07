@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ClassDataShape, StudentType } from "../../Config/types";
 import PageLoader from "@/React/Components/Widgets/PageLoader";
 import { EImageType, compress, compressAccurately } from "image-conversion";
+import apiClient from "../../Config/axios";
 
 const usePhotoUploaded = ({
     data,
@@ -137,22 +138,23 @@ const usePhotoUploaded = ({
     const [isError, setIsError] = useState(false);
 
     /**
-     * Simple file upload function
+     * Upload file to server using apiClient (with interceptors)
      */
     const uploadFile = async (formData: FormData) => {
         setIsLoading(true);
         setIsError(false);
         try {
-            const response = await fetch('/api/upload-photo', {
-                method: 'POST',
-                body: formData,
-            });
+            const response = await apiClient.post(
+                "/classroom/upload-student-photo",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
 
-            if (!response.ok) {
-                throw new Error('Upload failed');
-            }
-
-            return await response.json();
+            return response.data;
         } catch (error) {
             setIsError(true);
             throw error;
@@ -223,26 +225,9 @@ const usePhotoUploaded = ({
             return;
         }
 
-        // Determine the student_unit_id to use (from data or fallback)
-        let studentUnitId;
-        if (data && data.student_unit_id) {
-            studentUnitId = data.student_unit_id;
-            console.log('✅ Using student_unit_id from data:', studentUnitId);
-        } else if (student?.student_units && student.student_units.length > 0) {
-            studentUnitId = student.student_units[0].id;
-            console.log('🔧 Using fallback student_unit_id from student.student_units:', studentUnitId);
-        } else {
-            console.error("❌ student_unit_id not available in data or student.student_units");
-            console.error("❌ data:", data);
-            console.error("❌ student.student_units:", student?.student_units);
-            alert('Error: Student enrollment ID is missing. Please ensure you are properly enrolled and try again.');
-            setIsUploading(false);
-            return;
-        }
-
-        if (!student.course_auth_id) {
-            console.error("❌ course_auth_id is missing from student object", student);
-            alert('Error: Course authorization ID is missing. Please refresh the page and try again.');
+        if (!student.id) {
+            console.error("❌ student.id is missing from student object", student);
+            alert('Error: Student ID is missing. Please refresh the page and try again.');
             setIsUploading(false);
             return;
         }
@@ -257,22 +242,25 @@ const usePhotoUploaded = ({
                 // Upload the converted file to the server
                 const formData = new FormData();
                 formData.append("photoType", photoType);
-                formData.append(
-                    "student_unit_id",
-                    studentUnitId.toString()
-                );
-                formData.append(
-                    "course_auth_id",
-                    student.course_auth_id.toString()
-                );
+                if (student.course_auth_id) {
+                    formData.append(
+                        "course_auth_id",
+                        student.course_auth_id.toString()
+                    );
+                }
+                if (data?.course_date_id) {
+                    formData.append(
+                        "course_date_id",
+                        data.course_date_id.toString()
+                    );
+                }
+                formData.append("student_id", student.id.toString());
                 formData.append("file", convertedFile);
 
-                uploadFile(formData);
+                await uploadFile(formData);
 
-                setTimeout(() => {
-                    setIsUploading(false);
-                    setSelectedFile(null);
-                }, 15000);
+                setIsUploading(false);
+                setSelectedFile(null);
             }
         } catch (error) {
             console.error("❌ Upload error:", error);
@@ -289,6 +277,8 @@ const usePhotoUploaded = ({
             // Show user-friendly error message
             const errorMessage = error?.response?.data?.message || error?.message || 'Unknown upload error';
             alert(`Upload failed: ${errorMessage}. Please try again.`);
+
+            throw error;
         }
     };
 

@@ -3,9 +3,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Instructors;
 
 use App\Http\Controllers\Controller;
+use App\Classes\ChatLogCache;
+use App\Classes\MiscQueries;
 use App\Traits\PageMetaDataTrait;
 use App\Traits\StoragePathTrait;
 use App\Models\CourseDate;
+use App\Models\ChatLog;
+use App\Models\InstUnit;
+use App\Models\User;
 use App\Services\Frost\Instructors\InstructorDashboardService;
 use App\Services\Frost\Instructors\CourseDatesService;
 use App\Services\Frost\Instructors\ClassroomService;
@@ -14,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Exception;
 
 class InstructorDashboardController extends Controller
@@ -218,7 +224,7 @@ class InstructorDashboardController extends Controller
     /**
      * Get chat messages for instructor dashboard
      */
-    public function getChatMessages()
+    public function getChatMessages(Request $request)
     {
         $admin = auth('admin')->user();
 
@@ -226,21 +232,55 @@ class InstructorDashboardController extends Controller
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        // For now, return empty array - implement when chat system is ready
-        return response()->json([
-            'messages' => [],
-            'total' => 0,
-            'metadata' => [
-                'generated_at' => now()->format('c'),
-                'view_type' => 'chat_messages'
-            ]
-        ]);
+        $courseDateId = $request->query('course_date_id') ?? $request->input('course_date_id');
+        $userId = $request->query('user_id') ?? $request->input('user_id');
+
+        $courseDateId = is_numeric($courseDateId) ? (int) $courseDateId : null;
+        $userId = is_numeric($userId) ? (int) $userId : null;
+
+        if (!$courseDateId || !$userId) {
+            return response()->json([], 200);
+        }
+
+        if (!ChatLogCache::IsEnabled($courseDateId)) {
+            return response()->json([], 200);
+        }
+
+        $chatMessages = MiscQueries::RecentChatMessages($courseDateId, $userId);
+        $chats = [];
+
+        foreach ($chatMessages as $chatMessage) {
+            $authorId = (int) ($chatMessage->student_id ?? $chatMessage->inst_id ?? 0);
+            $author = $authorId > 0 ? User::find($authorId) : null;
+
+            $createdAt = null;
+            try {
+                $createdAt = $chatMessage->CreatedAt('HH:mm:ss');
+            } catch (\Throwable $e) {
+                $createdAt = optional($chatMessage->created_at)->format('H:i:s');
+            }
+
+            $chats[] = [
+                'id' => (int) $chatMessage->id,
+                'user' => [
+                    'user_id' => $authorId,
+                    'user_name' => $author ? trim(($author->fname ?? '') . ' ' . ($author->lname ?? '')) : 'Unknown',
+                    'user_avatar' => $author ? $author->getAvatar('thumb') : null,
+                    'user_type' => $chatMessage->student_id ? 'student' : 'instructor',
+                ],
+                'body' => (string) ($chatMessage->body ?? ''),
+                'created_at' => $createdAt,
+            ];
+        }
+
+        // IMPORTANT: FrostChatHooks expects an array (not a wrapper object).
+        return response()->json($chats);
     }
 
     /**
      * Send a message (placeholder implementation)
      */
-    public function sendMessage()
+    public function sendMessage(Request $request)
     {
         $admin = auth('admin')->user();
 
@@ -248,18 +288,95 @@ class InstructorDashboardController extends Controller
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        // Placeholder implementation
+        return $this->postChatMessage($request);
+    }
+
+    public function postChatMessage(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'course_date_id' => 'required|integer',
+            'user_id' => 'required|integer',
+            'message' => 'required|string|max:255',
+            'user_type' => 'required|string|max:25',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+            ], 422);
+        }
+
+        $courseDateId = (int) $request->input('course_date_id');
+        $userId = (int) $request->input('user_id');
+        $userType = (string) $request->input('user_type');
+        $message = (string) $request->input('message');
+
+        if (!ChatLogCache::IsEnabled($courseDateId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chat System Disabled',
+            ], 403);
+        }
+
+        $chat = new ChatLog();
+        $chat->course_date_id = $courseDateId;
+
+        if ($userType === 'instructor') {
+            $chat->inst_id = $userId;
+        } else {
+            $chat->student_id = $userId;
+        }
+
+        $chat->body = $message;
+        $chat->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function toggleChatEnabled(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'course_date_id' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+            ], 422);
+        }
+
+        $courseDateId = (int) $request->input('course_date_id');
+
+        if (!ChatLogCache::IsEnabled($courseDateId)) {
+            ChatLogCache::Enable($courseDateId);
+        } else {
+            ChatLogCache::Disable($courseDateId);
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Message sending functionality not yet implemented',
-            'timestamp' => now()->format('c')
+            'enabled' => ChatLogCache::IsEnabled($courseDateId),
         ]);
     }
 
     /**
      * Get online students for instructor dashboard
      */
-    public function getOnlineStudents()
+    public function getOnlineStudents(Request $request)
     {
         $admin = auth('admin')->user();
 
@@ -267,7 +384,10 @@ class InstructorDashboardController extends Controller
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        $onlineStudents = $this->studentService->getOnlineStudentsForInstructor();
+        $courseDateId = $request->query('courseDateId');
+        $courseDateId = is_numeric($courseDateId) ? (int) $courseDateId : null;
+
+        $onlineStudents = $this->studentService->getOnlineStudentsForInstructor($courseDateId);
 
         return response()->json($onlineStudents);
     }
@@ -1540,13 +1660,32 @@ class InstructorDashboardController extends Controller
             // Get current instructor lesson (in progress)
             $instUnitLesson = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
                 ->whereNull('completed_at')
-                ->select('lesson_id', 'created_at as started_at')
+                ->select('id as inst_lesson_id', 'lesson_id', 'created_at as started_at', 'is_paused')
                 ->first();
+
+            $breaksAllowed = 3;
+            $breaksTaken = 0;
+            $currentBreakStartedAt = null;
+
+            if ($instUnitLesson) {
+                $instLesson = \App\Models\InstLesson::find($instUnitLesson->inst_lesson_id);
+                if ($instLesson) {
+                    $breaksTaken = $instLesson->BreaksTaken();
+                    $currentBreak = $instLesson->CurrentBreak();
+                    $currentBreakStartedAt = $currentBreak?->started_at?->toIso8601String();
+                }
+            }
 
             return response()->json([
                 'success' => true,
                 'completedInstLessons' => $completedInstLessons,
                 'instUnitLesson' => $instUnitLesson,
+                'breaks' => [
+                    'breaks_allowed' => $breaksAllowed,
+                    'breaks_taken' => $breaksTaken,
+                    'breaks_remaining' => max(0, $breaksAllowed - $breaksTaken),
+                    'current_break_started_at' => $currentBreakStartedAt,
+                ],
             ]);
 
         } catch (\Exception $e) {
@@ -1758,7 +1897,7 @@ class InstructorDashboardController extends Controller
         $request->validate([
             'course_date_id' => 'required|integer|exists:course_dates,id',
             'lesson_id' => 'required|integer|exists:lessons,id',
-            'breaks_taken' => 'required|integer|min:0', // Frontend tracks this
+            'breaks_taken' => 'nullable|integer|min:0', // legacy (frontend-tracked) - ignored server-side
         ]);
 
         try {
@@ -1792,37 +1931,74 @@ class InstructorDashboardController extends Controller
                 ], 400);
             }
 
-            // Get lesson duration to determine break limits
-            $lesson = \App\Models\Lesson::findOrFail($request->lesson_id);
-            $lessonDurationMinutes = $lesson->credit_minutes ?? 0;
+            $breaksAllowed = 3;
 
-            // Calculate allowed breaks based on lesson duration
-            $breakLimits = $this->calculateBreakLimits($lessonDurationMinutes);
-            $breaksAllowed = $breakLimits['breaks_allowed'];
-            $breaksTaken = $request->breaks_taken;
+            $result = \DB::transaction(function () use ($instLesson, $breaksAllowed) {
+                $instLesson = \App\Models\InstLesson::where('id', $instLesson->id)
+                    ->lockForUpdate()
+                    ->first();
 
-            // Check if instructor exceeded break limit
-            if ($breaksTaken >= $breaksAllowed) {
+                if (!$instLesson || $instLesson->completed_at) {
+                    return [
+                        'ok' => false,
+                        'status' => 400,
+                        'message' => 'No active lesson found to pause',
+                    ];
+                }
+
+                if ($instLesson->is_paused) {
+                    return [
+                        'ok' => false,
+                        'status' => 400,
+                        'message' => 'Lesson is already paused',
+                    ];
+                }
+
+                $breaksTaken = $instLesson->Breaks()->count();
+                if ($breaksTaken >= $breaksAllowed) {
+                    return [
+                        'ok' => false,
+                        'status' => 400,
+                        'message' => "Maximum breaks reached. This lesson allows {$breaksAllowed} breaks.",
+                        'breaks_allowed' => $breaksAllowed,
+                        'breaks_taken' => $breaksTaken,
+                    ];
+                }
+
+                $nextBreakNumber = $breaksTaken + 1;
+                \App\Models\InstLessonBreak::create([
+                    'inst_lesson_id' => $instLesson->id,
+                    'break_number' => $nextBreakNumber,
+                    'started_at' => now(),
+                    'started_by' => \Auth::id(),
+                ]);
+
+                $instLesson->update(['is_paused' => true]);
+
+                return [
+                    'ok' => true,
+                    'inst_lesson_id' => $instLesson->id,
+                    'break_number' => $nextBreakNumber,
+                    'breaks_taken' => $nextBreakNumber,
+                    'breaks_allowed' => $breaksAllowed,
+                ];
+            });
+
+            if (!$result['ok']) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Maximum breaks reached. This lesson allows {$breaksAllowed} breaks.",
-                    'breaks_allowed' => $breaksAllowed,
-                    'breaks_taken' => $breaksTaken,
-                ], 400);
+                    'message' => $result['message'],
+                    'breaks_allowed' => $result['breaks_allowed'] ?? $breaksAllowed,
+                    'breaks_taken' => $result['breaks_taken'] ?? null,
+                ], $result['status']);
             }
-
-            // Set lesson as paused
-            $instLesson->update(['is_paused' => true]);
-
-            $nextBreakNumber = $breaksTaken + 1;
-            $nextBreakDuration = $breakLimits['break_durations'][$nextBreakNumber] ?? 15;
 
             Log::info('Instructor paused lesson', [
                 'instructor_id' => Auth::id(),
                 'course_date_id' => $request->course_date_id,
                 'lesson_id' => $request->lesson_id,
-                'inst_lesson_id' => $instLesson->id,
-                'break_number' => $nextBreakNumber,
+                'inst_lesson_id' => $result['inst_lesson_id'],
+                'break_number' => $result['break_number'],
                 'breaks_allowed' => $breaksAllowed,
             ]);
 
@@ -1830,14 +2006,14 @@ class InstructorDashboardController extends Controller
                 'success' => true,
                 'message' => 'Lesson paused for break',
                 'data' => [
-                    'inst_lesson_id' => $instLesson->id,
+                    'inst_lesson_id' => $result['inst_lesson_id'],
                     'is_paused' => true,
-                    'break_number' => $nextBreakNumber,
-                    'break_duration_minutes' => $nextBreakDuration,
-                    'breaks_taken' => $nextBreakNumber,
+                    'break_number' => $result['break_number'],
+                    'breaks_taken' => $result['breaks_taken'],
                     'breaks_allowed' => $breaksAllowed,
-                    'breaks_remaining' => $breaksAllowed - $nextBreakNumber,
-                    'is_last_break' => $nextBreakNumber === $breaksAllowed,
+                    'breaks_remaining' => max(0, $breaksAllowed - $result['breaks_taken']),
+                    'is_last_break' => $result['breaks_taken'] === $breaksAllowed,
+                    'paused_at' => now()->toISOString(),
                 ]
             ]);
 
@@ -1901,8 +2077,58 @@ class InstructorDashboardController extends Controller
                 ], 400);
             }
 
-            // Resume lesson
-            $instLesson->update(['is_paused' => false]);
+            $breaksAllowed = 3;
+
+            $result = \DB::transaction(function () use ($instLesson, $breaksAllowed) {
+                $instLesson = \App\Models\InstLesson::where('id', $instLesson->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$instLesson || $instLesson->completed_at) {
+                    return [
+                        'ok' => false,
+                        'status' => 400,
+                        'message' => 'No paused lesson found to resume',
+                    ];
+                }
+
+                $currentBreak = $instLesson->CurrentBreak();
+                if (!$currentBreak) {
+                    return [
+                        'ok' => false,
+                        'status' => 400,
+                        'message' => 'No active break found to end',
+                    ];
+                }
+
+                $endedAt = now();
+                $durationSeconds = max(0, (int) $currentBreak->started_at->diffInSeconds($endedAt));
+
+                $currentBreak->update([
+                    'ended_at' => $endedAt,
+                    'ended_by' => \Auth::id(),
+                    'duration_seconds' => $durationSeconds,
+                ]);
+
+                $instLesson->update(['is_paused' => false]);
+
+                $breaksTaken = $instLesson->BreaksTaken();
+                return [
+                    'ok' => true,
+                    'inst_lesson_id' => $instLesson->id,
+                    'breaks_allowed' => $breaksAllowed,
+                    'breaks_taken' => $breaksTaken,
+                    'break_duration_seconds' => $durationSeconds,
+                    'break_duration_minutes' => (int) ceil($durationSeconds / 60),
+                ];
+            });
+
+            if (!$result['ok']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'],
+                ], $result['status']);
+            }
 
             Log::info('Instructor resumed lesson', [
                 'instructor_id' => Auth::id(),
@@ -1915,9 +2141,14 @@ class InstructorDashboardController extends Controller
                 'success' => true,
                 'message' => 'Lesson resumed',
                 'data' => [
-                    'inst_lesson_id' => $instLesson->id,
+                    'inst_lesson_id' => $result['inst_lesson_id'],
                     'is_paused' => false,
                     'resumed_at' => now()->toISOString(),
+                    'breaks_allowed' => $result['breaks_allowed'],
+                    'breaks_taken' => $result['breaks_taken'],
+                    'breaks_remaining' => max(0, $result['breaks_allowed'] - $result['breaks_taken']),
+                    'break_duration_seconds' => $result['break_duration_seconds'],
+                    'break_duration_minutes' => $result['break_duration_minutes'],
                 ]
             ]);
 
@@ -1936,47 +2167,8 @@ class InstructorDashboardController extends Controller
         }
     }
 
-    /**
-     * Calculate break limits based on lesson duration
-     * Uses config/classroom_breaks.php rules
-     *
-     * @param int $durationMinutes
-     * @return array
-     */
-    private function calculateBreakLimits(int $durationMinutes): array
-    {
-        $thresholds = config('classroom_breaks.duration_thresholds');
-
-        // Very long lessons (6+ hours)
-        if ($durationMinutes >= ($thresholds['very_long']['min_duration'] ?? 360)) {
-            return [
-                'breaks_allowed' => $thresholds['very_long']['breaks_allowed'],
-                'break_durations' => $thresholds['very_long']['break_durations'],
-            ];
-        }
-
-        // Long lessons (4-6 hours)
-        if ($durationMinutes >= ($thresholds['long']['min_duration'] ?? 240)) {
-            return [
-                'breaks_allowed' => $thresholds['long']['breaks_allowed'],
-                'break_durations' => $thresholds['long']['break_durations'],
-            ];
-        }
-
-        // Medium lessons (2-4 hours)
-        if ($durationMinutes >= ($thresholds['medium']['min_duration'] ?? 120)) {
-            return [
-                'breaks_allowed' => $thresholds['medium']['breaks_allowed'],
-                'break_durations' => $thresholds['medium']['break_durations'],
-            ];
-        }
-
-        // Short lessons (< 2 hours)
-        return [
-            'breaks_allowed' => $thresholds['short']['breaks_allowed'],
-            'break_durations' => $thresholds['short']['break_durations'],
-        ];
-    }
+    // NOTE: live-classroom breaks are server-enforced and tracked in inst_lesson_breaks.
+    // Break policy is currently fixed at 3 breaks per lesson.
 
     /**
      * Get screen sharing status for classroom preparation

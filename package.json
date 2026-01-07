@@ -38,7 +38,6 @@
         "filepond-plugin-image-preview": "^4.6.12",
         "image-conversion": "^2.1.1",
         "lucide-react": "^0.542.0",
-        "opencv.js": "^1.2.1",
         "react-bootstrap": "^2.10.10",
         "react-error-boundary": "^6.0.0",
         "react-filepond": "^7.1.3",

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useClassroom } from "../../context/ClassroomContext";
+import { useStudent } from "../../context/StudentContext";
 import MainOffline from "./MainOffline";
 import MainOnline from "./MainOnline";
 import OnboardingFlow from "./OnboardingFlow";
@@ -26,6 +27,7 @@ interface MainClassroomProps {
  */
 const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, onBackToDashboard }) => {
     const classroomContext = useClassroom();
+    const studentContext = useStudent();
     const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
 
     // Loading classroom data
@@ -44,6 +46,11 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
 
     const { courseDate, instUnit, studentUnit, course } = classroomContext;
 
+    // Student progress (validations) comes from the student poll, not the classroom poll.
+    const validations = studentContext?.validationsByCourseAuth
+        ? studentContext.validationsByCourseAuth[courseAuthId]
+        : null;
+
     // ONBOARDING GATE: Check if student needs to complete onboarding
     // Only check when courseDate + instUnit exist (live classroom mode)
     if (courseDate && instUnit && studentUnit) {
@@ -59,6 +66,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     studentUnit={studentUnit}
                     student={student}
                     course={course}
+                    validations={validations || null}
                     onComplete={() => {
                         // Force classroom context to refresh by incrementing key
                         // This will re-poll and get updated studentUnit with onboarding_completed = true
@@ -73,7 +81,14 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
 
     // ONLINE: Live class in session (instructor has started)
     if (courseDate && instUnit) {
-        return <MainOnline classroom={classroomContext} student={student} onBackToDashboard={onBackToDashboard} />;
+        return (
+            <MainOnline
+                classroom={classroomContext}
+                student={student}
+                validations={validations || null}
+                onBackToDashboard={onBackToDashboard}
+            />
+        );
     }
 
     // WAITING: Class scheduled but instructor hasn't started yet
