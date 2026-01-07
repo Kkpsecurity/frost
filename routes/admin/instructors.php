@@ -244,4 +244,63 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
 
     Route::post('/chat-enable', [InstructorDashboardController::class, 'toggleChatEnabled'])
         ->name('chat-enable');
+
+    // =====================================================
+    // VALIDATION MANAGEMENT - Student Identity Verification
+    // =====================================================
+
+    // Get student validation images for instructor review
+    Route::get('/student-validations/{courseAuthId}', [InstructorDashboardController::class, 'getStudentValidations'])
+        ->name('student-validations');
+
+    // Approve student validation (ID card or headshot)
+    Route::post('/approve-validation', [InstructorDashboardController::class, 'approveValidation'])
+        ->name('approve-validation');
+
+    // Reject student validation (ID card or headshot)
+    Route::post('/reject-validation', [InstructorDashboardController::class, 'rejectValidation'])
+        ->name('reject-validation');
+
+    // =====================================================
+    // IDENTITY VERIFICATION PANEL - New React Component Routes
+    // =====================================================
+
+    // Get student identity data for verification panel (ID card + headshot)
+    Route::get('/student-identity/{studentId}/{courseDateId}', [InstructorDashboardController::class, 'getStudentIdentity'])
+        ->name('student-identity');
+
+    // Validate student identity (approve/reject) - OLD METHOD
+    Route::post('/validate-identity/{verificationId}', [InstructorDashboardController::class, 'validateStudentIdentity'])
+        ->name('validate-identity');
+
+    // Request new verification photo from student - OLD METHOD
+    Route::post('/request-new-photo/{studentId}/{courseDateId}', [InstructorDashboardController::class, 'requestNewVerificationPhoto'])
+        ->name('request-new-photo');
+
+    // =====================================================
+    // UNIFIED IDENTITY VERIFICATION ENDPOINTS
+    // Used by instructors, assistants, and support team
+    // =====================================================
+
+    // INDIVIDUAL VALIDATION APPROVAL (Recommended - Separate ID and Headshot)
+    // Approve single validation (ID card OR headshot)
+    Route::post('/approve-validation/{validationId}', [InstructorDashboardController::class, 'approveSingleValidation'])
+        ->name('approve-validation');
+
+    // Reject single validation (ID card OR headshot with reason)
+    Route::post('/reject-validation/{validationId}', [InstructorDashboardController::class, 'rejectSingleValidation'])
+        ->name('reject-validation');
+
+    // BULK APPROVAL (Optional - For convenience when approving both together)
+    // Approve student identity (both ID card and headshot)
+    Route::post('/approve-identity/{studentId}/{courseDateId}', [InstructorDashboardController::class, 'approveIdentity'])
+        ->name('approve-identity');
+
+    // Reject student identity (both ID card and headshot with reason)
+    Route::post('/reject-identity/{studentId}/{courseDateId}', [InstructorDashboardController::class, 'rejectIdentity'])
+        ->name('reject-identity');
+
+    // Request new verification photo (specify which photo: id_card, headshot, or both)
+    Route::post('/request-new-verification-photo/{studentId}/{courseDateId}', [InstructorDashboardController::class, 'requestNewVerificationPhoto'])
+        ->name('request-new-verification-photo');
 });

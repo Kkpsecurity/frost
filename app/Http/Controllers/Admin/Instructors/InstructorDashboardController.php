@@ -15,6 +15,7 @@ use App\Services\Frost\Instructors\InstructorDashboardService;
 use App\Services\Frost\Instructors\CourseDatesService;
 use App\Services\Frost\Instructors\ClassroomService;
 use App\Services\Frost\Students\BackendStudentService;
+use App\Services\IdentityVerificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -35,17 +36,20 @@ class InstructorDashboardController extends Controller
     protected CourseDatesService $courseDatesService;
     protected ClassroomService $classroomService;
     protected BackendStudentService $studentService;
+    protected IdentityVerificationService $identityService;
 
     public function __construct(
         InstructorDashboardService $dashboardService,
         CourseDatesService $courseDatesService,
         ClassroomService $classroomService,
-        BackendStudentService $studentService
+        BackendStudentService $studentService,
+        IdentityVerificationService $identityService
     ) {
         $this->dashboardService = $dashboardService;
         $this->courseDatesService = $courseDatesService;
         $this->classroomService = $classroomService;
         $this->studentService = $studentService;
+        $this->identityService = $identityService;
 
         // Make sure that the validation directories are created
         $idcardsPath = config('storage.paths.idcards', 'idcards');
@@ -2584,5 +2588,671 @@ class InstructorDashboardController extends Controller
                 'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
+    }
+
+    /**
+     * Get student validation images for instructor review
+     * GET /admin/instructors/student-validations/{courseAuthId}
+     */
+    public function getStudentValidations(int $courseAuthId)
+    {
+        try {
+            $instructor = auth('admin')->user();
+
+            if (!$instructor) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            // Get course auth
+            $courseAuth = \App\Models\CourseAuth::find($courseAuthId);
+
+            if (!$courseAuth) {
+                return response()->json(['message' => 'Course enrollment not found'], 404);
+            }
+
+            // Get ID card validation (once per course_auth)
+            $idCardValidation = \App\Models\Validation::where('course_auth_id', $courseAuthId)->first();
+            $idCardUrl = $idCardValidation ? $idCardValidation->URL(false) : null;
+            $idCardStatus = $idCardValidation
+                ? ($idCardValidation->status > 0 ? 'approved' : ($idCardValidation->status < 0 ? 'rejected' : 'uploaded'))
+                : 'missing';
+
+            // Get latest student unit for headshot (daily)
+            $studentUnit = \App\Models\StudentUnit::where('course_auth_id', $courseAuthId)
+                ->orderByDesc('course_date_id')
+                ->first();
+
+            $headshotUrl = null;
+            $headshotStatus = 'missing';
+
+            if ($studentUnit) {
+                $headshotValidation = \App\Models\Validation::where('student_unit_id', $studentUnit->id)->first();
+                $headshotUrl = $headshotValidation ? $headshotValidation->URL(false) : null;
+                $headshotStatus = $headshotValidation
+                    ? ($headshotValidation->status > 0 ? 'approved' : ($headshotValidation->status < 0 ? 'rejected' : 'uploaded'))
+                    : 'missing';
+            }
+
+            // Return validation data
+            return response()->json([
+                'success' => true,
+                'validations' => [
+                    'idcard' => $idCardUrl,
+                    'idcard_status' => $idCardStatus,
+                    'headshot' => [
+                        strtolower(now()->format('l')) => $headshotUrl,
+                    ],
+                    'headshot_status' => $headshotStatus,
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch student validations', [
+                'course_auth_id' => $courseAuthId,
+                'instructor_id' => auth('admin')->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch validations',
+                'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve student validation (ID card or headshot)
+     * POST /admin/instructors/approve-validation
+     */
+    public function approveValidation(Request $request)
+    {
+        try {
+            $instructor = auth('admin')->user();
+
+            if (!$instructor) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'course_auth_id' => 'required|integer|exists:course_auths,id',
+                'type' => 'required|in:idcard,headshot',
+                'student_unit_id' => 'nullable|integer|exists:student_units,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            }
+
+            $courseAuthId = $request->input('course_auth_id');
+            $type = $request->input('type');
+            $studentUnitId = $request->input('student_unit_id');
+
+            // Find the validation record
+            if ($type === 'idcard') {
+                $validation = \App\Models\Validation::where('course_auth_id', $courseAuthId)->first();
+            } else {
+                if (!$studentUnitId) {
+                    return response()->json(['message' => 'student_unit_id required for headshot approval'], 422);
+                }
+                $validation = \App\Models\Validation::where('student_unit_id', $studentUnitId)->first();
+            }
+
+            if (!$validation) {
+                return response()->json(['message' => 'Validation record not found'], 404);
+            }
+
+            // Approve validation (use existing Accept method from Validation model)
+            $validation->Accept($type);
+
+            Log::info('Instructor approved validation', [
+                'instructor_id' => $instructor->id,
+                'validation_id' => $validation->id,
+                'type' => $type,
+                'course_auth_id' => $courseAuthId,
+                'student_unit_id' => $studentUnitId,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => ucfirst($type) . ' approved successfully',
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to approve validation', [
+                'instructor_id' => auth('admin')->id(),
+                'request_data' => $request->all(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve validation',
+                'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject student validation (ID card or headshot)
+     * POST /admin/instructors/reject-validation
+     */
+    public function rejectValidation(Request $request)
+    {
+        try {
+            $instructor = auth('admin')->user();
+
+            if (!$instructor) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'course_auth_id' => 'required|integer|exists:course_auths,id',
+                'type' => 'required|in:idcard,headshot',
+                'reason' => 'required|string|min:3',
+                'student_unit_id' => 'nullable|integer|exists:student_units,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            }
+
+            $courseAuthId = $request->input('course_auth_id');
+            $type = $request->input('type');
+            $reason = $request->input('reason');
+            $studentUnitId = $request->input('student_unit_id');
+
+            // Find the validation record
+            if ($type === 'idcard') {
+                $validation = \App\Models\Validation::where('course_auth_id', $courseAuthId)->first();
+            } else {
+                if (!$studentUnitId) {
+                    return response()->json(['message' => 'student_unit_id required for headshot rejection'], 422);
+                }
+                $validation = \App\Models\Validation::where('student_unit_id', $studentUnitId)->first();
+            }
+
+            if (!$validation) {
+                return response()->json(['message' => 'Validation record not found'], 404);
+            }
+
+            // Reject validation (use existing Reject method from Validation model)
+            $validation->Reject($reason);
+
+            Log::info('Instructor rejected validation', [
+                'instructor_id' => $instructor->id,
+                'validation_id' => $validation->id,
+                'type' => $type,
+                'course_auth_id' => $courseAuthId,
+                'student_unit_id' => $studentUnitId,
+                'reason' => $reason,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => ucfirst($type) . ' rejected successfully',
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to reject validation', [
+                'instructor_id' => auth('admin')->id(),
+                'request_data' => $request->all(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject validation',
+                'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get student identity verification data for instructor review panel
+     * Shows ID card and today's headshot for identity validation
+     * Uses existing StudentDashboardController logic for consistency
+     *
+     * @param int $studentId
+     * @param int $courseDateId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getStudentIdentity(int $studentId, int $courseDateId)
+    {
+        try {
+            $instructor = auth('admin')->user();
+            if (!$instructor) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            // Verify instructor permission
+            $instUnit = InstUnit::where('course_date_id', $courseDateId)
+                ->where(function ($query) use ($instructor) {
+                    $query->where('created_by', $instructor->id)
+                        ->orWhere('assistant_id', $instructor->id);
+                })
+                ->first();
+
+            if (!$instUnit) {
+                return response()->json(['message' => 'You do not have permission to view this student'], 403);
+            }
+
+            $student = User::findOrFail($studentId);
+            $courseDate = CourseDate::with(['CourseUnit'])->findOrFail($courseDateId);
+            $courseId = $courseDate->CourseUnit->course_id ?? null;
+
+            if (!$courseId) {
+                return response()->json(['message' => 'Invalid course date'], 400);
+            }
+
+            // Get CourseAuth
+            $courseAuth = \App\Models\CourseAuth::where('user_id', $studentId)
+                ->where('course_id', $courseId)
+                ->first();
+
+            if (!$courseAuth) {
+                return response()->json([
+                    'student' => [
+                        'id' => $student->id,
+                        'name' => $student->fname . ' ' . $student->lname,
+                        'email' => $student->email,
+                        'student_number' => $student->student_num ?? null,
+                    ],
+                    'verification' => null,
+                ], 200);
+            }
+
+            // Use existing buildStudentValidationsForCourseAuth logic
+            $studentDashboardController = app(\App\Http\Controllers\Student\StudentDashboardController::class);
+            $reflection = new \ReflectionClass($studentDashboardController);
+            $method = $reflection->getMethod('buildStudentValidationsForCourseAuth');
+            $method->setAccessible(true);
+            $validations = $method->invoke($studentDashboardController, $courseAuth);
+
+            // Get validation records for status and IDs
+            $idCardValidation = \App\Models\Validation::where('course_auth_id', $courseAuth->id)->first();
+            $studentUnit = \App\Models\StudentUnit::where('course_auth_id', $courseAuth->id)
+                ->where('course_date_id', $courseDateId)
+                ->first();
+            $headshotValidation = $studentUnit ?
+                \App\Models\Validation::where('student_unit_id', $studentUnit->id)->first() : null;
+
+            // Format headshot URL (handle array or string)
+            $headshotUrl = is_array($validations['headshot']) ?
+                (reset($validations['headshot']) ?: null) : $validations['headshot'];
+
+            // Build response with new structure
+            $response = [
+                'student' => [
+                    'id' => $student->id,
+                    'name' => $student->fname . ' ' . $student->lname,
+                    'email' => $student->email,
+                    'student_number' => $student->student_num ?? null,
+                ],
+                'idcard' => [
+                    'validation_id' => $idCardValidation ? $idCardValidation->id : null,
+                    'image_url' => $validations['idcard'],
+                    'status' => $validations['idcard_status'],
+                    'uploaded_at' => $idCardValidation ? $idCardValidation->created_at : null,
+                    'reject_reason' => $idCardValidation ? $idCardValidation->reject_reason : null,
+                ],
+                'headshot' => [
+                    'validation_id' => $headshotValidation ? $headshotValidation->id : null,
+                    'image_url' => $headshotUrl,
+                    'status' => $validations['headshot_status'],
+                    'captured_at' => $headshotValidation ? $headshotValidation->created_at : null,
+                    'reject_reason' => $headshotValidation ? $headshotValidation->reject_reason : null,
+                ],
+                'fully_verified' => ($validations['idcard_status'] === 'approved' && $validations['headshot_status'] === 'approved'),
+            ];
+
+            return response()->json($response, 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get student identity', [
+                'instructor_id' => auth('admin')->id(),
+                'student_id' => $studentId,
+                'course_date_id' => $courseDateId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to load student identity data',
+                'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
+     * Map validation statuses to overall verification status
+     */
+    private function mapValidationStatus(string $idcardStatus, string $headshotStatus): string
+    {
+        if ($idcardStatus === 'rejected' || $headshotStatus === 'rejected') {
+            return 'rejected';
+        }
+        if ($idcardStatus === 'approved' && $headshotStatus === 'approved') {
+            return 'completed';
+        }
+        if ($idcardStatus === 'missing' || $headshotStatus === 'missing') {
+            return 'pending';
+        }
+        return 'pending';
+    }
+
+    /**
+     * Helper method to determine overall verification status
+     *
+     * @param \App\Models\Validation|null $idCardValidation
+     * @param \App\Models\Validation|null $headshotValidation
+     * @return string
+     */
+    private function getVerificationStatus($idCardValidation, $headshotValidation)
+    {
+        // Status: -1 = rejected, 0 = pending, 1 = accepted
+        $idStatus = $idCardValidation ? $idCardValidation->status : null;
+        $headshotStatus = $headshotValidation ? $headshotValidation->status : null;
+
+        // If either is rejected, overall status is rejected
+        if ($idStatus === -1 || $headshotStatus === -1) {
+            return 'rejected';
+        }
+
+        // If both are accepted, overall status is completed
+        if ($idStatus === 1 && $headshotStatus === 1) {
+            return 'completed';
+        }
+
+        // If at least one exists and is pending (status 0), overall status is pending
+        if ($idStatus === 0 || $headshotStatus === 0) {
+            return 'pending';
+        }
+
+        // Default to pending if no validations exist yet
+        return 'pending';
+    }
+
+    /**
+     * Validate student identity (approve or reject)
+     *
+     * @param Request $request
+     * @param int $verificationId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function validateStudentIdentity(Request $request, int $verificationId)
+    {
+        try {
+            $instructor = auth('admin')->user();
+            if (!$instructor) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'action' => 'required|in:approve,reject',
+                'notes' => 'nullable|string|max:500',
+                'validation_type' => 'required|in:id_card,headshot',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validation = \App\Models\Validation::findOrFail($verificationId);
+            $action = $request->input('action');
+            $notes = $request->input('notes');
+            $validationType = $request->input('validation_type');
+
+            // Get course_date_id from either course_auth or student_unit
+            $courseDateId = null;
+            if ($validation->course_auth_id) {
+                $courseAuth = $validation->courseAuth;
+                $courseDateId = $courseAuth ? $courseAuth->course_date_id : null;
+            } elseif ($validation->student_unit_id) {
+                $studentUnit = $validation->studentUnit;
+                $courseDateId = $studentUnit ? $studentUnit->course_date_id : null;
+            }
+
+            if (!$courseDateId) {
+                return response()->json(['message' => 'Invalid validation record'], 400);
+            }
+
+            // Verify instructor has permission
+            $instUnit = InstUnit::where('course_date_id', $courseDateId)
+                ->where(function ($query) use ($instructor) {
+                    $query->where('created_by', $instructor->id)
+                        ->orWhere('assistant_id', $instructor->id);
+                })
+                ->first();
+
+            if (!$instUnit) {
+                return response()->json(['message' => 'You do not have permission to validate this student'], 403);
+            }
+
+            if ($action === 'approve') {
+                $validation->Accept($validationType === 'id_card' ? 'id' : 'headshot');
+
+                // Check if BOTH validations are now accepted
+                $studentId = $validation->courseAuth ? $validation->courseAuth->user_id :
+                    ($validation->studentUnit ? $validation->studentUnit->CourseAuth->user_id : null);
+
+                if ($studentId) {
+                    // Get CourseAuth to find StudentUnit
+                    $courseDate = CourseDate::find($courseDateId);
+                    $courseId = $courseDate ? $courseDate->course_id : null;
+                    $courseAuth = $courseId ? \App\Models\CourseAuth::where('user_id', $studentId)->where('course_id', $courseId)->first() : null;
+
+                    $studentUnit = $courseAuth ? \App\Models\StudentUnit::where('course_auth_id', $courseAuth->id)
+                        ->where('course_date_id', $courseDateId)
+                        ->first() : null;
+
+                    if ($studentUnit && $courseId) {
+                        // Check if both ID card and headshot are accepted
+                        $idCardValidation = \App\Models\Validation::whereHas('courseAuth', function ($query) use ($studentId, $courseId) {
+                            $query->where('user_id', $studentId)->where('course_id', $courseId);
+                        })->where('status', 1)->first();
+
+                        $headshotValidation = \App\Models\Validation::where('student_unit_id', $studentUnit->id)
+                            ->where('status', 1)->first();
+
+                        if ($idCardValidation && $headshotValidation) {
+                            $studentUnit->verified = true;
+                            $studentUnit->verification_method = 'manual_instructor';
+                            $studentUnit->save();
+                        }
+                    }
+                }
+
+                $message = ucfirst($validationType) . ' verified successfully';
+            } else {
+                $validation->Reject($notes ?: ucfirst($validationType) . ' verification rejected by instructor');
+                $message = ucfirst($validationType) . ' rejected';
+            }
+
+            Log::info('Instructor validated student identity', [
+                'instructor_id' => $instructor->id,
+                'validation_id' => $verificationId,
+                'validation_type' => $validationType,
+                'action' => $action,
+                'notes' => $notes,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'verification_status' => $validation->status === 1 ? 'approved' : 'rejected',
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to validate student identity', [
+                'instructor_id' => auth('admin')->id(),
+                'verification_id' => $verificationId,
+                'request_data' => $request->all(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to validate identity',
+                'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve student identity (unified endpoint for instructors, assistants, support)
+     * 
+     * @param Request $request
+     * @param int $studentId
+     * @param int $courseDateId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function approveIdentity(Request $request, int $studentId, int $courseDateId)
+    {
+        $validator = Validator::make($request->all(), [
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $approver = auth('admin')->user();
+        $notes = $request->input('notes');
+
+        $result = $this->identityService->approveIdentity($studentId, $courseDateId, $approver, $notes);
+
+        return response()->json($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * Reject student identity (unified endpoint for instructors, assistants, support)
+     * 
+     * @param Request $request
+     * @param int $studentId
+     * @param int $courseDateId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function rejectIdentity(Request $request, int $studentId, int $courseDateId)
+    {
+        $validator = Validator::make($request->all(), [
+            'reason' => 'required|string|max:500',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $rejector = auth('admin')->user();
+        $reason = $request->input('reason');
+        $notes = $request->input('notes');
+
+        $result = $this->identityService->rejectIdentity($studentId, $courseDateId, $rejector, $reason, $notes);
+
+        return response()->json($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * Request new verification photo (unified endpoint for instructors, assistants, support)
+     * 
+     * @param Request $request
+     * @param int $studentId
+     * @param int $courseDateId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function requestNewVerificationPhoto(Request $request, int $studentId, int $courseDateId)
+    {
+        $validator = Validator::make($request->all(), [
+            'photo_type' => 'required|in:id_card,headshot,both',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $requester = auth('admin')->user();
+        $photoType = $request->input('photo_type');
+        $notes = $request->input('notes');
+
+        $result = $this->identityService->requestNewPhoto($studentId, $courseDateId, $requester, $photoType, $notes);
+
+        return response()->json($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * Approve a single validation (ID card OR headshot individually)
+     * 
+     * @param Request $request
+     * @param int $validationId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function approveSingleValidation(Request $request, int $validationId)
+    {
+        $validator = Validator::make($request->all(), [
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $approver = auth('admin')->user();
+        $notes = $request->input('notes');
+
+        $result = $this->identityService->approveSingleValidation($validationId, $approver, $notes);
+
+        return response()->json($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * Reject a single validation (ID card OR headshot individually)
+     * 
+     * @param Request $request
+     * @param int $validationId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function rejectSingleValidation(Request $request, int $validationId)
+    {
+        $validator = Validator::make($request->all(), [
+            'reason' => 'required|string|max:500',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $rejector = auth('admin')->user();
+        $reason = $request->input('reason');
+        $notes = $request->input('notes');
+
+        $result = $this->identityService->rejectSingleValidation($validationId, $rejector, $reason, $notes);
+
+        return response()->json($result, $result['success'] ? 200 : 500);
     }
 }

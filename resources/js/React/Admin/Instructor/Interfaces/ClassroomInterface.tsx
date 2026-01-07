@@ -5,6 +5,7 @@ import ZoomSetupPanel from "../components/ZoomSetupPanel";
 import StudentsPanel from "../Classroom/StudentsPanel";
 import InstructorLessonProgressBar from "../Components/InstructorLessonProgressBar";
 import FrostChatCard from "../Components/FrostChatCard";
+import StudentIdentityPanel from "../components/StudentIdentityPanel";
 
 interface ClassroomInterfaceProps {
     instructorData?: any;
@@ -34,26 +35,42 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     const [leftCollapsed, setLeftCollapsed] = useState(false);
     const [rightCollapsed, setRightCollapsed] = useState(false);
     const [isZoomReady, setIsZoomReady] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState<{
+        id: number;
+        name: string;
+        email: string;
+        course_auth_id: number;
+        student_unit_id?: number;
+    } | null>(null);
 
     const studentCount = classroomData?.student_count || 0;
 
     // Fetch lessons for current course date
-    const { data: lessonsData, isLoading: lessonsLoading, error: lessonsError } = useQuery({
-        queryKey: ['lessons', courseDateId],
+    const {
+        data: lessonsData,
+        isLoading: lessonsLoading,
+        error: lessonsError,
+    } = useQuery({
+        queryKey: ["lessons", courseDateId],
         queryFn: async () => {
             if (!courseDateId) return null;
 
-            const response = await fetch(`/admin/instructors/data/lessons/${courseDateId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            const response = await fetch(
+                `/admin/instructors/data/lessons/${courseDateId}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    credentials: "same-origin",
+                }
+            );
 
             if (!response.ok) {
-                throw new Error(`Failed to fetch lessons: ${response.statusText}`);
+                throw new Error(
+                    `Failed to fetch lessons: ${response.statusText}`
+                );
             }
 
             return response.json();
@@ -66,7 +83,8 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 
     // Get lessons data
     const lessons = lessonsData?.lessons || [];
-    const currentLesson = lessons.find((l: any) => l.status === 'in_progress') || null;
+    const currentLesson =
+        lessons.find((l: any) => l.status === "in_progress") || null;
 
     if (!instUnit) {
         return (
@@ -112,7 +130,10 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                     {/* Teaching Content */}
                     <div className="teaching-area">
                         {/* Zoom Setup Card - Always visible */}
-                        <div className="zoom-card-container" style={{ padding: '20px' }}>
+                        <div
+                            className="zoom-card-container"
+                            style={{ padding: "20px" }}
+                        >
                             <ZoomSetupPanel
                                 instUnit={instUnit}
                                 courseName={courseName}
@@ -120,8 +141,25 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                             />
                         </div>
 
+                        {/* Student Identity Validation Panel - Shows when clicking student name */}
+                        {selectedStudent && courseDateId && (
+                            <div
+                                className="student-identity-container"
+                                style={{ padding: "0 20px 20px 20px" }}
+                            >
+                                <StudentIdentityPanel
+                                    studentId={selectedStudent.id}
+                                    courseDateId={courseDateId}
+                                    onClose={() => setSelectedStudent(null)}
+                                />
+                            </div>
+                        )}
+
                         {/* Lesson Progress Bar - Shows current lesson progress */}
-                        <div className="progress-container" style={{ padding: '0 20px' }}>
+                        <div
+                            className="progress-container"
+                            style={{ padding: "0 20px" }}
+                        >
                             <InstructorLessonProgressBar
                                 currentLesson={currentLesson}
                                 lessons={lessons}
@@ -129,16 +167,26 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                         </div>
 
                         {/* Chat Room - Instructor and student communication */}
-                        <div className="chat-container" style={{ padding: '0 20px' }}>
+                        <div
+                            className="chat-container"
+                            style={{ padding: "0 20px" }}
+                        >
                             <FrostChatCard
                                 course_date_id={courseDateId || 0}
                                 isChatEnabled={true}
                                 chatUser={{
                                     id: instructor?.id || 0,
-                                    name: instructor?.fname + ' ' + instructor?.lname || 'Instructor',
-                                    email: instructor?.email || 'instructor@example.com',
-                                    user_type: 'instructor',
-                                    avatar: instructor?.avatar || '/images/default-avatar.png'
+                                    name:
+                                        instructor?.fname +
+                                            " " +
+                                            instructor?.lname || "Instructor",
+                                    email:
+                                        instructor?.email ||
+                                        "instructor@example.com",
+                                    user_type: "instructor",
+                                    avatar:
+                                        instructor?.avatar ||
+                                        "/images/default-avatar.png",
                                 }}
                                 darkMode={true}
                                 debug={true}
@@ -183,6 +231,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                                 <StudentsPanel
                                     courseDateId={courseDateId}
                                     instUnitId={instUnit?.id}
+                                    onStudentClick={setSelectedStudent}
                                 />
                             </div>
                         )}

@@ -4,6 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 interface StudentsPanelProps {
     courseDateId?: number;
     instUnitId?: number;
+    onStudentClick?: (student: {
+        id: number;
+        name: string;
+        email: string;
+        course_auth_id: number;
+        student_unit_id?: number;
+    }) => void;
 }
 
 interface Student {
@@ -11,7 +18,9 @@ interface Student {
     student_id: number;
     student_name: string;
     student_email: string;
-    status: 'online' | 'offline' | 'away';
+    course_auth_id?: number; // Course enrollment ID
+    student_unit_id?: number; // Current session enrollment
+    status: "online" | "offline" | "away";
     joined_at?: string;
     verified: boolean;
     progress_percent: number;
@@ -28,24 +37,37 @@ interface Student {
  * - Instructor actions (message, eject, ban)
  * - Live count updates
  */
-const StudentsPanel: React.FC<StudentsPanelProps> = ({ courseDateId, instUnitId }) => {
+const StudentsPanel: React.FC<StudentsPanelProps> = ({
+    courseDateId,
+    instUnitId,
+    onStudentClick,
+}) => {
     // Fetch active students for current class
-    const { data: studentsData, isLoading, error } = useQuery({
-        queryKey: ['students', courseDateId],
+    const {
+        data: studentsData,
+        isLoading,
+        error,
+    } = useQuery({
+        queryKey: ["students", courseDateId],
         queryFn: async () => {
             if (!courseDateId) return null;
 
-            const response = await fetch(`/admin/instructors/data/students/active?courseDateId=${courseDateId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
+            const response = await fetch(
+                `/admin/instructors/data/students/active?courseDateId=${courseDateId}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    credentials: "same-origin",
+                }
+            );
 
             if (!response.ok) {
-                throw new Error(`Failed to fetch students: ${response.statusText}`);
+                throw new Error(
+                    `Failed to fetch students: ${response.statusText}`
+                );
             }
 
             return response.json();
@@ -58,7 +80,7 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({ courseDateId, instUnitId 
     });
 
     const students: Student[] = studentsData?.students || [];
-    const onlineCount = students.filter(s => s.status === 'online').length;
+    const onlineCount = students.filter((s) => s.status === "online").length;
 
     if (isLoading) {
         return (
@@ -69,12 +91,22 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({ courseDateId, instUnitId 
                         Students
                     </h5>
                 </div>
-                <div className="card-body d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                <div
+                    className="card-body d-flex justify-content-center align-items-center"
+                    style={{ minHeight: "400px" }}
+                >
                     <div className="text-center">
-                        <div className="spinner-border spinner-border-sm text-primary" role="status">
-                            <span className="visually-hidden">Loading students...</span>
+                        <div
+                            className="spinner-border spinner-border-sm text-primary"
+                            role="status"
+                        >
+                            <span className="visually-hidden">
+                                Loading students...
+                            </span>
                         </div>
-                        <p className="mt-2 text-muted"><small>Loading students...</small></p>
+                        <p className="mt-2 text-muted">
+                            <small>Loading students...</small>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -112,7 +144,9 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({ courseDateId, instUnitId 
                     </h5>
                 </div>
                 <div className="card-body">
-                    <p className="text-muted small mb-0">No students in this class yet</p>
+                    <p className="text-muted small mb-0">
+                        No students in this class yet
+                    </p>
                 </div>
             </div>
         );
@@ -130,29 +164,58 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({ courseDateId, instUnitId 
                 </small>
             </div>
 
-            <div className="list-group list-group-flush m-0" style={{ maxHeight: '500px', overflow: 'auto' }}>
+            <div
+                className="list-group list-group-flush m-0"
+                style={{ maxHeight: "500px", overflow: "auto" }}
+            >
                 {students.map((student, index) => (
                     <div
                         key={student.id}
-                        className={`list-group-item list-group-item-action bg-transparent px-3 py-2 ${index === 0 ? 'border-top-0' : ''}`}
+                        className={`list-group-item list-group-item-action bg-transparent px-3 py-2 ${
+                            index === 0 ? "border-top-0" : ""
+                        }`}
                     >
                         <div className="d-flex align-items-start gap-2">
                             <div
                                 className="rounded-circle bg-secondary text-white-50 d-flex align-items-center justify-content-center flex-shrink-0"
-                                style={{ width: 32, height: 32, fontSize: '0.8rem' }}
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: "0.8rem",
+                                }}
                                 aria-hidden="true"
                             >
                                 <i className="fas fa-user"></i>
                             </div>
-                            <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                                <a
-                                    href={`/admin/frost-support/student/${student.student_id}`}
-                                    className="d-block fw-semibold link-light text-decoration-none text-truncate"
-                                    title={student.student_name}
+                            <div
+                                className="flex-grow-1"
+                                style={{ minWidth: 0 }}
+                            >
+                                <button
+                                    onClick={() =>
+                                        onStudentClick?.({
+                                            id: student.student_id,
+                                            name: student.student_name,
+                                            email: student.student_email,
+                                            course_auth_id:
+                                                student.course_auth_id || 0,
+                                            student_unit_id:
+                                                student.student_unit_id,
+                                        })
+                                    }
+                                    className="btn btn-link p-0 text-start d-block fw-semibold link-light text-decoration-none text-truncate"
+                                    title={`View ${student.student_name}'s validation images`}
+                                    style={{
+                                        border: "none",
+                                        background: "none",
+                                    }}
                                 >
                                     {student.student_name}
-                                </a>
-                                <div className="small text-white-50 text-truncate" title={student.student_email}>
+                                </button>
+                                <div
+                                    className="small text-white-50 text-truncate"
+                                    title={student.student_email}
+                                >
                                     {student.student_email}
                                 </div>
                             </div>
