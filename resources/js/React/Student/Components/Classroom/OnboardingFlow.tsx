@@ -11,6 +11,7 @@ interface OnboardingFlowProps {
     studentUnit: any;
     student: any;
     course: any;
+    courseAuth?: any; // Pass courseAuth to check agreed_at
     validations?: any;
     onComplete: () => void;
 }
@@ -43,6 +44,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     studentUnit,
     student,
     course,
+    courseAuth,
     validations,
     onComplete,
 }) => {
@@ -79,9 +81,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     const idCardUrl: string | null = typeof validations?.idcard === 'string' ? validations.idcard : null;
     const todayHeadshotUrl: string | null = getHeadshotUrlFromValidations();
 
+    // Check agreement status from courseAuth (one-time per course)
+    const hasAgreedToTerms = courseAuth?.agreed_at !== null && courseAuth?.agreed_at !== undefined;
+
     const [state, setState] = useState<OnboardingState>({
         currentStep: 1,
-        termsAccepted: studentUnit?.terms_accepted || false,
+        termsAccepted: hasAgreedToTerms, // Use courseAuth.agreed_at
         rulesAccepted: studentUnit?.rules_accepted || false,
         // ID card: once per courseAuth (use poll validations.idcard)
         idCardUploaded: derivedIdCardUploaded,
@@ -335,8 +340,27 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         </div>
                     )}
 
-                    {/* Step 1: Terms of Service */}
-                    {state.currentStep === 1 && (
+                    {/* Step 1: Terms of Service - Show validation if already agreed */}
+                    {state.currentStep === 1 && state.termsAccepted && (
+                        <div className="text-center" style={{ padding: "2rem" }}>
+                            <i
+                                className="fas fa-check-circle"
+                                style={{ fontSize: "3rem", color: "#2ecc71", marginBottom: "1rem" }}
+                            ></i>
+                            <h5 style={{ color: "white", marginBottom: "0.5rem" }}>
+                                Validating Step 1
+                            </h5>
+                            <p style={{ color: "#95a5a6" }}>
+                                Agreement already on file. Moving to next step...
+                            </p>
+                            <div className="spinner-border text-primary mt-2" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 1: Terms of Service - Show form if not agreed */}
+                    {state.currentStep === 1 && !state.termsAccepted && (
                         <StudentAgreement
                             student={{
                                 ...student,

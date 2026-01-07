@@ -183,12 +183,13 @@ class StudentDashboardController extends Controller
             'headshot' => $headshotByDay,
 
             // Explicit review statuses (optional for now).
-            'idcard_status' => $idCardValidation
-                ? ($idCardValidation->status > 0 ? 'approved' : ($idCardValidation->status < 0 ? 'rejected' : 'pending'))
-                : ($idCardUrl ? 'uploaded' : 'missing'),
-            'headshot_status' => $headshotValidation
-                ? ($headshotValidation->status > 0 ? 'approved' : ($headshotValidation->status < 0 ? 'rejected' : 'pending'))
-                : ($headshotUrl ? 'uploaded' : 'missing'),
+            // IMPORTANT: Only report approved/rejected if the file actually exists
+            'idcard_status' => $idCardUrl
+                ? ($idCardValidation && $idCardValidation->status > 0 ? 'approved' : ($idCardValidation && $idCardValidation->status < 0 ? 'rejected' : 'uploaded'))
+                : 'missing',
+            'headshot_status' => $headshotUrl
+                ? ($headshotValidation && $headshotValidation->status > 0 ? 'approved' : ($headshotValidation && $headshotValidation->status < 0 ? 'rejected' : 'uploaded'))
+                : 'missing',
             'message' => null,
         ];
     }
@@ -365,6 +366,7 @@ class StudentDashboardController extends Controller
                     'course_id' => $courseAuth->course_id,
                     'course_name' => $courseAuth->course?->title ?? $courseAuth->course?->title_long ?? 'N/A',
                     'start_date' => $classroomCourseDate?->starts_at?->format('Y-m-d') ?? $courseAuth->start_date,
+                    'agreed_at' => $courseAuth->agreed_at?->toISOString(), // Add agreement timestamp for onboarding check
                     'status' => $status,
                     'completion_status' => $courseAuth->is_passed ? 'Passed' :
                         ($courseAuth->completed_at ? 'Completed' : 'In Progress'),

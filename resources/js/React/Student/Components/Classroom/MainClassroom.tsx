@@ -53,8 +53,27 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
 
     // ONBOARDING GATE: Check if student needs to complete onboarding
     // Only check when courseDate + instUnit exist (live classroom mode)
+    // Agreement is ONE-TIME per course_auth (not per daily session)
     if (courseDate && instUnit && studentUnit) {
-        const needsOnboarding = !studentUnit.onboarding_completed;
+        // Get agreement status from student courses data (poll includes agreed_at)
+        const courseData = studentContext?.courses?.find((c: any) => c.id === courseAuthId);
+        const hasAgreedToTerms = courseData?.agreed_at !== null && courseData?.agreed_at !== undefined;
+
+        // Check if validation (ID + headshot) is complete
+        // Headshot is an object like { wednesday: url } so check if today's value exists
+        const getTodayKey = () => {
+            try {
+                return new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+            } catch {
+                return 'monday';
+            }
+        };
+        const todayKey = getTodayKey();
+        const headshotUrl = validations?.headshot?.[todayKey];
+        const hasIdCard = !!validations?.idcard;
+        const hasHeadshot = !!headshotUrl;
+
+        const needsOnboarding = !hasAgreedToTerms || !hasIdCard || !hasHeadshot;
 
         if (needsOnboarding) {
             return (
@@ -66,10 +85,10 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     studentUnit={studentUnit}
                     student={student}
                     course={course}
+                    courseAuth={courseData} // Pass course data which includes agreed_at
                     validations={validations || null}
                     onComplete={() => {
                         // Force classroom context to refresh by incrementing key
-                        // This will re-poll and get updated studentUnit with onboarding_completed = true
                         setOnboardingKey(prev => prev + 1);
                         // Trigger a manual reload or re-poll here if needed
                         window.location.reload();

@@ -117,7 +117,7 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
       <div className="w-100 p-0 m-0">
         <div className="bg-success text-white px-3 py-3 border-bottom border-light d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center gap-3">
-            <i className="fas fa-check-circle fa-2x"></i>
+            <i className="fas fa-check-circle fa-2x mr-2"></i>
             <div>
               <strong className="d-block" style={{ fontSize: '1.1rem' }}>Zoom Screen Sharing Active</strong>
               <small className="text-white-50">Students can now see your screen</small>

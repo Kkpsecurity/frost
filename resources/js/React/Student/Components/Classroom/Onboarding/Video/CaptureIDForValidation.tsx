@@ -308,7 +308,13 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
     }, [autoAdvanceTo, countdown]);
 
     // If we refresh and the poll already has the images, move forward automatically.
+    // BUT: Don't auto-advance if we're in the middle of a countdown (let the countdown complete naturally)
     useEffect(() => {
+        if (autoAdvanceTo) {
+            // Don't auto-advance if countdown is active
+            return;
+        }
+
         if (currentStep === 2 && idCardUrl) {
             // ID is already done, go to headshot
             setCurrentStep(3);
@@ -317,7 +323,7 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
             // Headshot already done for today, go to confirm
             setCurrentStep(4);
         }
-    }, [currentStep, idCardUrl, headshotUrl]);
+    }, [currentStep, idCardUrl, headshotUrl, autoAdvanceTo]);
 
     const WaitingPanel: React.FC<{ type: 'idcard' | 'headshot' }> = ({ type }) => {
         const title = type === 'idcard' ? 'ID Card Uploaded' : 'Headshot Uploaded';
