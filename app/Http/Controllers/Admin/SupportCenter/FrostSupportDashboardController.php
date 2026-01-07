@@ -11,29 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Services\SupportCenter\StudentQueryService;
-use App\Services\SupportCenter\StudentActionService;
-use App\Services\SupportCenter\ValidationQueryService;
-use App\Services\SupportCenter\ValidationActionService;
 
 class FrostSupportDashboardController extends Controller
 {
-    protected StudentQueryService $studentQuery;
-    protected StudentActionService $studentAction;
-    protected ValidationQueryService $validationQuery;
-    protected ValidationActionService $validationAction;
 
-    public function __construct(
-        StudentQueryService $studentQuery,
-        StudentActionService $studentAction,
-        ValidationQueryService $validationQuery,
-        ValidationActionService $validationAction
-    ) {
-        $this->studentQuery = $studentQuery;
-        $this->studentAction = $studentAction;
-        $this->validationQuery = $validationQuery;
-        $this->validationAction = $validationAction;
-    }
     /**
      * Display the Frost Support Center dashboard
      *
@@ -189,8 +170,47 @@ class FrostSupportDashboardController extends Controller
         }
 
         try {
-            // Use service to search students
-            $students = $this->studentQuery->searchStudents($query, 20);
+            // Based on archived support center search logic
+            $searchInput = $query;
+
+            $studentsQuery = User::query()->with('Role');
+
+            // Check if the search input is an email
+            if (filter_var($searchInput, FILTER_VALIDATE_EMAIL)) {
+                // Search by email
+                $studentsQuery->where('email', 'ilike', $searchInput);
+            } else {
+                // Initialize the query with a condition that always fails to seamlessly append OR conditions later
+                $studentsQuery->where(function ($q) use ($searchInput) {
+                    $q->whereRaw('1 = 0');
+
+                    // Search for the full name first if the input contains spaces
+                    if (strpos($searchInput, ' ') !== false) {
+                        $q->orWhereRaw("concat(fname, ' ', lname) ilike ?", ['%' . $searchInput . '%']);
+                    } else {
+                        $searchTerms = preg_split('/\s+/', trim($searchInput)) ?: [];
+                        foreach ($searchTerms as $term) {
+                            if ($term === '') {
+                                continue;
+                            }
+
+                            $q->orWhere('fname', 'ilike', '%' . $term . '%')
+                                ->orWhere('lname', 'ilike', '%' . $term . '%');
+                        }
+                    }
+                });
+            }
+
+            $students = $studentsQuery
+                ->orderBy('lname')
+                ->limit(20)
+                ->get();
+
+            foreach ($students as $student) {
+                if (!isset($student->avatar)) {
+                    $student->avatar = $student->getAvatar('thumb');
+                }
+            }
 
             // Debug: Log the actual SQL query and results
             Log::info('User search results', [
@@ -295,8 +315,12 @@ class FrostSupportDashboardController extends Controller
     public function getStudentDetails($studentId): JsonResponse
     {
         try {
-            // Use service to get student details
-            $student = $this->studentQuery->getStudentDetails($studentId);
+            // Based on archived student controller approach; load the relationships this page expects
+            $student = User::with([
+                'Role',
+                'StudentUnits.unit',
+                'CourseAuths.courseDate.course',
+            ])->where('id', $studentId)->first();
 
             if (!$student) {
                 return response()->json([
@@ -304,9 +328,6 @@ class FrostSupportDashboardController extends Controller
                     'message' => 'Student not found'
                 ], 404);
             }
-
-            // Get student statistics
-            $stats = $this->studentQuery->getStudentStatistics($studentId);
 
             // Check if student is online (has StudentUnit for today)
             $today = Carbon::today();
