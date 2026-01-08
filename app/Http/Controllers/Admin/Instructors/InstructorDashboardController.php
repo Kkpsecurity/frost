@@ -19,6 +19,7 @@ use App\Services\IdentityVerificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
@@ -99,6 +100,9 @@ class InstructorDashboardController extends Controller
                     'instLessons' => [],
                 ], 401);
             }
+
+            // Auto-complete any stale InstUnits before querying for active ones
+            $this->autoCompleteStaleInstUnits();
 
             // Find the instructor's active InstUnit (class they're currently teaching)
             $instUnit = \App\Models\InstUnit::where('created_by', $user->id)
@@ -3104,7 +3108,7 @@ class InstructorDashboardController extends Controller
 
     /**
      * Approve student identity (unified endpoint for instructors, assistants, support)
-     * 
+     *
      * @param Request $request
      * @param int $studentId
      * @param int $courseDateId
@@ -3134,7 +3138,7 @@ class InstructorDashboardController extends Controller
 
     /**
      * Reject student identity (unified endpoint for instructors, assistants, support)
-     * 
+     *
      * @param Request $request
      * @param int $studentId
      * @param int $courseDateId
@@ -3166,7 +3170,7 @@ class InstructorDashboardController extends Controller
 
     /**
      * Request new verification photo (unified endpoint for instructors, assistants, support)
-     * 
+     *
      * @param Request $request
      * @param int $studentId
      * @param int $courseDateId
@@ -3198,7 +3202,7 @@ class InstructorDashboardController extends Controller
 
     /**
      * Approve a single validation (ID card OR headshot individually)
-     * 
+     *
      * @param Request $request
      * @param int $validationId
      * @return \Illuminate\Http\JsonResponse
@@ -3227,7 +3231,7 @@ class InstructorDashboardController extends Controller
 
     /**
      * Reject a single validation (ID card OR headshot individually)
-     * 
+     *
      * @param Request $request
      * @param int $validationId
      * @return \Illuminate\Http\JsonResponse
@@ -3254,5 +3258,46 @@ class InstructorDashboardController extends Controller
         $result = $this->identityService->rejectSingleValidation($validationId, $rejector, $reason, $notes);
 
         return response()->json($result, $result['success'] ? 200 : 500);
+    }
+
+    /**
+     * Auto-complete stale InstUnits that are past their CourseDate end time
+     * This prevents instructors from viewing old active InstUnits
+     *
+     * @return void
+     */
+    protected function autoCompleteStaleInstUnits(): void
+    {
+        try {
+            // Find InstUnits that are still active but their CourseDate has ended
+            $staleInstUnits = InstUnit::whereNull('completed_at')
+                ->whereHas('CourseDate', function ($q) {
+                    $q->where('ends_at', '<', now());
+                })
+                ->with('CourseDate')
+                ->get();
+
+            if ($staleInstUnits->isNotEmpty()) {
+                foreach ($staleInstUnits as $instUnit) {
+                    $courseDate = $instUnit->CourseDate;
+
+                    // Set completed_at to the CourseDate's ends_at time
+                    \DB::table('inst_unit')
+                        ->where('id', $instUnit->id)
+                        ->update([
+                            'completed_at' => $courseDate->ends_at
+                        ]);
+
+                    Log::info('Auto-completed stale InstUnit', [
+                        'inst_unit_id' => $instUnit->id,
+                        'course_date_id' => $courseDate->id,
+                        'completed_at' => $courseDate->ends_at,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            // Non-fatal: log error but don't break the dashboard
+            Log::error('Failed to auto-complete stale InstUnits: ' . $e->getMessage());
+        }
     }
 }
