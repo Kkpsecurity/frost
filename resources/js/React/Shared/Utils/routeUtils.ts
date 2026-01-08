@@ -34,6 +34,13 @@ export const RouteCheckers = {
     isStudentDashboard(): boolean {
         return window.location.pathname.includes("/dashboard");
     },
+
+    /**
+     * Check if currently on /admin/frost-support route
+     */
+    isAdminFrostSupport(): boolean {
+        return window.location.pathname.includes("/admin/frost-support");
+    },
 };
 
 /**
@@ -47,6 +54,7 @@ export const logRouteInfo = (): void => {
             isStudentClassroom: RouteCheckers.isStudentClassroom(),
             isAdmin: RouteCheckers.isAdmin(),
             isStudentDashboard: RouteCheckers.isStudentDashboard(),
+            isAdminFrostSupport: RouteCheckers.isAdminFrostSupport(),
         });
     }
 };

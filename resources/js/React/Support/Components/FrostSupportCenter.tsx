@@ -25,7 +25,7 @@ interface RecentDoc {
     isPopular?: boolean;
 }
 
-const SupportDashboard: React.FC = () => {
+const FrostSupportCenter: React.FC = () => {
     // Fetch documentation categories
     const { data: categories, isLoading: categoriesLoading } = useQuery({
         queryKey: ["docs", "categories"],
@@ -345,4 +345,4 @@ const SupportDashboard: React.FC = () => {
     );
 };
 
-export default SupportDashboard;
+export default FrostSupportCenter;
