@@ -563,9 +563,9 @@ class CourseDatesService
                         'time' => $startTime->format('h:i A'),
                         'duration' => $startTime->diffInHours($endTime) . ' hours',
                         'course_name' => $fullCourseName,
-                        'course_code' => $course->title ?? 'N/A',
-                        'lesson_name' => $courseUnit->title ?? 'Unknown Lesson',
-                        'module' => $courseUnit->admin_title ?? 'Module N/A',
+                        'course_title' => $course->title ?? 'N/A',
+                        'unit_title' => $courseUnit->title ?? 'Unknown Unit',
+                        'unit_admin_title' => $courseUnit->admin_title ?? 'N/A',
                         'student_count' => $studentCount,
                         'lesson_count' => $lessonCount, // Add lesson count for course card
                         'class_status' => $classStatus,

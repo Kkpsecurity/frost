@@ -105,8 +105,12 @@ class InstructorDashboardController extends Controller
             // Auto-complete any stale InstUnits before querying for active ones
             $this->autoCompleteStaleInstUnits();
 
-            // Find the instructor's active InstUnit (class they're currently teaching)
-            $instUnit = \App\Models\InstUnit::where('created_by', $user->id)
+            // Find the instructor's or assistant's active InstUnit
+            // Check if user is the instructor (created_by) OR the assistant (assistant_id)
+            $instUnit = \App\Models\InstUnit::where(function ($query) use ($user) {
+                $query->where('created_by', $user->id)
+                    ->orWhere('assistant_id', $user->id);
+            })
                 ->whereNull('completed_at')
                 ->with(['instLessons', 'courseDate.courseUnit.course'])
                 ->orderBy('created_at', 'desc')

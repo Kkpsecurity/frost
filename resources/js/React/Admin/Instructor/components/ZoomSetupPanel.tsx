@@ -20,6 +20,7 @@ interface ZoomSetupPanelProps {
     courseName?: string;
     zoomStatusFromPoll?: ZoomStatusData | null; // NEW: Zoom status from instructor poll
     onZoomReadyChange?: (ready: boolean) => void;
+    isAssistant?: boolean; // Assistant mode - can view but not control
 }
 
 const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
@@ -27,6 +28,7 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
     courseName,
     zoomStatusFromPoll, // NEW
     onZoomReadyChange,
+    isAssistant = false,
 }) => {
     const [loading, setLoading] = useState(false); // Initially false since we have data from poll
     const [saving, setSaving] = useState(false);
@@ -272,11 +274,13 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                             <div className="alert alert-info mb-3">
                                 <i className="fas fa-info-circle mr-2"></i>
                                 <strong>
-                                    Review your Zoom credentials
+                                    {isAssistant
+                                        ? "Zoom Credentials (View Only)"
+                                        : "Review your Zoom credentials"}
                                 </strong>{" "}
-                                before starting screen sharing. Make sure the
-                                details are correct, then click "Start Sharing"
-                                to activate.
+                                {isAssistant
+                                    ? "You can view the Zoom credentials but cannot control the meeting."
+                                    : 'before starting screen sharing. Make sure the details are correct, then click "Start Sharing" to activate.'}
                             </div>
 
                             <div className="row g-3">
@@ -341,25 +345,27 @@ const ZoomSetupPanel: React.FC<ZoomSetupPanelProps> = ({
                                 </div>
                             </div>
 
-                            <div className="d-flex justify-content-end mt-3 gap-2">
-                                <button
-                                    className="btn btn-sm btn-success"
-                                    disabled={!canStartSharing || saving}
-                                    onClick={handleComplete}
-                                >
-                                    {saving ? (
-                                        <>
-                                            <i className="fas fa-spinner fa-spin mr-2" />
-                                            Activating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-share-square mr-2" />
-                                            Start Sharing
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            {!isAssistant && (
+                                <div className="d-flex justify-content-end mt-3 gap-2">
+                                    <button
+                                        className="btn btn-sm btn-success"
+                                        disabled={!canStartSharing || saving}
+                                        onClick={handleComplete}
+                                    >
+                                        {saving ? (
+                                            <>
+                                                <i className="fas fa-spinner fa-spin mr-2" />
+                                                Activating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="fas fa-share-square mr-2" />
+                                                Start Sharing
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

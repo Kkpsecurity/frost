@@ -5,10 +5,10 @@
 export interface CourseDate {
     id: number;
     course_name: string;
-    lesson_name: string;
+    course_title: string; // From courses.title
+    unit_title: string; // From course_units.title
+    unit_admin_title: string; // From course_units.admin_title
     lesson_count: number; // Total lessons for this course unit
-    module: string;
-    course_code: string;
     time: string;
     duration: string;
     student_count: number;

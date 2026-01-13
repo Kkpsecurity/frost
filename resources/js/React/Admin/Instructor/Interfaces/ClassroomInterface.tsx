@@ -33,6 +33,22 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     const currentCourseDate = classroomData?.courseDates?.[0];
     const courseName = currentCourseDate?.course_name;
 
+    // Determine if current user is assistant (not the instructor)
+    const currentUserId = instructorData?.instructor?.id;
+    const instructorId = instUnit?.created_by;
+    const assistantId = instUnit?.assistant_id;
+    const isAssistant =
+        currentUserId === assistantId && currentUserId !== instructorId;
+
+    console.log("🎨 ClassroomInterface: Role detection:", {
+        currentUserId,
+        instructorId,
+        assistantId,
+        isAssistant: isAssistant
+            ? "YES - READ ONLY MODE"
+            : "NO - FULL CONTROLS",
+    });
+
     const [leftCollapsed, setLeftCollapsed] = useState(false);
     const [rightCollapsed, setRightCollapsed] = useState(false);
     const [isZoomReady, setIsZoomReady] = useState(false);
@@ -87,6 +103,40 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     const currentLesson =
         lessons.find((l: any) => l.status === "in_progress") || null;
 
+    // Handle Leave Class action for assistants
+    const handleLeaveClass = async () => {
+        if (!confirm("Are you sure you want to leave this class?")) return;
+
+        try {
+            // Clear assistant_id from InstUnit
+            const response = await fetch(
+                `/admin/instructors/classroom/leave-assist/${instUnit.id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || "",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                }
+            );
+
+            const result = await response.json();
+            if (result.success) {
+                // Redirect back to bulletin board
+                window.location.href = "/admin/instructors";
+            } else {
+                alert(`Failed to leave class: ${result.message}`);
+            }
+        } catch (error: any) {
+            console.error("Error leaving class:", error);
+            alert(`Error leaving class: ${error.message}`);
+        }
+    };
+
     if (!instUnit) {
         return (
             <div style={{ padding: "20px" }}>
@@ -103,28 +153,50 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     return (
         <>
             <div className="classroom-container">
-                {/* LEFT SIDEBAR - Lessons */}
-                <LessonsPanel
-                    courseDateId={courseDateId}
-                    collapsed={leftCollapsed}
-                    onToggle={() => setLeftCollapsed(!leftCollapsed)}
-                    instUnit={instUnit}
-                    zoomReady={isZoomReady}
-                />
+                {/* LEFT SIDEBAR - Lessons (Hidden for assistants) */}
+                {!isAssistant && (
+                    <LessonsPanel
+                        courseDateId={courseDateId}
+                        collapsed={leftCollapsed}
+                        onToggle={() => setLeftCollapsed(!leftCollapsed)}
+                        instUnit={instUnit}
+                        zoomReady={isZoomReady}
+                    />
+                )}
 
                 {/* CENTER - Teaching Area */}
-                <main className="main-content">
+                <main
+                    className={`main-content ${
+                        isAssistant ? "assistant-no-left-sidebar" : ""
+                    }`}
+                >
                     <div className="titlebar">
                         <div className="titlebar-left">
                             <div className="d-flex align-items-center gap-2">
-                                <i className="fas fa-chalkboard-teacher text-light mr-2" />
+                                <i
+                                    className={`fas ${
+                                        isAssistant
+                                            ? "fa-hands-helping"
+                                            : "fa-chalkboard-teacher"
+                                    } text-light mr-2`}
+                                />
                                 <span className="text-light">
-                                    Teaching Area
+                                    {isAssistant
+                                        ? "Assistant View"
+                                        : "Teaching Area"}
                                 </span>
                             </div>
                         </div>
                         <div className="titlebar-right">
-                            {/* End Class control intentionally not shown yet */}
+                            {isAssistant && (
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={handleLeaveClass}
+                                >
+                                    <i className="fas fa-sign-out-alt mr-1"></i>
+                                    Leave Class
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -140,6 +212,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                                 courseName={courseName}
                                 zoomStatusFromPoll={zoomStatus}
                                 onZoomReadyChange={setIsZoomReady}
+                                isAssistant={isAssistant}
                             />
                         </div>
 
@@ -229,7 +302,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                     </div>
                     <div className="sidebar-content">
                         {!rightCollapsed && (
-                            <div className="p-2">
+                            <div className="p-2 h-100">
                                 <StudentsPanel
                                     courseDateId={courseDateId}
                                     instUnitId={instUnit?.id}
@@ -406,6 +479,11 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 
         .sidebar-content::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Assistant mode - No left sidebar */
+        .main-content.assistant-no-left-sidebar {
+          margin-left: 0;
         }
 
         /* Responsive */

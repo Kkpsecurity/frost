@@ -30,11 +30,33 @@ const BulletinBoard: React.FC<BulletinBoardProps> = ({
     const courseDates = classroomData?.courseDates || [];
     const upcomingDates = classroomData?.upcomingDates || [];
     const courses = classroomData?.courses || [];
+    const currentUserId = instructorData?.instructor?.id;
 
     console.log("📋 BulletinBoard received classroomData:", classroomData);
     console.log("📋 BulletinBoard courseDates (today):", courseDates);
     console.log("📋 BulletinBoard upcomingDates (future):", upcomingDates);
     console.log("📋 BulletinBoard courses:", courses);
+    console.log("👤 Current user ID:", currentUserId);
+
+    // Check if current user is assistant on any active course
+    // If they are, the instructorData should have instUnit populated
+    // The InstructorDataLayer will handle showing the active classroom
+    React.useEffect(() => {
+        if (!currentUserId || !courseDates || courseDates.length === 0) return;
+
+        const assistantCourse = courseDates.find(
+            (course: any) =>
+                course.class_status === "in_progress" &&
+                course.inst_unit?.assistant_id === currentUserId
+        );
+
+        if (assistantCourse) {
+            console.log("🎯 User is assistant on course:", assistantCourse.id);
+            console.log(
+                "🔄 Bulletin board should not be visible - waiting for instructorData.instUnit to load..."
+            );
+        }
+    }, [currentUserId, courseDates]);
 
     // Handle start class action
     const handleStartClass = async (course: any) => {

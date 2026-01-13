@@ -4,21 +4,28 @@ import React from "react";
 interface InstructorTitlebarProps {
     instructor?: InstructorData;
     title?: string;
+    isAssistant?: boolean;
+    onLeaveClass?: () => void;
 }
 
 const InstructorTitlebar: React.FC<InstructorTitlebarProps> = ({
     instructor,
     title = "Welcome: Florida Online Bulletin Board",
+    isAssistant = false,
+    onLeaveClass,
 }) => {
     // Get instructor name from various possible property names
     console.log("🏫 InstructorTitlebar: instructor data", instructor);
+    console.log("🏫 InstructorTitlebar: isAssistant mode", isAssistant);
 
+    const getInstructorName = (
+        instructor: InstructorData | undefined
+    ): string => {
+        if (!instructor) return isAssistant ? "Assistant" : "Instructor";
+        if (instructor.fname && instructor.lname)
+            return `${instructor.fname} ${instructor.lname}`;
 
-    const getInstructorName = (instructor: InstructorData | undefined): string => {
-        if (!instructor) return "Instructor";
-        if (instructor.fname && instructor.lname) return `${instructor.fname} ${instructor.lname}`;
-
-        return "Instructor";
+        return isAssistant ? "Assistant" : "Instructor";
     };
     return (
         <div
@@ -31,7 +38,10 @@ const InstructorTitlebar: React.FC<InstructorTitlebarProps> = ({
                 borderRadius: "0",
             }}
         >
-            <div className="d-flex justify-content-between align-items-center" style={{ padding: "1rem" }}>
+            <div
+                className="d-flex justify-content-between align-items-center"
+                style={{ padding: "1rem" }}
+            >
                 <div>
                     <h3
                         className="h4 mb-1"
@@ -46,22 +56,40 @@ const InstructorTitlebar: React.FC<InstructorTitlebarProps> = ({
                         {title}
                     </h3>
                     <p className="mb-0 text-light opacity-75">
-                       <i className="fas fa-chalkboard-teacher mr-1"></i>
-                        Instructor: <strong>{getInstructorName(instructor)}</strong>
+                        <i
+                            className={`fas ${
+                                isAssistant
+                                    ? "fa-hands-helping"
+                                    : "fa-chalkboard-teacher"
+                            } mr-1`}
+                        ></i>
+                        {isAssistant ? "Assistant" : "Instructor"}:{" "}
+                        <strong>{getInstructorName(instructor)}</strong>
                     </p>
                 </div>
                 <div className="text-end">
-                    <span
-                        className="badge bg-primary"
-                        style={{ padding: "8px 12px", fontSize: "0.9rem" }}
-                    >
-                        <i className="fas fa-calendar-alt mr-1"></i>
-                        {new Date().toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                        })}
-                    </span>
+                    {isAssistant && onLeaveClass ? (
+                        <button
+                            className="btn btn-danger"
+                            onClick={onLeaveClass}
+                            style={{ padding: "8px 16px", fontSize: "0.9rem" }}
+                        >
+                            <i className="fas fa-sign-out-alt mr-1"></i>
+                            Leave Class
+                        </button>
+                    ) : (
+                        <span
+                            className="badge bg-primary"
+                            style={{ padding: "8px 12px", fontSize: "0.9rem" }}
+                        >
+                            <i className="fas fa-calendar-alt mr-1"></i>
+                            {new Date().toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                            })}
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

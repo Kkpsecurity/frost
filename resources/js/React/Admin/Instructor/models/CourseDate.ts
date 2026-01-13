@@ -11,22 +11,27 @@ export interface CourseDate {
     is_active: boolean;
     classroom_created_at: string | null;
     classroom_metadata: any | null;
-    
+
     // Computed/Relationship data from API
     course_name?: string;
-    lesson_name?: string;
+    course_title?: string; // From courses.title
+    unit_title?: string; // From course_units.title
+    unit_admin_title?: string; // From course_units.admin_title
     lesson_count?: number; // Total lessons for this course unit
-    module?: string;
-    course_code?: string;
     time?: string;
     duration?: string;
     student_count?: number;
-    class_status?: 'unassigned' | 'assigned' | 'in_progress' | 'completed' | null;
-    
+    class_status?:
+        | "unassigned"
+        | "assigned"
+        | "in_progress"
+        | "completed"
+        | null;
+
     // Instructor/Assistant data (populated when InstUnit exists)
     instructor_name?: string | null; // From InstUnit->created_by User fname + lname
     assistant_name?: string | null; // From InstUnit->assistant_id User fname + lname
-    
+
     // Relationship data
     course_unit?: {
         id: number;
@@ -37,7 +42,7 @@ export interface CourseDate {
             code?: string;
         };
     };
-    
+
     // InstUnit data (when instructor has started the class)
     inst_unit?: {
         id: number;
@@ -50,7 +55,7 @@ export interface CourseDate {
         starts_at: string;
         ends_at: string;
     } | null;
-    
+
     // Dynamic buttons based on class_status and user permissions
     buttons?: Record<string, string>;
 }

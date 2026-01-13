@@ -12,6 +12,13 @@ export const RouteCheckers = {
     },
 
     /**
+     * Check if currently on /admin/assistant/classroom route
+     */
+    isAdminAssistantClassroom(): boolean {
+        return window.location.pathname.includes("/admin/assistant/classroom");
+    },
+
+    /**
      * Check if currently on /classroom route (student area)
      */
     isStudentClassroom(): boolean {
@@ -51,6 +58,8 @@ export const logRouteInfo = (): void => {
         console.log("🔀 Route Info:", {
             pathname: window.location.pathname,
             isAdminInstructors: RouteCheckers.isAdminInstructors(),
+            isAdminAssistantClassroom:
+                RouteCheckers.isAdminAssistantClassroom(),
             isStudentClassroom: RouteCheckers.isStudentClassroom(),
             isAdmin: RouteCheckers.isAdmin(),
             isStudentDashboard: RouteCheckers.isStudentDashboard(),

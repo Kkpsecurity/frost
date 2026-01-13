@@ -45,6 +45,24 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
         hasInstUnit: !!instructorData?.instUnit,
     });
 
+    // Determine if current user is assistant (not the instructor)
+    const currentUserId = instructor?.id;
+    const instructorId = instructorData?.instUnit?.created_by;
+    const assistantId = instructorData?.instUnit?.assistant_id;
+    const isAssistant =
+        isClassroomActive &&
+        currentUserId === assistantId &&
+        currentUserId !== instructorId;
+
+    console.log("🎓 InstructorDashboard: Role detection", {
+        currentUserId,
+        instructorId,
+        assistantId,
+        isAssistant: isAssistant
+            ? "YES - ASSISTANT MODE"
+            : "NO - INSTRUCTOR MODE",
+    });
+
     const activeCourseName =
         classroomData?.courseDates?.[0]?.course_name ||
         classroomData?.courseDates?.[0]?.course?.title ||
@@ -59,7 +77,11 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
     return (
         <div className="m-0 p-0" style={{ margin: 0, padding: 0 }}>
             {/* Titlebar - Sits above offline and online content */}
-            <InstructorTitlebar instructor={instructor} title={title} />
+            <InstructorTitlebar
+                instructor={instructor}
+                title={title}
+                isAssistant={isAssistant}
+            />
 
             {/* Content - Route based on state */}
             {(state === "offline" || state === "pending") && (
