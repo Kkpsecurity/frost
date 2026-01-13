@@ -45,380 +45,493 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
   instUnit,
   zoomReady,
 }) => {
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [lessonState, setLessonState] = useState<any>(null);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [lessonState, setLessonState] = useState<any>(null);
+    const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  // Check if Zoom is setup (zoom_creds.zoom_status === enabled)
-  const isZoomReady = !!zoomReady;
+    // Check if Zoom is setup (zoom_creds.zoom_status === enabled)
+    const isZoomReady = !!zoomReady;
 
-  // Get InstLesson records to track completion
-  const instLessons = instUnit?.instLessons || [];
+    // Get InstLesson records to track completion
+    // Prioritize lessonState data (fresh from getLessonState) over instUnit prop (from slow polling)
+    const instLessons =
+        lessonState?.data?.inst_lessons || instUnit?.instLessons || [];
 
-  const activeInstLesson: InstLesson | undefined = instLessons.find(
-    (il: InstLesson) => il.completed_at == null
-  );
-  const activeLessonId = activeInstLesson?.lesson_id;
-  const isPaused = !!activeInstLesson?.is_paused;
-  const breaksRemaining = lessonState?.breaks?.breaks_remaining;
-  const breaksAllowed = lessonState?.breaks?.breaks_allowed;
-  const breaksTaken = lessonState?.breaks?.breaks_taken;
+    console.log(
+        "📊 RENDER - instLessons count:",
+        instLessons.length,
+        "instUnit:",
+        !!instUnit,
+        "lessonState:",
+        !!lessonState
+    );
 
-  useEffect(() => {
-    if (!courseDateId) {
-      setLessons([]);
-      return;
-    }
+    const activeInstLesson: InstLesson | undefined = instLessons.find(
+        (il: InstLesson) => il.completed_at == null
+    );
+    console.log("📊 RENDER - activeInstLesson:", activeInstLesson);
+    const activeLessonId = activeInstLesson?.lesson_id;
+    const isPaused = !!activeInstLesson?.is_paused;
+    const breaksRemaining = lessonState?.breaks?.breaks_remaining;
+    const breaksAllowed = lessonState?.breaks?.breaks_allowed;
+    const breaksTaken = lessonState?.breaks?.breaks_taken;
 
-    const fetchLessons = async () => {
-      setLoading(true);
-      setError(null);
+    useEffect(() => {
+        if (!courseDateId) {
+            setLessons([]);
+            return;
+        }
 
-      try {
-        console.log(`📚 Fetching lessons for courseDate: ${courseDateId}`);
-        const response = await axios.get(
-          `/admin/instructors/data/lessons/${courseDateId}`
-        );
+        const fetchLessons = async () => {
+            setLoading(true);
+            setError(null);
 
-        console.log("✅ Lessons received:", response.data);
-        setLessons(response.data.lessons || []);
-      } catch (err: any) {
-        console.error("❌ Error fetching lessons:", err);
-        setError(err.message || "Failed to load lessons");
-      } finally {
-        setLoading(false);
-      }
+            try {
+                console.log(
+                    `📚 Fetching lessons for courseDate: ${courseDateId}`
+                );
+                const response = await axios.get(
+                    `/admin/instructors/data/lessons/${courseDateId}`
+                );
+
+                console.log("✅ Lessons received:", response.data);
+                setLessons(response.data.lessons || []);
+            } catch (err: any) {
+                console.error("❌ Error fetching lessons:", err);
+                setError(err.message || "Failed to load lessons");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLessons();
+    }, [courseDateId]);
+
+    useEffect(() => {
+        if (!courseDateId) {
+            setLessonState(null);
+            return;
+        }
+
+        const fetchLessonState = async () => {
+            try {
+                const response = await axios.get(
+                    `/admin/instructors/lessons/state/${courseDateId}`
+                );
+                setLessonState(response.data);
+            } catch (err) {
+                // non-fatal - UI still works with polling data
+            }
+        };
+
+        fetchLessonState();
+        const interval = window.setInterval(fetchLessonState, 5000);
+        return () => window.clearInterval(interval);
+    }, [courseDateId]);
+
+    const postLessonAction = async (path: string, lessonId: number) => {
+        if (!courseDateId) return;
+        setActionLoading(true);
+        setActionMessage(null);
+
+        console.log(`🎯 Posting lesson action:`, {
+            path,
+            lessonId,
+            courseDateId,
+        });
+
+        try {
+            const res = await axios.post(path, {
+                course_date_id: courseDateId,
+                lesson_id: lessonId,
+            });
+
+            console.log(`✅ Lesson action success:`, res.data);
+            setActionMessage(res?.data?.message || "Success");
+
+            // Force refresh state quickly
+            try {
+                const stateRes = await axios.get(
+                    `/admin/instructors/lessons/state/${courseDateId}`
+                );
+                setLessonState(stateRes.data);
+            } catch (e) {
+                console.warn("Failed to refresh lesson state:", e);
+            }
+        } catch (err: any) {
+            console.error(`❌ Lesson action failed:`, err);
+
+            // Handle CSRF token mismatch
+            if (err?.response?.status === 419) {
+                const message = "Session expired. Please refresh the page.";
+                setActionMessage(message);
+                alert(message); // Show alert for critical auth errors
+                return;
+            }
+
+            const message =
+                err?.response?.data?.message || err?.message || "Action failed";
+            setActionMessage(message);
+
+            // Refresh state even on error (e.g., "lesson already started" means it exists!)
+            try {
+                const stateRes = await axios.get(
+                    `/admin/instructors/lessons/state/${courseDateId}`
+                );
+                console.log("🔄 State refreshed after error:", stateRes.data);
+                setLessonState(stateRes.data);
+            } catch (e) {
+                console.warn("Failed to refresh lesson state after error:", e);
+            }
+        } finally {
+            setActionLoading(false);
+        }
     };
 
-    fetchLessons();
-  }, [courseDateId]);
-
-  useEffect(() => {
-    if (!courseDateId) {
-      setLessonState(null);
-      return;
-    }
-
-    const fetchLessonState = async () => {
-      try {
-        const response = await axios.get(
-          `/admin/instructors/lessons/state/${courseDateId}`
+    /**
+     * Check if a lesson is completed by looking at InstLesson records
+     */
+    const isLessonCompleted = (lessonId: number): boolean => {
+        const instLesson = instLessons.find(
+            (il: InstLesson) => il.lesson_id === lessonId
         );
-        setLessonState(response.data);
-      } catch (err) {
-        // non-fatal - UI still works with polling data
-      }
+        return instLesson?.completed_at != null;
     };
 
-    fetchLessonState();
-    const interval = window.setInterval(fetchLessonState, 5000);
-    return () => window.clearInterval(interval);
-  }, [courseDateId]);
-
-  const postLessonAction = async (path: string, lessonId: number) => {
-    if (!courseDateId) return;
-    setActionLoading(true);
-    setActionMessage(null);
-    try {
-      const res = await axios.post(path, {
-        course_date_id: courseDateId,
-        lesson_id: lessonId,
-      });
-      setActionMessage(res?.data?.message || "Success");
-      // Force refresh state quickly
-      try {
-        const stateRes = await axios.get(
-          `/admin/instructors/lessons/state/${courseDateId}`
+    /**
+     * Check if a lesson is currently active (started but not completed)
+     */
+    const isLessonActive = (lessonId: number): boolean => {
+        const instLesson = instLessons.find(
+            (il: InstLesson) => il.lesson_id === lessonId
         );
-        setLessonState(stateRes.data);
-      } catch (e) {
-        // ignore
-      }
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message || err?.message || "Action failed";
-      setActionMessage(message);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+        return instLesson != null && instLesson.completed_at == null;
+    };
 
-  /**
-   * Check if a lesson is completed by looking at InstLesson records
-   */
-  const isLessonCompleted = (lessonId: number): boolean => {
-    const instLesson = instLessons.find((il: InstLesson) => il.lesson_id === lessonId);
-    return instLesson?.completed_at != null;
-  };
+    /**
+     * Determine if a lesson button should be enabled
+     * Rules:
+     * 1. If Zoom not ready, ALL disabled
+     * 2. If lesson already started/completed, disabled
+     * 3. Only first incomplete lesson is enabled
+     * 4. All subsequent lessons disabled until previous completes
+     */
+    const isLessonEnabled = (lesson: Lesson, index: number): boolean => {
+        // Rule 1: Zoom must be setup first
+        if (!isZoomReady) {
+            return false;
+        }
 
-  /**
-   * Check if a lesson is currently active (started but not completed)
-   */
-  const isLessonActive = (lessonId: number): boolean => {
-    const instLesson = instLessons.find((il: InstLesson) => il.lesson_id === lessonId);
-    return instLesson != null && instLesson.completed_at == null;
-  };
+        // Check if this lesson is already completed or active
+        const completed = isLessonCompleted(lesson.id);
+        const active = isLessonActive(lesson.id);
 
-  /**
-   * Determine if a lesson button should be enabled
-   * Rules:
-   * 1. If Zoom not ready, ALL disabled
-   * 2. If lesson already started/completed, disabled
-   * 3. Only first incomplete lesson is enabled
-   * 4. All subsequent lessons disabled until previous completes
-   */
-  const isLessonEnabled = (lesson: Lesson, index: number): boolean => {
-    // Rule 1: Zoom must be setup first
-    if (!isZoomReady) {
-      return false;
-    }
+        // If already active or completed, disable button
+        if (active || completed) {
+            return false;
+        }
 
-    // Check if this lesson is already completed or active
-    const completed = isLessonCompleted(lesson.id);
-    const active = isLessonActive(lesson.id);
+        // Find the first incomplete lesson
+        for (let i = 0; i < lessons.length; i++) {
+            const currentLesson = lessons[i];
+            if (!isLessonCompleted(currentLesson.id)) {
+                // This is the first incomplete lesson - enable only if it's THIS lesson
+                return currentLesson.id === lesson.id;
+            }
+        }
 
-    // If already active or completed, disable button
-    if (active || completed) {
-      return false;
-    }
+        return false;
+    };
 
-    // Find the first incomplete lesson
-    for (let i = 0; i < lessons.length; i++) {
-      const currentLesson = lessons[i];
-      if (!isLessonCompleted(currentLesson.id)) {
-        // This is the first incomplete lesson - enable only if it's THIS lesson
-        return currentLesson.id === lesson.id;
-      }
-    }
+    const getLessonIcon = (lessonType: string) => {
+        switch (lessonType) {
+            case "video":
+                return "fa-video";
+            case "reading":
+                return "fa-book";
+            case "quiz":
+                return "fa-clipboard-question";
+            case "assignment":
+                return "fa-file-pen";
+            default:
+                return "fa-book-open";
+        }
+    };
 
-    return false;
-  };
+    const formatDuration = (minutes: number) => {
+        if (minutes < 60) {
+            return `${minutes}m`;
+        }
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    };
 
-  const getLessonIcon = (lessonType: string) => {
-    switch (lessonType) {
-      case "video":
-        return "fa-video";
-      case "reading":
-        return "fa-book";
-      case "quiz":
-        return "fa-clipboard-question";
-      case "assignment":
-        return "fa-file-pen";
-      default:
-        return "fa-book-open";
-    }
-  };
-
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes}m`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
-  return (
-    <aside className={`sidebar sidebar-left ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-header">
-        <div className="sidebar-title">
-          {!collapsed && (
-            <>
-              <i className="fas fa-book" />
-              <span>Today's Lessons</span>
-            </>
-          )}
-          {collapsed && <i className="fas fa-book" />}
-        </div>
-        <button
-          className="btn-collapse"
-          onClick={onToggle}
-          title={collapsed ? "Expand" : "Collapse"}
+    return (
+        <aside
+            className={`sidebar sidebar-left ${collapsed ? "collapsed" : ""}`}
         >
-          <i
-            className={`fas ${
-              collapsed ? "fa-chevron-right" : "fa-chevron-left"
-            }`}
-          />
-        </button>
-      </div>
-
-      <div className="sidebar-content">
-        {collapsed && (
-          <div className="collapsed-icons">
-            <i className="fas fa-book-open" title="Lessons" />
-            {lessons.length > 0 && (
-              <div className="lesson-count-badge">{lessons.length}</div>
-            )}
-          </div>
-        )}
-
-        {!collapsed && (
-          <>
-            {loading && (
-              <div className="text-center p-4">
-                <i className="fas fa-spinner fa-spin fa-2x text-white-50 mb-2" />
-                <p className="text-white-50 small mb-0">Loading lessons...</p>
-              </div>
-            )}
-
-            {error && !loading && (
-              <div className="alert alert-danger m-3">
-                <i className="fas fa-exclamation-triangle mr-2" />
-                {error}
-              </div>
-            )}
-
-            {!loading && !error && lessons.length === 0 && (
-              <div className="placeholder-content">
-                <i className="fas fa-inbox fa-3x mb-3 text-muted" />
-                <p className="text-muted small">No lessons scheduled for today</p>
-              </div>
-            )}
-
-            {!loading && !error && lessons.length > 0 && (
-              <>
-                {!isZoomReady && (
-                  <div className="alert alert-warning m-3">
-                    <i className="fas fa-exclamation-triangle mr-2" />
-                    <strong>Zoom Setup Required</strong>
-                    <p className="mb-0 small">Complete Zoom setup before starting lessons</p>
-                  </div>
-                )}
-                <div className="lessons-list">
-                  {lessons.map((lesson, index) => {
-                    const completed = isLessonCompleted(lesson.id);
-                    const active = isLessonActive(lesson.id);
-                    const enabled = isLessonEnabled(lesson, index);
-
-                    return (
-                      <div
-                        key={lesson.id}
-                        className={`lesson-item ${completed ? "completed" : ""} ${active ? "active" : ""}`}
-                      >
-                        <div className="lesson-number">{index + 1}</div>
-                        <div className="lesson-content">
-                          <div className="lesson-header">
-                            <i className={`fas ${getLessonIcon(lesson.lesson_type)} mr-2`} />
-                            <h6 className="lesson-title mb-0">{lesson.title}</h6>
-                          </div>
-                          <div className="lesson-meta">
-                            <span className="lesson-duration">
-                              <i className="far fa-clock me-1" />
-                              {formatDuration(lesson.duration_minutes)}
-                            </span>
-                            {completed && (
-                              <span className="lesson-status text-success">
-                                <i className="fas fa-check-circle me-1" />
-                                Completed
-                              </span>
-                            )}
-                            {active && !completed && (
-                              <span className="lesson-status text-primary">
-                                <i className="fas fa-play-circle me-1" />
-                                In Progress
-                              </span>
-                            )}
-                            {!active && !completed && !enabled && (
-                              <span className="lesson-status text-muted">
-                                <i className="fas fa-lock me-1" />
-                                Locked
-                              </span>
-                            )}
-                          </div>
-                          {!completed && !active && (
-                            <button
-                              className="btn btn-sm btn-primary btn-start-lesson mt-2"
-                              disabled={!enabled}
-                              title={
-                                !isZoomReady
-                                  ? "Setup Zoom first"
-                                  : !enabled
-                                  ? "Complete previous lesson first"
-                                  : "Start this lesson"
-                              }
-                              onClick={() =>
-                                postLessonAction(
-                                  "/admin/instructors/lessons/start",
-                                  lesson.id
-                                )
-                              }
-                            >
-                              <i className="fas fa-play me-1" />
-                              Start Lesson
-                            </button>
-                          )}
-                          {active && !completed && (
-                            <div className="btn-group w-100 mt-2">
-                              <button
-                                className={`btn btn-sm ${isPaused ? "btn-success" : "btn-warning"}`}
-                                title={isPaused ? "Resume lesson" : "Pause lesson"}
-                                disabled={
-                                  actionLoading ||
-                                  (!!breaksRemaining && breaksRemaining <= 0 && !isPaused)
-                                }
-                                onClick={() =>
-                                  postLessonAction(
-                                    isPaused
-                                      ? "/admin/instructors/lessons/resume"
-                                      : "/admin/instructors/lessons/pause",
-                                    lesson.id
-                                  )
-                                }
-                              >
-                                <i className={`fas ${isPaused ? "fa-play" : "fa-pause"} me-1`} />
-                                {isPaused ? "Resume" : "Pause"}
-                              </button>
-                              <button
-                                className="btn btn-sm btn-danger"
-                                title="Complete lesson"
-                                disabled={actionLoading}
-                                onClick={() =>
-                                  postLessonAction(
-                                    "/admin/instructors/lessons/complete",
-                                    lesson.id
-                                  )
-                                }
-                              >
-                                <i className="fas fa-check me-1" />
-                                Complete
-                              </button>
-                            </div>
-                          )}
-
-                          {active && !completed && typeof breaksAllowed === "number" && (
-                            <div className="mt-2">
-                              <small className="text-white-50">
-                                Breaks: {breaksTaken ?? 0}/{breaksAllowed}
-                                {typeof breaksRemaining === "number"
-                                  ? ` (${breaksRemaining} remaining)`
-                                  : ""}
-                              </small>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+            <div className="sidebar-header">
+                <div className="sidebar-title">
+                    {!collapsed && (
+                        <>
+                            <i className="fas fa-book" />
+                            <span>Today's Lessons</span>
+                        </>
+                    )}
+                    {collapsed && <i className="fas fa-book" />}
                 </div>
+                <button
+                    className="btn-collapse"
+                    onClick={onToggle}
+                    title={collapsed ? "Expand" : "Collapse"}
+                >
+                    <i
+                        className={`fas ${
+                            collapsed ? "fa-chevron-right" : "fa-chevron-left"
+                        }`}
+                    />
+                </button>
+            </div>
 
-                {actionMessage && (
-                  <div className="alert alert-info m-3">
-                    <i className="fas fa-info-circle mr-2" />
-                    {actionMessage}
-                  </div>
+            <div className="sidebar-content">
+                {collapsed && (
+                    <div className="collapsed-icons">
+                        <i className="fas fa-book-open" title="Lessons" />
+                        {lessons.length > 0 && (
+                            <div className="lesson-count-badge">
+                                {lessons.length}
+                            </div>
+                        )}
+                    </div>
                 )}
-              </>
-            )}
-          </>
-        )}
-      </div>
 
-      {/* Lesson Panel Specific Styles */}
-      <style>{`
+                {!collapsed && (
+                    <>
+                        {loading && (
+                            <div className="text-center p-4">
+                                <i className="fas fa-spinner fa-spin fa-2x text-white-50 mb-2" />
+                                <p className="text-white-50 small mb-0">
+                                    Loading lessons...
+                                </p>
+                            </div>
+                        )}
+
+                        {error && !loading && (
+                            <div className="alert alert-danger m-3">
+                                <i className="fas fa-exclamation-triangle mr-2" />
+                                {error}
+                            </div>
+                        )}
+
+                        {!loading && !error && lessons.length === 0 && (
+                            <div className="placeholder-content">
+                                <i className="fas fa-inbox fa-3x mb-3 text-muted" />
+                                <p className="text-muted small">
+                                    No lessons scheduled for today
+                                </p>
+                            </div>
+                        )}
+
+                        {!loading && !error && lessons.length > 0 && (
+                            <>
+                                {!isZoomReady && (
+                                    <div className="alert alert-warning m-3">
+                                        <i className="fas fa-exclamation-triangle mr-2" />
+                                        <strong>Zoom Setup Required</strong>
+                                        <p className="mb-0 small">
+                                            Complete Zoom setup before starting
+                                            lessons
+                                        </p>
+                                    </div>
+                                )}
+                                <div className="lessons-list">
+                                    {lessons.map((lesson, index) => {
+                                        const completed = isLessonCompleted(
+                                            lesson.id
+                                        );
+                                        const active = isLessonActive(
+                                            lesson.id
+                                        );
+                                        const enabled = isLessonEnabled(
+                                            lesson,
+                                            index
+                                        );
+
+                                        return (
+                                            <div
+                                                key={lesson.id}
+                                                className={`lesson-item ${
+                                                    completed ? "completed" : ""
+                                                } ${active ? "active" : ""}`}
+                                            >
+                                                <div className="lesson-number">
+                                                    {index + 1}
+                                                </div>
+                                                <div className="lesson-content">
+                                                    <div className="lesson-header">
+                                                        <i
+                                                            className={`fas ${getLessonIcon(
+                                                                lesson.lesson_type
+                                                            )} mr-2`}
+                                                        />
+                                                        <h6 className="lesson-title mb-0">
+                                                            {lesson.title}
+                                                        </h6>
+                                                    </div>
+                                                    <div className="lesson-meta">
+                                                        <span className="lesson-duration">
+                                                            <i className="far fa-clock me-1" />
+                                                            {formatDuration(
+                                                                lesson.duration_minutes
+                                                            )}
+                                                        </span>
+                                                        {completed && (
+                                                            <span className="lesson-status text-success">
+                                                                <i className="fas fa-check-circle me-1" />
+                                                                Completed
+                                                            </span>
+                                                        )}
+                                                        {active &&
+                                                            !completed && (
+                                                                <span className="lesson-status text-primary">
+                                                                    <i className="fas fa-play-circle me-1" />
+                                                                    In Progress
+                                                                </span>
+                                                            )}
+                                                        {!active &&
+                                                            !completed &&
+                                                            !enabled && (
+                                                                <span className="lesson-status text-muted">
+                                                                    <i className="fas fa-lock me-1" />
+                                                                    Locked
+                                                                </span>
+                                                            )}
+                                                    </div>
+                                                    {!completed && !active && (
+                                                        <button
+                                                            className="btn btn-sm btn-primary btn-start-lesson mt-2"
+                                                            disabled={!enabled}
+                                                            title={
+                                                                !isZoomReady
+                                                                    ? "Setup Zoom first"
+                                                                    : !enabled
+                                                                    ? "Complete previous lesson first"
+                                                                    : "Start this lesson"
+                                                            }
+                                                            onClick={() =>
+                                                                postLessonAction(
+                                                                    "/admin/instructors/lessons/start",
+                                                                    lesson.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <i className="fas fa-play me-1" />
+                                                            Start Lesson
+                                                        </button>
+                                                    )}
+                                                    {active && !completed && (
+                                                        <div className="btn-group w-100 mt-2">
+                                                            <button
+                                                                className={`btn btn-sm ${
+                                                                    isPaused
+                                                                        ? "btn-success"
+                                                                        : "btn-warning"
+                                                                }`}
+                                                                title={
+                                                                    isPaused
+                                                                        ? "Resume lesson"
+                                                                        : "Pause lesson"
+                                                                }
+                                                                disabled={
+                                                                    actionLoading ||
+                                                                    (!!breaksRemaining &&
+                                                                        breaksRemaining <=
+                                                                            0 &&
+                                                                        !isPaused)
+                                                                }
+                                                                onClick={() =>
+                                                                    postLessonAction(
+                                                                        isPaused
+                                                                            ? "/admin/instructors/lessons/resume"
+                                                                            : "/admin/instructors/lessons/pause",
+                                                                        lesson.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <i
+                                                                    className={`fas ${
+                                                                        isPaused
+                                                                            ? "fa-play"
+                                                                            : "fa-pause"
+                                                                    } me-1`}
+                                                                />
+                                                                {isPaused
+                                                                    ? "Resume"
+                                                                    : "Pause"}
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-sm btn-danger"
+                                                                title="Complete lesson"
+                                                                disabled={
+                                                                    actionLoading
+                                                                }
+                                                                onClick={() =>
+                                                                    postLessonAction(
+                                                                        "/admin/instructors/lessons/complete",
+                                                                        lesson.id
+                                                                    )
+                                                                }
+                                                            >
+                                                                <i className="fas fa-check me-1" />
+                                                                Complete
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {active &&
+                                                        !completed &&
+                                                        typeof breaksAllowed ===
+                                                            "number" && (
+                                                            <div className="mt-2">
+                                                                <small className="text-white-50">
+                                                                    Breaks:{" "}
+                                                                    {breaksTaken ??
+                                                                        0}
+                                                                    /
+                                                                    {
+                                                                        breaksAllowed
+                                                                    }
+                                                                    {typeof breaksRemaining ===
+                                                                    "number"
+                                                                        ? ` (${breaksRemaining} remaining)`
+                                                                        : ""}
+                                                                </small>
+                                                            </div>
+                                                        )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {actionMessage && (
+                                    <div className="alert alert-info m-3">
+                                        <i className="fas fa-info-circle mr-2" />
+                                        {actionMessage}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Lesson Panel Specific Styles */}
+            <style>{`
         .lessons-list {
           padding: 0;
         }
@@ -522,8 +635,8 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
           font-weight: 600;
         }
       `}</style>
-    </aside>
-  );
+        </aside>
+    );
 };
 
 export default LessonsPanel;

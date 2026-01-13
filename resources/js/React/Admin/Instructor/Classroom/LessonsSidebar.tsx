@@ -212,14 +212,14 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                         </small>
                                         <small className={`badge ${badge.bg}`}>
                                             <i
-                                                className={`${badge.icon} me-1`}
+                                                className={`${badge.icon} mr-1`}
                                             ></i>
                                             {badge.text}
                                         </small>
                                     </div>
                                     {isCurrentLesson && (
                                         <small className="badge bg-info">
-                                            <i className="fas fa-star me-1"></i>
+                                            <i className="fas fa-star mr-1"></i>
                                             Current
                                         </small>
                                     )}
@@ -240,7 +240,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                 {/* Progress Minutes */}
                                 {lesson.progress_minutes > 0 && (
                                     <small className="text-muted d-block mb-2">
-                                        <i className="fas fa-clock me-1"></i>
+                                        <i className="fas fa-clock mr-1"></i>
                                         {lesson.progress_minutes} minutes
                                     </small>
                                 )}
@@ -248,7 +248,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                 {/* Time Info */}
                                 {(lesson.start_time || lesson.end_time) && (
                                     <small className="text-muted d-block">
-                                        <i className="fas fa-calendar me-1"></i>
+                                        <i className="fas fa-calendar mr-1"></i>
                                         {lesson.start_time &&
                                             new Date(
                                                 lesson.start_time
@@ -276,7 +276,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                             className="btn btn-sm btn-outline-primary"
                                             title="Start this lesson"
                                         >
-                                            <i className="fas fa-play me-1"></i>
+                                            <i className="fas fa-play mr-1"></i>
                                             <small>Start</small>
                                         </button>
                                     )}
@@ -285,7 +285,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                             className="btn btn-sm btn-outline-danger"
                                             title="Complete this lesson"
                                         >
-                                            <i className="fas fa-check me-1"></i>
+                                            <i className="fas fa-check mr-1"></i>
                                             <small>Complete</small>
                                         </button>
                                     )}
@@ -295,7 +295,7 @@ const LessonsSidebar: React.FC<LessonsSidebarProps> = ({ courseDateId, instUnitI
                                             disabled
                                             title="Lesson completed"
                                         >
-                                            <i className="fas fa-check-circle me-1"></i>
+                                            <i className="fas fa-check-circle mr-1"></i>
                                             <small>Done</small>
                                         </button>
                                     )}

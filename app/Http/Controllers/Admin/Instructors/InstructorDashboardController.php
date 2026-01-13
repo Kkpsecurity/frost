@@ -86,18 +86,19 @@ class InstructorDashboardController extends Controller
 
     /**
      * Poll: Get instructor-specific data (30 sec interval)
-     * Returns: instructor info, today's lessons, stats
+     * Returns: instructor info, today's lessons, stats, zoom status
      */
     public function getInstructorData()
     {
         try {
-            $user = Auth::user('admin');
+            $user = Auth::guard('admin')->user();
 
             if (!$user) {
                 return response()->json([
                     'instructor' => null,
                     'instUnit' => null,
                     'instLessons' => [],
+                    'zoom' => null,
                 ], 401);
             }
 
@@ -107,9 +108,12 @@ class InstructorDashboardController extends Controller
             // Find the instructor's active InstUnit (class they're currently teaching)
             $instUnit = \App\Models\InstUnit::where('created_by', $user->id)
                 ->whereNull('completed_at')
-                ->with(['instLessons', 'courseDate'])
+                ->with(['instLessons', 'courseDate.courseUnit.course'])
                 ->orderBy('created_at', 'desc')
                 ->first();
+
+            // Get Zoom status for active InstUnit
+            $zoomData = $this->getZoomDataForInstructor($user, $instUnit);
 
             return response()->json([
                 'instructor' => [
@@ -127,10 +131,76 @@ class InstructorDashboardController extends Controller
                 ],
                 'instUnit' => $instUnit,
                 'instLessons' => $instUnit?->instLessons ?? [],
+                'zoom' => $zoomData, // NEW: Zoom status in instructor poll
             ]);
         } catch (Exception $e) {
             Log::error('Instructor poll data error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get zoom data for instructor (shared logic between poll and status endpoint)
+     */
+    private function getZoomDataForInstructor($instructor, $activeInstUnit = null)
+    {
+        try {
+            if (!$activeInstUnit || !$activeInstUnit->CourseDate) {
+                return [
+                    'status' => 'disabled',
+                    'is_active' => false,
+                    'message' => 'No active classroom session',
+                ];
+            }
+
+            $course = $activeInstUnit->CourseDate->CourseUnit->Course ?? null;
+            $courseTitle = strtoupper($course->title ?? '');
+
+            // Determine which Zoom account to use based on course type
+            $zoomEmail = null;
+            if (in_array($instructor->role_id, [1, 2])) {
+                // System Admin (1) or Administrator/Support (2) use admin account for testing
+                $zoomEmail = 'instructor_admin@stgroupusa.com';
+            } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
+                // D class courses - should typically be disabled
+                $zoomEmail = 'instructor_d@stgroupusa.com';
+            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
+                // G class courses use instructor_g account
+                $zoomEmail = 'instructor_g@stgroupusa.com';
+            } else {
+                $zoomEmail = 'instructor_admin@stgroupusa.com';
+            }
+
+            // Get the SPECIFIC Zoom credential for this instructor/course
+            $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
+
+            if (!$zoomCreds) {
+                return [
+                    'status' => 'disabled',
+                    'is_active' => false,
+                    'message' => 'No zoom credentials found',
+                    'email' => $zoomEmail,
+                ];
+            }
+
+            return [
+                'status' => $zoomCreds->zoom_status ?? 'disabled',
+                'is_active' => ($zoomCreds->zoom_status ?? 'disabled') === 'enabled',
+                'email' => $zoomCreds->zoom_email,
+                'meeting_id' => $zoomCreds->pmi,
+                'course_name' => $course ? $course->name : 'Unknown',
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get zoom data for instructor poll', [
+                'error' => $e->getMessage(),
+                'instructor_id' => $instructor->id ?? null,
+            ]);
+
+            return [
+                'status' => 'error',
+                'is_active' => false,
+                'message' => 'Error loading zoom status',
+            ];
         }
     }
 
@@ -724,6 +794,27 @@ class InstructorDashboardController extends Controller
             // Refresh to get the created_at timestamp
             $instUnit->refresh();
 
+            // Enable the Zoom credential for this course type
+            $course = $courseDate->CourseUnit?->Course;
+            $courseTitle = strtoupper($course->title ?? '');
+
+            $zoomEmail = null;
+            if (in_array($admin->role_id, [1, 2])) {
+                $zoomEmail = 'instructor_admin@stgroupusa.com';
+            } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
+                $zoomEmail = 'instructor_d@stgroupusa.com';
+            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
+                $zoomEmail = 'instructor_g@stgroupusa.com';
+            } else {
+                $zoomEmail = 'instructor_admin@stgroupusa.com';
+            }
+
+            $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
+            if ($zoomCreds) {
+                $zoomCreds->zoom_status = 'enabled';
+                $zoomCreds->save();
+            }
+
             // Get instructor and assistant names
             $instructor = \App\Models\User::find($admin->id);
             $assistant = $assistantId ? \App\Models\User::find($assistantId) : null;
@@ -732,7 +823,9 @@ class InstructorDashboardController extends Controller
                 'inst_unit_id' => $instUnit->id,
                 'course_date_id' => $courseDateId,
                 'instructor_id' => $admin->id,
-                'assistant_id' => $assistantId
+                'assistant_id' => $assistantId,
+                'zoom_email' => $zoomEmail,
+                'zoom_enabled' => $zoomCreds?->zoom_status === 'enabled'
             ]);
 
             // Return success with classroom session data
@@ -1719,10 +1812,19 @@ class InstructorDashboardController extends Controller
      */
     public function startLesson(Request $request)
     {
+        // Log request immediately
+        Log::info('startLesson called', [
+            'request_data' => $request->all(),
+            'auth_id' => Auth::id(),
+            'admin_auth_id' => Auth::guard('admin')->id(),
+        ]);
+
         $request->validate([
             'course_date_id' => 'required|integer|exists:course_dates,id',
             'lesson_id' => 'required|integer|exists:lessons,id',
         ]);
+
+        Log::info('startLesson validation passed');
 
         try {
             $courseDate = \App\Models\CourseDate::with(['InstUnit'])->findOrFail($request->course_date_id);
@@ -1770,14 +1872,14 @@ class InstructorDashboardController extends Controller
             $instLesson = \App\Models\InstLesson::create([
                 'inst_unit_id' => $instUnit->id,
                 'lesson_id' => $request->lesson_id,
-                'created_by' => Auth::id(),
+                'created_by' => Auth::guard('admin')->id(),
             ]);
 
             // Refresh to get the created_at timestamp
             $instLesson->refresh();
 
             Log::info('Instructor started lesson', [
-                'instructor_id' => Auth::id(),
+                'instructor_id' => Auth::guard('admin')->id(),
                 'course_date_id' => $request->course_date_id,
                 'lesson_id' => $request->lesson_id,
                 'inst_lesson_id' => $instLesson->id,
@@ -1796,8 +1898,9 @@ class InstructorDashboardController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to start lesson', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all(),
-                'instructor_id' => Auth::id(),
+                'instructor_id' => Auth::guard('admin')->id(),
             ]);
 
             return response()->json([
@@ -2179,6 +2282,101 @@ class InstructorDashboardController extends Controller
     // Break policy is currently fixed at 3 breaks per lesson.
 
     /**
+     * Get lesson state for a course date (all InstLesson records)
+     *
+     * @param int $courseDateId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getLessonState(int $courseDateId)
+    {
+        try {
+            $courseDate = \App\Models\CourseDate::with(['InstUnit'])->findOrFail($courseDateId);
+
+            if (!$this->hasInstructorAccess($courseDate)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied',
+                ], 403);
+            }
+
+            $instUnit = $courseDate->InstUnit;
+            if (!$instUnit) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'inst_lessons' => [],
+                        'active_lesson' => null,
+                    ]
+                ]);
+            }
+
+            // Get all InstLesson records for this InstUnit
+            $instLessons = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                ->with(['lesson', 'Breaks'])
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->map(function ($instLesson) {
+                    $breaks = $instLesson->Breaks->map(function ($break) {
+                        return [
+                            'id' => $break->id,
+                            'break_number' => $break->break_number,
+                            'started_at' => $break->started_at?->toIso8601String(),
+                            'ended_at' => $break->ended_at?->toIso8601String(),
+                            'duration_seconds' => $break->duration_seconds,
+                        ];
+                    });
+
+                    return [
+                        'id' => $instLesson->id,
+                        'lesson_id' => $instLesson->lesson_id,
+                        'lesson_title' => $instLesson->lesson->title ?? null,
+                        'created_at' => $instLesson->created_at->toIso8601String(),
+                        'completed_at' => $instLesson->completed_at?->toIso8601String(),
+                        'is_paused' => $instLesson->is_paused ?? false,
+                        'breaks' => $breaks,
+                        'breaks_taken' => $instLesson->BreaksTaken(),
+                    ];
+                });
+
+            // Find active lesson (not completed)
+            $activeLesson = $instLessons->firstWhere('completed_at', null);
+
+            // Calculate break statistics for active lesson
+            $breakStats = null;
+            if ($activeLesson) {
+                $breaksTaken = count($activeLesson['breaks'] ?? []);
+                $breakStats = [
+                    'breaks_allowed' => 3,
+                    'breaks_taken' => $breaksTaken,
+                    'breaks_remaining' => max(0, 3 - $breaksTaken),
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'inst_lessons' => $instLessons,
+                    'active_lesson' => $activeLesson,
+                    'breaks' => $breakStats,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get lesson state', [
+                'error' => $e->getMessage(),
+                'course_date_id' => $courseDateId,
+                'instructor_id' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get lesson state',
+                'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
      * Get screen sharing status for classroom preparation
      *
      * @param int $courseDateId
@@ -2370,47 +2568,36 @@ class InstructorDashboardController extends Controller
                 ->with(['CourseDate.CourseUnit.Course'])
                 ->first();
 
+            // Use shared zoom data logic
+            $zoomData = $this->getZoomDataForInstructor($instructor, $activeInstUnit);
+
+            // If no active session, return early
             if (!$activeInstUnit || !$activeInstUnit->CourseDate) {
                 return response()->json([
                     'success' => true,
                     'status' => 'disabled',
+                    'is_active' => false,
                     'message' => 'No active classroom session',
                 ], 200);
             }
 
+            // Get full zoom credentials with decrypted data for detailed view
             $course = $activeInstUnit->CourseDate->CourseUnit->Course ?? null;
-            $courseTitle = strtoupper($course->title ?? '');
-
-            // Determine which Zoom account to use (same logic as toggleZoomStatus)
-            // Priority 1: Admin/Support roles (role_id 1 or 2) always use admin account for testing
-            $zoomEmail = null;
-            if (in_array($instructor->role_id, [1, 2])) {
-                // System Admin (1) or Administrator/Support (2) use admin account for testing
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            }
-            // Priority 2: Course type determines account (D or G)
-            elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
-                $zoomEmail = 'instructor_d@stgroupusa.com';
-            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
-                $zoomEmail = 'instructor_g@stgroupusa.com';
-            } else {
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            }
-
-            // Get the SPECIFIC Zoom credential for this instructor/course
+            $zoomEmail = $zoomData['email'] ?? null;
             $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
 
             if (!$zoomCreds) {
                 return response()->json([
                     'success' => true,
                     'status' => 'disabled',
+                    'is_active' => false,
                     'message' => 'No zoom credentials found for ' . $zoomEmail,
                     'course_name' => $course ? $course->name : 'Unknown',
                     'email' => $zoomEmail,
                 ], 200);
             }
 
-            // Decrypt Zoom credentials
+            // Decrypt Zoom credentials for detailed endpoint
             try {
                 $decryptedPasscode = Crypt::decrypt($zoomCreds->zoom_passcode);
                 $decryptedPassword = Crypt::decrypt($zoomCreds->zoom_password);
@@ -3269,10 +3456,19 @@ class InstructorDashboardController extends Controller
     protected function autoCompleteStaleInstUnits(): void
     {
         try {
+            // Get current user to check for admin/support role
+            $currentUser = Auth::guard('admin')->user();
+            $isAdminOrSupport = $currentUser && in_array($currentUser->role_id, [1, 2]);
+
+            // Admin/Support get 12-hour grace period for testing/development
+            // Regular instructors: auto-complete immediately when CourseDate ends
+            $graceHours = $isAdminOrSupport ? 12 : 0;
+
             // Find InstUnits that are still active but their CourseDate has ended
+            // (with grace period adjustment for admin/support)
             $staleInstUnits = InstUnit::whereNull('completed_at')
-                ->whereHas('CourseDate', function ($q) {
-                    $q->where('ends_at', '<', now());
+                ->whereHas('CourseDate', function ($q) use ($graceHours) {
+                    $q->where('ends_at', '<', now()->subHours($graceHours));
                 })
                 ->with('CourseDate')
                 ->get();
@@ -3292,6 +3488,8 @@ class InstructorDashboardController extends Controller
                         'inst_unit_id' => $instUnit->id,
                         'course_date_id' => $courseDate->id,
                         'completed_at' => $courseDate->ends_at,
+                        'grace_hours' => $graceHours,
+                        'is_admin_or_support' => $isAdminOrSupport,
                     ]);
                 }
             }

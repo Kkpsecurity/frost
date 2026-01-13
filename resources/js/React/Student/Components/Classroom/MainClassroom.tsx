@@ -73,7 +73,8 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
         const hasIdCard = !!validations?.idcard;
         const hasHeadshot = !!headshotUrl;
 
-        const needsOnboarding = !hasAgreedToTerms || !hasIdCard || !hasHeadshot;
+        // Check onboarding_completed flag - student must complete all 4 steps including final confirmation
+        const needsOnboarding = !studentUnit?.onboarding_completed;
 
         if (needsOnboarding) {
             return (

@@ -27,6 +27,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 }) => {
     const instUnit = instructorData?.instUnit;
     const instructor = instructorData?.instructor_user;
+    const zoomStatus = instructorData?.zoom; // NEW: Get zoom status from instructor poll
     const courseDateId = instUnit?.course_date_id;
 
     const currentCourseDate = classroomData?.courseDates?.[0];
@@ -137,6 +138,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                             <ZoomSetupPanel
                                 instUnit={instUnit}
                                 courseName={courseName}
+                                zoomStatusFromPoll={zoomStatus}
                                 onZoomReadyChange={setIsZoomReady}
                             />
                         </div>

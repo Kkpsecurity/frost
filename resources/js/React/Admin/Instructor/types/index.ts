@@ -10,9 +10,10 @@
 // ==========================================
 
 export interface InstructorPollResponse {
-  instructor: InstructorData;
-  instUnit: InstUnitData | null;
-  instLessons: InstLessonData[];
+    instructor: InstructorData;
+    instUnit: InstUnitData | null;
+    instLessons: InstLessonData[];
+    zoom: ZoomStatusData | null; // NEW: Zoom status managed by instructor poll
 }
 
 export interface InstructorData {
@@ -49,6 +50,16 @@ export interface InstLessonData {
   started_at?: string | null;
   ended_at?: string | null;
   [key: string]: any;
+}
+
+// Zoom Status Data (part of Instructor Poll)
+export interface ZoomStatusData {
+  status: 'enabled' | 'disabled' | 'error';
+  is_active: boolean;
+  email?: string;
+  meeting_id?: string;
+  course_name?: string;
+  message?: string;
 }
 
 // ==========================================

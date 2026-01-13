@@ -24,6 +24,20 @@ if (token) {
 }
 
 /**
+ * Add request interceptor to ensure CSRF token is always fresh
+ * This prevents 419 errors when the session token changes
+ */
+window.axios.interceptors.request.use((config) => {
+    const freshToken = document.head.querySelector('meta[name="csrf-token"]');
+    if (freshToken) {
+        config.headers['X-CSRF-TOKEN'] = freshToken.content;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
+/**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting
  * allows your team to easily build robust real-time web applications.

@@ -179,6 +179,38 @@ Route::middleware(['auth'])->group(function () {
         ->where('sessionId', '[0-9a-f\-]{36}')  // UUID format
         ->name('classroom.lesson.session-status');
 
+    /**
+     * Student Activity Tracking Routes
+     */
+    Route::prefix('api/student/activity')->group(function () {
+        Route::post('/site-entry', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackSiteEntry'])
+            ->name('api.student.activity.site-entry');
+
+        Route::post('/site-exit', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackSiteExit'])
+            ->name('api.student.activity.site-exit');
+
+        Route::post('/classroom-entry', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackClassroomEntry'])
+            ->name('api.student.activity.classroom-entry');
+
+        Route::post('/agreement-accepted', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackAgreementAccepted'])
+            ->name('api.student.activity.agreement-accepted');
+
+        Route::post('/rules-accepted', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackRulesAccepted'])
+            ->name('api.student.activity.rules-accepted');
+
+        Route::post('/tab-visibility', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackTabVisibility'])
+            ->name('api.student.activity.tab-visibility');
+
+        Route::post('/button-click', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackButtonClick'])
+            ->name('api.student.activity.button-click');
+
+        Route::get('/timeline', [\App\Http\Controllers\Student\StudentActivityController::class, 'getTimeline'])
+            ->name('api.student.activity.timeline');
+
+        Route::get('/away-time', [\App\Http\Controllers\Student\StudentActivityController::class, 'getAwayTime'])
+            ->name('api.student.activity.away-time');
+    });
+
     // Main student classroom dashboard
     Route::get('/classroom', [StudentDashboardController::class, 'dashboard'])
         ->name('classroom.dashboard');

@@ -63,6 +63,32 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
 
         Route::post('/send-message', [InstructorDashboardController::class, 'sendMessage'])
             ->name('chat.send');
+    });
+
+    // =====================================================
+    // LESSON MANAGEMENT - Start, Pause, Resume, Complete
+    // =====================================================
+
+    Route::prefix('lessons')->name('lessons.')->group(function () {
+        // Start a lesson
+        Route::post('/start', [InstructorDashboardController::class, 'startLesson'])
+            ->name('start');
+
+        // Pause a lesson
+        Route::post('/pause', [InstructorDashboardController::class, 'pauseLesson'])
+            ->name('pause');
+
+        // Resume a lesson
+        Route::post('/resume', [InstructorDashboardController::class, 'resumeLesson'])
+            ->name('resume');
+
+        // Complete a lesson
+        Route::post('/complete', [InstructorDashboardController::class, 'completeLesson'])
+            ->name('complete');
+
+        // Get lesson state for a course date
+        Route::get('/state/{courseDateId}', [InstructorDashboardController::class, 'getLessonState'])
+            ->name('state');
 
         // Ask Instructor queue + session mode
         Route::get('/questions', [InstructorQuestionsController::class, 'list'])

@@ -751,6 +751,9 @@ class StudentDashboardController extends Controller
                     ->first();
             }
 
+            // Get validations for this course auth
+            $validations = $this->buildStudentValidationsForCourseAuth($courseAuth);
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -793,6 +796,16 @@ class StudentDashboardController extends Controller
                         // Identity validation is student progress and comes from the student poll.
                         'verified' => (bool) ($studentUnit->verified ?? false),
                     ] : null,
+                    'validations' => [
+                        'idcard' => [
+                            'image_url' => $validations['idcard'] ?? null,
+                            'status' => $validations['idcard_status'] ?? 'missing',
+                        ],
+                        'headshot' => [
+                            'image_url' => $validations['headshot'][strtolower(now()->format('l'))] ?? null,
+                            'status' => $validations['headshot_status'] ?? 'missing',
+                        ],
+                    ],
                     'lessons' => $lessons,
                     'modality' => $isOnline ? 'online' : 'offline',
                     'active_lesson_id' => $activeLessonId,
