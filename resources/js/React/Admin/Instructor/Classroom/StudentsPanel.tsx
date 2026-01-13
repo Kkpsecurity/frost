@@ -18,6 +18,7 @@ interface Student {
     student_id: number;
     student_name: string;
     student_email: string;
+    avatar?: string;
     course_auth_id?: number; // Course enrollment ID
     student_unit_id?: number; // Current session enrollment
     status: "online" | "offline" | "away";
@@ -176,17 +177,30 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({
                         }`}
                     >
                         <div className="d-flex align-items-start gap-2">
-                            <div
-                                className="rounded-circle bg-secondary text-white-50 d-flex align-items-center justify-content-center flex-shrink-0"
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    fontSize: "0.8rem",
-                                }}
-                                aria-hidden="true"
-                            >
-                                <i className="fas fa-user"></i>
-                            </div>
+                            {student.avatar ? (
+                                <img
+                                    src={student.avatar}
+                                    alt={student.student_name}
+                                    className="rounded-circle flex-shrink-0"
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        objectFit: "cover",
+                                    }}
+                                />
+                            ) : (
+                                <div
+                                    className="rounded-circle bg-secondary text-white-50 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        fontSize: "0.8rem",
+                                    }}
+                                    aria-hidden="true"
+                                >
+                                    <i className="fas fa-user"></i>
+                                </div>
+                            )}
                             <div
                                 className="flex-grow-1"
                                 style={{ minWidth: 0 }}

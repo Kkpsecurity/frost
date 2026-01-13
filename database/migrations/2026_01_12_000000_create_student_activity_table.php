@@ -30,8 +30,8 @@ return new class extends Migration
 
             $table->foreign('course_auth_id')->references('id')->on('course_auths')->onDelete('set null');
             $table->foreign('course_date_id')->references('id')->on('course_dates')->onDelete('set null');
-            $table->foreign('student_unit_id')->references('id')->on('student_units')->onDelete('set null');
-            $table->foreign('inst_unit_id')->references('id')->on('inst_units')->onDelete('set null');
+            $table->foreign('student_unit_id')->references('id')->on('student_unit')->onDelete('set null');
+            $table->foreign('inst_unit_id')->references('id')->on('inst_unit')->onDelete('set null');
 
             // Activity Classification
             $table->string('category', 50)->index(); // entry, navigation, interaction, agreement, system

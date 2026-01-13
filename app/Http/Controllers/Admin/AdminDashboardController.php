@@ -129,8 +129,6 @@ class AdminDashboardController extends Controller
                 'attendance_today' => DB::table('student_unit')->whereDate('created_at', $today)->count(),
                 'attendance_week' => DB::table('student_unit')->whereDate('created_at', '>=', $thisWeek)->count(),
                 'attendance_month' => DB::table('student_unit')->whereDate('created_at', '>=', $thisMonth)->count(),
-                'online_today' => DB::table('student_unit')->whereDate('created_at', $today)->where('attendance_type', 'online')->count(),
-                'offline_today' => DB::table('student_unit')->whereDate('created_at', $today)->where('attendance_type', 'offline')->count(),
                 'total_students' => DB::table('users')->where('role_id', '>=', 5)->count(),
                 'active_students' => DB::table('users')->where('role_id', '>=', 5)->where('is_active', true)->count(),
                 'completed_courses' => DB::table('course_auths')->whereNotNull('completed_at')->count(),
@@ -142,8 +140,6 @@ class AdminDashboardController extends Controller
                 'attendance_today' => 0,
                 'attendance_week' => 0,
                 'attendance_month' => 0,
-                'online_today' => 0,
-                'offline_today' => 0,
                 'total_students' => 0,
                 'active_students' => 0,
                 'completed_courses' => 0,
@@ -221,9 +217,9 @@ class AdminDashboardController extends Controller
                 ->count();
 
             // Student issues/verifications needing attention
-            $pendingVerifications = DB::table('student_unit')
-                ->where('onboarding_completed', false)
-                ->whereNotNull('inst_unit_id')
+            $pendingVerifications = DB::table('users')
+                ->where('role_id', '>=', 5)
+                ->whereNull('email_verified_at')
                 ->count();
 
             // Recent student attendance requiring verification
@@ -236,10 +232,7 @@ class AdminDashboardController extends Controller
                 'active_staff' => $activeSupport,
                 'pending_verifications' => $pendingVerifications,
                 'today_attendance' => $todayAttendance,
-                'students_needing_help' => DB::table('student_unit')
-                    ->whereDate('created_at', '>=', $thisWeek)
-                    ->where('terms_accepted', false)
-                    ->count(),
+                'students_needing_help' => 0, // Placeholder - define what "needing help" means
                 'verification_rate' => $todayAttendance > 0
                     ? round((($todayAttendance - $pendingVerifications) / $todayAttendance) * 100, 1)
                     : 100,
@@ -271,14 +264,16 @@ class AdminDashboardController extends Controller
                 $date = date('Y-m-d', strtotime("-$i days"));
                 $dayName = date('D', strtotime("-$i days"));
 
+                // Online: student_unit with inst_unit_id (live class)
                 $online = DB::table('student_unit')
                     ->whereDate('created_at', $date)
-                    ->where('attendance_type', 'online')
+                    ->whereNotNull('inst_unit_id')
                     ->count();
 
+                // Offline: student_unit without inst_unit_id (self study)
                 $offline = DB::table('student_unit')
                     ->whereDate('created_at', $date)
-                    ->where('attendance_type', 'offline')
+                    ->whereNull('inst_unit_id')
                     ->count();
 
                 $days[] = $dayName;
