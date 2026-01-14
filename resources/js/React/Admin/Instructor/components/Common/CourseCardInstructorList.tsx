@@ -1,3 +1,4 @@
+import { defaultAvatar } from "@/React/Config/helper";
 import React from "react";
 
 interface CourseCardInstructorListProps {
@@ -32,9 +33,7 @@ const CourseCardInstructorList: React.FC<CourseCardInstructorListProps> = ({
                             <img
                                 src={
                                     instructorAvatar ||
-                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                        instructorName
-                                    )}&size=32&background=6c757d&color=ffffff&rounded=true`
+                                    defaultAvatar(instructorName)
                                 }
                                 alt={instructorName}
                                 width="28"
@@ -43,7 +42,7 @@ const CourseCardInstructorList: React.FC<CourseCardInstructorListProps> = ({
                             />
                             <div className="d-flex flex-column flex-grow-1">
                                 <span
-                                    className="small text-dark text-uppercase fw-bold"
+                                    className="small text-dark text-uppercase fw-bold mr-2"
                                     style={{
                                         fontSize: "0.65rem",
                                         letterSpacing: "0.5px",
@@ -66,7 +65,7 @@ const CourseCardInstructorList: React.FC<CourseCardInstructorListProps> = ({
                     ) : (
                         <>
                             <div
-                                className="rounded-circle d-flex align-items-center justify-content-center"
+                                className="rounded-circle d-flex align-items-center justify-content-center mr-2"
                                 style={{
                                     width: 28,
                                     height: 28,
@@ -115,9 +114,7 @@ const CourseCardInstructorList: React.FC<CourseCardInstructorListProps> = ({
                             <img
                                 src={
                                     assistantAvatar ||
-                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                        assistantName
-                                    )}&size=32&background=6c757d&color=ffffff&rounded=true`
+                                    defaultAvatar(assistantName)
                                 }
                                 alt={assistantName}
                                 width="28"
@@ -149,7 +146,7 @@ const CourseCardInstructorList: React.FC<CourseCardInstructorListProps> = ({
                     ) : (
                         <>
                             <div
-                                className="rounded-circle d-flex align-items-center justify-content-center"
+                                className="rounded-circle d-flex align-items-center justify-content-center mr-2Ok lets move to the student side"
                                 style={{
                                     width: 28,
                                     height: 28,

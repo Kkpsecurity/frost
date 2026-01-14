@@ -62,9 +62,7 @@ class StudentUnit extends Model
         'unit_completed'    => 'boolean',
         'attendance_type' => 'string',
 
-        'terms_accepted' => 'boolean',
-        'rules_accepted' => 'boolean',
-        'onboarding_completed' => 'boolean',
+        // Note: terms_accepted, rules_accepted, onboarding_completed are tracked in student_activity table, not here
 
     ];
 

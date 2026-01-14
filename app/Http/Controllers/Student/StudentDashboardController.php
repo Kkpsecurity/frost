@@ -311,10 +311,30 @@ class StudentDashboardController extends Controller
             'course_unit_id' => $courseDate->course_unit_id,
             'course_date_id' => $courseDate->id,
             'inst_unit_id' => $instUnitId ?? 0,
-            'terms_accepted' => false,
-            'rules_accepted' => false,
-            'onboarding_completed' => false,
+            // Note: terms_accepted, rules_accepted, onboarding_completed are tracked in student_activity table
         ]);
+    }
+
+    /**
+     * Check if student has accepted rules for a given StudentUnit
+     */
+    private function hasAcceptedRules(int $userId, int $studentUnitId): bool
+    {
+        return \App\Models\StudentActivity::where('user_id', $userId)
+            ->where('student_unit_id', $studentUnitId)
+            ->where('activity_type', \App\Models\StudentActivity::TYPE_RULES_ACCEPTED)
+            ->exists();
+    }
+
+    /**
+     * Check if student has completed onboarding for a given StudentUnit
+     */
+    private function hasCompletedOnboarding(int $userId, int $studentUnitId): bool
+    {
+        return \App\Models\StudentActivity::where('user_id', $userId)
+            ->where('student_unit_id', $studentUnitId)
+            ->where('activity_type', 'onboarding_completed')
+            ->exists();
     }
 
     /**
@@ -408,7 +428,9 @@ class StudentDashboardController extends Controller
                 $courseIds = $courseAuths->pluck('course_id')->filter()->unique();
 
                 if ($courseIds->isNotEmpty()) {
-                    $courseDate = CourseDate::with(['CourseUnit', 'InstUnit'])
+                    // Prefer today's CourseDate for this course_id, regardless of InstUnit (needed for Waiting Room).
+                    $today = now()->format('Y-m-d');
+                    $courseDate = CourseDate::with(['CourseUnit', 'InstUnit', 'InstUnit.instLessons.Lesson'])
                         ->whereDate('starts_at', $today)
                         ->whereHas('CourseUnit', function ($q) use ($courseIds) {
                             $q->whereIn('course_id', $courseIds);
@@ -448,9 +470,9 @@ class StudentDashboardController extends Controller
                                 'id' => $studentUnit->id,
                                 'course_auth_id' => (int) ($studentUnit->course_auth_id ?? 0),
                                 'course_date_id' => (int) ($studentUnit->course_date_id ?? 0),
-                                'terms_accepted' => (bool) ($studentUnit->terms_accepted ?? false),
-                                'rules_accepted' => (bool) ($studentUnit->rules_accepted ?? false),
-                                'onboarding_completed' => (bool) ($studentUnit->onboarding_completed ?? false),
+                                'terms_accepted' => false, // tracked in student_activity
+                                'rules_accepted' => $this->hasAcceptedRules($user->id, $studentUnit->id),
+                                'onboarding_completed' => $this->hasCompletedOnboarding($user->id, $studentUnit->id),
                                 'verified' => (bool) ($studentUnit->verified ?? false),
                             ] : null,
                             'student_lessons' => [
@@ -599,9 +621,9 @@ class StudentDashboardController extends Controller
                             'course_auth_id' => (int) ($studentUnit->course_auth_id ?? 0),
                             'course_date_id' => (int) ($studentUnit->course_date_id ?? 0),
                             'joined_at' => $studentUnit->created_at,
-                            'terms_accepted' => (bool) ($studentUnit->terms_accepted ?? false),
-                            'rules_accepted' => (bool) ($studentUnit->rules_accepted ?? false),
-                            'onboarding_completed' => (bool) ($studentUnit->onboarding_completed ?? false),
+                            'terms_accepted' => false, // tracked in student_activity
+                            'rules_accepted' => $this->hasAcceptedRules($user->id, $studentUnit->id),
+                            'onboarding_completed' => $this->hasCompletedOnboarding($user->id, $studentUnit->id),
                             // Note: full identity verification details are returned on the per-course_auth poll.
                             'verified' => (bool) ($studentUnit->verified ?? false),
                         ] : null,
@@ -629,7 +651,7 @@ class StudentDashboardController extends Controller
 
             // Prefer today's CourseDate for this course_id, regardless of InstUnit (needed for Waiting Room).
             $today = now()->format('Y-m-d');
-            $courseDate = CourseDate::with(['CourseUnit', 'InstUnit'])
+            $courseDate = CourseDate::with(['CourseUnit', 'InstUnit', 'InstUnit.instLessons.Lesson'])
                 ->whereDate('starts_at', $today)
                 ->whereHas('CourseUnit', function ($q) use ($courseAuth) {
                     $q->where('course_id', $courseAuth->course_id);
@@ -783,15 +805,30 @@ class StudentDashboardController extends Controller
                         'id' => $instUnit->id,
                         'started_at' => $instUnit->start_time,
                         'completed_at' => $instUnit->completed_at,
+                        // Include inst_lessons for pause detection
+                        'inst_lessons' => $instUnit->instLessons->map(function ($instLesson) {
+                            return [
+                                'id' => $instLesson->id,
+                                'lesson_id' => $instLesson->lesson_id,
+                                'created_at' => $instLesson->created_at,
+                                'completed_at' => $instLesson->completed_at,
+                                'is_paused' => $instLesson->is_paused,
+                                'lesson' => $instLesson->Lesson ? [
+                                    'id' => $instLesson->Lesson->id,
+                                    'title' => $instLesson->Lesson->title ?? $instLesson->Lesson->name ?? 'Lesson ' . $instLesson->lesson_id,
+                                    'name' => $instLesson->Lesson->name ?? $instLesson->Lesson->title,
+                                ] : null,
+                            ];
+                        })->toArray(),
                     ] : null,
                     'studentUnit' => $studentUnit ? [
                         'id' => $studentUnit->id,
                         'course_auth_id' => (int) ($studentUnit->course_auth_id ?? 0),
                         'course_date_id' => (int) ($studentUnit->course_date_id ?? 0),
                         'joined_at' => $studentUnit->created_at,
-                        'terms_accepted' => (bool) ($studentUnit->terms_accepted ?? false),
-                        'rules_accepted' => (bool) ($studentUnit->rules_accepted ?? false),
-                        'onboarding_completed' => (bool) ($studentUnit->onboarding_completed ?? false),
+                        'terms_accepted' => false, // tracked in student_activity
+                        'rules_accepted' => $this->hasAcceptedRules($user->id, $studentUnit->id),
+                        'onboarding_completed' => $this->hasCompletedOnboarding($user->id, $studentUnit->id),
                         // Classroom poll should stay focused on classroom/session context.
                         // Identity validation is student progress and comes from the student poll.
                         'verified' => (bool) ($studentUnit->verified ?? false),
@@ -876,8 +913,8 @@ class StudentDashboardController extends Controller
                 'course.courseUnit',
                 'course.courseUnit.courseUnitLessons',
                 'instUnit',
-                'instUnit.instLessons',
-                'studentUnits',
+                'instUnit.instLessons.Lesson', // Load Lesson relationship for inst_lessons
+                'studentUnits.StudentLessons', // Load student lessons with completion status
             ])->find($courseDateId);
 
             if (!$courseDate) {
@@ -888,9 +925,26 @@ class StudentDashboardController extends Controller
                     'course' => null,
                     'lessons' => [],
                     'instUnit' => null,
+                    'studentUnit' => null,
+                    'studentLessons' => [],
                     'config' => [],
                 ]);
             }
+
+            // Find the current student's StudentUnit for today
+            $studentUnit = $courseDate->studentUnits->first(function ($su) use ($user) {
+                return $su->CourseAuth && $su->CourseAuth->user_id === $user->id;
+            });
+
+            // Get student lessons with completion status
+            $studentLessons = $studentUnit ? $studentUnit->StudentLessons->map(function ($sl) {
+                return [
+                    'id' => $sl->id,
+                    'lesson_id' => $sl->lesson_id,
+                    'completed_at' => $sl->completed_at?->toISOString(),
+                    'is_completed' => !is_null($sl->completed_at),
+                ];
+            })->toArray() : [];
 
             // Return classroom data
             return response()->json([
@@ -900,6 +954,8 @@ class StudentDashboardController extends Controller
                 'course' => $courseDate->course,
                 'lessons' => $courseDate->course?->courseUnit?->courseUnitLessons ?? [],
                 'instUnit' => $courseDate->instUnit,
+                'studentUnit' => $studentUnit,
+                'studentLessons' => $studentLessons,
                 'config' => [],
             ]);
         } catch (Exception $e) {
@@ -1093,7 +1149,7 @@ class StudentDashboardController extends Controller
                 // Class has started - check if student needs onboarding
                 if ($studentUnit) {
                     // Check onboarding status
-                    $onboardingComplete = $studentUnit->onboarding_completed ?? false;
+                    $onboardingComplete = false; // tracked in student_activity
 
                     if (!$onboardingComplete) {
                         $status = 'onboarding';
@@ -1102,8 +1158,8 @@ class StudentDashboardController extends Controller
                         // Get onboarding progress
                         $onboardingStatus = [
                             // Agreement is once per course (course_auth.agreed_at), rules are daily.
-                            'terms_accepted' => (bool) ($courseAuth->agreed_at !== null) || (bool) ($studentUnit->terms_accepted ?? false),
-                            'rules_accepted' => $studentUnit->rules_accepted ?? false,
+                            'terms_accepted' => (bool) ($courseAuth->agreed_at !== null),
+                            'rules_accepted' => $this->hasAcceptedRules($user->id, $studentUnit->id),
                             'identity_verified' => $studentUnit->verified ?? false,
                         ];
                     } else {
@@ -1213,8 +1269,18 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
-        $studentUnit->rules_accepted = true;
-        $studentUnit->save();
+        // Track rules acceptance in student_activity table
+        \App\Models\StudentActivity::create([
+            'user_id' => $user->id,
+            'student_unit_id' => $studentUnit->id,
+            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+            'activity_type' => \App\Models\StudentActivity::TYPE_RULES_ACCEPTED,
+            'description' => 'Student accepted classroom rules',
+            'data' => [
+                'course_date_id' => $courseDate->id,
+                'accepted_at' => now()->toIso8601String()
+            ]
+        ]);
 
         return response()->json([
             'success' => true,
@@ -1236,9 +1302,18 @@ class StudentDashboardController extends Controller
             ->where('course_date_id', $courseDateId)
             ->first();
 
+        // Check if rules have been accepted via student_activity
+        $rulesAccepted = false;
+        if ($studentUnit) {
+            $rulesAccepted = \App\Models\StudentActivity::where('user_id', $user->id)
+                ->where('student_unit_id', $studentUnit->id)
+                ->where('activity_type', \App\Models\StudentActivity::TYPE_RULES_ACCEPTED)
+                ->exists();
+        }
+
         return response()->json([
             'success' => true,
-            'already_agreed' => (bool) ($studentUnit?->rules_accepted ?? false),
+            'already_agreed' => $rulesAccepted,
         ]);
     }
 
@@ -1264,8 +1339,8 @@ class StudentDashboardController extends Controller
         }
 
         // Agreement is per-course; StudentUnit terms_accepted is a daily fallback.
-        $termsAccepted = $courseAgreed || (bool) ($studentUnit->terms_accepted ?? false);
-        $rulesAccepted = (bool) ($studentUnit->rules_accepted ?? false);
+        $termsAccepted = $courseAgreed;
+        $rulesAccepted = $this->hasAcceptedRules($user->id, $studentUnit->id);
         $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
 
         // Identity is complete only when:
@@ -1295,12 +1370,24 @@ class StudentDashboardController extends Controller
                     'terms_accepted' => $termsAccepted,
                     'rules_accepted' => $rulesAccepted,
                     'identity_verified' => $identityVerified,
+                    'id_card_exists' => $idCardExists,
+                    'headshot_exists' => $headshotExists,
                 ],
             ], 422);
         }
 
-        $studentUnit->onboarding_completed = true;
-        $studentUnit->save();
+        // Track onboarding completion in student_activity
+        \App\Models\StudentActivity::create([
+            'user_id' => $user->id,
+            'student_unit_id' => $studentUnit->id,
+            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+            'activity_type' => 'onboarding_completed',
+            'description' => 'Student completed onboarding process',
+            'data' => [
+                'course_date_id' => $courseDate->id,
+                'completed_at' => now()->toIso8601String()
+            ]
+        ]);
 
         return response()->json([
             'success' => true,

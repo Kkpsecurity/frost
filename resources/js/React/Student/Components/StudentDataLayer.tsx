@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "./Dashboard/MainDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
+import StudentLessonPauseModal from "./Classroom/StudentLessonPauseModal";
 import { StudentContextProvider, StudentContextType } from "../context/StudentContext";
 import { ClassroomContextProvider, ClassroomContextType } from "../context/ClassroomContext";
 import { isInstructorTeaching, getClassroomStatus } from "../services/classroomService";
@@ -80,6 +81,11 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         const saved = localStorage.getItem('frost_user_on_dashboard');
         return saved === 'true';
     });
+
+    // Track pause modal state
+    const [showPauseModal, setShowPauseModal] = useState(false);
+    const [pausedLessonTitle, setPausedLessonTitle] = useState<string>('');
+    const [breaksRemaining, setBreaksRemaining] = useState<number | undefined>(undefined);
 
     // Save to localStorage whenever selectedCourseAuthId changes
     useEffect(() => {
@@ -204,6 +210,77 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         }
     }, [classroomData, studentData, selectedCourseAuthId, userExplicitlySelectedDashboard]);
 
+    // =========================================================================
+    // PAUSE DETECTION LOGIC
+    // =========================================================================
+    // Monitor instUnit for active paused lessons
+    useEffect(() => {
+        const instUnit = classroomData?.data?.instUnit;
+
+        console.log('🔍 PAUSE DETECTION DEBUG:', {
+            hasClassroomData: !!classroomData,
+            hasInstUnit: !!instUnit,
+            instUnit: instUnit,
+            fullClassroomData: classroomData?.data,
+        });
+
+        if (!instUnit) {
+            // No active class - clear pause modal
+            setShowPauseModal(false);
+            return;
+        }
+
+        // Check for active inst_lessons with is_paused flag
+        const instLessons = classroomData?.data?.instUnit?.inst_lessons || [];
+
+        console.log('🔍 INST LESSONS DEBUG:', {
+            instLessonsCount: instLessons.length,
+            instLessons: instLessons,
+            instUnitStructure: Object.keys(instUnit),
+        });
+
+        const activeInstLesson = instLessons.find((lesson: any) =>
+            !lesson.completed_at && !lesson.failed_at
+        );
+
+        console.log('🔍 ACTIVE LESSON DEBUG:', {
+            hasActiveLesson: !!activeInstLesson,
+            activeInstLesson: activeInstLesson,
+            isPaused: activeInstLesson?.is_paused,
+        });
+
+        if (activeInstLesson && activeInstLesson.is_paused) {
+            // Lesson is paused - show modal
+            const lessonTitle = activeInstLesson.lesson?.title ||
+                               activeInstLesson.lesson?.name ||
+                               classroomData?.data?.lessons?.find((l: any) => l.id === activeInstLesson.lesson_id)?.title ||
+                               'Current Lesson';
+
+            setPausedLessonTitle(lessonTitle);
+
+            // Try to get breaks remaining from lesson state if available
+            const breaks = (classroomData?.data as any)?.breaks;
+            if (breaks) {
+                setBreaksRemaining(breaks.breaks_remaining);
+            }
+
+            setShowPauseModal(true);
+
+            console.log('⏸️ StudentDataLayer: Lesson paused detected', {
+                instLessonId: activeInstLesson.id,
+                lessonId: activeInstLesson.lesson_id,
+                lessonTitle,
+                isPaused: activeInstLesson.is_paused,
+            });
+        } else {
+            // No paused lesson - hide modal
+            if (showPauseModal) {
+                console.log('▶️ StudentDataLayer: Lesson resumed');
+            }
+            setShowPauseModal(false);
+        }
+    }, [classroomData, showPauseModal]);
+
     // IMPORTANT UX BEHAVIOR:
     // - Show the full-page loader ONLY on the initial load when we have no data yet.
     // - During polling/background refetches, keep rendering with the last known data.
@@ -260,6 +337,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     return (
         <StudentContextProvider value={studentContextValue}>
             <ClassroomContextProvider value={classroomContextValue}>
+                {/* Pause Detection Modal - Shows when instructor pauses lesson */}
+                <StudentLessonPauseModal
+                    isVisible={showPauseModal}
+                    lessonTitle={pausedLessonTitle}
+                    breaksRemaining={breaksRemaining}
+                />
+
                 {isInitialLoading ? (
                     <PageLoader />
                 ) : error && !studentData ? (

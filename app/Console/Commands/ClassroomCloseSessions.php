@@ -57,16 +57,24 @@ class ClassroomCloseSessions extends Command
         try {
             DB::beginTransaction();
 
-            // Find all active InstUnits (not completed)
+            // Find all active InstUnits (not completed) from PREVIOUS days only
+            // When run at midnight, this closes yesterday's classes
+            // When run manually during the day, it only closes past classes, not today's
+            $today = Carbon::today()->startOfDay();
+
             $activeInstUnits = InstUnit::whereNull('completed_at')
-                ->with(['CourseDate.CourseUnit.Course', 'instructor'])
+                ->whereHas('CourseDate', function ($query) use ($today) {
+                    // Only close sessions where the course date's end time is before today
+                    $query->where('ends_at', '<', $today);
+                })
+                ->with(['CourseDate.CourseUnit.Course', 'CreatedBy'])
                 ->get();
 
             $closedCount = 0;
             $zoomCredsDisabled = [];
 
             foreach ($activeInstUnits as $instUnit) {
-                $instructor = $instUnit->instructor;
+                $instructor = $instUnit->CreatedBy;
                 $course = $instUnit->CourseDate?->CourseUnit?->Course;
                 $courseTitle = strtoupper($course->title ?? '');
 
@@ -76,7 +84,7 @@ class ClassroomCloseSessions extends Command
                 if (!$dryRun) {
                     // Mark as completed
                     $instUnit->completed_at = now();
-                    $instUnit->completed_by = 0; // System closure (0 = automated)
+                    $instUnit->completed_by = null; // System closure (null = automated)
                     $instUnit->save();
 
                     // Disable the Zoom credential

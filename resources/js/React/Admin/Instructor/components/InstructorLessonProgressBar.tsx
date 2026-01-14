@@ -126,7 +126,7 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                 backgroundColor: "#34495e",
                 border: "none",
                 borderRadius: "8px",
-                marginBottom: "20px"
+                marginBottom: "20px",
             }}
         >
             <div
@@ -134,36 +134,47 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                 style={{
                     backgroundColor: "#2c3e50",
                     borderBottom: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "8px 8px 0 0"
+                    borderRadius: "8px 8px 0 0",
                 }}
             >
                 <div className="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 className="mb-0" style={{ color: "white", fontSize: "0.875rem" }}>
-                            <i className="fas fa-chalkboard-teacher me-2"></i>
+                        <h6
+                            className="mb-0"
+                            style={{ color: "white", fontSize: "0.875rem" }}
+                        >
+                            <i className="fas fa-chalkboard-teacher mr-2"></i>
                             Current Lesson
                         </h6>
-                        <small style={{ color: "#95a5a6", fontSize: "0.75rem" }}>
-                            {completedLessons} / {totalLessons} lessons completed
+                        <small
+                            style={{ color: "#95a5a6", fontSize: "0.75rem" }}
+                        >
+                            {completedLessons} / {totalLessons} lessons
+                            completed
                         </small>
                     </div>
                     <div className="d-flex gap-2">
-                        {currentLesson.status === 'in_progress' && (
+                        {currentLesson.status === "in_progress" && (
                             <span
                                 className="badge"
                                 style={{
-                                    backgroundColor: isOvertime ? '#e74c3c' : '#3498db',
-                                    fontSize: '0.75rem'
+                                    backgroundColor: isOvertime
+                                        ? "#e74c3c"
+                                        : "#3498db",
+                                    fontSize: "0.75rem",
                                 }}
                             >
-                                {isOvertime ? 'Overtime' : 'In Progress'}
+                                {isOvertime ? "Overtime" : "In Progress"}
                             </span>
                         )}
                         <span
                             className="badge bg-info"
-                            style={{ fontSize: '0.75rem' }}
+                            style={{ fontSize: "0.75rem" }}
                         >
-                            Lesson {lessons.findIndex(l => l.id === currentLesson.id) + 1}
+                            Lesson{" "}
+                            {lessons.findIndex(
+                                (l) => l.id === currentLesson.id
+                            ) + 1}
                         </span>
                     </div>
                 </div>
@@ -171,11 +182,20 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
             <div className="card-body" style={{ padding: "1rem" }}>
                 {/* Lesson Info */}
                 <div className="mb-3">
-                    <div style={{ color: "white", fontSize: "0.875rem", fontWeight: "600", marginBottom: "0.25rem" }}>
+                    <div
+                        style={{
+                            color: "white",
+                            fontSize: "0.875rem",
+                            fontWeight: "600",
+                            marginBottom: "0.25rem",
+                        }}
+                    >
                         {currentLesson.lesson_name}
                     </div>
                     {currentLesson.lesson_description && (
-                        <small style={{ color: "#95a5a6", fontSize: "0.75rem" }}>
+                        <small
+                            style={{ color: "#95a5a6", fontSize: "0.75rem" }}
+                        >
                             {currentLesson.lesson_description}
                         </small>
                     )}
@@ -184,42 +204,69 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                 {/* Time Display */}
                 <div className="row g-2 mb-3">
                     <div className="col-4">
-                        <div style={{ color: "#95a5a6", fontSize: "0.7rem", marginBottom: "0.25rem" }}>
+                        <div
+                            style={{
+                                color: "#95a5a6",
+                                fontSize: "0.7rem",
+                                marginBottom: "0.25rem",
+                            }}
+                        >
                             Elapsed
                         </div>
-                        <div style={{
-                            color: "#3498db",
-                            fontSize: "1rem",
-                            fontWeight: "600",
-                            fontFamily: "monospace"
-                        }}>
+                        <div
+                            style={{
+                                color: "#3498db",
+                                fontSize: "1rem",
+                                fontWeight: "600",
+                                fontFamily: "monospace",
+                            }}
+                        >
                             {formatTime(elapsedSeconds)}
                         </div>
                     </div>
                     <div className="col-4">
-                        <div style={{ color: "#95a5a6", fontSize: "0.7rem", marginBottom: "0.25rem" }}>
+                        <div
+                            style={{
+                                color: "#95a5a6",
+                                fontSize: "0.7rem",
+                                marginBottom: "0.25rem",
+                            }}
+                        >
                             Duration
                         </div>
-                        <div style={{
-                            color: "white",
-                            fontSize: "1rem",
-                            fontWeight: "600",
-                            fontFamily: "monospace"
-                        }}>
+                        <div
+                            style={{
+                                color: "white",
+                                fontSize: "1rem",
+                                fontWeight: "600",
+                                fontFamily: "monospace",
+                            }}
+                        >
                             {formatTime(totalSeconds)}
                         </div>
                     </div>
                     <div className="col-4">
-                        <div style={{ color: "#95a5a6", fontSize: "0.7rem", marginBottom: "0.25rem" }}>
+                        <div
+                            style={{
+                                color: "#95a5a6",
+                                fontSize: "0.7rem",
+                                marginBottom: "0.25rem",
+                            }}
+                        >
                             Remaining
                         </div>
-                        <div style={{
-                            color: isOvertime ? "#e74c3c" : "#2ecc71",
-                            fontSize: "1rem",
-                            fontWeight: "600",
-                            fontFamily: "monospace"
-                        }}>
-                            {isOvertime ? '+' + formatTime(elapsedSeconds - totalSeconds) : formatTime(remainingSeconds)}
+                        <div
+                            style={{
+                                color: isOvertime ? "#e74c3c" : "#2ecc71",
+                                fontSize: "1rem",
+                                fontWeight: "600",
+                                fontFamily: "monospace",
+                            }}
+                        >
+                            {isOvertime
+                                ? "+" +
+                                  formatTime(elapsedSeconds - totalSeconds)
+                                : formatTime(remainingSeconds)}
                         </div>
                     </div>
                 </div>
@@ -230,7 +277,13 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                         <small style={{ color: "#95a5a6", fontSize: "0.7rem" }}>
                             Lesson Progress
                         </small>
-                        <small style={{ color: "white", fontSize: "0.75rem", fontWeight: "600" }}>
+                        <small
+                            style={{
+                                color: "white",
+                                fontSize: "0.75rem",
+                                fontWeight: "600",
+                            }}
+                        >
                             {Math.round(progressPercentage)}%
                         </small>
                     </div>
@@ -247,7 +300,9 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                             style={{
                                 width: `${progressPercentage}%`,
                                 height: "100%",
-                                backgroundColor: isOvertime ? "#e74c3c" : "#3498db",
+                                backgroundColor: isOvertime
+                                    ? "#e74c3c"
+                                    : "#3498db",
                                 transition: "width 0.5s ease",
                                 borderRadius: "4px",
                             }}
@@ -256,12 +311,21 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                 </div>
 
                 {/* Overall Class Progress */}
-                <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                <div
+                    className="mt-3 pt-3"
+                    style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+                >
                     <div className="d-flex justify-content-between align-items-center mb-1">
                         <small style={{ color: "#95a5a6", fontSize: "0.7rem" }}>
                             Class Progress
                         </small>
-                        <small style={{ color: "white", fontSize: "0.75rem", fontWeight: "600" }}>
+                        <small
+                            style={{
+                                color: "white",
+                                fontSize: "0.75rem",
+                                fontWeight: "600",
+                            }}
+                        >
                             {Math.round(overallProgress)}%
                         </small>
                     </div>
@@ -287,7 +351,7 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                 </div>
 
                 {/* Status Message */}
-                {currentLesson.status === 'not_started' && (
+                {currentLesson.status === "not_started" && (
                     <div
                         className="alert mt-3 mb-0"
                         style={{
@@ -296,15 +360,15 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                             color: "#3498db",
                             padding: "0.5rem",
                             fontSize: "0.75rem",
-                            borderRadius: "0.25rem"
+                            borderRadius: "0.25rem",
                         }}
                     >
-                        <i className="fas fa-info-circle me-1"></i>
+                        <i className="fas fa-info-circle mr-1"></i>
                         Ready to start this lesson
                     </div>
                 )}
 
-                {currentLesson.status === 'completed' && (
+                {currentLesson.status === "completed" && (
                     <div
                         className="alert mt-3 mb-0"
                         style={{
@@ -313,10 +377,10 @@ const InstructorLessonProgressBar: React.FC<InstructorLessonProgressBarProps> = 
                             color: "#2ecc71",
                             padding: "0.5rem",
                             fontSize: "0.75rem",
-                            borderRadius: "0.25rem"
+                            borderRadius: "0.25rem",
                         }}
                     >
-                        <i className="fas fa-check-circle me-1"></i>
+                        <i className="fas fa-check-circle mr-1"></i>
                         Lesson completed successfully
                     </div>
                 )}

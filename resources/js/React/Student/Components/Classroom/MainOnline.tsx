@@ -78,32 +78,82 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
     const lessons = (classroom?.lessons || classroom?.data?.lessons || []) as LessonType[];
     const isLoadingLessons = false; // Lessons come from classroom poll data
 
+    // Get student lessons completion data
+    const studentLessons = classroom?.studentLessons || classroom?.data?.studentLessons || [];
+
+    // 🔍 DEBUG: Log student lessons data
+    console.log('🔍 DEBUG - Student Lessons Data:', {
+        studentLessons,
+        rawClassroom: classroom,
+    });
+
+    // Helper: Check if a lesson is completed by THIS student
+    const isLessonCompletedByStudent = (lessonId: number): boolean => {
+        const studentLesson = studentLessons.find((sl: any) => sl.lesson_id === lessonId);
+        console.log(`🔍 Checking if lesson ${lessonId} is completed:`, studentLesson, 'is_completed:', studentLesson?.is_completed);
+        return studentLesson?.is_completed === true;
+    };
+
+    // Helper: Check if a lesson is currently active (student has started but not completed)
+    const isLessonActive = (lessonId: number): boolean => {
+        const studentLesson = studentLessons.find((sl: any) => sl.lesson_id === lessonId);
+        const isActive = !!studentLesson && !studentLesson.is_completed;
+        console.log(`🔍 Checking if lesson ${lessonId} is active:`, studentLesson, 'isActive:', isActive);
+        // Active = StudentLesson exists but not completed yet
+        return isActive;
+    };
+
     const zoom = classroom?.data?.zoom;
     const isZoomReady = !!zoom?.is_ready;
     const screenShareUrl = zoom?.screen_share_url as string | undefined;
 
-    // Get lesson status color
-    const getLessonStatusColor = (status: string) => {
-        switch (status) {
-            case 'passed': return '#1a472a';
-            case 'failed': return '#7f1d1d';
-            case 'in-progress': return '#1e3a8a';
-            default: return '#2c3e50';
+    // Get lesson status color based on STUDENT completion, not instructor state
+    const getLessonStatusColor = (lesson: LessonType) => {
+        const lessonId = lesson.lesson_id || lesson.id;
+
+        // Check if THIS student completed it (solid green like old design)
+        if (isLessonCompletedByStudent(lessonId)) {
+            return '#16a34a'; // Solid green for completed by student
         }
+
+        // Check if student has started this lesson (StudentLesson exists, not completed)
+        if (isLessonActive(lessonId)) {
+            return '#0ea5e9'; // Cyan/blue for active
+        }
+
+        // Default pending state (light grey)
+        return '#e5e7eb'; // Light grey for pending
     };
 
-    // Get lesson status icon
+    // Get lesson status icon based on STUDENT completion
     const getLessonStatusIcon = (lesson: LessonType) => {
-        if (lesson.status === 'passed') {
-            return <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>;
+        const lessonId = lesson.lesson_id || lesson.id;
+
+        // Check if THIS student completed it
+        if (isLessonCompletedByStudent(lessonId)) {
+            return <i className="fas fa-check-circle" style={{ color: '#ffffff' }}></i>;
         }
-        if (lesson.status === 'failed') {
-            return <i className="fas fa-times-circle" style={{ color: '#ef4444' }}></i>;
+
+        // Check if instructor is actively teaching it
+        if (isLessonActive(lessonId)) {
+            return <i className="fas fa-play-circle" style={{ color: '#ffffff' }}></i>;
         }
-        if (lesson.status === 'in-progress') {
-            return <i className="fas fa-play-circle" style={{ color: '#3b82f6' }}></i>;
-        }
+
+        // Pending
         return <i className="far fa-circle" style={{ color: '#6b7280' }}></i>;
+    };
+
+    // Get text color based on lesson status
+    const getLessonTextColor = (lesson: LessonType) => {
+        const lessonId = lesson.lesson_id || lesson.id;
+
+        // Completed or active: white text
+        if (isLessonCompletedByStudent(lessonId) || isLessonActive(lessonId)) {
+            return '#ffffff';
+        }
+
+        // Pending: dark text
+        return '#1f2937';
     };
 
     // Handle lesson click
@@ -153,7 +203,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
                                                 Today's Lessons
                                             </h6>
                                             <span className="badge" style={{ backgroundColor: '#3498db' }}>
-                                                {lessons.filter(l => l.status === 'passed').length} / {lessons.length}
+                                                {lessons.filter(l => isLessonCompletedByStudent(l.lesson_id || l.id)).length} / {lessons.length}
                                             </span>
                                         </div>
 
@@ -172,64 +222,49 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
                                                 </div>
                                             ) : (
                                                 lessons.map((lesson) => {
-                                                    const isSelected = selectedLessonId === lesson.id;
-                                                    const baseColor = getLessonStatusColor(lesson.status);
-                                                    const selectedColor = '#2563eb';
+                                                    const baseColor = getLessonStatusColor(lesson);
+                                                    const textColor = getLessonTextColor(lesson);
+                                                    const lessonId = lesson.lesson_id || lesson.id;
+                                                    const isCompleted = isLessonCompletedByStudent(lessonId);
+                                                    const isActive = isLessonActive(lessonId);
 
                                                     return (
                                                         <div
                                                             key={lesson.id}
-                                                            className="lesson-item mb-2 p-2"
-                                                            onClick={() => handleLessonClick(lesson.id)}
+                                                            className="lesson-item mb-2 p-3"
                                                             style={{
-                                                                backgroundColor: isSelected ? selectedColor : baseColor,
+                                                                backgroundColor: baseColor,
                                                                 borderRadius: "0.25rem",
-                                                                cursor: "pointer",
-                                                                transition: "all 0.2s",
-                                                                border: isSelected ? '2px solid #3b82f6' : '2px solid transparent',
-                                                                opacity: isSelected ? 1 : 0.85,
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                if (!isSelected) {
-                                                                    e.currentTarget.style.opacity = '1';
-                                                                    e.currentTarget.style.transform = 'translateX(4px)';
-                                                                }
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                if (!isSelected) {
-                                                                    e.currentTarget.style.opacity = '0.85';
-                                                                    e.currentTarget.style.transform = 'translateX(0)';
-                                                                }
+                                                                border: 'none',
+                                                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                                                             }}
                                                         >
-                                                            <div className="d-flex align-items-start">
-                                                                <div className="me-2 mt-1">
-                                                                    {getLessonStatusIcon(lesson)}
+                                                            <div className="d-flex justify-content-between align-items-start mb-2">
+                                                                <div style={{
+                                                                    color: textColor,
+                                                                    fontSize: "0.95rem",
+                                                                    fontWeight: "600",
+                                                                    flex: 1
+                                                                }}>
+                                                                    {lesson.title}
                                                                 </div>
-                                                                <div className="flex-grow-1">
-                                                                    <div style={{ color: "white", fontSize: "0.875rem", fontWeight: "500" }}>
-                                                                        {lesson.title}
-                                                                    </div>
-                                                                    {lesson.description && (
-                                                                        <small style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.7rem", display: 'block', marginTop: '0.25rem' }}>
-                                                                            {lesson.description.length > 60
-                                                                                ? lesson.description.substring(0, 60) + '...'
-                                                                                : lesson.description}
-                                                                        </small>
-                                                                    )}
-                                                                    <div className="d-flex align-items-center mt-1">
-                                                                        <small style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem" }}>
-                                                                            <i className="far fa-clock me-1"></i>
-                                                                            {lesson.duration_minutes} min
-                                                                        </small>
-                                                                        {lesson.status === 'passed' && (
-                                                                            <small className="ms-2" style={{ color: '#10b981', fontSize: "0.7rem" }}>
-                                                                                <i className="fas fa-check me-1"></i>
-                                                                                Completed
-                                                                            </small>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                                {getLessonStatusIcon(lesson)}
+                                                            </div>
+                                                            <div className="d-flex justify-content-between align-items-center">
+                                                                <small style={{
+                                                                    color: textColor,
+                                                                    fontSize: "0.8rem",
+                                                                    opacity: 0.9
+                                                                }}>
+                                                                    Credit Minutes: <strong>{lesson.duration_minutes}</strong>
+                                                                </small>
+                                                                <small style={{
+                                                                    color: textColor,
+                                                                    fontSize: "0.8rem",
+                                                                    fontWeight: "600"
+                                                                }}>
+                                                                    {isCompleted ? 'Completed' : isActive ? 'Active' : 'Pending'}
+                                                                </small>
                                                             </div>
                                                         </div>
                                                     );
@@ -331,8 +366,8 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
 
                                 {/* Lesson Progress Bar - Shows elapsed time and progress */}
                                 <LessonProgressBar
-                                    selectedLesson={lessons.find(l => l.id === selectedLessonId) || null}
-                                    startTime={lessons.find(l => l.id === selectedLessonId)?.started_at || null}
+                                    selectedLesson={lessons.find(l => l.is_active || l.status === 'active_live' || l.status === 'active_fstb') || lessons.find(l => l.id === selectedLessonId) || null}
+                                    startTime={lessons.find(l => l.is_active || l.status === 'active_live')?.started_at || lessons.find(l => l.id === selectedLessonId)?.started_at || null}
                                 />
                             </div>
 

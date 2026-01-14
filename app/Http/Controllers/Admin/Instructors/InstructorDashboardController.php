@@ -119,6 +119,25 @@ class InstructorDashboardController extends Controller
             // Get Zoom status for active InstUnit
             $zoomData = $this->getZoomDataForInstructor($user, $instUnit);
 
+            // Get current lesson state (instUnitLesson) for the active InstUnit
+            $instUnitLesson = null;
+            $completedInstLessons = [];
+
+            if ($instUnit) {
+                // Get completed instructor lessons
+                $completedInstLessons = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                    ->whereNotNull('completed_at')
+                    ->select('lesson_id', 'completed_at')
+                    ->get()
+                    ->toArray();
+
+                // Get current instructor lesson (in progress)
+                $instUnitLesson = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                    ->whereNull('completed_at')
+                    ->select('id as inst_lesson_id', 'lesson_id', 'created_at as started_at', 'is_paused')
+                    ->first();
+            }
+
             return response()->json([
                 'instructor' => [
                     'id' => $user->id,
@@ -133,7 +152,10 @@ class InstructorDashboardController extends Controller
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
-                'instUnit' => $instUnit,
+                'instUnit' => $instUnit ? array_merge($instUnit->toArray(), [
+                    'instUnitLesson' => $instUnitLesson,
+                    'completedInstLessons' => $completedInstLessons,
+                ]) : null,
                 'instLessons' => $instUnit?->instLessons ?? [],
                 'zoom' => $zoomData, // NEW: Zoom status in instructor poll
             ]);
@@ -798,26 +820,9 @@ class InstructorDashboardController extends Controller
             // Refresh to get the created_at timestamp
             $instUnit->refresh();
 
-            // Enable the Zoom credential for this course type
-            $course = $courseDate->CourseUnit?->Course;
-            $courseTitle = strtoupper($course->title ?? '');
-
-            $zoomEmail = null;
-            if (in_array($admin->role_id, [1, 2])) {
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
-                $zoomEmail = 'instructor_d@stgroupusa.com';
-            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
-                $zoomEmail = 'instructor_g@stgroupusa.com';
-            } else {
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            }
-
-            $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
-            if ($zoomCreds) {
-                $zoomCreds->zoom_status = 'enabled';
-                $zoomCreds->save();
-            }
+            // NOTE: Zoom credentials remain DISABLED by default
+            // Instructor must manually enable screen sharing when ready
+            // This prevents automatic screen sharing before instructor is prepared
 
             // Get instructor and assistant names
             $instructor = \App\Models\User::find($admin->id);
@@ -828,8 +833,7 @@ class InstructorDashboardController extends Controller
                 'course_date_id' => $courseDateId,
                 'instructor_id' => $admin->id,
                 'assistant_id' => $assistantId,
-                'zoom_email' => $zoomEmail,
-                'zoom_enabled' => $zoomCreds?->zoom_status === 'enabled'
+                'note' => 'Zoom remains disabled - instructor must manually enable when ready'
             ]);
 
             // Return success with classroom session data
@@ -1768,7 +1772,7 @@ class InstructorDashboardController extends Controller
                 ->select('id as inst_lesson_id', 'lesson_id', 'created_at as started_at', 'is_paused')
                 ->first();
 
-            $breaksAllowed = 3;
+            $breaksAllowed = config('frost.instructor_breaks.breaks_allowed_per_day', 3);
             $breaksTaken = 0;
             $currentBreakStartedAt = null;
 
@@ -1831,7 +1835,7 @@ class InstructorDashboardController extends Controller
         Log::info('startLesson validation passed');
 
         try {
-            $courseDate = \App\Models\CourseDate::with(['InstUnit'])->findOrFail($request->course_date_id);
+            $courseDate = \App\Models\CourseDate::with(['InstUnit', 'StudentUnits'])->findOrFail($request->course_date_id);
 
             if (!$this->hasInstructorAccess($courseDate)) {
                 return response()->json([
@@ -1882,11 +1886,27 @@ class InstructorDashboardController extends Controller
             // Refresh to get the created_at timestamp
             $instLesson->refresh();
 
+            // ✅ CREATE STUDENT LESSONS: When instructor starts a lesson, create StudentLesson records for all students
+            $studentUnits = $courseDate->StudentUnits;
+            foreach ($studentUnits as $studentUnit) {
+                \App\Models\StudentLesson::firstOrCreate(
+                    [
+                        'student_unit_id' => $studentUnit->id,
+                        'lesson_id' => $request->lesson_id,
+                    ],
+                    [
+                        'inst_lesson_id' => $instLesson->id,
+                        'completed_at' => null,
+                    ]
+                );
+            }
+
             Log::info('Instructor started lesson', [
                 'instructor_id' => Auth::guard('admin')->id(),
                 'course_date_id' => $request->course_date_id,
                 'lesson_id' => $request->lesson_id,
                 'inst_lesson_id' => $instLesson->id,
+                'student_lessons_created' => $studentUnits->count(),
             ]);
 
             return response()->json([
@@ -1929,7 +1949,7 @@ class InstructorDashboardController extends Controller
         ]);
 
         try {
-            $courseDate = \App\Models\CourseDate::with(['InstUnit'])->findOrFail($request->course_date_id);
+            $courseDate = \App\Models\CourseDate::with(['InstUnit', 'StudentUnits'])->findOrFail($request->course_date_id);
 
             if (!$this->hasInstructorAccess($courseDate)) {
                 return response()->json([
@@ -1965,12 +1985,50 @@ class InstructorDashboardController extends Controller
                 'completed_by' => Auth::id(),
             ]);
 
+            // ✅ SYNC STUDENT LESSONS: Mark this lesson as completed for ALL students in this class
+            $studentUnits = $courseDate->StudentUnits;
+            foreach ($studentUnits as $studentUnit) {
+                // Find or create StudentLesson record for this student and lesson
+                $studentLesson = \App\Models\StudentLesson::firstOrCreate(
+                    [
+                        'student_unit_id' => $studentUnit->id,
+                        'lesson_id' => $request->lesson_id,
+                    ],
+                    [
+                        'inst_lesson_id' => $instLesson->id,
+                        'completed_at' => null,
+                    ]
+                );
+
+                // Mark it as completed if not already
+                if (!$studentLesson->completed_at) {
+                    $studentLesson->update(['completed_at' => now()]);
+                }
+            }
+
+            Log::info('StudentLessons synced for completed InstLesson', [
+                'inst_lesson_id' => $instLesson->id,
+                'lesson_id' => $request->lesson_id,
+                'students_updated' => $studentUnits->count(),
+            ]);
+
+            // Normalize dates to Carbon instances to avoid calling date methods on raw ints/strings
+            $startedAt = $instLesson->created_at instanceof \Carbon\Carbon
+                ? $instLesson->created_at
+                : \Carbon\Carbon::parse($instLesson->created_at);
+
+            $completedAt = $instLesson->completed_at instanceof \Carbon\Carbon
+                ? $instLesson->completed_at
+                : \Carbon\Carbon::parse($instLesson->completed_at);
+
+            $durationMinutes = $startedAt->diffInMinutes($completedAt);
+
             Log::info('Instructor completed lesson', [
                 'instructor_id' => Auth::id(),
                 'course_date_id' => $request->course_date_id,
                 'lesson_id' => $request->lesson_id,
                 'inst_lesson_id' => $instLesson->id,
-                'duration_minutes' => $instLesson->created_at->diffInMinutes(now()),
+                'duration_minutes' => $durationMinutes,
             ]);
 
             return response()->json([
@@ -1979,9 +2037,9 @@ class InstructorDashboardController extends Controller
                 'data' => [
                     'inst_lesson_id' => $instLesson->id,
                     'lesson_id' => $request->lesson_id,
-                    'started_at' => $instLesson->created_at->toISOString(),
-                    'ended_at' => $instLesson->completed_at->toISOString(),
-                    'duration_minutes' => $instLesson->created_at->diffInMinutes($instLesson->completed_at),
+                    'started_at' => $startedAt->toISOString(),
+                    'ended_at' => $completedAt->toISOString(),
+                    'duration_minutes' => $durationMinutes,
                 ]
             ]);
 
@@ -2046,9 +2104,10 @@ class InstructorDashboardController extends Controller
                 ], 400);
             }
 
-            $breaksAllowed = 3;
+            $breaksAllowed = config('frost.instructor_breaks.breaks_allowed_per_day', 3);
+            $breakDurations = config('frost.instructor_breaks.break_durations_minutes', [1 => 15, 2 => 10, 3 => 15]);
 
-            $result = \DB::transaction(function () use ($instLesson, $breaksAllowed) {
+            $result = \DB::transaction(function () use ($instLesson, $breaksAllowed, $breakDurations) {
                 $instLesson = \App\Models\InstLesson::where('id', $instLesson->id)
                     ->lockForUpdate()
                     ->first();
@@ -2081,6 +2140,8 @@ class InstructorDashboardController extends Controller
                 }
 
                 $nextBreakNumber = $breaksTaken + 1;
+                $breakDurationMinutes = $breakDurations[$nextBreakNumber] ?? 15;
+
                 \App\Models\InstLessonBreak::create([
                     'inst_lesson_id' => $instLesson->id,
                     'break_number' => $nextBreakNumber,
@@ -2096,6 +2157,7 @@ class InstructorDashboardController extends Controller
                     'break_number' => $nextBreakNumber,
                     'breaks_taken' => $nextBreakNumber,
                     'breaks_allowed' => $breaksAllowed,
+                    'break_duration_minutes' => $breakDurationMinutes,
                 ];
             });
 
@@ -2128,6 +2190,7 @@ class InstructorDashboardController extends Controller
                     'breaks_allowed' => $breaksAllowed,
                     'breaks_remaining' => max(0, $breaksAllowed - $result['breaks_taken']),
                     'is_last_break' => $result['breaks_taken'] === $breaksAllowed,
+                    'break_duration_minutes' => $result['break_duration_minutes'],
                     'paused_at' => now()->toISOString(),
                 ]
             ]);
@@ -2192,7 +2255,7 @@ class InstructorDashboardController extends Controller
                 ], 400);
             }
 
-            $breaksAllowed = 3;
+            $breaksAllowed = config('frost.instructor_breaks.breaks_allowed_per_day', 3);
 
             $result = \DB::transaction(function () use ($instLesson, $breaksAllowed) {
                 $instLesson = \App\Models\InstLesson::where('id', $instLesson->id)

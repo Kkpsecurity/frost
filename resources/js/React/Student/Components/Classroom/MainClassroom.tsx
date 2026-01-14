@@ -52,29 +52,27 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
         : null;
 
     // ONBOARDING GATE: Check if student needs to complete onboarding
-    // Only check when courseDate + instUnit exist (live classroom mode)
-    // Agreement is ONE-TIME per course_auth (not per daily session)
-    if (courseDate && instUnit && studentUnit) {
+    // Show onboarding when:
+    // 1. Class is live (courseDate + instUnit exist)
+    // 2. AND (studentUnit doesn't exist YET OR onboarding is not complete)
+    //
+    // studentUnit is NULL when it's a new day and student hasn't joined yet.
+    // Once they complete onboarding, a StudentUnit will be created.
+    if (courseDate && instUnit) {
         // Get agreement status from student courses data (poll includes agreed_at)
         const courseData = studentContext?.courses?.find((c: any) => c.id === courseAuthId);
-        const hasAgreedToTerms = courseData?.agreed_at !== null && courseData?.agreed_at !== undefined;
 
-        // Check if validation (ID + headshot) is complete
-        // Headshot is an object like { wednesday: url } so check if today's value exists
-        const getTodayKey = () => {
-            try {
-                return new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
-            } catch {
-                return 'monday';
-            }
-        };
-        const todayKey = getTodayKey();
-        const headshotUrl = validations?.headshot?.[todayKey];
-        const hasIdCard = !!validations?.idcard;
-        const hasHeadshot = !!headshotUrl;
+        // Determine if onboarding is needed
+        // Case 1: No StudentUnit exists yet (new day) - need onboarding
+        // Case 2: StudentUnit exists but onboarding_completed is false - need onboarding
+        const needsOnboarding = !studentUnit || !studentUnit.onboarding_completed;
 
-        // Check onboarding_completed flag - student must complete all 4 steps including final confirmation
-        const needsOnboarding = !studentUnit?.onboarding_completed;
+        console.log('🔍 Onboarding check:', {
+            hasStudentUnit: !!studentUnit,
+            studentUnitId: studentUnit?.id,
+            onboarding_completed: studentUnit?.onboarding_completed,
+            needsOnboarding: needsOnboarding
+        });
 
         if (needsOnboarding) {
             return (
@@ -82,8 +80,8 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     key={onboardingKey}
                     courseAuthId={courseAuthId}
                     courseDateId={courseDate.id}
-                    studentUnitId={studentUnit.id}
-                    studentUnit={studentUnit}
+                    studentUnitId={studentUnit?.id || 0} // 0 means "create new"
+                    studentUnit={studentUnit || null}
                     student={student}
                     course={course}
                     courseAuth={courseData} // Pass course data which includes agreed_at
@@ -91,8 +89,11 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     onComplete={() => {
                         // Force classroom context to refresh by incrementing key
                         setOnboardingKey(prev => prev + 1);
-                        // Trigger a manual reload or re-poll here if needed
-                        window.location.reload();
+                        // Add delay to ensure database commit completes before reload
+                        console.log('✅ Onboarding complete - reloading in 2 seconds...');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
                     }}
                 />
             );

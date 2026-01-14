@@ -33,13 +33,27 @@ export interface InstructorData {
 }
 
 export interface InstUnitData {
-  id: number;
-  course_date_id: number;
-  created_by: number;
-  assistant_id?: number | null;
-  starts_at: string;
-  ends_at: string;
-  [key: string]: any;
+    id: number;
+    course_date_id: number;
+    created_by: number;
+    assistant_id?: number | null;
+    starts_at: string;
+    ends_at: string;
+    instUnitLesson?: InstUnitLessonData | null; // Current active lesson
+    completedInstLessons?: CompletedInstLessonData[]; // Completed lessons
+    [key: string]: any;
+}
+
+export interface InstUnitLessonData {
+    inst_lesson_id: number;
+    lesson_id: number;
+    started_at: string;
+    is_paused: boolean;
+}
+
+export interface CompletedInstLessonData {
+    lesson_id: number;
+    completed_at: string;
 }
 
 export interface InstLessonData {

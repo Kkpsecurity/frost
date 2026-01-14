@@ -21,9 +21,9 @@ class InstLessonBreak extends Model
         'id' => 'integer',
         'inst_lesson_id' => 'integer',
         'break_number' => 'integer',
-        'started_at' => 'timestamp',
+        'started_at' => 'datetime',
         'started_by' => 'integer',
-        'ended_at' => 'timestamp',
+        'ended_at' => 'datetime',
         'ended_by' => 'integer',
         'duration_seconds' => 'integer',
     ];

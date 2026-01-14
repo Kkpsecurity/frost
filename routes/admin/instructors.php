@@ -87,7 +87,7 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
             ->name('complete');
 
         // Get lesson state for a course date
-        Route::get('/state/{courseDateId}', [InstructorDashboardController::class, 'getLessonState'])
+        Route::get('/state/{courseDateId}', [InstructorDashboardController::class, 'getInstructorLessonState'])
             ->name('state');
 
         // Ask Instructor queue + session mode
@@ -196,36 +196,6 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         // Lesson management data
         Route::get('/lessons', [InstructorDashboardController::class, 'getLessonManagementData'])
             ->name('lessons');
-    });
-
-    // =====================================================
-    // LESSON MANAGEMENT - Start/Complete/Track Lessons
-    // =====================================================
-
-    Route::prefix('lessons')->name('lessons.')->group(function () {
-        // Get current instructor lesson state for a course date
-        Route::get('/state/{courseDateId}', [InstructorDashboardController::class, 'getInstructorLessonState'])
-            ->name('state');
-
-        // Start a lesson (create InstLesson record)
-        Route::post('/start', [InstructorDashboardController::class, 'startLesson'])
-            ->name('start');
-
-        // Complete a lesson (mark InstLesson as completed)
-        Route::post('/complete', [InstructorDashboardController::class, 'completeLesson'])
-            ->name('complete');
-
-        // Pause a lesson (instructor break)
-        Route::post('/pause', [InstructorDashboardController::class, 'pauseLesson'])
-            ->name('pause');
-
-        // Resume a lesson (end break)
-        Route::post('/resume', [InstructorDashboardController::class, 'resumeLesson'])
-            ->name('resume');
-
-        // Get screen sharing status for classroom preparation
-        Route::get('/screen-sharing/status/{courseDateId}', [InstructorDashboardController::class, 'getScreenSharingStatus'])
-            ->name('screen-sharing.status');
     });
 
     // =====================================================

@@ -100,8 +100,29 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 
     // Get lessons data
     const lessons = lessonsData?.lessons || [];
-    const currentLesson =
-        lessons.find((l: any) => l.status === "in_progress") || null;
+
+    // Build currentLesson from instUnitLesson (real-time lesson tracking)
+    const instUnitLesson = instUnit?.instUnitLesson;
+    let currentLesson = null;
+
+    if (instUnitLesson && instUnitLesson.lesson_id) {
+        // Find the lesson details from lessons array
+        const lessonDetails = lessons.find(
+            (l: any) => l.id === instUnitLesson.lesson_id
+        );
+
+        if (lessonDetails) {
+            currentLesson = {
+                id: lessonDetails.id,
+                lesson_name: lessonDetails.title,
+                lesson_description: lessonDetails.description,
+                duration_minutes: lessonDetails.duration_minutes,
+                status: "in_progress",
+                start_time: instUnitLesson.started_at,
+                progress_minutes: 0, // Will be calculated by progress bar
+            };
+        }
+    }
 
     // Handle Leave Class action for assistants
     const handleLeaveClass = async () => {
