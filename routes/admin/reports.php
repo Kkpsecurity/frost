@@ -15,6 +15,15 @@ Route::prefix('reports')->name('reports.')->middleware(['admin'])->group(functio
     // Main Reports Dashboard
     Route::get('/', [ReportsController::class, 'index'])->name('index');
 
+    // Weekly Data for Charts
+    Route::get('/api/weekly-data', [ReportsController::class, 'getWeeklyData'])->name('api.weekly-data');
+
+    // Instructor Performance Data for Charts
+    Route::get('/api/instructor-data', [ReportsController::class, 'getInstructorData'])->name('api.instructor-data');
+
+    // Financial Data for Charts
+    Route::get('/api/financial-data', [ReportsController::class, 'getFinancialData'])->name('api.financial-data');
+
     // Financial Reports API Endpoints
     Route::prefix('api/financial')->name('api.financial.')->group(function () {
         Route::get('/', [ReportsController::class, 'getFinancialReports'])->name('index');

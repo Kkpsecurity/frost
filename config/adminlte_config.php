@@ -403,6 +403,11 @@ return [
             'url' => 'admin/course-dates',
             'icon' => 'fas fa-fw fa-calendar-alt',
         ],
+        [
+            'text' => 'Ranges',
+            'url' => 'admin/ranges',
+            'icon' => 'fas fa-fw fa-crosshairs',
+        ],
 
         ['header' => 'BUSINESS'],
         [
