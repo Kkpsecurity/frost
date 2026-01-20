@@ -367,6 +367,111 @@ return [
             'route' => 'admin.dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
         ],
+        [
+            'text' => 'Admin Center',
+            'icon' => 'fas fa-fw fa-tools',
+            'submenu' => [
+                [
+                    'text' => 'User Management',
+                    'icon' => 'fas fa-users-cog',
+                    'submenu' => [
+                        [
+                            'text' => 'Admin Users',
+                            'url' => 'admin/admin-center/admin-users',
+                            'icon' => 'fas fa-user-shield',
+                        ],
+                        [
+                            'text' => 'Instructor Management',
+                            'url' => 'admin/admin-center/instructor-management',
+                            'icon' => 'fas fa-chalkboard-teacher',
+                        ],
+                        [
+                            'text' => 'Role Permissions',
+                            'url' => 'admin/admin-center/role-permissions',
+                            'icon' => 'fas fa-key',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => 'Payment Gateway',
+                    'icon' => 'fas fa-credit-card',
+                    'submenu' => [
+                        [
+                            'text' => 'Gateway Settings',
+                            'url' => 'admin/admin-center/payment-gateway',
+                            'icon' => 'fas fa-sliders-h',
+                        ],
+                        [
+                            'text' => 'Transaction Logs',
+                            'url' => 'admin/admin-center/transaction-logs',
+                            'icon' => 'fas fa-receipt',
+                        ],
+                        [
+                            'text' => 'Payment Methods',
+                            'url' => 'admin/admin-center/payment-methods',
+                            'icon' => 'fas fa-wallet',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => 'System Configuration',
+                    'icon' => 'fas fa-cogs',
+                    'submenu' => [
+                        [
+                            'text' => 'General Settings',
+                            'url' => 'admin/admin-center/general-settings',
+                            'icon' => 'fas fa-cog',
+                        ],
+                        [
+                            'text' => 'Email Templates',
+                            'url' => 'admin/admin-center/email-templates',
+                            'icon' => 'fas fa-envelope',
+                        ],
+                        [
+                            'text' => 'Notifications',
+                            'url' => 'admin/admin-center/notifications',
+                            'icon' => 'fas fa-bell',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => 'Security & Access',
+                    'icon' => 'fas fa-shield-alt',
+                    'submenu' => [
+                        [
+                            'text' => 'Activity Logs',
+                            'url' => 'admin/admin-center/activity-logs',
+                            'icon' => 'fas fa-history',
+                        ],
+                        [
+                            'text' => 'Login Attempts',
+                            'url' => 'admin/admin-center/login-attempts',
+                            'icon' => 'fas fa-sign-in-alt',
+                        ],
+                        [
+                            'text' => 'IP Whitelist',
+                            'url' => 'admin/admin-center/ip-whitelist',
+                            'icon' => 'fas fa-network-wired',
+                        ],
+                    ],
+                ],
+                [
+                    'text' => 'Database Tools',
+                    'url' => 'admin/admin-center/database-tools',
+                    'icon' => 'fas fa-database',
+                ],
+                [
+                    'text' => 'Cache Management',
+                    'url' => 'admin/admin-center/cache-management',
+                    'icon' => 'fas fa-server',
+                ],
+                [
+                    'text' => 'System Health',
+                    'url' => 'admin/admin-center/system-health',
+                    'icon' => 'fas fa-heartbeat',
+                ],
+            ],
+        ],
 
         ['header' => 'ADMINISTRATION'],
         [

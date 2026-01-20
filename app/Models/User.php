@@ -18,6 +18,7 @@ use App\Services\RCache;
 use App\Models\Role;
 use App\Models\UserPref;
 use App\Models\InstLicense;
+use App\Models\InstUnit;
 use App\Models\UserBrowser;
 use App\Models\StudentIdVerification;
 
@@ -172,6 +173,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function InstLicenses()
     {
         return $this->hasMany(InstLicense::class, 'user_id');
+    }
+
+    public function instUnits()
+    {
+        return $this->hasMany(InstUnit::class, 'created_by');
     }
 
     public function Role()
