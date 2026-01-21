@@ -92,7 +92,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
             <div
                 className="card-header"
                 style={{
-                    backgroundColor: "#2c3e50",
+                    backgroundColor: startTime ? "#2c3e50" : "#3498db",
                     borderBottom: "1px solid rgba(255,255,255,0.1)",
                 }}
             >
@@ -101,17 +101,19 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                         <i className="fas fa-clock me-2"></i>
                         Lesson Progress
                     </h6>
-                    {startTime && (
-                        <span
-                            className="badge"
-                            style={{
-                                backgroundColor: isOvertime ? '#e74c3c' : '#3498db',
-                                fontSize: '0.75rem'
-                            }}
-                        >
-                            {isOvertime ? 'Overtime' : 'In Progress'}
-                        </span>
-                    )}
+                    <span
+                        className="badge"
+                        style={{
+                            backgroundColor: startTime
+                                ? (isOvertime ? '#e74c3c' : '#2ecc71')
+                                : '#1e40af',
+                            fontSize: '0.75rem'
+                        }}
+                    >
+                        {startTime
+                            ? (isOvertime ? 'Overtime' : 'In Progress')
+                            : 'In Progress'}
+                    </span>
                 </div>
             </div>
             <div className="card-body" style={{ padding: "1rem" }}>

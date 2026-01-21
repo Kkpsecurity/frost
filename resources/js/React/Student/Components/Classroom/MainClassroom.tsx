@@ -89,11 +89,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     onComplete={() => {
                         // Force classroom context to refresh by incrementing key
                         setOnboardingKey(prev => prev + 1);
-                        // Add delay to ensure database commit completes before reload
-                        console.log('✅ Onboarding complete - reloading in 2 seconds...');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
+                        console.log('✅ Onboarding complete - polling will refresh automatically');
                     }}
                 />
             );

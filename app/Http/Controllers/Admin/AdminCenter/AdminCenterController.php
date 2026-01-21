@@ -441,7 +441,7 @@ class AdminCenterController extends Controller
         $appSettings = DB::table('settings')->where('group', 'app')->get();
         $authSettings = DB::table('settings')->where('group', 'auth')->get();
         $systemSettings = DB::table('settings')->whereIn('group', ['system', 'mail', 'cache'])->get();
-        
+
         return view('admin.admin-center.general-settings', compact('appSettings', 'authSettings', 'systemSettings'));
     }
 

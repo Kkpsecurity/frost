@@ -67,6 +67,12 @@ export interface LessonProgressData {
     credit_minutes: number;
     video_seconds: number;
     is_completed: boolean;
+    status?: string; // 'passed' | 'failed' | 'in-progress' | 'credit-available' | 'not-started'
+    has_student_lesson?: boolean;
+    has_self_study_lesson?: boolean;
+    ordering?: number;
+    is_active?: boolean; // True when instructor has started this lesson (live classroom)
+    started_at?: string; // ISO timestamp when lesson was started (live classroom)
 }
 
 /**

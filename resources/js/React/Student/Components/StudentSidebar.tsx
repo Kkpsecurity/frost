@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+500import React, { useState, useEffect } from "react";
 import { LessonsData, LessonProgressData } from "../types/LaravelProps";
 import { useLessonSession } from "../hooks/useLessonSession";
 import type { StudentAttendanceSummary } from "../types/props/classroom.props";
@@ -34,6 +34,21 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
     validations = null, // Destructure validations prop
     activeLesson = null, // Destructure active lesson from instructor
 }) => {
+    // 🔍 AUDIT: Log all incoming props
+    useEffect(() => {
+        console.log('🔍 STUDENT SIDEBAR PROPS AUDIT:', {
+            instructor,
+            classroomStatus,
+            hasLessons,
+            isOnline,
+            selectedCourseAuthId,
+            activeLesson,
+            selectedLesson,
+            lessons_keys: lessons ? Object.keys(lessons) : null,
+            lessons_sample: lessons && selectedCourseAuthId ? lessons[selectedCourseAuthId] : null
+        });
+    }, [instructor, classroomStatus, lessons, hasLessons, isOnline, selectedCourseAuthId, activeLesson, selectedLesson]);
+
     // Use shared lesson session hook - syncs with VideoLessonsTab
     const {
         session,
@@ -91,6 +106,14 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
             return lessons;
         }
 
+        // 🔍 AUDIT: Log incoming lessons data structure
+        console.log('🔍 LESSONS DATA AUDIT - Raw Input:', {
+            selectedCourseAuthId,
+            lessons_keys: Object.keys(lessons),
+            lessons_for_selected_course: lessons[selectedCourseAuthId],
+            full_lessons_object: lessons
+        });
+
         // Lessons are already shaped/filtered by the backend poll response.
         return lessons;
     }, [lessons, hasLessons, selectedCourseAuthId]);
@@ -130,6 +153,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
     // 🐛 DEBUG: Check localStorage directly vs hook state
     useEffect(() => {
         const rawSession = localStorage.getItem("offlineLessonSession");
+        const rawLessonSession = localStorage.getItem("lesson_session_active");
         const rawOnboarding = localStorage.getItem(
             "fstb_offline_onboarding_progress"
         );
@@ -139,6 +163,9 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
             activeTab,
             "localStorage.offlineLessonSession": rawSession
                 ? JSON.parse(rawSession)
+                : null,
+            "localStorage.lesson_session_active": rawLessonSession
+                ? JSON.parse(rawLessonSession)
                 : null,
             "localStorage.onboarding": rawOnboarding
                 ? JSON.parse(rawOnboarding)
@@ -523,6 +550,48 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
 
                                     return (
                                         <div key={courseAuthId}>
+                                            {/* 🔍 DEBUG JSON DUMP */}
+                                            <div className="bg-warning text-dark p-3 m-2" style={{fontSize: '11px', fontFamily: 'monospace', maxHeight: '400px', overflow: 'auto'}}>
+                                                <div className="fw-bold mb-2 d-flex justify-content-between align-items-center">
+                                                    <span>🔍 DEBUG - API & LOCALSTORAGE DATA:</span>
+                                                    <button 
+                                                        className="btn btn-sm btn-danger"
+                                                        onClick={() => {
+                                                            localStorage.clear();
+                                                            location.reload();
+                                                        }}
+                                                    >
+                                                        Clear LocalStorage & Reload
+                                                    </button>
+                                                </div>
+                                                <pre style={{margin: 0, whiteSpace: 'pre-wrap'}}>
+                                                    {JSON.stringify({
+                                                        API_DATA: {
+                                                            active_lesson_id: courseData.active_lesson_id,
+                                                            activeLiveLessonId: activeLiveLessonId,
+                                                            total_lessons: allLessons.length,
+                                                            lessons_to_show: lessonsToShow.length,
+                                                            lessons: allLessons.map((l: any) => ({
+                                                                id: l.id,
+                                                                title: l.title,
+                                                                status: l.status,
+                                                                is_active: l.is_active,
+                                                                is_completed: l.is_completed,
+                                                                started_at: l.started_at,
+                                                            }))
+                                                        },
+                                                        LOCALSTORAGE: {
+                                                            offlineLessonSession: localStorage.getItem("offlineLessonSession"),
+                                                            lesson_session_active: localStorage.getItem("lesson_session_active"),
+                                                            fstb_offline_onboarding_progress: localStorage.getItem("fstb_offline_onboarding_progress"),
+                                                        },
+                                                        HOOK_STATE: {
+                                                            session: session,
+                                                            hasActiveFSTBSession: hasActiveFSTBSession,
+                                                        }
+                                                    }, null, 2)}
+                                                </pre>
+                                            </div>
                                             {/* Course Title Header */}
                                             {Object.keys(filteredLessons)
                                                 .length > 1 && (
@@ -543,6 +612,21 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                         selectedLesson?.id ===
                                                         lesson.id;
 
+                                                    // 🔍 AUDIT: Log lesson data structure
+                                                    if (index === 0) {
+                                                        console.log('🔍 LESSON DATA AUDIT - First Lesson:', {
+                                                            lesson_id: lesson.id,
+                                                            title: lesson.title,
+                                                            status: lesson.status,
+                                                            is_completed: lesson.is_completed,
+                                                            is_active: lesson.is_active,
+                                                            started_at: lesson.started_at,
+                                                            has_student_lesson: lesson.has_student_lesson,
+                                                            has_self_study_lesson: lesson.has_self_study_lesson,
+                                                            full_lesson_object: lesson
+                                                        });
+                                                    }
+
                                                     // Debug: Check if this lesson matches active session
                                                     // Check if this is the active FSTB lesson
                                                     const isActiveFSTBLesson =
@@ -558,9 +642,35 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                             activeLesson.lesson_id ===
                                                                 lesson.id);
 
-                                                    // DON'T automatically mark first lesson as active - only backend determines this
+                                                    // Check if this lesson has been started (has started_at timestamp)
+                                                    const hasStarted = !!(lesson.started_at || lesson.is_active);
+
+                                                    // First non-completed lesson should show as active (In Progress)
+                                                    // But ONLY if no other lesson has actually been started
+                                                    const isFirstLesson = index === 0;
                                                     const shouldShowAsActive =
-                                                        false;
+                                                        isFirstLesson &&
+                                                        !lesson.is_completed &&
+                                                        !hasStarted && // Don't show first as active if another lesson has started
+                                                        lesson.status ===
+                                                            "credit-available";
+
+                                                    // 🔍 AUDIT: Log decision logic for first lesson
+                                                    if (index === 0) {
+                                                        console.log('🔍 LESSON STATUS LOGIC AUDIT:', {
+                                                            isFirstLesson,
+                                                            isActiveFSTBLesson,
+                                                            isActiveLiveLesson,
+                                                            hasStarted,
+                                                            shouldShowAsActive,
+                                                            'lesson.status': lesson.status,
+                                                            'lesson.is_completed': lesson.is_completed,
+                                                            'lesson.is_active': lesson.is_active,
+                                                            'lesson.started_at': lesson.started_at,
+                                                            activeLesson,
+                                                            session
+                                                        });
+                                                    }
 
                                                     if (
                                                         isActiveFSTBLesson ||
@@ -669,6 +779,33 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                                         {/* Show status badge on Home/Documents tab */}
                                                                         {activeTab !==
                                                                             "videos" && (
+                                                                            <>
+                                                                            {/* 🔍 AUDIT: Log badge rendering decision for first lesson */}
+                                                                            {index === 0 && console.log('🔍 BADGE RENDER AUDIT:', {
+                                                                                title: lesson.title,
+                                                                                'lesson.status': lesson.status,
+                                                                                hasStarted,
+                                                                                isActiveLiveLesson,
+                                                                                isActiveFSTBLesson,
+                                                                                shouldShowAsActive,
+                                                                                'lesson.is_completed': lesson.is_completed,
+                                                                                'lesson.is_active': lesson.is_active,
+                                                                                'lesson.started_at': lesson.started_at,
+                                                                                'Final badge text': lesson.status === "passed"
+                                                                                    ? "Completed"
+                                                                                    : lesson.status === "failed"
+                                                                                    ? "Failed"
+                                                                                    : lesson.status === "in-progress" ||
+                                                                                      hasStarted ||
+                                                                                      isActiveLiveLesson ||
+                                                                                      isActiveFSTBLesson
+                                                                                    ? "In Progress"
+                                                                                    : shouldShowAsActive
+                                                                                    ? "In Progress"
+                                                                                    : lesson.status === "credit-available"
+                                                                                    ? "Available"
+                                                                                    : "Pending"
+                                                                            })}
                                                                             <span
                                                                                 className={`badge ${
                                                                                     lesson.status ===
@@ -678,10 +815,13 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                                                           "failed"
                                                                                         ? "bg-danger"
                                                                                         : lesson.status ===
-                                                                                          "in-progress"
-                                                                                        ? "bg-info"
+                                                                                          "in-progress" ||
+                                                                                          hasStarted ||
+                                                                                          isActiveLiveLesson ||
+                                                                                          isActiveFSTBLesson
+                                                                                        ? "bg-primary"
                                                                                         : shouldShowAsActive
-                                                                                        ? "bg-info"
+                                                                                        ? "bg-primary"
                                                                                         : "bg-warning text-dark"
                                                                                 }`}
                                                                                 style={{
@@ -698,15 +838,19 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                                                       "failed"
                                                                                     ? "Failed"
                                                                                     : lesson.status ===
-                                                                                      "in-progress"
+                                                                                      "in-progress" ||
+                                                                                      hasStarted ||
+                                                                                      isActiveLiveLesson ||
+                                                                                      isActiveFSTBLesson
                                                                                     ? "In Progress"
                                                                                     : shouldShowAsActive
-                                                                                    ? "Active"
+                                                                                    ? "In Progress"
                                                                                     : lesson.status ===
                                                                                       "credit-available"
                                                                                     ? "Available"
                                                                                     : "Pending"}
                                                                             </span>
+                                                                            </>
                                                                         )}
 
                                                                         {/* Show Start/Resume/Review button only on Video Lessons tab */}
@@ -818,11 +962,16 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                 return lessonsToShow
                                     .filter((lesson) => lesson && lesson.title)
                                     .map((lesson, index) => {
-                                        // First lesson should be active (blue) if not completed
+                                        // Check if this lesson has been started (has started_at timestamp or is_active flag)
+                                        const hasStarted = !!(lesson.started_at || lesson.is_active);
+                                        const isActiveLiveLesson = lesson.is_active === true;
+
+                                        // First lesson should be active (blue) if not completed and no other lesson started
                                         const isFirstLesson = index === 0;
                                         const shouldShowAsActive =
                                             isFirstLesson &&
                                             !lesson.is_completed &&
+                                            !hasStarted &&
                                             lesson.status ===
                                                 "credit-available";
 
@@ -832,8 +981,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                 className={`lesson-initial ${
                                                     lesson.is_completed
                                                         ? "bg-success"
+                                                        : lesson.status === "in-progress" ||
+                                                          hasStarted ||
+                                                          isActiveLiveLesson
+                                                        ? "bg-primary"
                                                         : shouldShowAsActive
-                                                        ? "bg-info"
+                                                        ? "bg-primary"
                                                         : "bg-secondary"
                                                 } text-white text-center ${
                                                     index <
@@ -858,10 +1011,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                           "failed"
                                                         ? "Failed"
                                                         : lesson.status ===
-                                                          "in-progress"
+                                                          "in-progress" ||
+                                                          hasStarted ||
+                                                          isActiveLiveLesson
                                                         ? "In Progress"
                                                         : shouldShowAsActive
-                                                        ? "Active"
+                                                        ? "In Progress"
                                                         : lesson.status ===
                                                           "credit-available"
                                                         ? "Available"

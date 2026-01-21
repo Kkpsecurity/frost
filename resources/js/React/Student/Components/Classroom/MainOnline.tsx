@@ -103,12 +103,29 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
         return isActive;
     };
 
+    // Helper: Check if a lesson should show as "In Progress" (first non-completed lesson in live class)
+    const isLessonInProgress = (lessonId: number, index: number): boolean => {
+        // If student has started this lesson (has StudentLesson record)
+        if (isLessonActive(lessonId)) return true;
+
+        // Find the first non-completed lesson (should show as "In Progress")
+        const firstIncompleteIndex = lessons.findIndex(l => !isLessonCompletedByStudent(l.lesson_id || l.id));
+
+        // If this is the first non-completed lesson, show as "In Progress"
+        if (firstIncompleteIndex === index) {
+            console.log(`🔍 Lesson ${lessonId} at index ${index} showing as In Progress (first non-completed)`);
+            return true;
+        }
+
+        return false;
+    };
+
     const zoom = classroom?.data?.zoom;
     const isZoomReady = !!zoom?.is_ready;
     const screenShareUrl = zoom?.screen_share_url as string | undefined;
 
     // Get lesson status color based on STUDENT completion, not instructor state
-    const getLessonStatusColor = (lesson: LessonType) => {
+    const getLessonStatusColor = (lesson: LessonType, index: number) => {
         const lessonId = lesson.lesson_id || lesson.id;
 
         // Check if THIS student completed it (solid green like old design)
@@ -116,9 +133,9 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
             return '#16a34a'; // Solid green for completed by student
         }
 
-        // Check if student has started this lesson (StudentLesson exists, not completed)
-        if (isLessonActive(lessonId)) {
-            return '#0ea5e9'; // Cyan/blue for active
+        // Check if this lesson is in progress (student started OR first lesson with no completions)
+        if (isLessonInProgress(lessonId, index)) {
+            return '#3b82f6'; // Blue for in progress
         }
 
         // Default pending state (light grey)
@@ -126,7 +143,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
     };
 
     // Get lesson status icon based on STUDENT completion
-    const getLessonStatusIcon = (lesson: LessonType) => {
+    const getLessonStatusIcon = (lesson: LessonType, index: number) => {
         const lessonId = lesson.lesson_id || lesson.id;
 
         // Check if THIS student completed it
@@ -134,8 +151,8 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
             return <i className="fas fa-check-circle" style={{ color: '#ffffff' }}></i>;
         }
 
-        // Check if instructor is actively teaching it
-        if (isLessonActive(lessonId)) {
+        // Check if lesson is in progress
+        if (isLessonInProgress(lessonId, index)) {
             return <i className="fas fa-play-circle" style={{ color: '#ffffff' }}></i>;
         }
 
@@ -144,11 +161,11 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
     };
 
     // Get text color based on lesson status
-    const getLessonTextColor = (lesson: LessonType) => {
+    const getLessonTextColor = (lesson: LessonType, index: number) => {
         const lessonId = lesson.lesson_id || lesson.id;
 
-        // Completed or active: white text
-        if (isLessonCompletedByStudent(lessonId) || isLessonActive(lessonId)) {
+        // Completed or in progress: white text
+        if (isLessonCompletedByStudent(lessonId) || isLessonInProgress(lessonId, index)) {
             return '#ffffff';
         }
 
@@ -221,12 +238,12 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
                                                     <p className="mb-0">No lessons available</p>
                                                 </div>
                                             ) : (
-                                                lessons.map((lesson) => {
-                                                    const baseColor = getLessonStatusColor(lesson);
-                                                    const textColor = getLessonTextColor(lesson);
+                                                lessons.map((lesson, index) => {
+                                                    const baseColor = getLessonStatusColor(lesson, index);
+                                                    const textColor = getLessonTextColor(lesson, index);
                                                     const lessonId = lesson.lesson_id || lesson.id;
                                                     const isCompleted = isLessonCompletedByStudent(lessonId);
-                                                    const isActive = isLessonActive(lessonId);
+                                                    const inProgress = isLessonInProgress(lessonId, index);
 
                                                     return (
                                                         <div
@@ -248,7 +265,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
                                                                 }}>
                                                                     {lesson.title}
                                                                 </div>
-                                                                {getLessonStatusIcon(lesson)}
+                                                                {getLessonStatusIcon(lesson, index)}
                                                             </div>
                                                             <div className="d-flex justify-content-between align-items-center">
                                                                 <small style={{
@@ -263,7 +280,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
                                                                     fontSize: "0.8rem",
                                                                     fontWeight: "600"
                                                                 }}>
-                                                                    {isCompleted ? 'Completed' : isActive ? 'Active' : 'Pending'}
+                                                                    {isCompleted ? 'Completed' : inProgress ? 'In Progress' : 'Pending'}
                                                                 </small>
                                                             </div>
                                                         </div>
@@ -366,8 +383,20 @@ const MainOnline: React.FC<MainOnlineProps> = ({ classroom, student, validations
 
                                 {/* Lesson Progress Bar - Shows elapsed time and progress */}
                                 <LessonProgressBar
-                                    selectedLesson={lessons.find(l => l.is_active || l.status === 'active_live' || l.status === 'active_fstb') || lessons.find(l => l.id === selectedLessonId) || null}
-                                    startTime={lessons.find(l => l.is_active || l.status === 'active_live')?.started_at || lessons.find(l => l.id === selectedLessonId)?.started_at || null}
+                                    selectedLesson={
+                                        // Try to find active lesson with started_at
+                                        lessons.find(l => l.is_active || l.status === 'active_live') ||
+                                        // Or use the first non-completed lesson (current lesson)
+                                        lessons.find((l, idx) => !isLessonCompletedByStudent(l.lesson_id || l.id)) ||
+                                        // Fallback to selected lesson
+                                        lessons.find(l => l.id === selectedLessonId) ||
+                                        null
+                                    }
+                                    startTime={
+                                        lessons.find(l => l.is_active || l.status === 'active_live')?.started_at ||
+                                        lessons.find(l => l.id === selectedLessonId)?.started_at ||
+                                        null
+                                    }
                                 />
                             </div>
 

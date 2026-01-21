@@ -33,22 +33,22 @@
                 <form action="{{ route('admin.admin-center.general-settings.update') }}" method="POST">
                     @csrf
                     <input type="hidden" name="group" value="app">
-                    
+
                     <div class="card-body">
                         <div class="form-group">
                             <label for="app_name">Application Name</label>
-                            <input type="text" class="form-control" id="app_name" 
-                                   name="settings[app_name]" 
-                                   value="{{ config('app.name', 'Frost') }}" 
+                            <input type="text" class="form-control" id="app_name"
+                                   name="settings[app_name]"
+                                   value="{{ config('app.name', 'Frost') }}"
                                    placeholder="Frost">
                             <small class="form-text text-muted">The name of your application</small>
                         </div>
 
                         <div class="form-group">
                             <label for="app_url">Application URL</label>
-                            <input type="url" class="form-control" id="app_url" 
-                                   name="settings[app_url]" 
-                                   value="{{ config('app.url', url('/')) }}" 
+                            <input type="url" class="form-control" id="app_url"
+                                   name="settings[app_url]"
+                                   value="{{ config('app.url', url('/')) }}"
                                    placeholder="https://frost.test">
                             <small class="form-text text-muted">The base URL of your application</small>
                         </div>
@@ -65,8 +65,8 @@
 
                         <div class="form-group">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="app_debug" 
-                                       name="settings[app_debug]" value="1" 
+                                <input type="checkbox" class="custom-control-input" id="app_debug"
+                                       name="settings[app_debug]" value="1"
                                        {{ config('app.debug') ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="app_debug">
                                     Debug Mode
@@ -95,8 +95,8 @@
                             @foreach($appSettings as $setting)
                                 <div class="form-group">
                                     <label>{{ ucwords(str_replace('_', ' ', $setting->key)) }}</label>
-                                    <input type="text" class="form-control" 
-                                           name="custom_settings[{{ $setting->key }}]" 
+                                    <input type="text" class="form-control"
+                                           name="custom_settings[{{ $setting->key }}]"
                                            value="{{ $setting->value }}">
                                     <small class="form-text text-muted">Key: {{ $setting->key }}</small>
                                 </div>
@@ -124,22 +124,22 @@
                 <form action="{{ route('admin.admin-center.general-settings.update') }}" method="POST">
                     @csrf
                     <input type="hidden" name="group" value="auth">
-                    
+
                     <div class="card-body">
                         <h5>Password Requirements</h5>
-                        
+
                         <div class="form-group">
                             <label for="password_min_length">Minimum Password Length</label>
-                            <input type="number" class="form-control" id="password_min_length" 
-                                   name="settings[password_min_length]" 
-                                   value="{{ $authSettings->where('key', 'password_min_length')->first()->value ?? 8 }}" 
+                            <input type="number" class="form-control" id="password_min_length"
+                                   name="settings[password_min_length]"
+                                   value="{{ $authSettings->where('key', 'password_min_length')->first()->value ?? 8 }}"
                                    min="6" max="32">
                             <small class="form-text text-muted">Minimum characters required (6-32)</small>
                         </div>
 
                         <div class="form-group">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="password_require_uppercase" 
+                                <input type="checkbox" class="custom-control-input" id="password_require_uppercase"
                                        name="settings[password_require_uppercase]" value="1"
                                        {{ ($authSettings->where('key', 'password_require_uppercase')->first()->value ?? true) ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="password_require_uppercase">
@@ -150,7 +150,7 @@
 
                         <div class="form-group">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="password_require_lowercase" 
+                                <input type="checkbox" class="custom-control-input" id="password_require_lowercase"
                                        name="settings[password_require_lowercase]" value="1"
                                        {{ ($authSettings->where('key', 'password_require_lowercase')->first()->value ?? true) ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="password_require_lowercase">
@@ -161,7 +161,7 @@
 
                         <div class="form-group">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="password_require_numbers" 
+                                <input type="checkbox" class="custom-control-input" id="password_require_numbers"
                                        name="settings[password_require_numbers]" value="1"
                                        {{ ($authSettings->where('key', 'password_require_numbers')->first()->value ?? true) ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="password_require_numbers">
@@ -172,7 +172,7 @@
 
                         <div class="form-group">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="password_require_symbols" 
+                                <input type="checkbox" class="custom-control-input" id="password_require_symbols"
                                        name="settings[password_require_symbols]" value="1"
                                        {{ ($authSettings->where('key', 'password_require_symbols')->first()->value ?? false) ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="password_require_symbols">
@@ -186,16 +186,16 @@
 
                         <div class="form-group">
                             <label for="session_lifetime">Session Lifetime (minutes)</label>
-                            <input type="number" class="form-control" id="session_lifetime" 
-                                   name="settings[session_lifetime]" 
-                                   value="{{ config('session.lifetime', 120) }}" 
+                            <input type="number" class="form-control" id="session_lifetime"
+                                   name="settings[session_lifetime]"
+                                   value="{{ config('session.lifetime', 120) }}"
                                    min="5" max="1440">
                             <small class="form-text text-muted">How long sessions remain active (5-1440 minutes)</small>
                         </div>
 
                         <div class="form-group">
                             <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="expire_on_close" 
+                                <input type="checkbox" class="custom-control-input" id="expire_on_close"
                                        name="settings[expire_on_close]" value="1"
                                        {{ config('session.expire_on_close') ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="expire_on_close">
@@ -209,16 +209,16 @@
 
                         <div class="form-group">
                             <label for="max_login_attempts">Max Login Attempts</label>
-                            <input type="number" class="form-control" id="max_login_attempts" 
-                                   name="settings[max_login_attempts]" 
+                            <input type="number" class="form-control" id="max_login_attempts"
+                                   name="settings[max_login_attempts]"
                                    value="5" min="3" max="10">
                             <small class="form-text text-muted">Failed attempts before lockout (3-10)</small>
                         </div>
 
                         <div class="form-group">
                             <label for="lockout_duration">Lockout Duration (minutes)</label>
-                            <input type="number" class="form-control" id="lockout_duration" 
-                                   name="settings[lockout_duration]" 
+                            <input type="number" class="form-control" id="lockout_duration"
+                                   name="settings[lockout_duration]"
                                    value="15" min="5" max="60">
                             <small class="form-text text-muted">How long users are locked out (5-60 minutes)</small>
                         </div>
@@ -289,7 +289,7 @@
 
                     <div class="alert alert-warning mt-3">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Note:</strong> Some settings require .env file changes and application restart to take effect. 
+                        <strong>Note:</strong> Some settings require .env file changes and application restart to take effect.
                         Database settings are managed through the <code>settings</code> table.
                     </div>
                 </div>
@@ -310,7 +310,7 @@
                     @php
                         $inMaintenance = app()->isDownForMaintenance();
                     @endphp
-                    
+
                     @if($inMaintenance)
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle"></i>
@@ -332,7 +332,7 @@
                     <hr>
                     <p class="text-muted">
                         <small>
-                            Maintenance mode prevents access to the application for all users except admins. 
+                            Maintenance mode prevents access to the application for all users except admins.
                             Use this when performing system updates or maintenance.
                         </small>
                     </p>
@@ -349,7 +349,7 @@
                 </div>
                 <div class="card-body">
                     <p>Clear system caches to apply configuration changes or free up resources.</p>
-                    
+
                     <div class="btn-group-vertical btn-block">
                         <button class="btn btn-outline-danger" onclick="clearCache('config')">
                             <i class="fas fa-cog"></i> Clear Config Cache

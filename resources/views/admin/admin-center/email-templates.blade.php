@@ -28,10 +28,10 @@
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge badge-success">Active</span></dd>
-                        
+
                         <dt class="col-sm-5">Subject:</dt>
                         <dd class="col-sm-7">Welcome to Frost!</dd>
-                        
+
                         <dt class="col-sm-5">Last Updated:</dt>
                         <dd class="col-sm-7">{{ now()->subDays(5)->format('M d, Y') }}</dd>
                     </dl>
@@ -62,10 +62,10 @@
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge badge-success">Active</span></dd>
-                        
+
                         <dt class="col-sm-5">Subject:</dt>
                         <dd class="col-sm-7">Reset Your Password</dd>
-                        
+
                         <dt class="col-sm-5">Last Updated:</dt>
                         <dd class="col-sm-7">{{ now()->subDays(10)->format('M d, Y') }}</dd>
                     </dl>
@@ -96,10 +96,10 @@
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge badge-success">Active</span></dd>
-                        
+
                         <dt class="col-sm-5">Subject:</dt>
                         <dd class="col-sm-7">Verify Your Email</dd>
-                        
+
                         <dt class="col-sm-5">Last Updated:</dt>
                         <dd class="col-sm-7">{{ now()->subDays(15)->format('M d, Y') }}</dd>
                     </dl>
@@ -130,10 +130,10 @@
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge badge-success">Active</span></dd>
-                        
+
                         <dt class="col-sm-5">Subject:</dt>
                         <dd class="col-sm-7">Order Confirmation</dd>
-                        
+
                         <dt class="col-sm-5">Last Updated:</dt>
                         <dd class="col-sm-7">{{ now()->subDays(3)->format('M d, Y') }}</dd>
                     </dl>
@@ -164,10 +164,10 @@
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge badge-success">Active</span></dd>
-                        
+
                         <dt class="col-sm-5">Subject:</dt>
                         <dd class="col-sm-7">Course Enrollment</dd>
-                        
+
                         <dt class="col-sm-5">Last Updated:</dt>
                         <dd class="col-sm-7">{{ now()->subDays(7)->format('M d, Y') }}</dd>
                     </dl>
@@ -198,10 +198,10 @@
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge badge-success">Active</span></dd>
-                        
+
                         <dt class="col-sm-5">Subject:</dt>
                         <dd class="col-sm-7">Notification</dd>
-                        
+
                         <dt class="col-sm-5">Last Updated:</dt>
                         <dd class="col-sm-7">{{ now()->subDays(12)->format('M d, Y') }}</dd>
                     </dl>
@@ -309,7 +309,7 @@
             </div>
             <div class="alert alert-warning mt-3">
                 <i class="fas fa-info-circle"></i>
-                SMTP settings are configured in your <code>.env</code> file. 
+                SMTP settings are configured in your <code>.env</code> file.
                 Update <code>MAIL_*</code> variables to change email configuration.
             </div>
         </div>
@@ -367,7 +367,7 @@
     function editTemplate(templateName) {
         // TODO: Load template data via AJAX
         console.log('Editing template:', templateName);
-        
+
         // Example data (would be loaded from database)
         const templates = {
             'welcome': {
@@ -379,7 +379,7 @@
                 content: '<h1>Password Reset</h1><p>Click the link to reset: @{{$reset_url}}</p>'
             }
         };
-        
+
         if (templates[templateName]) {
             $('#template_subject').val(templates[templateName].subject);
             $('#template_content').val(templates[templateName].content);

@@ -361,7 +361,7 @@ class StudentDashboardController extends Controller
 
             // Get ALL student's course authorizations with course data
             $courseAuths = $user->courseAuths()
-                ->with(['course'])
+                ->with(['Course'])
                 ->get();
 
             // Map course auths to course list for dashboard
@@ -384,7 +384,7 @@ class StudentDashboardController extends Controller
                     'course_auth_id' => $courseAuth->id,
                     'course_date_id' => $classroomCourseDate?->id,
                     'course_id' => $courseAuth->course_id,
-                    'course_name' => $courseAuth->course?->title ?? $courseAuth->course?->title_long ?? 'N/A',
+                    'course_name' => $courseAuth->Course?->title ?? $courseAuth->Course?->title_long ?? 'N/A',
                     'start_date' => $classroomCourseDate?->starts_at?->format('Y-m-d') ?? $courseAuth->start_date,
                     'agreed_at' => $courseAuth->agreed_at?->toISOString(), // Add agreement timestamp for onboarding check
                     'status' => $status,
@@ -634,7 +634,7 @@ class StudentDashboardController extends Controller
             }
 
             // Get the course auth
-            $courseAuth = CourseAuth::with(['course'])
+            $courseAuth = CourseAuth::with(['Course'])
                 ->where('id', $courseAuthId)
                 ->where('user_id', $user->id)
                 ->first();
@@ -686,7 +686,7 @@ class StudentDashboardController extends Controller
 
             // Zoom readiness (used by student iframe screen share)
             // Infer Zoom credentials based on instructor role and course title pattern
-            $zoomCreds = $this->inferZoomCredentials($courseAuth->course, $instUnit);
+            $zoomCreds = $this->inferZoomCredentials($courseAuth->Course, $instUnit);
             $zoomStatus = $zoomCreds?->zoom_status ?? 'disabled';
             $isZoomReady = ($zoomStatus === 'enabled');
 
@@ -715,40 +715,103 @@ class StudentDashboardController extends Controller
                 }
             } else {
                 // OFFLINE MODE: Get all lessons for the entire course
-                $course = $courseAuth->course;
+                $course = $courseAuth->Course;
                 if ($course) {
                     $allLessons = $course->GetLessons();
                     $lessons = $allLessons ? $allLessons->toArray() : [];
                 }
             }
 
-            // Get completed lessons for this student
-            $completedLessons = [];
-            if ($studentUnit) {
-                $completedLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
-                    ->where('completed_at', '!=', null)
-                    ->pluck('lesson_id')
-                    ->toArray();
+            // Get today's InstLessons to determine lesson status
+            $todaysInstLessons = collect();
+            if ($instUnit) {
+                $todaysInstLessons = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                    ->get()
+                    ->keyBy('lesson_id');
             }
 
-            // Get active lesson (if instructor is teaching)
+            // Get StudentLessons for today
+            $todaysStudentLessons = collect();
+            if ($studentUnit && $instUnit && $todaysInstLessons->isNotEmpty()) {
+                $todaysStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
+                    ->whereIn('inst_lesson_id', $todaysInstLessons->pluck('id'))
+                    ->get()
+                    ->keyBy('lesson_id');
+            }
+
+            // Build studentLessons array for frontend
+            $studentLessons = $todaysStudentLessons->map(function ($sl) {
+                return [
+                    'id' => $sl->id,
+                    'lesson_id' => $sl->lesson_id,
+                    'student_unit_id' => $sl->student_unit_id,
+                    'inst_lesson_id' => $sl->inst_lesson_id,
+                    'created_at' => $sl->created_at ? (is_int($sl->created_at) ? date('c', $sl->created_at) : $sl->created_at->toISOString()) : null,
+                    'completed_at' => $sl->completed_at ? (is_int($sl->completed_at) ? date('c', $sl->completed_at) : $sl->completed_at->toISOString()) : null,
+                    'is_completed' => !is_null($sl->completed_at),
+                ];
+            })->values()->toArray();
+
+            // Determine active lesson (InstLesson exists but NOT completed)
             $activeLessonId = null;
-            if ($instUnit) {
-                $activeInstLesson = ClassroomQueries::ActiveInstLesson($instUnit);
-                if ($activeInstLesson) {
-                    $activeLessonId = $activeInstLesson->lesson_id;
+            foreach ($todaysInstLessons as $lessonId => $instLesson) {
+                if (!$instLesson->completed_at) {
+                    $activeLessonId = $lessonId;
+                    break; // Only one lesson can be active at a time
                 }
             }
 
+            // 🔍 DEBUG: Log active lesson determination
+            \Log::info('🔍 ACTIVE LESSON DETERMINATION', [
+                'today_inst_lessons_count' => $todaysInstLessons->count(),
+                'inst_lessons' => $todaysInstLessons->map(fn($il) => [
+                    'id' => $il->id,
+                    'lesson_id' => $il->lesson_id,
+                    'completed_at' => $il->completed_at,
+                    'is_completed' => !is_null($il->completed_at),
+                ])->toArray(),
+                'active_lesson_id' => $activeLessonId,
+                'student_id' => $user->id,
+                'course_auth_id' => $courseAuth->id,
+            ]);
+
             // Enhance lessons with status information
-            $lessons = collect($lessons)->map(function ($lesson) use ($completedLessons, $activeLessonId, $isOnline) {
+            $lessons = collect($lessons)->map(function ($lesson) use ($todaysInstLessons, $todaysStudentLessons, $isOnline) {
                 $lessonId = $lesson['id'];
 
-                $status = 'incomplete';
-                if (in_array($lessonId, $completedLessons)) {
-                    $status = 'completed';
-                } elseif ($activeLessonId === $lessonId) {
+                // Check if InstLesson exists for this lesson today
+                $instLesson = $todaysInstLessons->get($lessonId);
+                $studentLesson = $todaysStudentLessons->get($lessonId);
+
+                // Determine status (must match TypeScript: "incomplete" | "completed" | "active_live" | "active_fstb")
+                $status = 'incomplete'; // Default: not started or in progress
+                $isCompleted = false;
+                $isActive = false;
+
+                // 🔍 DEBUG: Log each lesson's status determination
+                \Log::info('🔍 LESSON STATUS CHECK', [
+                    'lesson_id' => $lessonId,
+                    'lesson_title' => $lesson['title'],
+                    'has_inst_lesson' => !is_null($instLesson),
+                    'inst_lesson_completed' => $instLesson ? !is_null($instLesson->completed_at) : null,
+                    'has_student_lesson' => !is_null($studentLesson),
+                    'student_lesson_completed' => $studentLesson ? !is_null($studentLesson->completed_at) : null,
+                ]);
+
+                if (!$instLesson) {
+                    // No InstLesson → INCOMPLETE (not started)
+                    $status = 'incomplete';
+                } elseif (!$instLesson->completed_at) {
+                    // InstLesson NOT completed → ACTIVE (instructor teaching NOW)
                     $status = $isOnline ? 'active_live' : 'active_fstb';
+                    $isActive = true;
+                } elseif ($studentLesson && $studentLesson->completed_at) {
+                    // InstLesson completed + StudentLesson completed → COMPLETED
+                    $status = 'completed';
+                    $isCompleted = true;
+                } else {
+                    // InstLesson completed but NO StudentLesson or incomplete → INCOMPLETE (in progress)
+                    $status = 'incomplete';
                 }
 
                 return [
@@ -758,10 +821,22 @@ class StudentDashboardController extends Controller
                     'duration_minutes' => $lesson['credit_minutes'] ?? $lesson['duration_minutes'] ?? $lesson['progress_minutes'] ?? 0,
                     'order' => $lesson['order'] ?? $lesson['order_by'] ?? 0,
                     'status' => $status,
-                    'is_completed' => in_array($lessonId, $completedLessons),
-                    'is_active' => $activeLessonId === $lessonId,
+                    'is_completed' => $isCompleted,
+                    'is_active' => $isActive,
                 ];
             })->sortBy('order')->values()->toArray();
+
+            // 🔍 DEBUG: Log all lessons after processing
+            \Log::info('🔍 ALL LESSONS AFTER PROCESSING', [
+                'total_lessons' => count($lessons),
+                'lessons' => collect($lessons)->map(fn($l) => [
+                    'id' => $l['id'],
+                    'title' => $l['title'],
+                    'status' => $l['status'],
+                    'is_completed' => $l['is_completed'],
+                    'is_active' => $l['is_active'],
+                ])->toArray(),
+            ]);
 
             // Check for active self-study session
             $activeSelfStudySession = null;
@@ -782,13 +857,13 @@ class StudentDashboardController extends Controller
                     'courseAuth' => [
                         'id' => $courseAuth->id,
                         'course_id' => $courseAuth->course_id,
-                        'course_name' => $courseAuth->course?->title ?? 'N/A',
+                        'course_name' => $courseAuth->Course?->title ?? 'N/A',
                         // Agreement is once per course.
                         'agreed_at' => $courseAuth->agreed_at?->toISOString(),
                     ],
                     'courseDate' => $courseDate ? [
                         'id' => $courseDate->id,
-                        'course_name' => $courseAuth->course?->title ?? $courseAuth->course?->title_long ?? $courseAuth->course?->name ?? 'N/A',
+                        'course_name' => $courseAuth->Course?->title ?? $courseAuth->Course?->title_long ?? $courseAuth->Course?->name ?? 'N/A',
                         // Frontend expects these keys; derive from starts_at/ends_at.
                         'class_date' => optional($courseDate->starts_at)->format('Y-m-d'),
                         'class_time' => optional($courseDate->starts_at)->format('H:i:s'),
@@ -844,9 +919,10 @@ class StudentDashboardController extends Controller
                         ],
                     ],
                     'lessons' => $lessons,
+                    'studentLessons' => $studentLessons, // ✅ ADD: Student lessons with completion tracking
                     'modality' => $isOnline ? 'online' : 'offline',
                     'active_lesson_id' => $activeLessonId,
-                    'completed_lessons_count' => count($completedLessons),
+                    'completed_lessons_count' => collect($lessons)->where('is_completed', true)->count(),
                     'total_lessons_count' => count($lessons),
                     'zoom' => [
                         'status' => $zoomStatus,
@@ -993,7 +1069,7 @@ class StudentDashboardController extends Controller
                 return [
                     'id' => $courseAuth->id,
                     'course_id' => $courseAuth->course_id,
-                    'course_name' => $courseAuth->course ? $courseAuth->course->name : 'N/A',
+                    'course_name' => $courseAuth->Course ? $courseAuth->Course->name : 'N/A',
                     'status' => $courseAuth->status ?? 'active',
                 ];
             })
@@ -2115,8 +2191,8 @@ class StudentDashboardController extends Controller
             ], 422);
         }
 
-        $courseDate = CourseDate::with(['course'])->findOrFail($courseDateId);
-        $courseId = (int) ($courseDate->course_id ?? ($courseDate->course?->id ?? 0));
+        $courseDate = CourseDate::with(['CourseUnit'])->findOrFail($courseDateId);
+        $courseId = (int) ($courseDate->course_id ?? ($courseDate->CourseUnit?->course_id ?? 0));
         if ($courseId <= 0) {
             return response()->json([
                 'success' => false,
@@ -2348,7 +2424,7 @@ class StudentDashboardController extends Controller
     {
         $user = Auth::user();
 
-        $courseAuth = CourseAuth::with(['course', 'course.ZoomCreds'])
+        $courseAuth = CourseAuth::with(['Course', 'Course.ZoomCreds'])
             ->where('id', $courseAuthId)
             ->where('user_id', $user?->id)
             ->first();
@@ -2380,7 +2456,7 @@ class StudentDashboardController extends Controller
         $instUnit = $courseDate->InstUnit;
 
         // Infer Zoom credentials based on instructor role and course title pattern
-        $zoomCreds = $this->inferZoomCredentials($courseAuth->course, $instUnit);
+        $zoomCreds = $this->inferZoomCredentials($courseAuth->Course, $instUnit);
         $zoomStatus = $zoomCreds?->zoom_status ?? 'disabled';
         $isZoomReady = ($zoomStatus === 'enabled');
 
