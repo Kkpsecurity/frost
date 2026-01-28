@@ -1,3 +1,4 @@
+import "../../core/bootstrap";
 import React, { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import StudentErrorBoundary from "./ErrorBoundry/StudentErrorBoundry";
@@ -43,7 +44,7 @@ export const StudentEntry: React.FC = () => {
                 props.course_auth_id || props.selected_course_auth_id || null;
             console.log(
                 "🎓 StudentEntry: Read courseAuthId from props:",
-                courseAuthId
+                courseAuthId,
             );
         } catch (error) {
             console.error("❌ Failed to parse student props:", error);
@@ -87,4 +88,3 @@ if (document.readyState === "loading") {
 
 // Export default for module loading
 export default StudentEntry;
-

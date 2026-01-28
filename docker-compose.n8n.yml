@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: frost_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-change_me_please}
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/New_York}
+      # Encryption key for credentials
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-}
+      # Database
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+      # Execution
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_TIMEOUT=3600
+      - EXECUTIONS_TIMEOUT_MAX=7200
+      - N8N_METRICS=true
+      # Logging
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_LOG_OUTPUT=console,file
+      - N8N_LOG_FILE_LOCATION=/home/node/.n8n/logs/
+    volumes:
+      - ./storage/n8n/data:/home/node/.n8n
+      - ./storage/n8n/workflows:/home/node/.n8n/workflows
+      - ./storage/n8n/logs:/home/node/.n8n/logs
+    networks:
+      - frost_network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+
+  # Optional: PostgreSQL for production use
+  # Uncomment if you want to use PostgreSQL instead of SQLite
+  # n8n_postgres:
+  #   image: postgres:15-alpine
+  #   container_name: frost_n8n_db
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_USER=n8n
+  #     - POSTGRES_PASSWORD=${N8N_DB_PASSWORD:-n8n_secure_password}
+  #     - POSTGRES_DB=n8n
+  #   volumes:
+  #     - ./storage/n8n/postgres:/var/lib/postgresql/data
+  #   networks:
+  #     - frost_network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U n8n"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # Optional: Redis for queue management
+  # Uncomment if you want to use Redis for workflow queue
+  # n8n_redis:
+  #   image: redis:7-alpine
+  #   container_name: frost_n8n_redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6380:6379"
+  #   volumes:
+  #     - ./storage/n8n/redis:/data
+  #   networks:
+  #     - frost_network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  frost_network:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  n8n_workflows:
+  n8n_logs:

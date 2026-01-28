@@ -734,6 +734,8 @@ class StudentDashboardController extends Controller
             // Get today's InstLessons to determine lesson status
             $todaysInstLessons = collect();
             if ($instUnit) {
+                // ✅ FIX: Reload instUnit relationship to get fresh is_paused values
+                $instUnit->load('instLessons');
                 $todaysInstLessons = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
                     ->get()
                     ->keyBy('lesson_id');
@@ -761,14 +763,17 @@ class StudentDashboardController extends Controller
                 ];
             })->values()->toArray();
 
-            // Determine active lesson (InstLesson exists but NOT completed AND NOT paused AND InstUnit NOT completed)
+            // Determine active lesson (InstLesson exists but NOT completed, INCLUDES paused lessons, InstUnit NOT completed)
             $activeLessonId = null;
+            $activeInstLesson = null;
             $isInstUnitCompleted = $instUnit && $instUnit->completed_at;
 
             if (!$isInstUnitCompleted) {
                 foreach ($todaysInstLessons as $lessonId => $instLesson) {
-                    if (!$instLesson->completed_at && !$instLesson->is_paused) {
+                    if (!$instLesson->completed_at) {
                         $activeLessonId = $lessonId;
+                        // ✅ FIX: Refresh from database to get latest is_paused value
+                        $activeInstLesson = $instLesson->fresh();
                         break; // Only one lesson can be active at a time
                     }
                 }
@@ -938,21 +943,23 @@ class StudentDashboardController extends Controller
                         'id' => $instUnit->id,
                         'started_at' => $instUnit->start_time,
                         'completed_at' => $instUnit->completed_at,
-                        // Include inst_lessons for pause detection
-                        'inst_lessons' => $instUnit->instLessons->map(function ($instLesson) {
-                            return [
-                                'id' => $instLesson->id,
-                                'lesson_id' => $instLesson->lesson_id,
-                                'created_at' => $instLesson->created_at,
-                                'completed_at' => $instLesson->completed_at,
-                                'is_paused' => $instLesson->is_paused,
-                                'lesson' => $instLesson->Lesson ? [
-                                    'id' => $instLesson->Lesson->id,
-                                    'title' => $instLesson->Lesson->title ?? $instLesson->Lesson->name ?? 'Lesson ' . $instLesson->lesson_id,
-                                    'name' => $instLesson->Lesson->name ?? $instLesson->Lesson->title,
-                                ] : null,
-                            ];
-                        })->toArray(),
+                        // ✅ FIX: Reload inst_lessons to get fresh is_paused values
+                        'inst_lessons' => \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                            ->get()
+                            ->map(function ($instLesson) {
+                                return [
+                                    'id' => $instLesson->id,
+                                    'lesson_id' => $instLesson->lesson_id,
+                                    'created_at' => $instLesson->created_at,
+                                    'completed_at' => $instLesson->completed_at,
+                                    'is_paused' => $instLesson->is_paused,
+                                    'lesson' => $instLesson->Lesson ? [
+                                        'id' => $instLesson->Lesson->id,
+                                        'title' => $instLesson->Lesson->title ?? $instLesson->Lesson->name ?? 'Lesson ' . $instLesson->lesson_id,
+                                        'name' => $instLesson->Lesson->name ?? $instLesson->Lesson->title,
+                                    ] : null,
+                                ];
+                            })->toArray(),
                     ] : null,
                     'instructor' => $instUnit ? (function () use ($instUnit) {
                         $instructor = \App\Models\User::find($instUnit->created_by);
@@ -994,6 +1001,14 @@ class StudentDashboardController extends Controller
                     'studentLessons' => $studentLessons, // ✅ ADD: Student lessons with completion tracking
                     'modality' => $isOnline ? 'online' : 'offline',
                     'active_lesson_id' => $activeLessonId,
+                    'activeLesson' => $activeInstLesson ? [
+                        'id' => $activeInstLesson->id,
+                        'lesson_id' => $activeInstLesson->lesson_id,
+                        'inst_unit_id' => $activeInstLesson->inst_unit_id,
+                        'started_at' => $activeInstLesson->started_at ?? $activeInstLesson->created_at,
+                        'completed_at' => $activeInstLesson->completed_at,
+                        'is_paused' => $activeInstLesson->is_paused,
+                    ] : null,
                     'completed_lessons_count' => collect($lessons)->where('is_completed', true)->count(),
                     'total_lessons_count' => count($lessons),
                     'zoom' => [
@@ -1117,7 +1132,7 @@ class StudentDashboardController extends Controller
             }
             if (!$isInstUnitCompleted) {
                 foreach ($todaysInstLessons as $lessonId => $instLesson) {
-                    if (!$instLesson->completed_at && !$instLesson->is_paused) {
+                    if (!$instLesson->completed_at) {
                         $activeLessonId = $lessonId;
                         break;
                     }

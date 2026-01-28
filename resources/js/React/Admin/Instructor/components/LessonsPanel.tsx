@@ -2,31 +2,31 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 interface Lesson {
-  id: number;
-  title: string;
-  sort_order: number;
-  lesson_type: string;
-  is_completed: boolean;
-  duration_minutes: number;
-  description: string;
-  content_url: string | null;
-  objectives: string | null;
+    id: number;
+    title: string;
+    sort_order: number;
+    lesson_type: string;
+    is_completed: boolean;
+    duration_minutes: number;
+    description: string;
+    content_url: string | null;
+    objectives: string | null;
 }
 
 interface InstLesson {
-  id: number;
-  lesson_id: number;
-  created_at: string;
-  completed_at: string | null;
-  is_paused: boolean;
+    id: number;
+    lesson_id: number;
+    created_at: string;
+    completed_at: string | null;
+    is_paused: boolean;
 }
 
 interface LessonsPanelProps {
-  courseDateId?: number;
-  collapsed: boolean;
-  onToggle: () => void;
-  instUnit?: any; // Contains instLessons
-  zoomReady?: boolean;
+    courseDateId?: number;
+    collapsed: boolean;
+    onToggle: () => void;
+    instUnit?: any; // Contains instLessons
+    zoomReady?: boolean;
 }
 
 /**
@@ -39,11 +39,11 @@ interface LessonsPanelProps {
  * 4. Prevents starting lessons out of order
  */
 const LessonsPanel: React.FC<LessonsPanelProps> = ({
-  courseDateId,
-  collapsed,
-  onToggle,
-  instUnit,
-  zoomReady,
+    courseDateId,
+    collapsed,
+    onToggle,
+    instUnit,
+    zoomReady,
 }) => {
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [loading, setLoading] = useState(false);
@@ -76,7 +76,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
         "completedLessons:",
         completedLessons.length,
         "lessonState:",
-        !!lessonState
+        !!lessonState,
     );
 
     const activeLessonId = instUnitLesson?.lesson_id;
@@ -86,6 +86,17 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
     const breaksAllowed = lessonState?.breaks?.breaks_allowed;
     const breaksTaken = lessonState?.breaks?.breaks_taken;
     const currentBreakStartedAt = lessonState?.breaks?.current_break_started_at;
+
+    console.log("🔍 PAUSE BUTTON CHECK:", {
+        activeLessonId,
+        hasActiveLessonId: !!activeLessonId,
+        instUnitLesson,
+        isPaused,
+        isZoomReady,
+        breaksRemaining,
+        breaksAllowed,
+        shouldShowButton: !!activeLessonId,
+    });
 
     // Countdown timer for break duration
     useEffect(() => {
@@ -137,10 +148,10 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
 
             try {
                 console.log(
-                    `📚 Fetching lessons for courseDate: ${courseDateId}`
+                    `📚 Fetching lessons for courseDate: ${courseDateId}`,
                 );
                 const response = await axios.get(
-                    `/admin/instructors/data/lessons/${courseDateId}`
+                    `/admin/instructors/data/lessons/${courseDateId}`,
                 );
 
                 console.log("✅ Lessons received:", response.data);
@@ -165,7 +176,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
         const fetchLessonState = async () => {
             try {
                 const response = await axios.get(
-                    `/admin/instructors/lessons/state/${courseDateId}`
+                    `/admin/instructors/lessons/state/${courseDateId}`,
                 );
                 setLessonState(response.data);
             } catch (err) {
@@ -179,7 +190,18 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
     }, [courseDateId]);
 
     const postLessonAction = async (path: string, lessonId: number) => {
-        if (!courseDateId) return;
+        console.log(`🔍 postLessonAction called:`, {
+            path,
+            lessonId,
+            courseDateId,
+            hasCourseDateId: !!courseDateId,
+        });
+
+        if (!courseDateId) {
+            console.error("❌ courseDateId is missing, cannot make API call");
+            return;
+        }
+
         setActionLoading(true);
         setActionMessage(null);
 
@@ -207,19 +229,19 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                 console.log(
                     "⏱️ Break duration set to:",
                     res.data.data.break_duration_minutes,
-                    "minutes"
+                    "minutes",
                 );
             }
 
             // Force refresh state quickly
             try {
                 const stateRes = await axios.get(
-                    `/admin/instructors/lessons/state/${courseDateId}`
+                    `/admin/instructors/lessons/state/${courseDateId}`,
                 );
                 console.log("🔄 Lesson state refreshed:", stateRes.data);
                 console.log(
                     "🔄 inst_lessons from state:",
-                    stateRes.data?.data?.inst_lessons
+                    stateRes.data?.data?.inst_lessons,
                 );
                 setLessonState(stateRes.data);
             } catch (e) {
@@ -243,7 +265,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
             // Refresh state even on error (e.g., "lesson already started" means it exists!)
             try {
                 const stateRes = await axios.get(
-                    `/admin/instructors/lessons/state/${courseDateId}`
+                    `/admin/instructors/lessons/state/${courseDateId}`,
                 );
                 console.log("🔄 State refreshed after error:", stateRes.data);
                 setLessonState(stateRes.data);
@@ -425,15 +447,24 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                                         undefined &&
                                                         breaksRemaining <= 0)
                                                 }
-                                                onClick={() => {
-                                                    setPausedLessonId(
-                                                        activeLessonId
+                                                onClick={async () => {
+                                                    console.log(
+                                                        "🖱️ Pause button clicked",
+                                                        {
+                                                            activeLessonId,
+                                                            courseDateId,
+                                                        },
                                                     );
-                                                    setShowPauseModal(true);
+                                                    await postLessonAction(
+                                                        "/admin/instructors/lessons/pause",
+                                                        activeLessonId,
+                                                    );
                                                 }}
                                             >
                                                 <i className="fas fa-pause me-1" />
-                                                Pause Class
+                                                {actionLoading
+                                                    ? "Pausing..."
+                                                    : "Pause Class"}
                                                 {breaksRemaining !==
                                                     undefined &&
                                                     breaksRemaining > 0 && (
@@ -463,14 +494,14 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                     <div className="lessons-list">
                                         {lessons.map((lesson, index) => {
                                             const completed = isLessonCompleted(
-                                                lesson.id
+                                                lesson.id,
                                             );
                                             const active = isLessonActive(
-                                                lesson.id
+                                                lesson.id,
                                             );
                                             const enabled = isLessonEnabled(
                                                 lesson,
-                                                index
+                                                index,
                                             );
 
                                             return (
@@ -491,7 +522,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                                         <div className="lesson-header">
                                                             <i
                                                                 className={`fas ${getLessonIcon(
-                                                                    lesson.lesson_type
+                                                                    lesson.lesson_type,
                                                                 )} mr-2`}
                                                             />
                                                             <h6 className="lesson-title mb-0">
@@ -502,7 +533,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                                             <span className="lesson-duration">
                                                                 <i className="far fa-clock me-1" />
                                                                 {formatDuration(
-                                                                    lesson.duration_minutes
+                                                                    lesson.duration_minutes,
                                                                 )}
                                                             </span>
                                                             {completed && (
@@ -539,13 +570,13 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                                                         !isZoomReady
                                                                             ? "Setup Zoom first"
                                                                             : !enabled
-                                                                            ? "Complete previous lesson first"
-                                                                            : "Start this lesson"
+                                                                              ? "Complete previous lesson first"
+                                                                              : "Start this lesson"
                                                                     }
                                                                     onClick={() =>
                                                                         postLessonAction(
                                                                             "/admin/instructors/lessons/start",
-                                                                            lesson.id
+                                                                            lesson.id,
                                                                         )
                                                                     }
                                                                 >
@@ -565,7 +596,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                                                         onClick={() =>
                                                                             postLessonAction(
                                                                                 "/admin/instructors/lessons/complete",
-                                                                                lesson.id
+                                                                                lesson.id,
                                                                             )
                                                                         }
                                                                     >
@@ -789,7 +820,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                     >
                                         {Math.floor(breakTimeRemaining / 60)}:
                                         {String(
-                                            breakTimeRemaining % 60
+                                            breakTimeRemaining % 60,
                                         ).padStart(2, "0")}
                                     </div>
                                     <div
@@ -847,12 +878,28 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                         }}
                                         disabled={actionLoading}
                                         onClick={async () => {
+                                            console.log(
+                                                "🖱️ Start Break button clicked",
+                                                {
+                                                    pausedLessonId,
+                                                    actionLoading,
+                                                    courseDateId,
+                                                },
+                                            );
+
                                             if (pausedLessonId) {
+                                                console.log(
+                                                    "✅ pausedLessonId exists, calling postLessonAction",
+                                                );
                                                 await postLessonAction(
                                                     "/admin/instructors/lessons/pause",
-                                                    pausedLessonId
+                                                    pausedLessonId,
                                                 );
                                                 // Don't close modal - stays open while paused
+                                            } else {
+                                                console.error(
+                                                    "❌ pausedLessonId is null/undefined",
+                                                );
                                             }
                                         }}
                                     >
@@ -892,7 +939,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                         if (pausedLessonId) {
                                             await postLessonAction(
                                                 "/admin/instructors/lessons/resume",
-                                                pausedLessonId
+                                                pausedLessonId,
                                             );
                                             // Close modal after resuming
                                             setShowPauseModal(false);

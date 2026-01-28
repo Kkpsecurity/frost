@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin\Instructors;
 
 use App\Http\Controllers\Controller;
@@ -136,6 +138,15 @@ class InstructorDashboardController extends Controller
                     ->whereNull('completed_at')
                     ->select('id as inst_lesson_id', 'lesson_id', 'created_at as started_at', 'is_paused')
                     ->first();
+
+                if ($instUnitLesson) {
+                    \Log::info('📊 INSTRUCTOR POLL - InstUnitLesson', [
+                        'inst_lesson_id' => $instUnitLesson->inst_lesson_id,
+                        'lesson_id' => $instUnitLesson->lesson_id,
+                        'is_paused' => $instUnitLesson->is_paused,
+                        'started_at' => $instUnitLesson->started_at,
+                    ]);
+                }
             }
 
             return response()->json([
@@ -644,7 +655,6 @@ class InstructorDashboardController extends Controller
                     ]
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error fetching upcoming courses data', [
                 'admin_id' => $admin->id,
@@ -732,7 +742,6 @@ class InstructorDashboardController extends Controller
                     'is_assignment_only' => true // Flag to indicate this is just assignment, not active session
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error assigning instructor', [
                 'course_date_id' => $courseDateId,
@@ -855,7 +864,6 @@ class InstructorDashboardController extends Controller
                     'is_existing' => false
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error starting class', [
                 'course_date_id' => $courseDateId,
@@ -954,7 +962,6 @@ class InstructorDashboardController extends Controller
                     'instructor_id' => $admin->id
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error force ending classes', [
                 'admin_id' => $admin->id,
@@ -1065,7 +1072,6 @@ class InstructorDashboardController extends Controller
                 'success' => true,
                 'message' => 'Successfully took over the class session!'
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error taking over class', [
                 'admin_id' => $admin->id,
@@ -1150,7 +1156,6 @@ class InstructorDashboardController extends Controller
                     ]
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error assisting class', [
                 'admin_id' => $admin->id,
@@ -1287,7 +1292,6 @@ class InstructorDashboardController extends Controller
                     'ends_at' => $courseDate->ends_at
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('InstructorDashboardController: Error fetching lessons', [
                 'course_date_id' => $courseDateId,
@@ -1372,7 +1376,6 @@ class InstructorDashboardController extends Controller
                     'generated_at' => now()->toISOString()
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get classroom data array', [
                 'error' => $e->getMessage(),
@@ -1430,7 +1433,6 @@ class InstructorDashboardController extends Controller
                     'generated_at' => now()->toISOString()
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get classroom poll data', [
                 'error' => $e->getMessage(),
@@ -1498,7 +1500,6 @@ class InstructorDashboardController extends Controller
                     'generated_at' => now()->toISOString()
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get instructor classroom data', [
                 'error' => $e->getMessage(),
@@ -1565,7 +1566,6 @@ class InstructorDashboardController extends Controller
                     'generated_at' => now()->toISOString()
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get lesson management data', [
                 'error' => $e->getMessage(),
@@ -1796,7 +1796,6 @@ class InstructorDashboardController extends Controller
                     'current_break_started_at' => $currentBreakStartedAt,
                 ],
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get instructor lesson state', [
                 'error' => $e->getMessage(),
@@ -1918,7 +1917,6 @@ class InstructorDashboardController extends Controller
                     'started_at' => $instLesson->created_at->toIso8601String(),
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to start lesson', [
                 'error' => $e->getMessage(),
@@ -2042,7 +2040,6 @@ class InstructorDashboardController extends Controller
                     'duration_minutes' => $durationMinutes,
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to complete lesson', [
                 'error' => $e->getMessage(),
@@ -2067,6 +2064,11 @@ class InstructorDashboardController extends Controller
      */
     public function pauseLesson(Request $request)
     {
+        \Log::info('🚨 PAUSE ENDPOINT CALLED', [
+            'request_data' => $request->all(),
+            'user_id' => \Auth::id(),
+        ]);
+
         $request->validate([
             'course_date_id' => 'required|integer|exists:course_dates,id',
             'lesson_id' => 'required|integer|exists:lessons,id',
@@ -2151,6 +2153,13 @@ class InstructorDashboardController extends Controller
 
                 $instLesson->update(['is_paused' => true]);
 
+                \Log::info('✅ LESSON PAUSED', [
+                    'inst_lesson_id' => $instLesson->id,
+                    'lesson_id' => $instLesson->lesson_id,
+                    'is_paused' => true,
+                    'break_number' => $nextBreakNumber,
+                ]);
+
                 return [
                     'ok' => true,
                     'inst_lesson_id' => $instLesson->id,
@@ -2194,7 +2203,6 @@ class InstructorDashboardController extends Controller
                     'paused_at' => now()->toISOString(),
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to pause lesson', [
                 'error' => $e->getMessage(),
@@ -2329,7 +2337,6 @@ class InstructorDashboardController extends Controller
                     'break_duration_minutes' => $result['break_duration_minutes'],
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to resume lesson', [
                 'error' => $e->getMessage(),
@@ -2424,10 +2431,11 @@ class InstructorDashboardController extends Controller
                 'data' => [
                     'inst_lessons' => $instLessons,
                     'active_lesson' => $activeLesson,
+                    'instUnitLesson' => $activeLesson, // ✅ Add this for frontend compatibility
+                    'completedInstLessons' => $instLessons->where('completed_at', '!=', null)->values(),
                     'breaks' => $breakStats,
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get lesson state', [
                 'error' => $e->getMessage(),
@@ -2482,7 +2490,6 @@ class InstructorDashboardController extends Controller
                     'class_started' => $instUnit ? $instUnit->created_at->toISOString() : null,
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get screen sharing status', [
                 'error' => $e->getMessage(),
@@ -2596,7 +2603,6 @@ class InstructorDashboardController extends Controller
                     ]
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get students for course date', [
                 'error' => $e->getMessage(),
@@ -2689,7 +2695,6 @@ class InstructorDashboardController extends Controller
                 'course_name' => $course ? $course->name : 'Unknown',
                 'inst_unit_id' => $activeInstUnit->id,
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to get zoom status', [
                 'error' => $e->getMessage(),
@@ -2702,12 +2707,13 @@ class InstructorDashboardController extends Controller
                 'error' => app()->environment('local') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
-    }    /**
-         * Toggle zoom status (enable/disable) for the authenticated instructor
-         *
-         * @param \Illuminate\Http\Request $request
-         * @return \Illuminate\Http\JsonResponse
-         */
+    }
+    /**
+     * Toggle zoom status (enable/disable) for the authenticated instructor
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function toggleZoomStatus(Request $request)
     {
         try {
@@ -2832,7 +2838,6 @@ class InstructorDashboardController extends Controller
                 'email' => $zoomCreds->zoom_email,
                 'course_name' => $course->name,
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to toggle zoom status', [
                 'error' => $e->getMessage(),
@@ -2903,7 +2908,6 @@ class InstructorDashboardController extends Controller
                     'headshot_status' => $headshotStatus,
                 ],
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to fetch student validations', [
                 'course_auth_id' => $courseAuthId,
@@ -2975,7 +2979,6 @@ class InstructorDashboardController extends Controller
                 'success' => true,
                 'message' => ucfirst($type) . ' approved successfully',
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to approve validation', [
                 'instructor_id' => auth('admin')->id(),
@@ -3050,7 +3053,6 @@ class InstructorDashboardController extends Controller
                 'success' => true,
                 'message' => ucfirst($type) . ' rejected successfully',
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to reject validation', [
                 'instructor_id' => auth('admin')->id(),
@@ -3165,7 +3167,6 @@ class InstructorDashboardController extends Controller
             ];
 
             return response()->json($response, 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to get student identity', [
                 'instructor_id' => auth('admin')->id(),
@@ -3294,8 +3295,7 @@ class InstructorDashboardController extends Controller
                 $validation->Accept($validationType === 'id_card' ? 'id' : 'headshot');
 
                 // Check if BOTH validations are now accepted
-                $studentId = $validation->courseAuth ? $validation->courseAuth->user_id :
-                    ($validation->studentUnit ? $validation->studentUnit->CourseAuth->user_id : null);
+                $studentId = $validation->courseAuth ? $validation->courseAuth->user_id : ($validation->studentUnit ? $validation->studentUnit->CourseAuth->user_id : null);
 
                 if ($studentId) {
                     // Get CourseAuth to find StudentUnit
@@ -3343,7 +3343,6 @@ class InstructorDashboardController extends Controller
                 'message' => $message,
                 'verification_status' => $validation->status === 1 ? 'approved' : 'rejected',
             ], 200);
-
         } catch (\Exception $e) {
             Log::error('Failed to validate student identity', [
                 'instructor_id' => auth('admin')->id(),

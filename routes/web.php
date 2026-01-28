@@ -211,7 +211,29 @@ if (class_exists('App\\Http\\Controllers\\Admin\\AdminPaymentsController')) {
 }
 
 /**
+ * Sentinel Bridge & Monitoring API Routes
+ * Protected by auth middleware
+ */
+Route::middleware('auth')->prefix('api/sentinel')->name('sentinel.')->group(function () {
+    Route::post('/event', [App\Http\Controllers\Api\SentinelController::class, 'sendEvent'])->name('event');
+    Route::get('/health', [App\Http\Controllers\Api\SentinelController::class, 'health'])->name('health');
+    Route::post('/test', [App\Http\Controllers\Api\SentinelController::class, 'testConnection'])->name('test');
+    Route::get('/stats', [App\Http\Controllers\Api\SentinelController::class, 'stats'])->name('stats');
+    Route::get('/events', [App\Http\Controllers\Api\SentinelController::class, 'events'])->name('events');
+    Route::get('/events/{id}', [App\Http\Controllers\Api\SentinelController::class, 'eventDetails'])->name('events.details');
+    Route::get('/health-checks', [App\Http\Controllers\Api\SentinelController::class, 'healthChecks'])->name('health-checks');
+    Route::post('/cleanup', [App\Http\Controllers\Api\SentinelController::class, 'cleanup'])->name('cleanup');
+});
+
+/**
+ * n8n Webhook Callback Routes
+ * No auth required for webhooks from n8n
+ */
+Route::prefix('api/webhooks/n8n')->name('webhooks.n8n.')->group(function () {
+    Route::post('/callback', [App\Http\Controllers\Api\WebhookController::class, 'n8nCallback'])->name('callback');
+    Route::post('/notify', [App\Http\Controllers\Api\WebhookController::class, 'n8nNotify'])->name('notify');
+});
+
+/**
  * Clean web routes - test/debug routes moved to separate files
  */
-
-

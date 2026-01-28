@@ -2,6 +2,9 @@ import React, { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// Import axios configuration with CSRF token setup
+import "../../../core/bootstrap";
+
 import EntryErrorBoundary from "./ErrorBoundry/EntryErrorBoundry";
 import InstructorDataLayer from "./InstructorDataLayer";
 

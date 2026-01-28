@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import FrostDashboardWrapper from "../../Styles/FrostDashboardWrapper.styled";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import LessonSideBar from "../Common/LessonSideBar";
@@ -28,30 +28,41 @@ const MainOffline: React.FC<MainOfflineProps> = ({
 }) => {
     const classroomContext = useClassroom();
 
+    // Tab state management
+    const [activeTab, setActiveTab] = useState<
+        "details" | "self-study" | "documentation"
+    >("details");
+
     // OFFLINE MODE: ALL lessons for the entire course (not just today)
     // Backend returns all lessons across all course units when no courseDate exists
     // Students can study any lesson in self-paced mode
     // Access data property if context is wrapped
     const classroomData = classroomContext?.data || classroomContext;
     const backendLessons = classroomData?.lessons || [];
-    
+
     // 🎨 TEMP: For testing layout with all 18 lessons
     // TODO: Remove this when backend returns all course lessons in offline mode
-    const mockLessons = backendLessons.length < 18 ? [
-        ...backendLessons,
-        ...Array.from({ length: 18 - backendLessons.length }, (_, i) => ({
-            id: 100 + i,
-            title: `Lesson ${backendLessons.length + i + 1}`,
-            description: `Course lesson ${backendLessons.length + i + 1}`,
-            duration_minutes: 60,
-            order: backendLessons.length + i + 1,
-            status: 'incomplete',
-            is_completed: false,
-            is_active: false,
-            is_paused: false,
-        }))
-    ] : backendLessons;
-    
+    const mockLessons =
+        backendLessons.length < 18
+            ? [
+                  ...backendLessons,
+                  ...Array.from(
+                      { length: 18 - backendLessons.length },
+                      (_, i) => ({
+                          id: 100 + i,
+                          title: `Lesson ${backendLessons.length + i + 1}`,
+                          description: `Course lesson ${backendLessons.length + i + 1}`,
+                          duration_minutes: 60,
+                          order: backendLessons.length + i + 1,
+                          status: "incomplete",
+                          is_completed: false,
+                          is_active: false,
+                          is_paused: false,
+                      }),
+                  ),
+              ]
+            : backendLessons;
+
     const lessons = mockLessons;
     const studentLessons = classroomData?.studentLessons || [];
     const activeLesson = null; // No active lesson in offline mode
@@ -112,14 +123,199 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                             </div>
                             {/* Main Content Area */}
                             <div className="col-md-10">
-                                <div style={{ padding: "2rem" }}>
-                                    <h3 style={{ color: "white" }}>
-                                        Self-Study Content Area
-                                    </h3>
-                                    <p style={{ color: "#95a5a6" }}>
-                                        Lesson details, study materials, and
-                                        documentation will appear here.
-                                    </p>
+                                {/* Tab Navigation */}
+                                <div
+                                    className="tabs-navigation"
+                                    style={{
+                                        backgroundColor: "#2c3e50",
+                                        borderBottom: "2px solid #34495e",
+                                        padding: "0 1.5rem",
+                                    }}
+                                >
+                                    <div className="d-flex">
+                                        {/* Details Tab */}
+                                        <button
+                                            className={`tab-button ${
+                                                activeTab === "details"
+                                                    ? "active"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                setActiveTab("details")
+                                            }
+                                            style={{
+                                                backgroundColor:
+                                                    activeTab === "details"
+                                                        ? "#34495e"
+                                                        : "transparent",
+                                                color:
+                                                    activeTab === "details"
+                                                        ? "white"
+                                                        : "#95a5a6",
+                                                border: "none",
+                                                padding: "1rem 1.5rem",
+                                                cursor: "pointer",
+                                                fontWeight:
+                                                    activeTab === "details"
+                                                        ? "600"
+                                                        : "400",
+                                                borderBottom:
+                                                    activeTab === "details"
+                                                        ? "3px solid #3498db"
+                                                        : "none",
+                                                transition: "all 0.2s",
+                                            }}
+                                        >
+                                            <i className="fas fa-info-circle me-2"></i>
+                                            Details
+                                        </button>
+
+                                        {/* Self Study Tab */}
+                                        <button
+                                            className={`tab-button ${
+                                                activeTab === "self-study"
+                                                    ? "active"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                setActiveTab("self-study")
+                                            }
+                                            style={{
+                                                backgroundColor:
+                                                    activeTab === "self-study"
+                                                        ? "#34495e"
+                                                        : "transparent",
+                                                color:
+                                                    activeTab === "self-study"
+                                                        ? "white"
+                                                        : "#95a5a6",
+                                                border: "none",
+                                                padding: "1rem 1.5rem",
+                                                cursor: "pointer",
+                                                fontWeight:
+                                                    activeTab === "self-study"
+                                                        ? "600"
+                                                        : "400",
+                                                borderBottom:
+                                                    activeTab === "self-study"
+                                                        ? "3px solid #3498db"
+                                                        : "none",
+                                                transition: "all 0.2s",
+                                            }}
+                                        >
+                                            <i className="fas fa-graduation-cap me-2"></i>
+                                            Self Study
+                                        </button>
+
+                                        {/* Documentation Tab */}
+                                        <button
+                                            className={`tab-button ${
+                                                activeTab === "documentation"
+                                                    ? "active"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                setActiveTab("documentation")
+                                            }
+                                            style={{
+                                                backgroundColor:
+                                                    activeTab ===
+                                                    "documentation"
+                                                        ? "#34495e"
+                                                        : "transparent",
+                                                color:
+                                                    activeTab ===
+                                                    "documentation"
+                                                        ? "white"
+                                                        : "#95a5a6",
+                                                border: "none",
+                                                padding: "1rem 1.5rem",
+                                                cursor: "pointer",
+                                                fontWeight:
+                                                    activeTab ===
+                                                    "documentation"
+                                                        ? "600"
+                                                        : "400",
+                                                borderBottom:
+                                                    activeTab ===
+                                                    "documentation"
+                                                        ? "3px solid #3498db"
+                                                        : "none",
+                                                transition: "all 0.2s",
+                                            }}
+                                        >
+                                            <i className="fas fa-file-alt me-2"></i>
+                                            Documentation
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Tab Content */}
+                                <div
+                                    className="tab-content"
+                                    style={{
+                                        padding: "2rem",
+                                        overflowY: "auto",
+                                        height: "calc(100vh - 250px)",
+                                    }}
+                                >
+                                    {/* Details Tab Content */}
+                                    {activeTab === "details" && (
+                                        <div className="details-tab">
+                                            <h3
+                                                style={{
+                                                    color: "white",
+                                                    marginBottom: "1.5rem",
+                                                }}
+                                            >
+                                                <i className="fas fa-tachometer-alt me-2"></i>
+                                                Learning Dashboard
+                                            </h3>
+                                            <p style={{ color: "#95a5a6" }}>
+                                                Course overview, progress stats,
+                                                and learning materials.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Self Study Tab Content */}
+                                    {activeTab === "self-study" && (
+                                        <div className="self-study-tab">
+                                            <h3
+                                                style={{
+                                                    color: "white",
+                                                    marginBottom: "1.5rem",
+                                                }}
+                                            >
+                                                <i className="fas fa-play-circle me-2"></i>
+                                                Self Study Mode
+                                            </h3>
+                                            <p style={{ color: "#95a5a6" }}>
+                                                Video lessons, practice
+                                                exercises, and interactive
+                                                content.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Documentation Tab Content */}
+                                    {activeTab === "documentation" && (
+                                        <div className="documentation-tab">
+                                            <h3
+                                                style={{
+                                                    color: "white",
+                                                    marginBottom: "1.5rem",
+                                                }}
+                                            >
+                                                <i className="fas fa-folder-open me-2"></i>
+                                                Course Documentation
+                                            </h3>
+                                            <p style={{ color: "#95a5a6" }}>
+                                                PDF resources, handbooks, and
+                                                reference materials.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "./Dashboard/MainDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
+import StudentLessonPauseModal from "./Classroom/StudentLessonPauseModal";
 import {
     StudentContextProvider,
     StudentContextType,
@@ -111,6 +112,15 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     const [breaksRemaining, setBreaksRemaining] = useState<number | undefined>(
         undefined,
     );
+
+    // DEBUG: Log when showPauseModal changes
+    useEffect(() => {
+        console.log("🚨 PAUSE MODAL STATE CHANGED:", {
+            showPauseModal,
+            pausedLessonTitle,
+            breaksRemaining,
+        });
+    }, [showPauseModal, pausedLessonTitle, breaksRemaining]);
 
     // Save to localStorage whenever selectedCourseAuthId changes
     useEffect(() => {
@@ -265,51 +275,43 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     // =========================================================================
     // PAUSE DETECTION LOGIC
     // =========================================================================
-    // Monitor instUnit for active paused lessons
+    // Monitor activeLesson from classroom poll for pause status
     useEffect(() => {
-        const instUnit = classroomData?.data?.instUnit;
+        // Log the full classroom poll data structure
+        console.log("📡 FULL CLASSROOM POLL DATA:", {
+            hasClassroomData: !!classroomData,
+            classroomDataKeys: classroomData ? Object.keys(classroomData) : [],
+            dataKeys: classroomData?.data
+                ? Object.keys(classroomData.data)
+                : [],
+            fullData: classroomData?.data,
+        });
+
+        const activeLesson = classroomData?.data?.activeLesson;
 
         console.log("🔍 PAUSE DETECTION DEBUG:", {
             hasClassroomData: !!classroomData,
-            hasInstUnit: !!instUnit,
-            instUnit: instUnit,
-            fullClassroomData: classroomData?.data,
+            hasActiveLesson: !!activeLesson,
+            activeLesson: activeLesson,
+            isPaused: activeLesson?.is_paused,
+            activeLessonType: typeof activeLesson,
         });
 
-        if (!instUnit) {
-            // No active class - clear pause modal
+        if (!activeLesson) {
+            // No active lesson - clear pause modal
             setShowPauseModal(false);
             return;
         }
 
-        // Check for active inst_lessons with is_paused flag
-        const instLessons = classroomData?.data?.instUnit?.inst_lessons || [];
-
-        console.log("🔍 INST LESSONS DEBUG:", {
-            instLessonsCount: instLessons.length,
-            instLessons: instLessons,
-            instUnitStructure: Object.keys(instUnit),
-        });
-
-        const activeInstLesson = instLessons.find(
-            (lesson: any) => !lesson.completed_at && !lesson.failed_at,
-        );
-
-        console.log("🔍 ACTIVE LESSON DEBUG:", {
-            hasActiveLesson: !!activeInstLesson,
-            activeInstLesson: activeInstLesson,
-            isPaused: activeInstLesson?.is_paused,
-        });
-
-        if (activeInstLesson && activeInstLesson.is_paused) {
+        // Check if the active lesson is paused
+        if (activeLesson.is_paused) {
+            console.log("🔴 PAUSE DETECTED - SETTING MODAL TO TRUE");
+            
             // Lesson is paused - show modal
             const lessonTitle =
-                activeInstLesson.lesson?.title ||
-                activeInstLesson.lesson?.name ||
                 classroomData?.data?.lessons?.find(
-                    (l: any) => l.id === activeInstLesson.lesson_id,
-                )?.title ||
-                "Current Lesson";
+                    (l: any) => l.id === activeLesson.lesson_id,
+                )?.title || "Current Lesson";
 
             setPausedLessonTitle(lessonTitle);
 
@@ -319,13 +321,15 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                 setBreaksRemaining(breaks.breaks_remaining);
             }
 
+            console.log("🔴 ABOUT TO CALL setShowPauseModal(true)");
             setShowPauseModal(true);
+            console.log("🔴 CALLED setShowPauseModal(true)");
 
             console.log("⏸️ StudentDataLayer: Lesson paused detected", {
-                instLessonId: activeInstLesson.id,
-                lessonId: activeInstLesson.lesson_id,
+                instLessonId: activeLesson.id,
+                lessonId: activeLesson.lesson_id,
                 lessonTitle,
-                isPaused: activeInstLesson.is_paused,
+                isPaused: activeLesson.is_paused,
             });
         } else {
             // No paused lesson - hide modal
@@ -403,6 +407,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     return (
         <StudentContextProvider value={studentContextValue}>
             <ClassroomContextProvider value={classroomContextValue}>
+                {/* Pause Modal - Shown when instructor pauses lesson */}
+                <StudentLessonPauseModal
+                    isVisible={showPauseModal}
+                    lessonTitle={pausedLessonTitle}
+                    breaksRemaining={breaksRemaining}
+                />
+                
                 {isInitialLoading ? (
                     <PageLoader />
                 ) : error && !studentData ? (
