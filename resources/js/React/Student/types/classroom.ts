@@ -53,6 +53,8 @@ export interface LessonType {
     status: LessonStatus;
     is_completed: boolean;
     is_active: boolean;
+    is_paused?: boolean;
+    paused_at?: string | null;
 }
 
 /**

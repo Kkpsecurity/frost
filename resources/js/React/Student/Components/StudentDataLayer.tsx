@@ -3,10 +3,18 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "./Dashboard/MainDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
-import StudentLessonPauseModal from "./Classroom/StudentLessonPauseModal";
-import { StudentContextProvider, StudentContextType } from "../context/StudentContext";
-import { ClassroomContextProvider, ClassroomContextType } from "../context/ClassroomContext";
-import { isInstructorTeaching, getClassroomStatus } from "../services/classroomService";
+import {
+    StudentContextProvider,
+    StudentContextType,
+} from "../context/StudentContext";
+import {
+    ClassroomContextProvider,
+    ClassroomContextType,
+} from "../context/ClassroomContext";
+import {
+    isInstructorTeaching,
+    getClassroomStatus,
+} from "../services/classroomService";
 
 interface StudentDataLayerProps {
     courseAuthId?: number | null;
@@ -39,7 +47,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
     // Check if session has expired
     const isSessionExpired = (): boolean => {
-        const sessionTimestamp = localStorage.getItem('frost_session_timestamp');
+        const sessionTimestamp = localStorage.getItem(
+            "frost_session_timestamp",
+        );
         if (!sessionTimestamp) return true;
 
         const sessionTime = parseInt(sessionTimestamp, 10);
@@ -52,52 +62,78 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     // Internal state for selected courseAuthId (SPA routing)
     // PERSISTENCE: Restore from localStorage on mount, save on changes
     // SESSION EXPIRATION: Clear after 12 hours
-    const [selectedCourseAuthId, setSelectedCourseAuthId] = useState<number | null>(() => {
+    const [selectedCourseAuthId, setSelectedCourseAuthId] = useState<
+        number | null
+    >(() => {
         // Check if session has expired
         if (isSessionExpired()) {
-            console.log('⏰ StudentDataLayer: Session expired (12 hours), returning to dashboard');
-            localStorage.removeItem('frost_selected_course_auth_id');
-            localStorage.removeItem('frost_session_timestamp');
+            console.log(
+                "⏰ StudentDataLayer: Session expired (12 hours), returning to dashboard",
+            );
+            localStorage.removeItem("frost_selected_course_auth_id");
+            localStorage.removeItem("frost_session_timestamp");
             return null;
         }
 
         // Try to restore from localStorage if session is still valid
-        const saved = localStorage.getItem('frost_selected_course_auth_id');
+        const saved = localStorage.getItem("frost_selected_course_auth_id");
         if (saved) {
             const parsedId = parseInt(saved, 10);
             if (!isNaN(parsedId)) {
-                console.log('📦 StudentDataLayer: Restored courseAuthId from localStorage:', parsedId);
+                console.log(
+                    "📦 StudentDataLayer: Restored courseAuthId from localStorage:",
+                    parsedId,
+                );
                 return parsedId;
             }
         }
         // Fallback to initialCourseAuthId or null
-        console.log('📦 StudentDataLayer: Using initial courseAuthId:', initialCourseAuthId);
+        console.log(
+            "📦 StudentDataLayer: Using initial courseAuthId:",
+            initialCourseAuthId,
+        );
         return initialCourseAuthId || null;
     });
 
     // Track if user explicitly clicked Dashboard (to prevent auto-select)
     // PERSISTENCE: Restore from localStorage on mount
-    const [userExplicitlySelectedDashboard, setUserExplicitlySelectedDashboard] = useState(() => {
-        const saved = localStorage.getItem('frost_user_on_dashboard');
-        return saved === 'true';
+    const [
+        userExplicitlySelectedDashboard,
+        setUserExplicitlySelectedDashboard,
+    ] = useState(() => {
+        const saved = localStorage.getItem("frost_user_on_dashboard");
+        return saved === "true";
     });
 
     // Track pause modal state
     const [showPauseModal, setShowPauseModal] = useState(false);
-    const [pausedLessonTitle, setPausedLessonTitle] = useState<string>('');
-    const [breaksRemaining, setBreaksRemaining] = useState<number | undefined>(undefined);
+    const [pausedLessonTitle, setPausedLessonTitle] = useState<string>("");
+    const [breaksRemaining, setBreaksRemaining] = useState<number | undefined>(
+        undefined,
+    );
 
     // Save to localStorage whenever selectedCourseAuthId changes
     useEffect(() => {
         if (selectedCourseAuthId !== null) {
-            localStorage.setItem('frost_selected_course_auth_id', selectedCourseAuthId.toString());
+            localStorage.setItem(
+                "frost_selected_course_auth_id",
+                selectedCourseAuthId.toString(),
+            );
             // Update session timestamp
-            localStorage.setItem('frost_session_timestamp', Date.now().toString());
-            console.log('💾 StudentDataLayer: Saved courseAuthId to localStorage:', selectedCourseAuthId);
+            localStorage.setItem(
+                "frost_session_timestamp",
+                Date.now().toString(),
+            );
+            console.log(
+                "💾 StudentDataLayer: Saved courseAuthId to localStorage:",
+                selectedCourseAuthId,
+            );
         } else {
-            localStorage.removeItem('frost_selected_course_auth_id');
-            localStorage.removeItem('frost_session_timestamp');
-            console.log('🗑️ StudentDataLayer: Cleared courseAuthId from localStorage');
+            localStorage.removeItem("frost_selected_course_auth_id");
+            localStorage.removeItem("frost_session_timestamp");
+            console.log(
+                "🗑️ StudentDataLayer: Cleared courseAuthId from localStorage",
+            );
         }
     }, [selectedCourseAuthId]);
 
@@ -105,11 +141,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     const handleSetSelectedCourseAuthId = (id: number | null) => {
         if (id === null) {
             setUserExplicitlySelectedDashboard(true);
-            localStorage.setItem('frost_user_on_dashboard', 'true');
-            console.log('👤 StudentDataLayer: User explicitly clicked Dashboard');
+            localStorage.setItem("frost_user_on_dashboard", "true");
+            console.log(
+                "👤 StudentDataLayer: User explicitly clicked Dashboard",
+            );
         } else {
             setUserExplicitlySelectedDashboard(false);
-            localStorage.removeItem('frost_user_on_dashboard');
+            localStorage.removeItem("frost_user_on_dashboard");
         }
         setSelectedCourseAuthId(id);
     };
@@ -124,7 +162,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         queryFn: async () => {
             const response = await fetch(`/classroom/student/poll`);
             if (!response.ok) {
-                throw new Error(`Failed to fetch student data: ${response.status}`);
+                throw new Error(
+                    `Failed to fetch student data: ${response.status}`,
+                );
             }
             return response.json();
         },
@@ -147,7 +187,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                 : "/classroom/class/data";
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`Failed to fetch classroom data: ${response.status}`);
+                throw new Error(
+                    `Failed to fetch classroom data: ${response.status}`,
+                );
             }
             return response.json();
         },
@@ -163,23 +205,27 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     useEffect(() => {
         // If user explicitly clicked Dashboard, don't auto-select
         if (userExplicitlySelectedDashboard) {
-            console.log('⏸️ StudentDataLayer: Skipping auto-select (user on Dashboard)');
+            console.log(
+                "⏸️ StudentDataLayer: Skipping auto-select (user on Dashboard)",
+            );
             return;
         }
 
         if (selectedCourseAuthId) return;
 
-        const classroomCourseDateId = classroomData?.data?.courseDate?.id ?? null;
+        const classroomCourseDateId =
+            classroomData?.data?.courseDate?.id ?? null;
         if (!classroomCourseDateId) return;
 
         // Prefer the explicit course_auth_id from the backend when available.
-        const resolvedCourseAuthId = classroomData?.data?.course_auth_id ?? null;
+        const resolvedCourseAuthId =
+            classroomData?.data?.course_auth_id ?? null;
         if (resolvedCourseAuthId) {
             const nextId = Number(resolvedCourseAuthId);
             if (!Number.isNaN(nextId) && nextId > 0) {
                 console.log(
                     "🎯 StudentDataLayer: Auto-selecting courseAuthId from classroom poll:",
-                    nextId
+                    nextId,
                 );
                 setSelectedCourseAuthId(nextId);
                 return;
@@ -187,12 +233,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         }
 
         // Fallback: map classroom course_id to the student's enrollment list.
-        const classroomCourseId = classroomData?.data?.course?.course_id ?? null;
+        const classroomCourseId =
+            classroomData?.data?.course?.course_id ?? null;
         if (!classroomCourseId) return;
 
         const courses = studentData?.data?.courses ?? [];
         const match = courses.find(
-            (c: any) => Number(c?.course_id) === Number(classroomCourseId)
+            (c: any) => Number(c?.course_id) === Number(classroomCourseId),
         );
         if (!match?.course_auth_id) return;
 
@@ -204,11 +251,16 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                     courseAuthId: nextId,
                     courseId: classroomCourseId,
                     courseDateId: classroomCourseDateId,
-                }
+                },
             );
             setSelectedCourseAuthId(nextId);
         }
-    }, [classroomData, studentData, selectedCourseAuthId, userExplicitlySelectedDashboard]);
+    }, [
+        classroomData,
+        studentData,
+        selectedCourseAuthId,
+        userExplicitlySelectedDashboard,
+    ]);
 
     // =========================================================================
     // PAUSE DETECTION LOGIC
@@ -217,7 +269,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     useEffect(() => {
         const instUnit = classroomData?.data?.instUnit;
 
-        console.log('🔍 PAUSE DETECTION DEBUG:', {
+        console.log("🔍 PAUSE DETECTION DEBUG:", {
             hasClassroomData: !!classroomData,
             hasInstUnit: !!instUnit,
             instUnit: instUnit,
@@ -233,17 +285,17 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         // Check for active inst_lessons with is_paused flag
         const instLessons = classroomData?.data?.instUnit?.inst_lessons || [];
 
-        console.log('🔍 INST LESSONS DEBUG:', {
+        console.log("🔍 INST LESSONS DEBUG:", {
             instLessonsCount: instLessons.length,
             instLessons: instLessons,
             instUnitStructure: Object.keys(instUnit),
         });
 
-        const activeInstLesson = instLessons.find((lesson: any) =>
-            !lesson.completed_at && !lesson.failed_at
+        const activeInstLesson = instLessons.find(
+            (lesson: any) => !lesson.completed_at && !lesson.failed_at,
         );
 
-        console.log('🔍 ACTIVE LESSON DEBUG:', {
+        console.log("🔍 ACTIVE LESSON DEBUG:", {
             hasActiveLesson: !!activeInstLesson,
             activeInstLesson: activeInstLesson,
             isPaused: activeInstLesson?.is_paused,
@@ -251,10 +303,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
         if (activeInstLesson && activeInstLesson.is_paused) {
             // Lesson is paused - show modal
-            const lessonTitle = activeInstLesson.lesson?.title ||
-                               activeInstLesson.lesson?.name ||
-                               classroomData?.data?.lessons?.find((l: any) => l.id === activeInstLesson.lesson_id)?.title ||
-                               'Current Lesson';
+            const lessonTitle =
+                activeInstLesson.lesson?.title ||
+                activeInstLesson.lesson?.name ||
+                classroomData?.data?.lessons?.find(
+                    (l: any) => l.id === activeInstLesson.lesson_id,
+                )?.title ||
+                "Current Lesson";
 
             setPausedLessonTitle(lessonTitle);
 
@@ -266,7 +321,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
             setShowPauseModal(true);
 
-            console.log('⏸️ StudentDataLayer: Lesson paused detected', {
+            console.log("⏸️ StudentDataLayer: Lesson paused detected", {
                 instLessonId: activeInstLesson.id,
                 lessonId: activeInstLesson.lesson_id,
                 lessonTitle,
@@ -275,7 +330,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         } else {
             // No paused lesson - hide modal
             if (showPauseModal) {
-                console.log('▶️ StudentDataLayer: Lesson resumed');
+                console.log("▶️ StudentDataLayer: Lesson resumed");
             }
             setShowPauseModal(false);
         }
@@ -297,7 +352,8 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         student: studentData?.data?.student || null,
         courses: studentData?.data?.courses || [],
         progress: studentData?.data?.progress || null,
-        validationsByCourseAuth: studentData?.data?.validations_by_course_auth || null,
+        validationsByCourseAuth:
+            studentData?.data?.validations_by_course_auth || null,
         notifications: studentData?.data?.notifications || [],
         assignments: studentData?.data?.assignments || [],
         selectedCourseAuthId: selectedCourseAuthId,
@@ -307,23 +363,34 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     };
 
     // Create classroom context data from poll response
-    const classroomContextValue: ClassroomContextType | null = classroomData?.data ? {
-        data: classroomData.data,
-        course: classroomData.data.course || null,
-        courseDate: classroomData.data.courseDate || null,
-        instructor: classroomData.data.courseDate?.instructor || null,
-        instUnit: classroomData.data.instUnit || null,
-        studentUnit: classroomData.data.studentUnit || null,
-        courseUnits: classroomData.data.courseUnit?.course_units || [],
-        courseLessons: classroomData.data.lessons || [],
-        instLessons: classroomData.data.instUnit?.inst_lessons || [],
-        config: classroomData.data.config || null,
-        isClassroomActive: isInstructorTeaching(classroomData.data),
-        isInstructorOnline: classroomData.data.courseDate?.instructor?.online_status === 'online' || false,
-        classroomStatus: getClassroomStatus(classroomData.data) as any,
-        loading: classroomLoading,
-        error: classroomError instanceof Error ? classroomError.message : null,
-    } : null;
+    const classroomContextValue: ClassroomContextType | null =
+        classroomData?.data
+            ? {
+                  data: classroomData.data,
+                  course: classroomData.data.course || null,
+                  courseDate: classroomData.data.courseDate || null,
+                  instructor: classroomData.data.courseDate?.instructor || null,
+                  instUnit: classroomData.data.instUnit || null,
+                  studentUnit: classroomData.data.studentUnit || null,
+                  courseUnits:
+                      classroomData.data.courseUnit?.course_units || [],
+                  courseLessons: classroomData.data.lessons || [],
+                  instLessons: classroomData.data.instUnit?.inst_lessons || [],
+                  config: classroomData.data.config || null,
+                  isClassroomActive: isInstructorTeaching(classroomData.data),
+                  isInstructorOnline:
+                      classroomData.data.courseDate?.instructor
+                          ?.online_status === "online" || false,
+                  classroomStatus: getClassroomStatus(
+                      classroomData.data,
+                  ) as any,
+                  loading: classroomLoading,
+                  error:
+                      classroomError instanceof Error
+                          ? classroomError.message
+                          : null,
+              }
+            : null;
 
     console.log("🎓 StudentDataLayer: Rendering with contexts", {
         selectedCourseAuthId,
@@ -332,18 +399,10 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         studentData: studentContextValue,
         classroomData: classroomContextValue,
     });
-
     // ALWAYS render with both contexts - let MainDashboard handle state display
     return (
         <StudentContextProvider value={studentContextValue}>
             <ClassroomContextProvider value={classroomContextValue}>
-                {/* Pause Detection Modal - Shows when instructor pauses lesson */}
-                <StudentLessonPauseModal
-                    isVisible={showPauseModal}
-                    lessonTitle={pausedLessonTitle}
-                    breaksRemaining={breaksRemaining}
-                />
-
                 {isInitialLoading ? (
                     <PageLoader />
                 ) : error && !studentData ? (
@@ -354,7 +413,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                                 ? error.message
                                 : "Unable to load student data"}
                         </p>
-                        <p className="mb-0">Please refresh the page or contact support.</p>
+                        <p className="mb-0">
+                            Please refresh the page or contact support.
+                        </p>
                     </Alert>
                 ) : (
                     // Render MainDashboard with selectedCourseAuthId from internal state

@@ -4,6 +4,7 @@ import { LessonType } from "../../types/classroom";
 interface LessonProgressBarProps {
     selectedLesson: LessonType | null;
     startTime?: string | null; // ISO timestamp when lesson started
+    isPaused?: boolean; // Whether the lesson is currently paused
 }
 
 /**
@@ -17,7 +18,8 @@ interface LessonProgressBarProps {
  */
 const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
     selectedLesson,
-    startTime
+    startTime,
+    isPaused = false,
 }) => {
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -47,7 +49,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
     };
 
     if (!selectedLesson) {
@@ -92,38 +94,63 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
             <div
                 className="card-header"
                 style={{
-                    backgroundColor: startTime ? "#2c3e50" : "#3498db",
+                    backgroundColor: isPaused
+                        ? "#f39c12"
+                        : startTime
+                          ? "#2c3e50"
+                          : "#3498db",
                     borderBottom: "1px solid rgba(255,255,255,0.1)",
                 }}
             >
                 <div className="d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0" style={{ color: "white", fontSize: "0.875rem" }}>
-                        <i className="fas fa-clock me-2"></i>
-                        Lesson Progress
+                    <h6
+                        className="mb-0"
+                        style={{ color: "white", fontSize: "0.875rem" }}
+                    >
+                        <i
+                            className={`fas ${isPaused ? "fa-pause-circle" : "fa-clock"} me-2`}
+                        ></i>
+                        {isPaused ? "On Break" : "Lesson Progress"}
                     </h6>
                     <span
                         className="badge"
                         style={{
-                            backgroundColor: startTime
-                                ? (isOvertime ? '#e74c3c' : '#2ecc71')
-                                : '#1e40af',
-                            fontSize: '0.75rem'
+                            backgroundColor: isPaused
+                                ? "#f39c12" // orange for on break
+                                : startTime
+                                  ? isOvertime
+                                      ? "#e74c3c"
+                                      : "#2ecc71"
+                                  : "#6c757d", // gray for pending
+                            fontSize: "0.75rem",
                         }}
                     >
-                        {startTime
-                            ? (isOvertime ? 'Overtime' : 'In Progress')
-                            : 'In Progress'}
+                        {isPaused
+                            ? "BREAK"
+                            : startTime
+                              ? isOvertime
+                                  ? "Overtime"
+                                  : "In Progress"
+                              : "Pending"}
                     </span>
                 </div>
             </div>
             <div className="card-body" style={{ padding: "1rem" }}>
                 {/* Lesson Title */}
                 <div className="mb-3">
-                    <div style={{ color: "white", fontSize: "0.875rem", fontWeight: "600" }}>
+                    <div
+                        style={{
+                            color: "white",
+                            fontSize: "0.875rem",
+                            fontWeight: "600",
+                        }}
+                    >
                         {selectedLesson.title}
                     </div>
                     {selectedLesson.description && (
-                        <small style={{ color: "#95a5a6", fontSize: "0.75rem" }}>
+                        <small
+                            style={{ color: "#95a5a6", fontSize: "0.75rem" }}
+                        >
                             {selectedLesson.description}
                         </small>
                     )}
@@ -132,32 +159,69 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                 {/* Time Display */}
                 <div className="row g-2 mb-3">
                     <div className="col-4">
-                        <div style={{ color: "#95a5a6", fontSize: "0.7rem", marginBottom: "0.25rem" }}>
+                        <div
+                            style={{
+                                color: "#95a5a6",
+                                fontSize: "0.7rem",
+                                marginBottom: "0.25rem",
+                            }}
+                        >
                             Elapsed
                         </div>
-                        <div style={{ color: "#3498db", fontSize: "1rem", fontWeight: "600", fontFamily: "monospace" }}>
+                        <div
+                            style={{
+                                color: "#3498db",
+                                fontSize: "1rem",
+                                fontWeight: "600",
+                                fontFamily: "monospace",
+                            }}
+                        >
                             {formatTime(elapsedSeconds)}
                         </div>
                     </div>
                     <div className="col-4">
-                        <div style={{ color: "#95a5a6", fontSize: "0.7rem", marginBottom: "0.25rem" }}>
+                        <div
+                            style={{
+                                color: "#95a5a6",
+                                fontSize: "0.7rem",
+                                marginBottom: "0.25rem",
+                            }}
+                        >
                             Duration
                         </div>
-                        <div style={{ color: "white", fontSize: "1rem", fontWeight: "600", fontFamily: "monospace" }}>
+                        <div
+                            style={{
+                                color: "white",
+                                fontSize: "1rem",
+                                fontWeight: "600",
+                                fontFamily: "monospace",
+                            }}
+                        >
                             {formatTime(totalSeconds)}
                         </div>
                     </div>
                     <div className="col-4">
-                        <div style={{ color: "#95a5a6", fontSize: "0.7rem", marginBottom: "0.25rem" }}>
+                        <div
+                            style={{
+                                color: "#95a5a6",
+                                fontSize: "0.7rem",
+                                marginBottom: "0.25rem",
+                            }}
+                        >
                             Remaining
                         </div>
-                        <div style={{
-                            color: isOvertime ? "#e74c3c" : "#2ecc71",
-                            fontSize: "1rem",
-                            fontWeight: "600",
-                            fontFamily: "monospace"
-                        }}>
-                            {isOvertime ? '+' + formatTime(elapsedSeconds - totalSeconds) : formatTime(remainingSeconds)}
+                        <div
+                            style={{
+                                color: isOvertime ? "#e74c3c" : "#2ecc71",
+                                fontSize: "1rem",
+                                fontWeight: "600",
+                                fontFamily: "monospace",
+                            }}
+                        >
+                            {isOvertime
+                                ? "+" +
+                                  formatTime(elapsedSeconds - totalSeconds)
+                                : formatTime(remainingSeconds)}
                         </div>
                     </div>
                 </div>
@@ -168,7 +232,13 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                         <small style={{ color: "#95a5a6", fontSize: "0.7rem" }}>
                             Progress
                         </small>
-                        <small style={{ color: "white", fontSize: "0.75rem", fontWeight: "600" }}>
+                        <small
+                            style={{
+                                color: "white",
+                                fontSize: "0.75rem",
+                                fontWeight: "600",
+                            }}
+                        >
                             {Math.round(progressPercentage)}%
                         </small>
                     </div>
@@ -185,7 +255,9 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                             style={{
                                 width: `${progressPercentage}%`,
                                 height: "100%",
-                                backgroundColor: isOvertime ? "#e74c3c" : "#3498db",
+                                backgroundColor: isOvertime
+                                    ? "#e74c3c"
+                                    : "#3498db",
                                 transition: "width 0.5s ease",
                                 borderRadius: "4px",
                             }}
@@ -203,7 +275,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                             color: "#3498db",
                             padding: "0.5rem",
                             fontSize: "0.75rem",
-                            borderRadius: "0.25rem"
+                            borderRadius: "0.25rem",
                         }}
                     >
                         <i className="fas fa-info-circle me-1"></i>

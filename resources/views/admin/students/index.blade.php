@@ -99,6 +99,11 @@
         .table td {
             vertical-align: middle;
         }
+        .table thead th {
+            background-color: #222d32;
+            color: #ffc107;
+            border-color: #1a2226;
+        }
     </style>
 @stop
 

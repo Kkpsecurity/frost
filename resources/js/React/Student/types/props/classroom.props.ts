@@ -40,6 +40,7 @@ export type SchoolDashboardTitleBarProps = {
     className?: string;
     onBackToDashboard?: () => void;
     classroomStatus?: "ONLINE" | "WAITING" | "OFFLINE" | null;
+    devModeToggle?: React.ReactNode;
 };
 
 export type SchoolNavBarProps = {

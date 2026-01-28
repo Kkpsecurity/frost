@@ -67,9 +67,11 @@ class StudentDashboardController extends Controller
             $sqlState = $e->errorInfo[0] ?? null;
 
             // Postgres duplicate key violation.
-            if (DB::getDriverName() === 'pgsql'
+            if (
+                DB::getDriverName() === 'pgsql'
                 && $sqlState === '23505'
-                && str_contains($e->getMessage(), 'validations_pkey')) {
+                && str_contains($e->getMessage(), 'validations_pkey')
+            ) {
                 $this->repairValidationsIdSequenceIfNeeded();
                 $validation->save();
                 return;
@@ -105,7 +107,11 @@ class StudentDashboardController extends Controller
             if ($recentUnitWithId) {
                 $verified = $this->decodeVerifiedData($recentUnitWithId->getRawOriginal('verified'));
                 if (!empty($verified['id_card_path'])) {
-                    $idCardUrl = url('storage/' . ltrim((string) $verified['id_card_path'], '/'));
+                    // Check if the file actually exists before returning URL
+                    $relativePath = ltrim((string) $verified['id_card_path'], '/');
+                    if (\Storage::disk('public')->exists($relativePath)) {
+                        $idCardUrl = url('storage/' . $relativePath);
+                    }
                 }
             }
         }
@@ -169,7 +175,11 @@ class StudentDashboardController extends Controller
             if (!$headshotUrl) {
                 $verified = $this->decodeVerifiedData($headshotUnit->getRawOriginal('verified'));
                 if (!empty($verified['headshot_path'])) {
-                    $headshotUrl = url('storage/' . ltrim((string) $verified['headshot_path'], '/'));
+                    // Check if the file actually exists before returning URL
+                    $relativePath = ltrim((string) $verified['headshot_path'], '/');
+                    if (\Storage::disk('public')->exists($relativePath)) {
+                        $headshotUrl = url('storage/' . $relativePath);
+                    }
                 }
             }
         }
@@ -388,8 +398,7 @@ class StudentDashboardController extends Controller
                     'start_date' => $classroomCourseDate?->starts_at?->format('Y-m-d') ?? $courseAuth->start_date,
                     'agreed_at' => $courseAuth->agreed_at?->toISOString(), // Add agreement timestamp for onboarding check
                     'status' => $status,
-                    'completion_status' => $courseAuth->is_passed ? 'Passed' :
-                        ($courseAuth->completed_at ? 'Completed' : 'In Progress'),
+                    'completion_status' => $courseAuth->is_passed ? 'Passed' : ($courseAuth->completed_at ? 'Completed' : 'In Progress'),
                 ];
             })->toArray();
 
@@ -752,23 +761,51 @@ class StudentDashboardController extends Controller
                 ];
             })->values()->toArray();
 
-            // Determine active lesson (InstLesson exists but NOT completed)
+            // Determine active lesson (InstLesson exists but NOT completed AND NOT paused AND InstUnit NOT completed)
             $activeLessonId = null;
-            foreach ($todaysInstLessons as $lessonId => $instLesson) {
-                if (!$instLesson->completed_at) {
-                    $activeLessonId = $lessonId;
-                    break; // Only one lesson can be active at a time
+            $isInstUnitCompleted = $instUnit && $instUnit->completed_at;
+
+            if (!$isInstUnitCompleted) {
+                foreach ($todaysInstLessons as $lessonId => $instLesson) {
+                    if (!$instLesson->completed_at && !$instLesson->is_paused) {
+                        $activeLessonId = $lessonId;
+                        break; // Only one lesson can be active at a time
+                    }
+                }
+            }
+
+            // ✅ TRACK STUDENT: If there's an active lesson, create/get StudentLesson to track the student's progress
+            if ($activeLessonId && $studentUnit && $instUnit) {
+                try {
+                    $studentLesson = \App\Classes\ClassroomQueries::InitStudentLesson($studentUnit);
+                    if ($studentLesson) {
+                        \Log::info('✅ STUDENT LESSON TRACKING', [
+                            'student_id' => $user->id,
+                            'student_lesson_id' => $studentLesson->id,
+                            'inst_lesson_id' => $studentLesson->inst_lesson_id,
+                            'lesson_id' => $studentLesson->lesson_id,
+                            'created_at' => $studentLesson->created_at,
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('❌ STUDENT LESSON TRACKING FAILED', [
+                        'student_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 
             // 🔍 DEBUG: Log active lesson determination
             \Log::info('🔍 ACTIVE LESSON DETERMINATION', [
+                'inst_unit_id' => $instUnit?->id,
+                'inst_unit_completed' => $isInstUnitCompleted,
                 'today_inst_lessons_count' => $todaysInstLessons->count(),
                 'inst_lessons' => $todaysInstLessons->map(fn($il) => [
                     'id' => $il->id,
                     'lesson_id' => $il->lesson_id,
                     'completed_at' => $il->completed_at,
                     'is_completed' => !is_null($il->completed_at),
+                    'is_paused' => $il->is_paused,
                 ])->toArray(),
                 'active_lesson_id' => $activeLessonId,
                 'student_id' => $user->id,
@@ -776,7 +813,7 @@ class StudentDashboardController extends Controller
             ]);
 
             // Enhance lessons with status information
-            $lessons = collect($lessons)->map(function ($lesson) use ($todaysInstLessons, $todaysStudentLessons, $isOnline) {
+            $lessons = collect($lessons)->map(function ($lesson) use ($todaysInstLessons, $todaysStudentLessons, $isOnline, $isInstUnitCompleted, $activeLessonId) {
                 $lessonId = $lesson['id'];
 
                 // Check if InstLesson exists for this lesson today
@@ -794,6 +831,8 @@ class StudentDashboardController extends Controller
                     'lesson_title' => $lesson['title'],
                     'has_inst_lesson' => !is_null($instLesson),
                     'inst_lesson_completed' => $instLesson ? !is_null($instLesson->completed_at) : null,
+                    'inst_lesson_paused' => $instLesson ? $instLesson->is_paused : null,
+                    'inst_unit_completed' => $isInstUnitCompleted,
                     'has_student_lesson' => !is_null($studentLesson),
                     'student_lesson_completed' => $studentLesson ? !is_null($studentLesson->completed_at) : null,
                 ]);
@@ -801,8 +840,12 @@ class StudentDashboardController extends Controller
                 if (!$instLesson) {
                     // No InstLesson → INCOMPLETE (not started)
                     $status = 'incomplete';
-                } elseif (!$instLesson->completed_at) {
-                    // InstLesson NOT completed → ACTIVE (instructor teaching NOW)
+                } elseif ($lessonId === $activeLessonId && !$instLesson->completed_at && $instLesson->is_paused) {
+                    // This is the ACTIVE lesson but it's PAUSED (on break)
+                    $status = $isOnline ? 'paused_live' : 'paused_fstb';
+                    $isActive = true; // Still "active" but paused
+                } elseif ($lessonId === $activeLessonId && !$instLesson->completed_at && !$instLesson->is_paused) {
+                    // This is the ACTIVE lesson (the one the instructor is currently teaching)
                     $status = $isOnline ? 'active_live' : 'active_fstb';
                     $isActive = true;
                 } elseif ($studentLesson && $studentLesson->completed_at) {
@@ -814,6 +857,19 @@ class StudentDashboardController extends Controller
                     $status = 'incomplete';
                 }
 
+                $isPausedFlag = $instLesson ? $instLesson->is_paused : false;
+
+                // 🔍 DEBUG: Log pause state for active lessons
+                if ($isActive) {
+                    \Log::info('🔍 ACTIVE LESSON STATE', [
+                        'lesson_id' => $lessonId,
+                        'lesson_title' => $lesson['name'] ?? $lesson['title'] ?? 'N/A',
+                        'is_paused' => $isPausedFlag,
+                        'is_active' => $isActive,
+                        'status' => $status,
+                    ]);
+                }
+
                 return [
                     'id' => $lessonId,
                     'title' => $lesson['name'] ?? $lesson['title'] ?? 'Lesson ' . $lessonId,
@@ -823,6 +879,8 @@ class StudentDashboardController extends Controller
                     'status' => $status,
                     'is_completed' => $isCompleted,
                     'is_active' => $isActive,
+                    'is_paused' => $isPausedFlag,
+                    'paused_at' => $isPausedFlag ? now()->toIso8601String() : null,
                 ];
             })->sortBy('order')->values()->toArray();
 
@@ -896,6 +954,20 @@ class StudentDashboardController extends Controller
                             ];
                         })->toArray(),
                     ] : null,
+                    'instructor' => $instUnit ? (function () use ($instUnit) {
+                        $instructor = \App\Models\User::find($instUnit->created_by);
+                        if (!$instructor) {
+                            return null;
+                        }
+                        return [
+                            'id' => $instructor->id,
+                            'name' => $instructor->fname . ' ' . $instructor->lname,
+                            'fname' => $instructor->fname,
+                            'lname' => $instructor->lname,
+                            'email' => $instructor->email,
+                            'avatar' => $instructor->avatar ?? '/images/default-avatar.png',
+                        ];
+                    })() : null,
                     'studentUnit' => $studentUnit ? [
                         'id' => $studentUnit->id,
                         'course_auth_id' => (int) ($studentUnit->course_auth_id ?? 0),
@@ -946,7 +1018,6 @@ class StudentDashboardController extends Controller
                     ],
                 ],
             ]);
-
         } catch (Exception $e) {
             Log::error('Class data error', [
                 'error' => $e->getMessage(),
@@ -1022,13 +1093,79 @@ class StudentDashboardController extends Controller
                 ];
             })->toArray() : [];
 
-            // Return classroom data
+            // Enhance lessons with status information (copied from main dashboard logic)
+            $lessons = [];
+            $todaysInstLessons = collect();
+            $todaysStudentLessons = collect();
+            $activeLessonId = null;
+            $isInstUnitCompleted = $courseDate->instUnit && $courseDate->instUnit->completed_at;
+            $isOnline = $courseDate->instUnit !== null;
+            if ($courseDate->course && $courseDate->course->courseUnit) {
+                $allLessons = $courseDate->course->courseUnit->courseUnitLessons;
+                $lessons = $allLessons ? $allLessons->toArray() : [];
+            }
+            if ($courseDate->instUnit) {
+                $todaysInstLessons = \App\Models\InstLesson::where('inst_unit_id', $courseDate->instUnit->id)
+                    ->get()
+                    ->keyBy('lesson_id');
+            }
+            if ($studentUnit && $courseDate->instUnit && $todaysInstLessons->isNotEmpty()) {
+                $todaysStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
+                    ->whereIn('inst_lesson_id', $todaysInstLessons->pluck('id'))
+                    ->get()
+                    ->keyBy('lesson_id');
+            }
+            if (!$isInstUnitCompleted) {
+                foreach ($todaysInstLessons as $lessonId => $instLesson) {
+                    if (!$instLesson->completed_at && !$instLesson->is_paused) {
+                        $activeLessonId = $lessonId;
+                        break;
+                    }
+                }
+            }
+            $lessons = collect($lessons)->map(function ($lesson) use ($todaysInstLessons, $todaysStudentLessons, $isOnline, $isInstUnitCompleted, $activeLessonId) {
+                $lessonId = $lesson['id'];
+                $instLesson = $todaysInstLessons->get($lessonId);
+                $studentLesson = $todaysStudentLessons->get($lessonId);
+                $status = 'incomplete';
+                $isCompleted = false;
+                $isActive = false;
+                if (!$instLesson) {
+                    $status = 'incomplete';
+                } elseif ($lessonId === $activeLessonId && !$instLesson->completed_at && $instLesson->is_paused) {
+                    $status = $isOnline ? 'paused_live' : 'paused_fstb';
+                    $isActive = true;
+                } elseif ($lessonId === $activeLessonId && !$instLesson->completed_at && !$instLesson->is_paused) {
+                    $status = $isOnline ? 'active_live' : 'active_fstb';
+                    $isActive = true;
+                } elseif ($studentLesson && $studentLesson->completed_at) {
+                    $status = 'completed';
+                    $isCompleted = true;
+                } else {
+                    $status = 'incomplete';
+                }
+                $isPausedFlag = $instLesson ? $instLesson->is_paused : false;
+                return [
+                    'id' => $lessonId,
+                    'title' => $lesson['name'] ?? $lesson['title'] ?? 'Lesson ' . $lessonId,
+                    'description' => $lesson['description'] ?? '',
+                    'duration_minutes' => $lesson['credit_minutes'] ?? $lesson['duration_minutes'] ?? $lesson['progress_minutes'] ?? 0,
+                    'order' => $lesson['order'] ?? $lesson['order_by'] ?? 0,
+                    'status' => $status,
+                    'is_completed' => $isCompleted,
+                    'is_active' => $isActive,
+                    'is_paused' => $isPausedFlag,
+                    'paused_at' => $isPausedFlag ? now()->toIso8601String() : null,
+                ];
+            })->sortBy('order')->values()->toArray();
+
+            // Return classroom data with enhanced lessons
             return response()->json([
                 'success' => true,
                 'courseDate' => $courseDate,
                 'courseUnit' => $courseDate->course?->courseUnit,
                 'course' => $courseDate->course,
-                'lessons' => $courseDate->course?->courseUnit?->courseUnitLessons ?? [],
+                'lessons' => $lessons,
                 'instUnit' => $courseDate->instUnit,
                 'studentUnit' => $studentUnit,
                 'studentLessons' => $studentLessons,
@@ -1273,7 +1410,6 @@ class StudentDashboardController extends Controller
                     ];
                 })() : null,
             ]);
-
         } catch (Exception $e) {
             Log::error('Error fetching class status', [
                 'course_date_id' => $courseDateId,
@@ -1983,7 +2119,6 @@ class StudentDashboardController extends Controller
                     'identity_verified' => (bool) (!empty($verified['id_card_path'] ?? null) && !empty($verified['headshot_path'] ?? null)),
                 ],
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -2286,8 +2421,18 @@ class StudentDashboardController extends Controller
             if (!$url) {
                 $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
                 if (!empty($verified['headshot_path'])) {
-                    $url = url('storage/' . ltrim((string) $verified['headshot_path'], '/'));
-                    $status = 'uploaded';
+                    // Check if the file actually exists before returning URL
+                    $relativePath = ltrim((string) $verified['headshot_path'], '/');
+                    if (\Storage::disk('public')->exists($relativePath)) {
+                        $url = url('storage/' . $relativePath);
+                        $status = 'uploaded';
+                    } else {
+                        // File missing - clear the path from database
+                        $verified['headshot_path'] = null;
+                        $studentUnit->verified = json_encode($verified);
+                        $studentUnit->save();
+                        $status = 'missing';
+                    }
                 }
             }
         }
@@ -2663,7 +2808,6 @@ class StudentDashboardController extends Controller
                         : null,
                 ],
             ]);
-
         } catch (Exception $e) {
             Log::error('Error finding active class', [
                 'user_id' => Auth::id(),

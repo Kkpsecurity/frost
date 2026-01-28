@@ -25,18 +25,34 @@ interface MainClassroomProps {
  * - CourseDate exists + NO InstUnit = Waiting (scheduled, pending instructor)
  * - No CourseDate = Offline (self-study)
  */
-const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, onBackToDashboard }) => {
+const MainClassroom: React.FC<MainClassroomProps> = ({
+    courseAuthId,
+    student,
+    onBackToDashboard,
+}) => {
     const classroomContext = useClassroom();
     const studentContext = useStudent();
     const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
 
+    // 🎨 DEV MODE: Toggle between online/offline views for design testing
+    const [devMode, setDevMode] = useState<"auto" | "online" | "offline">(
+        "auto",
+    );
+    // Show toggle in all modes for now (remove this line later to restrict to dev only)
+    const showToggle = true; // TODO: Change to import.meta.env.DEV when done testing
+
     // Loading classroom data
     if (!classroomContext) {
         return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+            <div
+                className="d-flex justify-content-center align-items-center"
+                style={{ minHeight: "400px" }}
+            >
                 <div className="text-center">
                     <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading classroom...</span>
+                        <span className="visually-hidden">
+                            Loading classroom...
+                        </span>
                     </div>
                     <p className="mt-3">Loading classroom...</p>
                 </div>
@@ -60,18 +76,21 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
     // Once they complete onboarding, a StudentUnit will be created.
     if (courseDate && instUnit) {
         // Get agreement status from student courses data (poll includes agreed_at)
-        const courseData = studentContext?.courses?.find((c: any) => c.id === courseAuthId);
+        const courseData = studentContext?.courses?.find(
+            (c: any) => c.id === courseAuthId,
+        );
 
         // Determine if onboarding is needed
         // Case 1: No StudentUnit exists yet (new day) - need onboarding
         // Case 2: StudentUnit exists but onboarding_completed is false - need onboarding
-        const needsOnboarding = !studentUnit || !studentUnit.onboarding_completed;
+        const needsOnboarding =
+            !studentUnit || !studentUnit.onboarding_completed;
 
-        console.log('🔍 Onboarding check:', {
+        console.log("🔍 Onboarding check:", {
             hasStudentUnit: !!studentUnit,
             studentUnitId: studentUnit?.id,
             onboarding_completed: studentUnit?.onboarding_completed,
-            needsOnboarding: needsOnboarding
+            needsOnboarding: needsOnboarding,
         });
 
         if (needsOnboarding) {
@@ -88,31 +107,126 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     validations={validations || null}
                     onComplete={() => {
                         // Force classroom context to refresh by incrementing key
-                        setOnboardingKey(prev => prev + 1);
-                        console.log('✅ Onboarding complete - polling will refresh automatically');
+                        setOnboardingKey((prev) => prev + 1);
+                        console.log(
+                            "✅ Onboarding complete - polling will refresh automatically",
+                        );
                     }}
                 />
             );
         }
     }
 
+    // 🎨 DEV MODE: Simplified view override for layout testing
+    // When devMode is set, bypass normal logic and show the selected view
+    let shouldShowOnline = false;
+    let shouldShowOffline = false;
+
+    if (devMode === "online") {
+        shouldShowOnline = true;
+    } else if (devMode === "offline") {
+        shouldShowOffline = true;
+    } else {
+        // Auto mode - use actual classroom state
+        shouldShowOnline = !!(courseDate && instUnit);
+        shouldShowOffline = !courseDate;
+    }
+
+    // 🎨 DEV TOGGLE UI (only in development mode)
+    const DevModeToggle = showToggle ? (
+        <div className="btn-group" role="group" aria-label="View mode toggle">
+            <button
+                type="button"
+                onClick={() => setDevMode("auto")}
+                className="btn btn-sm"
+                title="Auto mode"
+                style={{
+                    backgroundColor:
+                        devMode === "auto"
+                            ? "#3498db"
+                            : "rgba(255,255,255,0.2)",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    padding: "6px 12px",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                }}
+            >
+                Auto
+            </button>
+            <button
+                type="button"
+                onClick={() => setDevMode("online")}
+                className="btn btn-sm"
+                title="Force online view"
+                style={{
+                    backgroundColor:
+                        devMode === "online"
+                            ? "#27ae60"
+                            : "rgba(255,255,255,0.2)",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    padding: "6px 12px",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                }}
+            >
+                Online
+            </button>
+            <button
+                type="button"
+                onClick={() => setDevMode("offline")}
+                className="btn btn-sm"
+                title="Force offline view"
+                style={{
+                    backgroundColor:
+                        devMode === "offline"
+                            ? "#e67e22"
+                            : "rgba(255,255,255,0.2)",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    padding: "6px 12px",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                }}
+            >
+                Offline
+            </button>
+        </div>
+    ) : null;
+
     // ONLINE: Live class in session (instructor has started)
-    if (courseDate && instUnit) {
+    if (shouldShowOnline) {
         return (
             <MainOnline
                 classroom={classroomContext}
                 student={student}
                 validations={validations || null}
                 onBackToDashboard={onBackToDashboard}
+                devModeToggle={DevModeToggle}
+            />
+        );
+    }
+
+    // OFFLINE: Self-study mode (no class today)
+    if (shouldShowOffline) {
+        return (
+            <MainOffline
+                courseAuthId={courseAuthId}
+                student={student}
+                onBackToDashboard={onBackToDashboard}
+                devModeToggle={DevModeToggle}
             />
         );
     }
 
     // WAITING: Class scheduled but instructor hasn't started yet
     if (courseDate && !instUnit) {
-        const courseName = course?.name || 'Class';
-        const classDate = courseDate.class_date ? new Date(courseDate.class_date).toLocaleDateString() : 'Today';
-        const classTime = courseDate.class_time || 'Soon';
+        const courseName = course?.name || "Class";
+        const classDate = courseDate.class_date
+            ? new Date(courseDate.class_date).toLocaleDateString()
+            : "Today";
+        const classTime = courseDate.class_time || "Soon";
 
         return (
             <div
@@ -131,10 +245,17 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                     icon={<i className="fas fa-clock"></i>}
                     onBackToDashboard={onBackToDashboard}
                     classroomStatus="WAITING"
+                    devModeToggle={DevModeToggle}
                 />
-
                 {/* Waiting Room Content */}
-                <div className="container-fluid" style={{ padding: "3rem 2rem", maxWidth: "900px", margin: "0 auto" }}>
+                <div
+                    className="container-fluid"
+                    style={{
+                        padding: "3rem 2rem",
+                        maxWidth: "900px",
+                        margin: "0 auto",
+                    }}
+                >
                     {/* Main Waiting Card */}
                     <div
                         className="card"
@@ -160,16 +281,34 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                         </div>
 
                         {/* Title */}
-                        <h3 style={{ color: "white", marginBottom: "1rem", fontWeight: "600" }}>
+                        <h3
+                            style={{
+                                color: "white",
+                                marginBottom: "1rem",
+                                fontWeight: "600",
+                            }}
+                        >
                             Waiting for Class to Start
                         </h3>
 
                         {/* Course Info */}
                         <div style={{ marginBottom: "2rem" }}>
-                            <p style={{ color: "#95a5a6", fontSize: "1rem", marginBottom: "0.5rem" }}>
+                            <p
+                                style={{
+                                    color: "#95a5a6",
+                                    fontSize: "1rem",
+                                    marginBottom: "0.5rem",
+                                }}
+                            >
                                 Your class is scheduled:
                             </p>
-                            <h4 style={{ color: "#3498db", marginBottom: "0.5rem", fontWeight: "600" }}>
+                            <h4
+                                style={{
+                                    color: "#3498db",
+                                    marginBottom: "0.5rem",
+                                    fontWeight: "600",
+                                }}
+                            >
                                 {courseName}
                             </h4>
                             <p style={{ color: "#ecf0f1", fontSize: "1.1rem" }}>
@@ -189,18 +328,52 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                                 marginBottom: "2rem",
                             }}
                         >
-                            <div style={{ display: "flex", alignItems: "start", gap: "0.75rem" }}>
-                                <i className="fas fa-info-circle" style={{ color: "#3498db", fontSize: "1.25rem", marginTop: "0.125rem" }}></i>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "start",
+                                    gap: "0.75rem",
+                                }}
+                            >
+                                <i
+                                    className="fas fa-info-circle"
+                                    style={{
+                                        color: "#3498db",
+                                        fontSize: "1.25rem",
+                                        marginTop: "0.125rem",
+                                    }}
+                                ></i>
                                 <div>
-                                    <h6 style={{ color: "#3498db", marginBottom: "0.5rem", fontWeight: "600" }}>
+                                    <h6
+                                        style={{
+                                            color: "#3498db",
+                                            marginBottom: "0.5rem",
+                                            fontWeight: "600",
+                                        }}
+                                    >
                                         Your instructor is preparing to begin
                                     </h6>
-                                    <p style={{ color: "#ecf0f1", fontSize: "0.95rem", marginBottom: "0.5rem" }}>
-                                        Your class is scheduled and ready. The instructor will start the session shortly.
+                                    <p
+                                        style={{
+                                            color: "#ecf0f1",
+                                            fontSize: "0.95rem",
+                                            marginBottom: "0.5rem",
+                                        }}
+                                    >
+                                        Your class is scheduled and ready. The
+                                        instructor will start the session
+                                        shortly.
                                     </p>
-                                    <p style={{ color: "#95a5a6", fontSize: "0.9rem", marginBottom: "0" }}>
+                                    <p
+                                        style={{
+                                            color: "#95a5a6",
+                                            fontSize: "0.9rem",
+                                            marginBottom: "0",
+                                        }}
+                                    >
                                         <i className="fas fa-sync-alt me-2"></i>
-                                        This page will automatically update when your instructor begins the class.
+                                        This page will automatically update when
+                                        your instructor begins the class.
                                     </p>
                                 </div>
                             </div>
@@ -208,26 +381,137 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
 
                         {/* Preparation Checklist */}
                         <div style={{ marginBottom: "2rem" }}>
-                            <h6 style={{ color: "#ecf0f1", marginBottom: "1rem", fontWeight: "600" }}>
-                                <i className="fas fa-tasks me-2" style={{ color: "#3498db" }}></i>
+                            <h6
+                                style={{
+                                    color: "#ecf0f1",
+                                    marginBottom: "1rem",
+                                    fontWeight: "600",
+                                }}
+                            >
+                                <i
+                                    className="fas fa-tasks me-2"
+                                    style={{ color: "#3498db" }}
+                                ></i>
                                 While you wait, please:
                             </h6>
-                            <div style={{ textAlign: "left", maxWidth: "500px", margin: "0 auto" }}>
-                                <div style={{ padding: "0.75rem", marginBottom: "0.5rem", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                    <i className="fas fa-check-circle" style={{ color: "#2ecc71", fontSize: "1.25rem" }}></i>
-                                    <span style={{ color: "#ecf0f1", fontSize: "0.95rem" }}>Test your audio and video equipment</span>
+                            <div
+                                style={{
+                                    textAlign: "left",
+                                    maxWidth: "500px",
+                                    margin: "0 auto",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        padding: "0.75rem",
+                                        marginBottom: "0.5rem",
+                                        backgroundColor:
+                                            "rgba(255,255,255,0.05)",
+                                        borderRadius: "0.375rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                    }}
+                                >
+                                    <i
+                                        className="fas fa-check-circle"
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
+                                    ></i>
+                                    <span
+                                        style={{
+                                            color: "#ecf0f1",
+                                            fontSize: "0.95rem",
+                                        }}
+                                    >
+                                        Test your audio and video equipment
+                                    </span>
                                 </div>
-                                <div style={{ padding: "0.75rem", marginBottom: "0.5rem", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                    <i className="fas fa-check-circle" style={{ color: "#2ecc71", fontSize: "1.25rem" }}></i>
-                                    <span style={{ color: "#ecf0f1", fontSize: "0.95rem" }}>Have your course materials ready</span>
+                                <div
+                                    style={{
+                                        padding: "0.75rem",
+                                        marginBottom: "0.5rem",
+                                        backgroundColor:
+                                            "rgba(255,255,255,0.05)",
+                                        borderRadius: "0.375rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                    }}
+                                >
+                                    <i
+                                        className="fas fa-check-circle"
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
+                                    ></i>
+                                    <span
+                                        style={{
+                                            color: "#ecf0f1",
+                                            fontSize: "0.95rem",
+                                        }}
+                                    >
+                                        Have your course materials ready
+                                    </span>
                                 </div>
-                                <div style={{ padding: "0.75rem", marginBottom: "0.5rem", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                    <i className="fas fa-check-circle" style={{ color: "#2ecc71", fontSize: "1.25rem" }}></i>
-                                    <span style={{ color: "#ecf0f1", fontSize: "0.95rem" }}>Find a quiet environment for class</span>
+                                <div
+                                    style={{
+                                        padding: "0.75rem",
+                                        marginBottom: "0.5rem",
+                                        backgroundColor:
+                                            "rgba(255,255,255,0.05)",
+                                        borderRadius: "0.375rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                    }}
+                                >
+                                    <i
+                                        className="fas fa-check-circle"
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
+                                    ></i>
+                                    <span
+                                        style={{
+                                            color: "#ecf0f1",
+                                            fontSize: "0.95rem",
+                                        }}
+                                    >
+                                        Find a quiet environment for class
+                                    </span>
                                 </div>
-                                <div style={{ padding: "0.75rem", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "0.375rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                    <i className="fas fa-check-circle" style={{ color: "#2ecc71", fontSize: "1.25rem" }}></i>
-                                    <span style={{ color: "#ecf0f1", fontSize: "0.95rem" }}>Stay on this page - it updates automatically</span>
+                                <div
+                                    style={{
+                                        padding: "0.75rem",
+                                        backgroundColor:
+                                            "rgba(255,255,255,0.05)",
+                                        borderRadius: "0.375rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                    }}
+                                >
+                                    <i
+                                        className="fas fa-check-circle"
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
+                                    ></i>
+                                    <span
+                                        style={{
+                                            color: "#ecf0f1",
+                                            fontSize: "0.95rem",
+                                        }}
+                                    >
+                                        Stay on this page - it updates
+                                        automatically
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -248,12 +532,16 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
                                 transition: "all 0.3s",
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#3498db";
-                                e.currentTarget.style.transform = "translateY(-2px)";
+                                e.currentTarget.style.backgroundColor =
+                                    "#3498db";
+                                e.currentTarget.style.transform =
+                                    "translateY(-2px)";
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "#34495e";
-                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.backgroundColor =
+                                    "#34495e";
+                                e.currentTarget.style.transform =
+                                    "translateY(0)";
                             }}
                         >
                             <i className="fas fa-arrow-left me-2"></i>
@@ -280,7 +568,14 @@ const MainClassroom: React.FC<MainClassroomProps> = ({ courseAuthId, student, on
     }
 
     // OFFLINE: No scheduled class, self-study mode
-    return <MainOffline courseAuthId={courseAuthId} student={student} onBackToDashboard={onBackToDashboard} />;
+    return (
+        <MainOffline
+            courseAuthId={courseAuthId}
+            student={student}
+            onBackToDashboard={onBackToDashboard}
+            devModeToggle={DevModeToggle}
+        />
+    );
 };
 
 export default MainClassroom;

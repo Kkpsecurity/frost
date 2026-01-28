@@ -39,7 +39,28 @@ class ClassroomDataArrayService
      */
     public function buildClassroomPollData(): array
     {
-        return $this->basePayload();
+        $payload = $this->basePayload();
+
+        // Add active lesson state if InstUnit exists
+        $courseDate = $this->courseDate;
+        $instUnit = $courseDate?->InstUnit;
+        $activeLesson = null;
+        if ($instUnit) {
+            $activeInstLesson = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                ->whereNull('completed_at')
+                ->orderBy('id', 'asc')
+                ->first();
+            if ($activeInstLesson) {
+                $activeLesson = [
+                    'id' => $activeInstLesson->id,
+                    'lesson_id' => $activeInstLesson->lesson_id,
+                    'is_paused' => $activeInstLesson->is_paused,
+                    'completed_at' => $activeInstLesson->completed_at,
+                ];
+            }
+        }
+        $payload['activeLesson'] = $activeLesson;
+        return $payload;
     }
 
     /**

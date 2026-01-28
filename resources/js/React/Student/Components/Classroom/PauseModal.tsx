@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 
 interface PauseModalProps {
     isVisible: boolean;
@@ -7,7 +7,6 @@ interface PauseModalProps {
     remainingSeconds: number;
     warningSeconds: number;
     alertSoundPath: string;
-    onResume: () => void;
     onTimeExpired: () => void;
 }
 
@@ -18,8 +17,7 @@ const PauseModal: React.FC<PauseModalProps> = ({
     remainingSeconds,
     warningSeconds,
     alertSoundPath,
-    onResume,
-    onTimeExpired
+    onTimeExpired,
 }) => {
     const [showWarning, setShowWarning] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -43,8 +41,8 @@ const PauseModal: React.FC<PauseModalProps> = ({
 
             // Play sound only once when warning starts
             if (!hasPlayedSound.current && audioRef.current) {
-                audioRef.current.play().catch(err => {
-                    console.error('Failed to play pause warning sound:', err);
+                audioRef.current.play().catch((err) => {
+                    console.error("Failed to play pause warning sound:", err);
                 });
                 hasPlayedSound.current = true;
             }
@@ -67,7 +65,7 @@ const PauseModal: React.FC<PauseModalProps> = ({
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
     };
 
     // Calculate progress percentage
@@ -80,30 +78,32 @@ const PauseModal: React.FC<PauseModalProps> = ({
             {/* Backdrop */}
             <div
                 style={{
-                    position: 'fixed',
+                    position: "fixed",
                     top: 0,
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    backdropFilter: 'blur(8px)',
+                    backgroundColor: "rgba(0, 0, 0, 0.85)",
+                    backdropFilter: "blur(8px)",
                     zIndex: 9999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 }}
             >
                 {/* Modal */}
                 <div
                     style={{
-                        backgroundColor: '#2c3e50',
-                        borderRadius: '16px',
-                        padding: '40px',
-                        maxWidth: '500px',
-                        width: '90%',
-                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                        border: showWarning ? '3px solid #e74c3c' : '3px solid #3498db',
-                        animation: showWarning ? 'pulse 1s infinite' : 'none',
+                        backgroundColor: "#2c3e50",
+                        borderRadius: "16px",
+                        padding: "40px",
+                        maxWidth: "500px",
+                        width: "90%",
+                        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+                        border: showWarning
+                            ? "3px solid #e74c3c"
+                            : "3px solid #3498db",
+                        animation: showWarning ? "pulse 1s infinite" : "none",
                     }}
                 >
                     {/* Pause Icon */}
@@ -111,19 +111,25 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         <i
                             className="fas fa-pause-circle"
                             style={{
-                                fontSize: '80px',
-                                color: showWarning ? '#e74c3c' : '#3498db',
+                                fontSize: "80px",
+                                color: showWarning ? "#e74c3c" : "#3498db",
                             }}
                         ></i>
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-center mb-2" style={{ color: 'white', fontWeight: '600' }}>
+                    <h3
+                        className="text-center mb-2"
+                        style={{ color: "white", fontWeight: "600" }}
+                    >
                         Video Paused
                     </h3>
 
                     {/* Pause Label */}
-                    <p className="text-center mb-4" style={{ color: '#95a5a6', fontSize: '1.1rem' }}>
+                    <p
+                        className="text-center mb-4"
+                        style={{ color: "#95a5a6", fontSize: "1.1rem" }}
+                    >
                         {pauseLabel} - {pauseDurationMinutes} minutes
                     </p>
 
@@ -131,42 +137,48 @@ const PauseModal: React.FC<PauseModalProps> = ({
                     <div
                         className="text-center mb-4"
                         style={{
-                            backgroundColor: showWarning ? 'rgba(231, 76, 60, 0.2)' : 'rgba(52, 152, 219, 0.2)',
-                            borderRadius: '12px',
-                            padding: '30px',
+                            backgroundColor: showWarning
+                                ? "rgba(231, 76, 60, 0.2)"
+                                : "rgba(52, 152, 219, 0.2)",
+                            borderRadius: "12px",
+                            padding: "30px",
                         }}
                     >
                         <div
                             style={{
-                                fontSize: '4rem',
-                                fontWeight: '700',
-                                color: showWarning ? '#e74c3c' : '#3498db',
-                                fontFamily: 'monospace',
+                                fontSize: "4rem",
+                                fontWeight: "700",
+                                color: showWarning ? "#e74c3c" : "#3498db",
+                                fontFamily: "monospace",
                             }}
                         >
                             {formatTime(remainingSeconds)}
                         </div>
-                        <small style={{ color: '#95a5a6' }}>
-                            {showWarning ? 'Pause time ending soon!' : 'Time remaining'}
+                        <small style={{ color: "#95a5a6" }}>
+                            {showWarning
+                                ? "Pause time ending soon!"
+                                : "Time remaining"}
                         </small>
                     </div>
 
                     {/* Progress Bar */}
                     <div
                         style={{
-                            height: '8px',
-                            backgroundColor: '#34495e',
-                            borderRadius: '4px',
-                            overflow: 'hidden',
-                            marginBottom: '20px',
+                            height: "8px",
+                            backgroundColor: "#34495e",
+                            borderRadius: "4px",
+                            overflow: "hidden",
+                            marginBottom: "20px",
                         }}
                     >
                         <div
                             style={{
-                                height: '100%',
+                                height: "100%",
                                 width: `${progressPercentage}%`,
-                                backgroundColor: showWarning ? '#e74c3c' : '#3498db',
-                                transition: 'width 1s linear',
+                                backgroundColor: showWarning
+                                    ? "#e74c3c"
+                                    : "#3498db",
+                                transition: "width 1s linear",
                             }}
                         />
                     </div>
@@ -176,16 +188,18 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         <div
                             className="alert mb-3"
                             style={{
-                                backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                                border: '1px solid #e74c3c',
-                                color: '#e74c3c',
-                                borderRadius: '8px',
-                                padding: '12px',
-                                textAlign: 'center',
+                                backgroundColor: "rgba(231, 76, 60, 0.2)",
+                                border: "1px solid #e74c3c",
+                                color: "#e74c3c",
+                                borderRadius: "8px",
+                                padding: "12px",
+                                textAlign: "center",
                             }}
                         >
                             <i className="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Pause time ending in {remainingSeconds} seconds!</strong>
+                            <strong>
+                                Pause time ending in {remainingSeconds} seconds!
+                            </strong>
                         </div>
                     )}
 
@@ -193,27 +207,13 @@ const PauseModal: React.FC<PauseModalProps> = ({
                     <div
                         className="text-center mb-4"
                         style={{
-                            color: '#95a5a6',
-                            fontSize: '0.9rem',
+                            color: "#95a5a6",
+                            fontSize: "0.9rem",
                         }}
                     >
                         <i className="fas fa-info-circle me-2"></i>
                         Video will automatically resume when pause time expires
                     </div>
-
-                    {/* Resume Button */}
-                    <button
-                        className="btn btn-primary btn-lg w-100"
-                        onClick={onResume}
-                        style={{
-                            padding: '15px',
-                            fontSize: '1.1rem',
-                            fontWeight: '600',
-                        }}
-                    >
-                        <i className="fas fa-play me-2"></i>
-                        Resume Now
-                    </button>
                 </div>
             </div>
 

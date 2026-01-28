@@ -26,43 +26,57 @@ class ClassroomSessionModeCache
 
     public static function Get(int $courseDateId): string
     {
-        $value = (string) (self::Redis()->get(self::RedisKey($courseDateId)) ?? '');
-        $value = strtoupper(trim($value));
+        try {
+            $value = (string) (self::Redis()->get(self::RedisKey($courseDateId)) ?? '');
+            $value = strtoupper(trim($value));
 
-        if ($value === strtoupper(self::MODE_QA) || $value === 'QA') {
-            return self::MODE_QA;
+            if ($value === strtoupper(self::MODE_QA) || $value === 'QA') {
+                return self::MODE_QA;
+            }
+
+            if ($value === self::MODE_BREAK) {
+                return self::MODE_BREAK;
+            }
+
+            return self::MODE_TEACHING;
+        } catch (\Exception $e) {
+            // If Redis is unavailable, default to TEACHING mode
+            return self::MODE_TEACHING;
         }
-
-        if ($value === self::MODE_BREAK) {
-            return self::MODE_BREAK;
-        }
-
-        return self::MODE_TEACHING;
     }
 
     public static function Set(int $courseDateId, string $mode): void
     {
-        $modeNorm = strtoupper(trim($mode));
-        if ($modeNorm === 'QA' || $modeNorm === strtoupper(self::MODE_QA)) {
-            $mode = self::MODE_QA;
-        } elseif ($modeNorm === self::MODE_BREAK) {
-            $mode = self::MODE_BREAK;
-        } else {
-            $mode = self::MODE_TEACHING;
-        }
+        try {
+            $modeNorm = strtoupper(trim($mode));
+            if ($modeNorm === 'QA' || $modeNorm === strtoupper(self::MODE_QA)) {
+                $mode = self::MODE_QA;
+            } elseif ($modeNorm === self::MODE_BREAK) {
+                $mode = self::MODE_BREAK;
+            } else {
+                $mode = self::MODE_TEACHING;
+            }
 
-        self::Redis()->set(self::RedisKey($courseDateId), $mode, 'EX', self::EXPIRE_SECONDS);
+            self::Redis()->set(self::RedisKey($courseDateId), $mode, 'EX', self::EXPIRE_SECONDS);
+        } catch (\Exception $e) {
+            // If Redis is unavailable, silently fail (value won't be cached)
+        }
     }
 
     public static function Cycle(int $courseDateId): string
     {
-        $current = self::Get($courseDateId);
-        $next = match ($current) {
-            self::MODE_TEACHING => self::MODE_QA,
-            self::MODE_QA => self::MODE_BREAK,
-            default => self::MODE_TEACHING,
-        };
-        self::Set($courseDateId, $next);
-        return $next;
+        try {
+            $current = self::Get($courseDateId);
+            $next = match ($current) {
+                self::MODE_TEACHING => self::MODE_QA,
+                self::MODE_QA => self::MODE_BREAK,
+                default => self::MODE_TEACHING,
+            };
+            self::Set($courseDateId, $next);
+            return $next;
+        } catch (\Exception $e) {
+            // If Redis is unavailable, return default
+            return self::MODE_TEACHING;
+        }
     }
 }

@@ -89,10 +89,34 @@ const ValidationConfirmationView: React.FC<{
     const headshotUrl = getImageUrl(validations?.headshot);
     const idCardUrl = getImageUrl(validations?.idcard);
 
+    const hasMissingImages = !headshotUrl || !idCardUrl;
+
     return (
         <div className="container-fluid">
             <div className="row justify-content-center">
                 <div className="col-lg-10">
+                    {/* Show alert if images are missing */}
+                    {hasMissingImages && (
+                        <div
+                            className="alert alert-warning mb-3"
+                            style={{
+                                background: "rgba(255, 193, 7, 0.1)",
+                                border: "1px solid #ffc107",
+                                color: "#ffc107",
+                                borderRadius: "0.5rem"
+                            }}
+                        >
+                            <strong>⚠️ Missing Images</strong>
+                            <p className="mb-0 mt-1">
+                                {!idCardUrl && !headshotUrl
+                                    ? "Both ID card and headshot images are missing. Please upload them to continue."
+                                    : !idCardUrl
+                                    ? "ID card image is missing. Please upload it to continue."
+                                    : "Headshot image is missing. Please upload it to continue."}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Compact Header */}
                     <div className="text-center mb-2">
                         <PhotoTitle style={{ fontSize: "1rem", margin: "0 0 0.25rem" }}>
@@ -129,16 +153,23 @@ const ValidationConfirmationView: React.FC<{
                                     />
                                 ) : (
                                     <div
-                                        className="d-flex align-items-center justify-content-center"
+                                        className="d-flex flex-column align-items-center justify-content-center"
                                         style={{
                                             color: "#e74c3c",
                                             minHeight: "120px",
                                             background: "rgba(231, 76, 60, 0.1)",
                                             borderRadius: "0.375rem",
-                                            width: "100%"
+                                            width: "100%",
+                                            padding: "1rem"
                                         }}
                                     >
-                                        No ID card uploaded
+                                        <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📷</div>
+                                        <div style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.25rem" }}>
+                                            No ID card image
+                                        </div>
+                                        <div style={{ fontSize: "0.85rem", color: "#95a5a6" }}>
+                                            Click "Back to ID Card" to upload
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -161,16 +192,23 @@ const ValidationConfirmationView: React.FC<{
                                     />
                                 ) : (
                                     <div
-                                        className="d-flex align-items-center justify-content-center"
+                                        className="d-flex flex-column align-items-center justify-content-center"
                                         style={{
                                             color: "#e74c3c",
                                             minHeight: "120px",
                                             background: "rgba(231, 76, 60, 0.1)",
                                             borderRadius: "0.375rem",
-                                            width: "100%"
+                                            width: "100%",
+                                            padding: "1rem"
                                         }}
                                     >
-                                        No headshot uploaded
+                                        <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🤳</div>
+                                        <div style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.25rem" }}>
+                                            No headshot image
+                                        </div>
+                                        <div style={{ fontSize: "0.85rem", color: "#95a5a6" }}>
+                                            {!idCardUrl ? "Upload ID card first" : "Click button to go back and upload"}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -178,20 +216,26 @@ const ValidationConfirmationView: React.FC<{
                     </div>
 
                     {/* Compact Navigation */}
-                    <div className="d-flex justify-content-between">
+                    <div className="d-flex justify-content-between gap-2">
                         <StyledButton
-                            onClick={() => setCurrentStep(2)}
+                            onClick={() => setCurrentStep(idCardUrl ? 3 : 2)}
                             style={{ padding: "0.5rem 1rem" }}
                         >
-                            ← Back to ID Card
+                            {idCardUrl ? "← Back to Headshot" : "← Back to ID Card"}
                         </StyledButton>
                         <StyledButton
                             onClick={handleConfirmValidation}
                             disabled={isSubmitting || !headshotUrl || !idCardUrl}
+                            title={
+                                !headshotUrl || !idCardUrl
+                                    ? "Please upload both images before confirming"
+                                    : "Confirm and continue"
+                            }
                             style={{
                                 background: !headshotUrl || !idCardUrl ? "#6c757d" : "#2ecc71",
                                 color: "#ffffff",
-                                padding: "0.5rem 1rem"
+                                padding: "0.5rem 1rem",
+                                cursor: !headshotUrl || !idCardUrl ? "not-allowed" : "pointer"
                             }}
                         >
                             {isSubmitting ? "Submitting..." : "Confirm Validation"}

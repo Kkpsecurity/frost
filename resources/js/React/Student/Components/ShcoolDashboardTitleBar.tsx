@@ -7,6 +7,7 @@ const SchoolDashboardTitleBar = ({
     icon,
     onBackToDashboard,
     classroomStatus = null,
+    devModeToggle = null,
 }: SchoolDashboardTitleBarProps) => {
     return (
         <div
@@ -32,8 +33,8 @@ const SchoolDashboardTitleBar = ({
                                     classroomStatus === "ONLINE"
                                         ? "bg-success"
                                         : classroomStatus === "WAITING"
-                                        ? "bg-warning"
-                                        : "bg-secondary"
+                                          ? "bg-warning"
+                                          : "bg-secondary"
                                 }`}
                                 style={{
                                     fontSize: "0.9rem",
@@ -44,8 +45,8 @@ const SchoolDashboardTitleBar = ({
                                         classroomStatus === "ONLINE"
                                             ? "fa-wifi"
                                             : classroomStatus === "WAITING"
-                                            ? "fa-clock"
-                                            : "fa-wifi-slash"
+                                              ? "fa-clock"
+                                              : "fa-wifi-slash"
                                     } me-1`}
                                 ></i>
                                 {classroomStatus}
@@ -64,6 +65,7 @@ const SchoolDashboardTitleBar = ({
                 </div>
 
                 <div className="d-flex align-items-center gap-3">
+                    {devModeToggle}
                     <button
                         type="button"
                         className="btn btn-light btn-sm d-flex align-items-center gap-2"
@@ -75,11 +77,11 @@ const SchoolDashboardTitleBar = ({
                             color: "var(--frost-primary-color)",
                             fontWeight: "600",
                             border: "2px solid white",
-                            padding: "8px 16px"
+                            padding: "8px 16px",
                         }}
                     >
                         <i
-                            className="fas fa-arrow-left"
+                            className="fas fa-arrow-left mr-2"
                             aria-hidden="true"
                         />
                         <span>Dashboard</span>
@@ -91,4 +93,3 @@ const SchoolDashboardTitleBar = ({
 };
 
 export default SchoolDashboardTitleBar;
-

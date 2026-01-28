@@ -554,7 +554,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                             <div className="bg-warning text-dark p-3 m-2" style={{fontSize: '11px', fontFamily: 'monospace', maxHeight: '400px', overflow: 'auto'}}>
                                                 <div className="fw-bold mb-2 d-flex justify-content-between align-items-center">
                                                     <span>🔍 DEBUG - API & LOCALSTORAGE DATA:</span>
-                                                    <button 
+                                                    <button
                                                         className="btn btn-sm btn-danger"
                                                         onClick={() => {
                                                             localStorage.clear();
@@ -648,7 +648,8 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                     // First non-completed lesson should show as active (In Progress)
                                                     // But ONLY if no other lesson has actually been started
                                                     const isFirstLesson = index === 0;
-                                                    const shouldShowAsActive =
+                                                    // First non-completed lesson should show as 'Pending' if not started
+                                                    const shouldShowAsPending =
                                                         isFirstLesson &&
                                                         !lesson.is_completed &&
                                                         !hasStarted && // Don't show first as active if another lesson has started
@@ -710,53 +711,53 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                                 margin: "0",
                                                                 borderRadius:
                                                                     "0",
-                                                                backgroundColor:
-                                                                    isActiveLiveLesson
-                                                                        ? "#0ea5e9" // Bright cyan/blue for live instructor lesson (like screenshot)
-                                                                        : isActiveFSTBLesson
-                                                                        ? "#3b82f6" // Bright blue for active FSTB lesson
-                                                                        : shouldShowAsActive
-                                                                        ? "#0ea5e9" // Bright cyan/blue for first lesson (active)
-                                                                        : lesson.is_completed
-                                                                        ? "#059669" // Bright green for completed (like screenshot)
-                                                                        : isSelected
-                                                                        ? "#2563eb" // Darker blue for selected
-                                                                        : "#1e293b", // Dark slate for incomplete
-                                                                borderLeft:
-                                                                    isActiveLiveLesson ||
-                                                                    isActiveFSTBLesson
-                                                                        ? "none" // No border for active lessons
-                                                                        : isSelected
-                                                                        ? "4px solid #60a5fa"
-                                                                        : "none",
-                                                                transition:
-                                                                    "all 0.2s ease",
-                                                                cursor: "pointer",
-                                                            }}
-                                                        >
-                                                            <div className="p-3">
-                                                                <div className="d-flex justify-content-between align-items-start">
-                                                                    <div className="flex-grow-1">
-                                                                        <h6 className="mb-1 fw-bold text-white">
-                                                                            {
-                                                                                lesson.title
-                                                                            }
-                                                                        </h6>
-                                                                        <div className="d-flex flex-wrap gap-2">
-                                                                            <small className="text-muted">
-                                                                                Credit
-                                                                                Minutes:{" "}
-                                                                                {
-                                                                                    lesson.credit_minutes
-                                                                                }
-                                                                            </small>
-                                                                            {lesson.video_seconds >
-                                                                                0 && (
-                                                                                <small className="text-muted">
-                                                                                    •
-                                                                                    Video:{" "}
-                                                                                    {Math.round(
-                                                                                        lesson.video_seconds /
+                                                                                                                                                        <span
+                                                                                                                                                                className={`badge ${
+                                                                                                                                                                        lesson.status ===
+                                                                                                                                                                        "passed"
+                                                                                                                                                                                ? "bg-success"
+                                                                                                                                                                                : lesson.status ===
+                                                                                                                                                                                    "failed"
+                                                                                                                                                                                ? "bg-danger"
+                                                                                                                                                                                : lesson.status ===
+                                                                                                                                                                                    "in-progress" ||
+                                                                                                                                                                                    hasStarted ||
+                                                                                                                                                                                    isActiveLiveLesson ||
+                                                                                                                                                                                    isActiveFSTBLesson
+                                                                                                                                                                                ? "bg-primary"
+                                                                                                                                                                                : shouldShowAsPending
+                                                                                                                                                                                ? "bg-warning text-dark"
+                                                                                                                                                                                : lesson.status ===
+                                                                                                                                                                                    "credit-available"
+                                                                                                                                                                                ? "bg-warning text-dark"
+                                                                                                                                                                                : "bg-warning text-dark"
+                                                                                                                                                                }`}
+                                                                                                                                                                style={{
+                                                                                                                                                                        minWidth:
+                                                                                                                                                                                "80px",
+                                                                                                                                                                        fontSize:
+                                                                                                                                                                                "0.75rem",
+                                                                                                                                                                }}
+                                                                                                                                                        >
+                                                                                                                                                                {lesson.status ===
+                                                                                                                                                                "passed"
+                                                                                                                                                                        ? "Completed"
+                                                                                                                                                                        : lesson.status ===
+                                                                                                                                                                            "failed"
+                                                                                                                                                                        ? "Failed"
+                                                                                                                                                                        : lesson.status ===
+                                                                                                                                                                            "in-progress" ||
+                                                                                                                                                                            hasStarted ||
+                                                                                                                                                                            isActiveLiveLesson ||
+                                                                                                                                                                            isActiveFSTBLesson
+                                                                                                                                                                        ? "In Progress"
+                                                                                                                                                                        : shouldShowAsPending
+                                                                                                                                                                        ? "Pending"
+                                                                                                                                                                        : lesson.status ===
+                                                                                                                                                                            "credit-available"
+                                                                                                                                                                        ? "Pending"
+                                                                                                                                                                        : "Pending"}
+                                                                                                                                                        </span>
                                                                                             60
                                                                                     )}
                                                                                     min
