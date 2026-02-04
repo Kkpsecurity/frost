@@ -153,6 +153,7 @@ export interface StudentUnitData {
 
 export interface ChatPollResponse {
   messages: ChatMessageData[];
+  enabled?: boolean;
 }
 
 export interface ChatMessageData {

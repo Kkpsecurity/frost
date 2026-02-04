@@ -61,6 +61,10 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::get('/chat-messages', [InstructorDashboardController::class, 'getChatMessages'])
             ->name('chat.messages');
 
+        // UI compatibility: ChatPanel posts to /admin/instructors/classroom/chat-enable
+        Route::post('/chat-enable', [InstructorDashboardController::class, 'toggleChatEnabled'])
+            ->name('chat.enable');
+
         Route::post('/send-message', [InstructorDashboardController::class, 'sendMessage'])
             ->name('chat.send');
     });
@@ -240,6 +244,13 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
 
     Route::post('/chat-enable', [InstructorDashboardController::class, 'toggleChatEnabled'])
         ->name('chat-enable');
+
+    // Chat presets management
+    Route::get('/chat-presets', [InstructorDashboardController::class, 'getChatPresets'])
+        ->name('chat-presets.get');
+
+    Route::post('/chat-presets', [InstructorDashboardController::class, 'saveChatPresets'])
+        ->name('chat-presets.save');
 
     // =====================================================
     // VALIDATION MANAGEMENT - Student Identity Verification

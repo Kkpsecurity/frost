@@ -454,6 +454,21 @@ class StudentDashboardController extends Controller
                             ->orderByDesc('id')
                             ->value('id') ?? 0);
 
+                        // Use latest InstUnit (including completed) so students don't see "waiting" after End Day.
+                        $latestInstUnit = null;
+                        try {
+                            $latestInstUnit = \App\Models\InstUnit::where('course_date_id', $courseDate->id)
+                                ->orderByDesc('id')
+                                ->first();
+                        } catch (\Throwable $e) {
+                            $latestInstUnit = null;
+                        }
+
+                        $classroomStatus = 'waiting';
+                        if ($latestInstUnit) {
+                            $classroomStatus = $latestInstUnit->completed_at ? 'ended' : 'active';
+                        }
+
                         $studentUnit = null;
                         $completedLessonIds = [];
                         if ($courseAuthId > 0) {
@@ -470,11 +485,11 @@ class StudentDashboardController extends Controller
                         }
 
                         $activeClassroom = [
-                            'status' => $courseDate->InstUnit ? 'active' : 'waiting',
+                            'status' => $classroomStatus,
                             'course_id' => $courseId,
                             'course_auth_id' => $courseAuthId > 0 ? $courseAuthId : null,
                             'course_date_id' => (int) $courseDate->id,
-                            'inst_unit_id' => $courseDate->InstUnit?->id,
+                            'inst_unit_id' => $latestInstUnit?->id,
                             'student_unit' => $studentUnit ? [
                                 'id' => $studentUnit->id,
                                 'course_auth_id' => (int) ($studentUnit->course_auth_id ?? 0),
@@ -595,6 +610,16 @@ class StudentDashboardController extends Controller
                     $studentUnit = null;
                 }
 
+                // Include InstUnit even when completed so the client can differentiate "ended" vs "waiting".
+                $latestInstUnit = null;
+                try {
+                    $latestInstUnit = \App\Models\InstUnit::where('course_date_id', $courseDate->id)
+                        ->orderByDesc('id')
+                        ->first();
+                } catch (\Throwable $e) {
+                    $latestInstUnit = null;
+                }
+
                 return response()->json([
                     'success' => true,
                     'data' => [
@@ -620,10 +645,11 @@ class StudentDashboardController extends Controller
                             // Optionally keep a course_id here as well.
                             'course_id' => (int) ($courseId ?? 0),
                         ] : null,
-                        'instUnit' => $courseDate->InstUnit ? [
-                            'id' => $courseDate->InstUnit->id,
-                            'started_at' => $courseDate->InstUnit->start_time,
-                            'completed_at' => $courseDate->InstUnit->completed_at,
+                        'instUnit' => $latestInstUnit ? [
+                            'id' => $latestInstUnit->id,
+                            'status' => $latestInstUnit->completed_at ? 'ended' : 'active',
+                            'started_at' => $latestInstUnit->start_time,
+                            'completed_at' => $latestInstUnit->completed_at,
                         ] : null,
                         'studentUnit' => $studentUnit ? [
                             'id' => $studentUnit->id,
@@ -676,7 +702,9 @@ class StudentDashboardController extends Controller
             // Get instructor unit (if instructor started class)
             $instUnit = null;
             if ($courseDate) {
-                $instUnit = $courseDate->InstUnit;
+                $instUnit = \App\Models\InstUnit::where('course_date_id', $courseDate->id)
+                    ->orderByDesc('id')
+                    ->first();
             }
 
             // Ensure StudentUnit exists as soon as there is a CourseDate (waiting or active).
@@ -691,7 +719,8 @@ class StudentDashboardController extends Controller
             }
 
             // Determine modality: ONLINE (live class) or OFFLINE (self-study)
-            $isOnline = $courseDate && $instUnit;
+            // If InstUnit exists but is completed, treat as OFFLINE.
+            $isOnline = $courseDate && $instUnit && !$instUnit->completed_at;
 
             // Zoom readiness (used by student iframe screen share)
             // Infer Zoom credentials based on instructor role and course title pattern
@@ -741,13 +770,27 @@ class StudentDashboardController extends Controller
                     ->keyBy('lesson_id');
             }
 
-            // Get StudentLessons for today
+            // Get StudentLessons for today's lesson IDs.
+            // IMPORTANT: Do NOT restrict to today's InstLesson IDs; a student may have already completed a
+            // lesson earlier (different inst_lesson_id) and we still need to show it as completed.
             $todaysStudentLessons = collect();
-            if ($studentUnit && $instUnit && $todaysInstLessons->isNotEmpty()) {
-                $todaysStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
-                    ->whereIn('inst_lesson_id', $todaysInstLessons->pluck('id'))
+            if ($studentUnit && $todaysInstLessons->isNotEmpty()) {
+                $lessonIdsForToday = $todaysInstLessons->keys()->values()->all();
+
+                $rawStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
+                    ->whereIn('lesson_id', $lessonIdsForToday)
+                    ->orderByDesc('id')
                     ->get()
-                    ->keyBy('lesson_id');
+                    ->groupBy('lesson_id');
+
+                // For each lesson_id, prefer a completed record if one exists; otherwise use the newest.
+                $todaysStudentLessons = $rawStudentLessons->map(function ($group) {
+                    $completed = $group->first(function ($sl) {
+                        return !is_null($sl->completed_at);
+                    });
+
+                    return $completed ?: $group->first();
+                });
             }
 
             // Build studentLessons array for frontend
@@ -941,6 +984,7 @@ class StudentDashboardController extends Controller
                     ] : null,
                     'instUnit' => $instUnit ? [
                         'id' => $instUnit->id,
+                        'status' => $instUnit->completed_at ? 'ended' : 'active',
                         'started_at' => $instUnit->start_time,
                         'completed_at' => $instUnit->completed_at,
                         // ✅ FIX: Reload inst_lessons to get fresh is_paused values

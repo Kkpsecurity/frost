@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin\Instructors;
 
 use App\Http\Controllers\Controller;
 use App\Classes\ChatLogCache;
+use App\Classes\InstructorChatPresets;
 use App\Classes\MiscQueries;
 use App\Traits\PageMetaDataTrait;
 use App\Traits\StoragePathTrait;
@@ -348,20 +349,20 @@ class InstructorDashboardController extends Controller
         }
 
         $courseDateId = $request->query('course_date_id') ?? $request->input('course_date_id');
-        $userId = $request->query('user_id') ?? $request->input('user_id');
-
         $courseDateId = is_numeric($courseDateId) ? (int) $courseDateId : null;
-        $userId = is_numeric($userId) ? (int) $userId : null;
 
-        if (!$courseDateId || !$userId) {
-            return response()->json([], 200);
+        if (!$courseDateId) {
+            return response()->json(['messages' => [], 'enabled' => false], 200);
         }
 
-        if (!ChatLogCache::IsEnabled($courseDateId)) {
-            return response()->json([], 200);
+        $enabled = ChatLogCache::IsEnabled($courseDateId);
+
+        if (!$enabled) {
+            return response()->json(['messages' => [], 'enabled' => false], 200);
         }
 
-        $chatMessages = MiscQueries::RecentChatMessages($courseDateId, $userId);
+        // Use admin user ID for chat query
+        $chatMessages = MiscQueries::RecentChatMessages($courseDateId, (int) $admin->id);
         $chats = [];
 
         foreach ($chatMessages as $chatMessage) {
@@ -388,8 +389,11 @@ class InstructorDashboardController extends Controller
             ];
         }
 
-        // IMPORTANT: FrostChatHooks expects an array (not a wrapper object).
-        return response()->json($chats);
+        // IMPORTANT: FrostChatHooks expects messages array and enabled status
+        return response()->json([
+            'messages' => $chats,
+            'enabled' => ChatLogCache::IsEnabled($courseDateId),
+        ]);
     }
 
     /**
@@ -403,7 +407,41 @@ class InstructorDashboardController extends Controller
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        return $this->postChatMessage($request);
+        // React Instructor Classroom ChatPanel posts: { message, course_date_id, inst_unit_id }
+        // Older compat endpoint /chat-messages posts: { course_date_id, user_id, user_type, message }
+        // This endpoint should work with the classroom payload and use the authenticated admin as the sender.
+        $validator = Validator::make($request->all(), [
+            'course_date_id' => 'required|integer',
+            'message' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+            ], 422);
+        }
+
+        $courseDateId = (int) $request->input('course_date_id');
+        $message = trim((string) $request->input('message'));
+
+        if (!ChatLogCache::IsEnabled($courseDateId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chat System Disabled',
+            ], 403);
+        }
+
+        $chat = new ChatLog();
+        $chat->course_date_id = $courseDateId;
+        $chat->inst_id = (int) $admin->id;
+        $chat->body = $message;
+        $chat->save();
+
+        return response()->json([
+            'success' => true,
+            'chat_id' => (int) $chat->id,
+        ]);
     }
 
     public function postChatMessage(Request $request)
@@ -465,6 +503,7 @@ class InstructorDashboardController extends Controller
 
         $validator = Validator::make($request->all(), [
             'course_date_id' => 'required|integer',
+            'enabled' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -475,8 +514,9 @@ class InstructorDashboardController extends Controller
         }
 
         $courseDateId = (int) $request->input('course_date_id');
+        $enabled = (bool) $request->input('enabled');
 
-        if (!ChatLogCache::IsEnabled($courseDateId)) {
+        if ($enabled) {
             ChatLogCache::Enable($courseDateId);
         } else {
             ChatLogCache::Disable($courseDateId);
@@ -485,6 +525,57 @@ class InstructorDashboardController extends Controller
         return response()->json([
             'success' => true,
             'enabled' => ChatLogCache::IsEnabled($courseDateId),
+        ]);
+    }
+
+    /**
+     * Get chat presets for instructor
+     */
+    public function getChatPresets(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $presets = InstructorChatPresets::getPresets((int) $admin->id);
+
+        return response()->json([
+            'success' => true,
+            'presets' => $presets,
+        ]);
+    }
+
+    /**
+     * Save chat presets for instructor
+     */
+    public function saveChatPresets(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'presets' => 'required|array',
+            'presets.*' => 'required|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+            ], 422);
+        }
+
+        $presets = $request->input('presets');
+        $success = InstructorChatPresets::savePresets((int) $admin->id, $presets);
+
+        return response()->json([
+            'success' => $success,
+            'presets' => InstructorChatPresets::getPresets((int) $admin->id),
         ]);
     }
 
@@ -703,11 +794,17 @@ class InstructorDashboardController extends Controller
                 ], 404);
             }
 
-            // Check if InstUnit already exists
-            if ($courseDate->InstUnit) {
+            // Check if ANY InstUnit already exists (active or completed)
+            $existingInstUnit = \App\Models\InstUnit::where('course_date_id', $courseDateId)
+                ->latest('created_at')
+                ->first();
+
+            if ($existingInstUnit) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Course already has an assigned instructor'
+                    'message' => $existingInstUnit->completed_at
+                        ? 'Course day has already been completed'
+                        : 'Course already has an assigned instructor'
                 ], 400);
             }
 
@@ -781,9 +878,21 @@ class InstructorDashboardController extends Controller
             }
 
             // Check if InstUnit already exists
-            $instUnit = $courseDate->InstUnit;
+            // IMPORTANT: CourseDate->InstUnit() only returns ACTIVE (where completed_at is null).
+            // But the DB has a unique constraint on inst_unit.course_date_id, so we must also
+            // check for completed sessions to avoid duplicate inserts.
+            $instUnit = \App\Models\InstUnit::where('course_date_id', $courseDateId)
+                ->latest('created_at')
+                ->first();
 
             if ($instUnit) {
+                if ($instUnit->completed_at) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This class has already been completed and cannot be started again.'
+                    ], 409);
+                }
+
                 // InstUnit exists - check if it's the current instructor trying to take control
                 if ($instUnit->created_by == $admin->id) {
                     // Same instructor - just return existing session info

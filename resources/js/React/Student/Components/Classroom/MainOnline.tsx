@@ -4,6 +4,7 @@ import PauseOverlay from "../Common/PauseOverlay";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import LessonSideBar from "../Common/LessonSideBar";
 import LessonProgressBar from "./LessonProgressBar";
+import ClassroomChatCard from "./ClassroomChatCard";
 import { useClassroomSessionMode } from "@/React/Hooks/ClassroomAskInstructorHooks";
 import { useLessonSidebar } from "../../hooks/useLessonSidebar";
 
@@ -546,57 +547,9 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                 </div>
 
                                 {/* Chat System Panel */}
-                                <div
-                                    className="card"
-                                    style={{
-                                        backgroundColor: "#34495e",
-                                        border: "none",
-                                        marginBottom: "1rem",
-                                    }}
-                                >
-                                    <div
-                                        className="card-header"
-                                        style={{
-                                            backgroundColor: "#2c3e50",
-                                            borderBottom:
-                                                "1px solid rgba(255,255,255,0.1)",
-                                        }}
-                                    >
-                                        <h6
-                                            className="mb-0"
-                                            style={{ color: "white" }}
-                                        >
-                                            <i className="fas fa-comments me-2"></i>
-                                            Classroom Chat
-                                        </h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <div
-                                            style={{
-                                                height: "200px",
-                                                backgroundColor:
-                                                    "rgba(0,0,0,0.15)",
-                                                borderRadius: "0.375rem",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                color: "#95a5a6",
-                                            }}
-                                        >
-                                            <div className="text-center">
-                                                <i className="fas fa-comment-dots fa-2x mb-2"></i>
-                                                <p
-                                                    className="mb-0"
-                                                    style={{
-                                                        fontSize: "0.875rem",
-                                                    }}
-                                                >
-                                                    Chat will appear here
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <ClassroomChatCard
+                                    courseDateId={courseDateId}
+                                />
 
                                 {/* Course Documents Panel */}
                                 <div

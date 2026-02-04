@@ -56,13 +56,18 @@ export const useClassroomDataPolling = (enabled: boolean = true) => {
 /**
  * Hook to poll chat messages every 3 seconds (only when active)
  */
-export const useChatMessagesPolling = (enabled: boolean = true) => {
+export const useChatMessagesPolling = (
+    courseDateId: number | null | undefined,
+    enabled: boolean = true,
+) => {
     return useQuery({
-        queryKey: ["chat-messages"],
+        queryKey: ["chat-messages", courseDateId],
         queryFn: async () => {
-            console.log("📡 Fetching chat messages from /admin/instructors/classroom/chat");
+            console.log(
+                "📡 Fetching chat messages from /admin/instructors/classroom/chat",
+            );
             const response = await axios.get<ChatPollResponse>(
-                "/admin/instructors/classroom/chat"
+                `/admin/instructors/classroom/chat?course_date_id=${courseDateId}`,
             );
             console.log("✅ Chat messages received:", response.data);
             return response.data;
@@ -70,6 +75,6 @@ export const useChatMessagesPolling = (enabled: boolean = true) => {
         refetchInterval: 3000, // Poll every 3 seconds
         refetchOnWindowFocus: false,
         retry: true,
-        enabled: enabled, // Only poll if classroom is active
+        enabled: enabled && !!courseDateId, // Only poll if classroom is active and has a course date
     });
 };

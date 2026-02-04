@@ -31,19 +31,21 @@ const InstructorDataLayer: React.FC = () => {
         error: classroomError,
     } = useClassroomDataPolling(true);
 
+    const courseDateId = classroomData?.courseDate?.id ?? null;
+
     // Poll chat messages every 3 seconds (only if classroom is active)
     const {
         data: chatData,
         isLoading: loadingChat,
         error: chatError,
-    } = useChatMessagesPolling(hasActiveClassroom);
+    } = useChatMessagesPolling(courseDateId, hasActiveClassroom);
 
     // Check if classroom is active based on instructor data
     useEffect(() => {
         if (instructorData?.instUnit) {
             console.log(
                 "✅ Active classroom detected:",
-                instructorData.instUnit
+                instructorData.instUnit,
             );
             setHasActiveClassroom(true);
         } else {

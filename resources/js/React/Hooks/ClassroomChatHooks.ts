@@ -29,9 +29,9 @@ export function useClassroomChat(courseDateId: number | null) {
             );
             return response.data;
         },
-        gcTime: 30000,
-        staleTime: 30000,
-        refetchInterval: 15000,
+        gcTime: 5 * 60 * 1000,
+        staleTime: 2 * 1000,
+        refetchInterval: 3000,
     });
 }
 

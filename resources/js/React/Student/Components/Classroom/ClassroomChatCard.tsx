@@ -9,17 +9,23 @@ interface ClassroomChatCardProps {
     courseDateId: number | null;
 }
 
-const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({ courseDateId }) => {
+const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({
+    courseDateId,
+}) => {
     const [draft, setDraft] = useState<string>("");
 
     const { data, isLoading, isError } = useClassroomChat(courseDateId);
-    const { mutateAsync, isPending } = usePostClassroomChatMessage(courseDateId);
+    const { mutateAsync, isPending } =
+        usePostClassroomChatMessage(courseDateId);
 
     const enabled = data?.enabled ?? false;
-    const messages: ClassroomChatMessage[] = useMemo(() => data?.messages ?? [], [data]);
+    const messages: ClassroomChatMessage[] = useMemo(
+        () => data?.messages ?? [],
+        [data],
+    );
 
     const onSend = async () => {
-        if (!courseDateId) return;
+        if (!courseDateId || !enabled) return;
         const message = draft.trim();
         if (!message) return;
 
@@ -128,7 +134,8 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({ courseDateId }) =
                                                 style={{
                                                     display: "flex",
                                                     alignItems: "baseline",
-                                                    justifyContent: "space-between",
+                                                    justifyContent:
+                                                        "space-between",
                                                     gap: "0.5rem",
                                                 }}
                                             >
@@ -138,7 +145,8 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({ courseDateId }) =
                                                         fontWeight: 600,
                                                         fontSize: "0.85rem",
                                                         overflow: "hidden",
-                                                        textOverflow: "ellipsis",
+                                                        textOverflow:
+                                                            "ellipsis",
                                                         whiteSpace: "nowrap",
                                                     }}
                                                     title={m.user.user_name}
@@ -178,26 +186,34 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({ courseDateId }) =
                                 value={draft}
                                 onChange={(e) => setDraft(e.target.value)}
                                 onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
+                                    if (e.key === "Enter" && enabled) {
                                         e.preventDefault();
                                         onSend();
                                     }
                                 }}
-                                placeholder="Type a message..."
-                                disabled={isPending}
+                                placeholder={
+                                    enabled
+                                        ? "Type a message..."
+                                        : "Chat is disabled"
+                                }
+                                disabled={isPending || !enabled}
                                 style={{
                                     backgroundColor: "rgba(0,0,0,0.15)",
                                     border: "1px solid rgba(255,255,255,0.12)",
                                     color: "#ecf0f1",
+                                    opacity: enabled ? 1 : 0.5,
                                 }}
                             />
                             <button
                                 className="btn btn-primary"
                                 type="button"
                                 onClick={onSend}
-                                disabled={isPending || !draft.trim()}
+                                disabled={
+                                    isPending || !draft.trim() || !enabled
+                                }
                                 style={{
                                     whiteSpace: "nowrap",
+                                    opacity: enabled ? 1 : 0.5,
                                 }}
                             >
                                 Send

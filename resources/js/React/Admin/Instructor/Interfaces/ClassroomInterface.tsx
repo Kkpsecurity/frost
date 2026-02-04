@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import LessonsPanel from "../components/LessonsPanel";
 import ZoomSetupPanel from "../components/ZoomSetupPanel";
 import StudentsPanel from "../Classroom/StudentsPanel";
@@ -26,9 +26,16 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     chatData,
 }) => {
     const instUnit = instructorData?.instUnit;
-    const instructor = instructorData?.instructor_user;
+    const instructor = instructorData?.instructor; // Fixed: was instructor_user, should be instructor
     const zoomStatus = instructorData?.zoom; // NEW: Get zoom status from instructor poll
     const courseDateId = instUnit?.course_date_id;
+
+    console.log("🔍 ClassroomInterface: courseDateId debug", {
+        instUnit,
+        courseDateId,
+        hasInstUnit: !!instUnit,
+        instUnitKeys: instUnit ? Object.keys(instUnit) : [],
+    });
 
     const currentCourseDate = classroomData?.courseDates?.[0];
     const courseName = currentCourseDate?.course_name;
@@ -81,12 +88,12 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                         "X-Requested-With": "XMLHttpRequest",
                     },
                     credentials: "same-origin",
-                }
+                },
             );
 
             if (!response.ok) {
                 throw new Error(
-                    `Failed to fetch lessons: ${response.statusText}`
+                    `Failed to fetch lessons: ${response.statusText}`,
                 );
             }
 
@@ -108,7 +115,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
     if (instUnitLesson && instUnitLesson.lesson_id) {
         // Find the lesson details from lessons array
         const lessonDetails = lessons.find(
-            (l: any) => l.id === instUnitLesson.lesson_id
+            (l: any) => l.id === instUnitLesson.lesson_id,
         );
 
         if (lessonDetails) {
@@ -142,7 +149,7 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                                 ?.getAttribute("content") || "",
                         "X-Requested-With": "XMLHttpRequest",
                     },
-                }
+                },
             );
 
             const result = await response.json();
@@ -269,7 +276,6 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                         >
                             <FrostChatCard
                                 course_date_id={courseDateId || 0}
-                                isChatEnabled={true}
                                 chatUser={{
                                     id: instructor?.id || 0,
                                     name:

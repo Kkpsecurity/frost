@@ -37,16 +37,7 @@ class ClassroomChatController extends Controller
 
         $courseDateId = (int) $request->input('course_date_id');
 
-        // If class is online, auto-enable chat so student UI works out of the box.
-        try {
-            $instUnit = InstUnit::where('course_date_id', $courseDateId)->first();
-            if ($instUnit && !ChatLogCache::IsEnabled($courseDateId)) {
-                ChatLogCache::Enable($courseDateId);
-            }
-        } catch (\Throwable $e) {
-            // Non-fatal.
-        }
-
+        // Check if chat is enabled (instructor controls this)
         $enabled = ChatLogCache::IsEnabled($courseDateId);
 
         $messages = [];
@@ -107,12 +98,6 @@ class ClassroomChatController extends Controller
 
         $courseDateId = (int) $request->input('course_date_id');
 
-        // Auto-enable chat when class is online.
-        $instUnit = InstUnit::where('course_date_id', $courseDateId)->first();
-        if ($instUnit && !ChatLogCache::IsEnabled($courseDateId)) {
-            ChatLogCache::Enable($courseDateId);
-        }
-
         if (!ChatLogCache::IsEnabled($courseDateId)) {
             return response()->json([
                 'success' => false,
@@ -123,14 +108,9 @@ class ClassroomChatController extends Controller
         $chat = new ChatLog();
         $chat->course_date_id = $courseDateId;
 
-        // Determine whether this authenticated user is the instructor for this class.
-        // This allows instructors (if present under auth()) to chat with everyone.
-        $isInstructor = $instUnit && (int) $instUnit->created_by === (int) $user->id;
-        if ($isInstructor) {
-            $chat->inst_id = (int) $user->id;
-        } else {
-            $chat->student_id = (int) $user->id;
-        }
+        // Student chat endpoint: treat the authenticated user as a student sender.
+        // (Instructors use the admin/instructors endpoints.)
+        $chat->student_id = (int) $user->id;
 
         $chat->body = (string) $request->input('message');
         $chat->save();

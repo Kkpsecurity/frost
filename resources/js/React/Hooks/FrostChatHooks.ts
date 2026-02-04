@@ -8,6 +8,7 @@ import {
 
 interface FrostChatData {
     chatMessages?: ReturnChatMessageType[];
+    enabled?: boolean;
     isLoading: boolean;
     isError?: boolean;
     error?: {};
@@ -15,7 +16,7 @@ interface FrostChatData {
 
 export const getFrostMessages = (course_date_id: string, user_id: string): FrostChatData => {
     const {
-        data: chatMessages,
+        data,
         isLoading,
         isError,
         error,
@@ -26,22 +27,29 @@ export const getFrostMessages = (course_date_id: string, user_id: string): Frost
                 const response = await apiClient.get(
                     `/admin/instructors/classroom/chat?course_date_id=${course_date_id}&user_id=${user_id}`
                 );
+                // API returns { messages: [...], enabled: true/false }
                 return response.data;
             } catch (error: any) {
                 // If the endpoint doesn't exist yet, return mock data for development
                 if (error.response?.status === 404) {
                     console.warn("Chat endpoint not implemented yet, using mock data");
-                    return [];
+                    return { messages: [], enabled: false };
                 }
                 throw error;
             }
         },
-        gcTime: 30000, // cache for 30 seconds (renamed from cacheTime)
-        staleTime: 30000, // allow stale data for 30 seconds
-        refetchInterval: 15000, // poll every 15 seconds
+        gcTime: 5 * 60 * 1000,
+        staleTime: 2 * 1000,
+        refetchInterval: 3000,
     });
 
-    return { chatMessages, isLoading, isError, error };
+    return {
+        chatMessages: data?.messages || [],
+        enabled: data?.enabled,
+        isLoading,
+        isError,
+        error,
+    };
 };
 
 
@@ -74,10 +82,11 @@ export const postFrostMessage = (course_date_id: string, user_id: string) => {
     });
 };
 
-export const enableFrostChat = (course_date_id: string) => {
+export const enableFrostChat = (course_date_id: string, enabled: boolean) => {
     return apiClient
         .post(`/admin/instructors/chat-enable`, {
             course_date_id: course_date_id,
+            enabled: enabled,
         })
         .then((response) => response.data)
         .catch((error) => {

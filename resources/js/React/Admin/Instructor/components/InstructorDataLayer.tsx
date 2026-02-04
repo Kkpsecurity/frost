@@ -2,9 +2,18 @@ import React from "react";
 import { Alert } from "react-bootstrap";
 import InstructorDashboard from "./InstructorDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
-import { InstructorContextProvider, InstructorContextType } from "../Context/InstructorContext";
-import { ClassroomActivityContextProvider, ClassroomActivityContextType } from "../Context/ClassroomActivityContext";
-import { ChatSystemContextProvider, ChatSystemContextType } from "../Context/ChatSystemContext";
+import {
+    InstructorContextProvider,
+    InstructorContextType,
+} from "../Context/InstructorContext";
+import {
+    ClassroomActivityContextProvider,
+    ClassroomActivityContextType,
+} from "../Context/ClassroomActivityContext";
+import {
+    ChatSystemContextProvider,
+    ChatSystemContextType,
+} from "../Context/ChatSystemContext";
 import {
     useInstructorDataPolling,
     useClassroomDataPolling,
@@ -21,14 +30,28 @@ import {
  */
 const InstructorDataLayer: React.FC = () => {
     // Call the 3 polling hooks
-    const { data: instructorData, isLoading: instructorLoading, error: instructorError } = useInstructorDataPolling();
+    const {
+        data: instructorData,
+        isLoading: instructorLoading,
+        error: instructorError,
+    } = useInstructorDataPolling();
     const isClassroomActive = !!instructorData?.instUnit;
 
     // ALWAYS poll for classroom data (needed for BulletinBoard even when offline)
-    const { data: classroomData, isLoading: classroomLoading, error: classroomError } = useClassroomDataPolling(true);
+    const {
+        data: classroomData,
+        isLoading: classroomLoading,
+        error: classroomError,
+    } = useClassroomDataPolling(true);
+
+    const courseDateId = classroomData?.courseDate?.id ?? null;
 
     // Only poll chat when classroom is active
-    const { data: chatData, isLoading: chatLoading, error: chatError } = useChatMessagesPolling(isClassroomActive);
+    const {
+        data: chatData,
+        isLoading: chatLoading,
+        error: chatError,
+    } = useChatMessagesPolling(courseDateId, isClassroomActive);
 
     const isLoading = instructorLoading || classroomLoading;
     const error = instructorError || classroomError || chatError;
@@ -48,7 +71,9 @@ const InstructorDataLayer: React.FC = () => {
                         ? error.message
                         : "Unable to load instructor data"}
                 </p>
-                <p className="mb-0">Please refresh the page or contact support.</p>
+                <p className="mb-0">
+                    Please refresh the page or contact support.
+                </p>
             </Alert>
         );
     }
