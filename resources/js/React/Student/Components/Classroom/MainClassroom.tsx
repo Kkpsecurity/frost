@@ -85,15 +85,15 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         );
 
         // Determine if onboarding is needed
-        // Case 1: No StudentUnit exists yet (new day) - need onboarding
-        // Case 2: StudentUnit exists but onboarding_completed is false - need onboarding
-        const needsOnboarding =
-            !studentUnit || !studentUnit.onboarding_completed;
+        // Check validations.onboarding_completed instead of studentUnit.onboarding_completed
+        // Validations object manages all onboarding requirements (terms, rules, identity)
+        const needsOnboarding = !validations?.onboarding_completed;
 
         console.log("🔍 Onboarding check:", {
             hasStudentUnit: !!studentUnit,
             studentUnitId: studentUnit?.id,
-            onboarding_completed: studentUnit?.onboarding_completed,
+            hasValidations: !!validations,
+            onboarding_completed: validations?.onboarding_completed,
             needsOnboarding: needsOnboarding,
         });
 

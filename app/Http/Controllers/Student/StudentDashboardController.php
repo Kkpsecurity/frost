@@ -189,6 +189,18 @@ class StudentDashboardController extends Controller
         // Keyed by weekday (frontend expects validations.headshot[today]).
         $headshotByDay[$todayKey] = $headshotUrl;
 
+        // Calculate onboarding requirements
+        $termsAccepted = (bool) ($courseAuth->agreed_at !== null);
+        $rulesAccepted = false;
+        $identityVerified = (bool) ($idCardUrl && $headshotUrl);
+        $onboardingCompleted = false;
+
+        // Check if student has a StudentUnit for today to verify rules and onboarding completion
+        if ($headshotUnit) {
+            $rulesAccepted = $this->hasAcceptedRules($courseAuth->user_id, $headshotUnit->id);
+            $onboardingCompleted = $this->hasCompletedOnboarding($courseAuth->user_id, $headshotUnit->id);
+        }
+
         return [
             // Backward-compatible fields used by onboarding UI.
             'idcard' => $idCardUrl,
@@ -203,6 +215,12 @@ class StudentDashboardController extends Controller
                 ? ($headshotValidation && $headshotValidation->status > 0 ? 'approved' : ($headshotValidation && $headshotValidation->status < 0 ? 'rejected' : 'uploaded'))
                 : 'missing',
             'message' => null,
+
+            // Onboarding status management
+            'terms_accepted' => $termsAccepted,
+            'rules_accepted' => $rulesAccepted,
+            'identity_verified' => $identityVerified,
+            'onboarding_completed' => $onboardingCompleted,
         ];
     }
 
@@ -488,9 +506,6 @@ class StudentDashboardController extends Controller
                                 ->first();
 
                             if ($studentUnit) {
-                                // Add onboarding_completed field
-                                $studentUnit->onboarding_completed = $this->hasCompletedOnboarding($user->id, $studentUnit->id);
-                                
                                 $completedLessonIds = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
                                     ->whereNotNull('completed_at')
                                     ->pluck('lesson_id')
@@ -843,11 +858,6 @@ class StudentDashboardController extends Controller
             $studentUnit = $courseDate->studentUnits->first(function ($su) use ($user) {
                 return $su->CourseAuth && $su->CourseAuth->user_id === $user->id;
             });
-
-            // Add onboarding_completed field to studentUnit
-            if ($studentUnit) {
-                $studentUnit->onboarding_completed = $this->hasCompletedOnboarding($user->id, $studentUnit->id);
-            }
 
             // Get student lessons with completion status
             $studentLessons = $studentUnit ? $studentUnit->StudentLessons->map(function ($sl) {

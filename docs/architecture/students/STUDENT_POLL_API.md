@@ -30,8 +30,8 @@ Requires authenticated user session (Laravel Sanctum/Session).
 
 **⚠️ CURRENT STATE vs TARGET STATE:**
 
-- ✅ **Currently Implemented:** `student`, `courses` (array), `progress`, `validations_by_course_auth`, `active_classroom`, `notifications`, `assignments`, `challenges`
-- 🚧 **Target Structure (NOT YET IMPLEMENTED):** `courseAuth`, `studentUnit`, `studentLessons`, `validations`
+- ✅ **Currently Implemented:** `student`, `validations`, `active_classroom`, `challenges`
+- 🚧 **Target Structure (NOT YET IMPLEMENTED):** `courseAuth`, `studentUnit`, `studentLessons`
 - ⚠️ **DEPRECATED (will be removed):** `courses`, `progress`, `validations_by_course_auth`, `notifications`, `assignments`
 
 ```json
@@ -214,9 +214,9 @@ null // No active classroom session or student hasn't joined yet
 
 ### `validations` (Object)
 
-**🚧 STATUS: NOT YET IMPLEMENTED** - This field is not currently returned by the API. Use `validations_by_course_auth` for now (see deprecated section).
+**✅ STATUS: IMPLEMENTED** - This field is returned by the API and manages onboarding status.
 
-**Purpose:** Identity verification status for this course enrollment (ID card and headshot photos)
+**Purpose:** Identity verification and onboarding status for this course enrollment (ID card, headshot photos, and onboarding completion)
 
 ```json
 {
@@ -226,19 +226,29 @@ null // No active classroom session or student hasn't joined yet
     },
     "idcard_status": "approved",
     "headshot_status": "approved",
-    "message": null
+    "message": null,
+    "terms_accepted": true,
+    "rules_accepted": true,
+    "identity_verified": true,
+    "onboarding_completed": true
 }
 ```
 
-| Field             | Type         | Description                                             |
-| ----------------- | ------------ | ------------------------------------------------------- |
-| `idcard`          | String\|null | URL to uploaded ID card image                           |
-| `headshot`        | Object       | Headshot photos by day of week                          |
-| `idcard_status`   | String       | `missing`, `pending`, `approved`, `rejected`            |
-| `headshot_status` | String       | `missing`, `pending`, `approved`, `rejected`, `partial` |
-| `message`         | String\|null | Admin feedback or rejection reason                      |
+| Field                  | Type         | Description                                             |
+| ---------------------- | ------------ | ------------------------------------------------------- |
+| `idcard`               | String\|null | URL to uploaded ID card image                           |
+| `headshot`             | Object       | Headshot photos by day of week                          |
+| `idcard_status`        | String       | `missing`, `pending`, `approved`, `rejected`            |
+| `headshot_status`      | String       | `missing`, `pending`, `approved`, `rejected`, `partial` |
+| `message`              | String\|null | Admin feedback or rejection reason                      |
+| `terms_accepted`       | Boolean      | Student accepted course terms                           |
+| `rules_accepted`       | Boolean      | Student accepted classroom rules                        |
+| `identity_verified`    | Boolean      | Both ID card and headshot uploaded                      |
+| `onboarding_completed` | Boolean      | All onboarding requirements met                         |
 
 **Note:** Headshot object contains day-of-week keys (monday, tuesday, wednesday, thursday, friday, saturday, sunday) with photo URLs or null values.
+
+**Onboarding Management:** The validations object is the single source of truth for onboarding status. All onboarding requirements (terms, rules, identity) are tracked here.
 
 ---
 
