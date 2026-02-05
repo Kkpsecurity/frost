@@ -25,6 +25,10 @@ export interface StudentContextType {
     studentUnit?: any | null;
     studentLessons?: any[];
     activeClassroom?: any | null;
+    // Student-owned exam readiness/attempt (from student poll)
+    studentExam?: any | null;
+    // Student-owned exam readiness/attempt for all enrollments
+    studentExamsByCourseAuth?: Record<number, any> | null;
     notifications: any[];
     assignments: any[];
     selectedCourseAuthId: number | null;

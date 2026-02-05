@@ -5,6 +5,7 @@ import LessonSideBar from "../Common/LessonSideBar";
 import { useLessonSidebar } from "../../hooks/useLessonSidebar";
 import { useClassroom } from "../../context/ClassroomContext";
 import { useStudent } from "../../context/StudentContext";
+import TabDetails from "../OfflineTabSystem/TabDetails";
 
 interface MainOfflineProps {
     courseAuthId: number;
@@ -263,21 +264,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                 >
                                     {/* Details Tab Content */}
                                     {activeTab === "details" && (
-                                        <div className="details-tab">
-                                            <h3
-                                                style={{
-                                                    color: "white",
-                                                    marginBottom: "1.5rem",
-                                                }}
-                                            >
-                                                <i className="fas fa-tachometer-alt me-2"></i>
-                                                Learning Dashboard
-                                            </h3>
-                                            <p style={{ color: "#95a5a6" }}>
-                                                Course overview, progress stats,
-                                                and learning materials.
-                                            </p>
-                                        </div>
+                                        <TabDetails lessons={lessons} />
                                     )}
 
                                     {/* Self Study Tab Content */}

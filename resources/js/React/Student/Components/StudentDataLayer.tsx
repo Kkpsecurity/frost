@@ -451,6 +451,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         validationsByCourseAuth:
             studentData?.data?.validations_by_course_auth || null,
         activeClassroom: studentData?.data?.active_classroom || null,
+        studentExam: studentData?.data?.studentExam || null,
+        studentExamsByCourseAuth:
+            studentData?.data?.studentExamsByCourseAuth || null,
         studentUnit: studentData?.data?.studentUnit || null,
         studentLessons: studentData?.data?.studentLessons || [],
         notifications: studentData?.data?.notifications || [],

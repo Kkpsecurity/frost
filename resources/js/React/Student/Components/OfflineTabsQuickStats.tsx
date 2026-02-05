@@ -1,6 +1,17 @@
 import React from "react";
 
-const OfflineTabsQuickStats = () => {
+type OfflineLessonLike = {
+    is_completed?: boolean;
+    duration_minutes?: number;
+};
+
+interface OfflineTabsQuickStatsProps {
+    lessons: OfflineLessonLike[];
+}
+
+const OfflineTabsQuickStats: React.FC<OfflineTabsQuickStatsProps> = ({
+    lessons,
+}) => {
     return (
         <div className="row g-3 mb-4">
             <div className="col-md-3">

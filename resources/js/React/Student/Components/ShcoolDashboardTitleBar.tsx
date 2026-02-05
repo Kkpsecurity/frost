@@ -1,5 +1,6 @@
 import React from "react";
 import { SchoolDashboardTitleBarProps } from "../types/props/classroom.props";
+import { useStudent } from "../context/StudentContext";
 
 const SchoolDashboardTitleBar = ({
     title,
@@ -9,6 +10,34 @@ const SchoolDashboardTitleBar = ({
     classroomStatus = null,
     devModeToggle = null,
 }: SchoolDashboardTitleBarProps) => {
+    const { studentExam, studentExamsByCourseAuth, selectedCourseAuthId } =
+        useStudent();
+
+    const effectiveStudentExam =
+        (selectedCourseAuthId
+            ? studentExamsByCourseAuth?.[selectedCourseAuthId]
+            : null) ?? studentExam;
+
+    const showExamButton = Boolean(
+        effectiveStudentExam?.has_active_attempt ||
+        effectiveStudentExam?.is_ready,
+    );
+
+    const handleExamClick = () => {
+        // Exam UI is not yet implemented in the React classroom.
+        // This preserves the desired UX (button appears only when qualified) without hard-wiring routes.
+        const nextAttemptAt = effectiveStudentExam?.next_attempt_at;
+
+        if (nextAttemptAt) {
+            window.alert(`Exam not ready yet. Next attempt: ${nextAttemptAt}`);
+            return;
+        }
+
+        window.alert(
+            "Exam is available, but the Exam Room UI is not wired into the React app yet.",
+        );
+    };
+
     return (
         <div
             className="section-title"
@@ -65,6 +94,28 @@ const SchoolDashboardTitleBar = ({
                 </div>
 
                 <div className="d-flex align-items-center gap-3">
+                    {showExamButton && (
+                        <button
+                            type="button"
+                            className="btn btn-light btn-sm d-flex align-items-center gap-2"
+                            onClick={handleExamClick}
+                            title="Exam"
+                            aria-label="Exam"
+                            style={{
+                                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                                color: "white",
+                                fontWeight: "600",
+                                border: "2px solid rgba(255, 255, 255, 0.35)",
+                                padding: "8px 16px",
+                            }}
+                        >
+                            <i
+                                className="fas fa-clipboard-check"
+                                aria-hidden="true"
+                            />
+                            <span>Exam</span>
+                        </button>
+                    )}
                     {devModeToggle}
                     <button
                         type="button"

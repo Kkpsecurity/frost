@@ -3,7 +3,7 @@
 ## Endpoint
 
 ```
-GET /student/poll
+GET /classroom/student/poll
 ```
 
 ## Purpose
@@ -20,9 +20,10 @@ Requires authenticated user session (Laravel Sanctum/Session).
 
 ## Request Parameters
 
-| Parameter        | Type    | Required | Description                                       |
-| ---------------- | ------- | -------- | ------------------------------------------------- |
-| `course_auth_id` | Integer | Yes      | The student's enrollment ID for a specific course |
+None.
+
+Note: The current implementation derives the "active" enrollment from today's scheduled classroom.
+If/when we add per-enrollment polling, we'll introduce a `course_auth_id` query param.
 
 ## Response Structure
 
@@ -30,7 +31,8 @@ Requires authenticated user session (Laravel Sanctum/Session).
 
 **⚠️ CURRENT STATE vs TARGET STATE:**
 
-- ✅ **Currently Implemented:** `student`, `validations`, `active_classroom`, `studentUnit`, `studentLessons`, `challenges`
+- ✅ **Currently Implemented:** `student`, `active_classroom`, `studentUnit`, `studentLessons`, `challenges`, `studentExam`
+- ✅ **Currently Implemented:** `studentExamsByCourseAuth`
 - 🚧 **Target Structure (NOT YET IMPLEMENTED):** `courseAuth`
 - ⚠️ **DEPRECATED (will be removed):** `courses`, `progress`, `validations_by_course_auth`, `notifications`, `assignments`
 
@@ -40,6 +42,8 @@ Requires authenticated user session (Laravel Sanctum/Session).
     "data": {
         "student": { ... },                      // ✅ IMPLEMENTED
         "courseAuth": { ... },                   // 🚧 NOT YET IMPLEMENTED
+        "studentExam": { ... },                  // ✅ IMPLEMENTED
+        "studentExamsByCourseAuth": { ... },     // ✅ IMPLEMENTED
         "studentUnit": { ... },                  // ✅ IMPLEMENTED
         "studentLessons": [ ... ],               // ✅ IMPLEMENTED
         "validations": { ... },                  // ✅ IMPLEMENTED
@@ -154,6 +158,59 @@ null // No active classroom session or student hasn't joined yet
 | `inst_unit_id`   | Integer        | Links to instructor's classroom session |
 | `course_date_id` | Integer        | Links to scheduled class date           |
 | `joined_at`      | ISO 8601\|null | When student joined this classroom      |
+
+---
+
+### `studentExam` (Object | null)
+
+**✅ STATUS: IMPLEMENTED** - This field is returned by the API.
+
+**Purpose:** Student-facing exam/test-stage state for this enrollment (readiness + retry timing + active attempt).
+
+**Current structure:**
+
+```json
+{
+    "is_ready": false,
+    "next_attempt_at": "2026-02-05T16:00:00Z",
+    "missing_id_file": false,
+    "has_active_attempt": false,
+    "active_exam_auth_id": null
+}
+```
+
+```json
+null
+```
+
+| Field                 | Type           | Description                                                   |
+| --------------------- | -------------- | ------------------------------------------------------------- |
+| `is_ready`            | Boolean        | Whether student can begin an exam attempt now                 |
+| `next_attempt_at`     | ISO 8601\|null | When student can retry after a failed attempt                 |
+| `missing_id_file`     | Boolean        | Reserved for identity gating (currently not enforced in code) |
+| `has_active_attempt`  | Boolean        | Whether there is an active (in-progress, unexpired) attempt   |
+| `active_exam_auth_id` | Integer\|null  | ExamAuth ID for the active attempt (if any)                   |
+
+---
+
+### `studentExamsByCourseAuth` (Object)
+
+**✅ STATUS: IMPLEMENTED** - This field is returned by the API.
+
+**Purpose:** Exam readiness/attempt for each enrollment, keyed by `course_auth_id`. The React UI should typically read the entry for the currently selected enrollment.
+
+```json
+{
+    "123": {
+        "is_ready": false,
+        "next_attempt_at": "2026-02-05T16:00:00Z",
+        "missing_id_file": false,
+        "has_active_attempt": false,
+        "active_exam_auth_id": null
+    },
+    "124": null
+}
+```
 
 ---
 

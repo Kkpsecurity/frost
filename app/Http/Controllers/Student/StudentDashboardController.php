@@ -469,7 +469,7 @@ class StudentDashboardController extends Controller
 
             // Get ALL student's course authorizations with course data
             $courseAuths = $user->courseAuths()
-                ->with(['Course'])
+                ->with(['Course', 'LatestExamAuth'])
                 ->get();
 
             // Map course auths to course list for dashboard
@@ -516,6 +516,27 @@ class StudentDashboardController extends Controller
                 }
             }
 
+            // Student exam readiness/attempt per enrollment (courseAuth).
+            // This allows the UI to show an Exam action for the currently selected enrollment,
+            // even when there is no active classroom today.
+            $studentExamsByCourseAuth = [];
+            foreach ($courseAuths as $courseAuth) {
+                try {
+                    $examObj = $courseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
+                    $activeExamAuth = $courseAuth->ActiveExamAuth();
+
+                    $studentExamsByCourseAuth[(int) $courseAuth->id] = [
+                        'is_ready' => (bool) ($examObj->is_ready ?? false),
+                        'next_attempt_at' => $examObj->next_attempt_at ?? null,
+                        'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
+                        'has_active_attempt' => $activeExamAuth !== null,
+                        'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
+                    ];
+                } catch (\Throwable $e) {
+                    $studentExamsByCourseAuth[(int) $courseAuth->id] = null;
+                }
+            }
+
             // Count courses with classroom dates
             $coursesWithDates = $courseAuths->filter(function ($courseAuth) {
                 return $courseAuth->ClassroomCourseDate() !== null;
@@ -532,6 +553,7 @@ class StudentDashboardController extends Controller
             $activeClassroom = null;
             $activeStudentUnit = null;
             $activeStudentLessons = [];
+            $activeStudentExam = null;
             try {
                 $today = now()->format('Y-m-d');
                 $courseIds = $courseAuths->pluck('course_id')->filter()->unique();
@@ -573,6 +595,7 @@ class StudentDashboardController extends Controller
                         $activeClassroom = [
                             'status' => $classroomStatus,
                             'course_id' => $courseId,
+                            'course_auth_id' => $courseAuthId,
                             'course_date_id' => (int) $courseDate->id,
                             'inst_unit_id' => $latestInstUnit?->id,
                         ];
@@ -584,6 +607,31 @@ class StudentDashboardController extends Controller
                             $studentUnit = StudentUnit::where('course_auth_id', $courseAuthId)
                                 ->where('course_date_id', $courseDate->id)
                                 ->first();
+
+                            // Exam readiness/attempt is student-owned per CourseAuth.
+                            // Provide a small, stable object for UI.
+                            try {
+                                $activeCourseAuth = $courseAuths->firstWhere('id', $courseAuthId);
+                                if (! $activeCourseAuth) {
+                                    $activeCourseAuth = CourseAuth::with('LatestExamAuth')->find($courseAuthId);
+                                }
+
+                                if ($activeCourseAuth) {
+                                    $examObj = $activeCourseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
+                                    $activeExamAuth = $activeCourseAuth->ActiveExamAuth();
+
+                                    $activeStudentExam = [
+                                        'is_ready' => (bool) ($examObj->is_ready ?? false),
+                                        'next_attempt_at' => $examObj->next_attempt_at ?? null,
+                                        'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
+                                        'has_active_attempt' => $activeExamAuth !== null,
+                                        'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
+                                    ];
+                                }
+                            } catch (\Throwable $e) {
+                                // Non-fatal: exam subsystem may be partially enabled.
+                                $activeStudentExam = null;
+                            }
 
                             if ($studentUnit) {
                                 $activeStudentUnit = $studentUnit;
@@ -690,6 +738,10 @@ class StudentDashboardController extends Controller
                     ],
                     'validations_by_course_auth' => $validationsByCourseAuth,
                     'active_classroom' => $activeClassroom,
+                    // Student-owned exam readiness/attempt per enrollment (keyed by course_auth_id)
+                    'studentExamsByCourseAuth' => $studentExamsByCourseAuth,
+                    // Student-owned exam readiness/attempt for the active enrollment (if any)
+                    'studentExam' => $activeStudentExam,
                     // Student-owned classroom participation (if joined today)
                     'studentUnit' => $activeStudentUnit ? [
                         'id' => (int) $activeStudentUnit->id,
