@@ -8,6 +8,7 @@ import ClassroomChatCard from "./ClassroomChatCard";
 import ChallengeHistory from "./ChallengeHistory";
 import { useClassroomSessionMode } from "@/React/Hooks/ClassroomAskInstructorHooks";
 import { useLessonSidebar } from "../../hooks/useLessonSidebar";
+import { useStudent } from "../../context/StudentContext";
 
 interface MainOnlineProps {
     classroom: any;
@@ -39,6 +40,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     onBackToDashboard,
     devModeToggle,
 }) => {
+    const studentContext = useStudent();
     // Extract classroom data (handle if classroom is wrapped in context)
     const classroomData = classroom?.data || classroom;
     const { courseDate, instructor, instUnit } = classroomData || {};
@@ -58,7 +60,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     // ONLINE MODE: Lessons for TODAY only (based on courseUnit/day_number)
     // Backend returns lessons for current CourseUnit (e.g., Wednesday = Day 3 lessons)
     const lessons = classroomData?.lessons || [];
-    const studentLessons = classroomData?.studentLessons || [];
+    const studentLessons = studentContext?.studentLessons || [];
     const activeLesson = classroomData?.activeLesson || null;
     const isLoadingLessons = false; // Replace with real loading state
 

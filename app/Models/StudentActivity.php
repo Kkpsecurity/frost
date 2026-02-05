@@ -57,11 +57,43 @@ class StudentActivity extends Model
     public const TYPE_PAGE_VIEW = 'page_view';
     public const TYPE_BUTTON_CLICK = 'button_click';
     public const TYPE_AGREEMENT_ACCEPTED = 'agreement_accepted';
+    public const TYPE_TERMS_ACCEPTED = 'terms_accepted';
     public const TYPE_RULES_ACCEPTED = 'rules_accepted';
+    public const TYPE_ID_CARD_UPLOADED = 'id_card_uploaded';
+    public const TYPE_HEADSHOT_UPLOADED = 'headshot_uploaded';
     public const TYPE_TAB_HIDDEN = 'tab_hidden';
     public const TYPE_TAB_VISIBLE = 'tab_visible';
     public const TYPE_IDLE_START = 'idle_start';
     public const TYPE_IDLE_END = 'idle_end';
+
+    // Lesson progress
+    public const TYPE_LESSON_STARTED = 'lesson_started';
+    public const TYPE_LESSON_COMPLETED = 'lesson_completed';
+    public const TYPE_LESSON_PAUSED = 'lesson_paused';
+    public const TYPE_LESSON_UNPAUSED = 'lesson_unpaused';
+
+    public static function lessonType(string $baseType, int $lessonId): string
+    {
+        if ($lessonId <= 0) {
+            return $baseType;
+        }
+
+        return $baseType . '_' . $lessonId;
+    }
+
+    public static function suffixType(string $baseType, int|string|null $suffix): string
+    {
+        if (is_null($suffix)) {
+            return $baseType;
+        }
+
+        $suffixStr = trim((string) $suffix);
+        if ($suffixStr === '' || $suffixStr === '0') {
+            return $baseType;
+        }
+
+        return $baseType . '_' . $suffixStr;
+    }
 
     /**
      * Relationships

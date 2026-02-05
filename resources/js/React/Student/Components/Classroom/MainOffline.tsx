@@ -4,6 +4,7 @@ import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import LessonSideBar from "../Common/LessonSideBar";
 import { useLessonSidebar } from "../../hooks/useLessonSidebar";
 import { useClassroom } from "../../context/ClassroomContext";
+import { useStudent } from "../../context/StudentContext";
 
 interface MainOfflineProps {
     courseAuthId: number;
@@ -27,6 +28,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     devModeToggle,
 }) => {
     const classroomContext = useClassroom();
+    const studentContext = useStudent();
 
     // Tab state management
     const [activeTab, setActiveTab] = useState<
@@ -64,7 +66,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
             : backendLessons;
 
     const lessons = mockLessons;
-    const studentLessons = classroomData?.studentLessons || [];
+    const studentLessons = studentContext?.studentLessons || [];
     const activeLesson = null; // No active lesson in offline mode
     const isLoadingLessons = false; // Replace with real loading state
 

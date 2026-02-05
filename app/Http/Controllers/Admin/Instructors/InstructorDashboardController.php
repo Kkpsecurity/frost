@@ -2379,7 +2379,7 @@ class InstructorDashboardController extends Controller
                 $nextBreakNumber = $breaksTaken + 1;
                 $breakDurationMinutes = $breakDurations[$nextBreakNumber] ?? 15;
 
-                \App\Models\InstLessonBreak::create([
+                $break = \App\Models\InstLessonBreak::create([
                     'inst_lesson_id' => $instLesson->id,
                     'break_number' => $nextBreakNumber,
                     'started_at' => now(),
@@ -2402,6 +2402,7 @@ class InstructorDashboardController extends Controller
                     'breaks_taken' => $nextBreakNumber,
                     'breaks_allowed' => $breaksAllowed,
                     'break_duration_minutes' => $breakDurationMinutes,
+                    'paused_at' => $break?->started_at?->toIso8601String(),
                 ];
             });
 
@@ -2435,7 +2436,7 @@ class InstructorDashboardController extends Controller
                     'breaks_remaining' => max(0, $breaksAllowed - $result['breaks_taken']),
                     'is_last_break' => $result['breaks_taken'] === $breaksAllowed,
                     'break_duration_minutes' => $result['break_duration_minutes'],
-                    'paused_at' => now()->toISOString(),
+                    'paused_at' => $result['paused_at'] ?? null,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -3202,12 +3203,19 @@ class InstructorDashboardController extends Controller
             // Approve validation (use existing Accept method from Validation model)
             $validation->Accept($type);
 
+            // Refresh model to ensure changes are persisted
+            $validation->refresh();
+
+            // Clear any query cache that might be caching validation lookups
+            \Cache::tags(['validations', 'student_validations'])->flush();
+
             Log::info('Instructor approved validation', [
                 'instructor_id' => $instructor->id,
                 'validation_id' => $validation->id,
                 'type' => $type,
                 'course_auth_id' => $courseAuthId,
                 'student_unit_id' => $studentUnitId,
+                'new_status' => $validation->status,
             ]);
 
             return response()->json([

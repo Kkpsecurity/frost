@@ -30,8 +30,8 @@ Requires authenticated user session (Laravel Sanctum/Session).
 
 **⚠️ CURRENT STATE vs TARGET STATE:**
 
-- ✅ **Currently Implemented:** `student`, `validations`, `active_classroom`, `challenges`
-- 🚧 **Target Structure (NOT YET IMPLEMENTED):** `courseAuth`, `studentUnit`, `studentLessons`
+- ✅ **Currently Implemented:** `student`, `validations`, `active_classroom`, `studentUnit`, `studentLessons`, `challenges`
+- 🚧 **Target Structure (NOT YET IMPLEMENTED):** `courseAuth`
 - ⚠️ **DEPRECATED (will be removed):** `courses`, `progress`, `validations_by_course_auth`, `notifications`, `assignments`
 
 ```json
@@ -40,9 +40,9 @@ Requires authenticated user session (Laravel Sanctum/Session).
     "data": {
         "student": { ... },                      // ✅ IMPLEMENTED
         "courseAuth": { ... },                   // 🚧 NOT YET IMPLEMENTED
-        "studentUnit": { ... },                  // 🚧 NOT YET IMPLEMENTED
-        "studentLessons": [ ... ],               // 🚧 NOT YET IMPLEMENTED
-        "validations": { ... },                  // 🚧 NOT YET IMPLEMENTED
+        "studentUnit": { ... },                  // ✅ IMPLEMENTED
+        "studentLessons": [ ... ],               // ✅ IMPLEMENTED
+        "validations": { ... },                  // ✅ IMPLEMENTED
         "active_classroom": { ... },             // ✅ IMPLEMENTED
         "challenges": [ ... ],                   // ✅ IMPLEMENTED
 
@@ -127,8 +127,11 @@ Requires authenticated user session (Laravel Sanctum/Session).
 
 ### `studentUnit` (Object | null)
 
-**🚧 STATUS: NOT YET IMPLEMENTED** - This field is not currently returned by the API in the student poll endpoint.
-**Purpose:** Student's participation record for the current classroom session
+**✅ STATUS: IMPLEMENTED** - This field is returned by the API.
+
+**Purpose:** Student-owned participation record for the current classroom session (if the student has joined today).
+
+**Note:** Onboarding/rules completion state is tracked in `validations` (single source of truth) rather than duplicated on `studentUnit`.
 
 ```json
 {
@@ -136,8 +139,6 @@ Requires authenticated user session (Laravel Sanctum/Session).
     "course_auth_id": 456,
     "inst_unit_id": 67890,
     "course_date_id": 12345,
-    "rules_accepted": true,
-    "onboarding_completed": true,
     "joined_at": "2026-02-04T10:05:00Z"
 }
 ```
@@ -146,69 +147,47 @@ Requires authenticated user session (Laravel Sanctum/Session).
 null // No active classroom session or student hasn't joined yet
 ```
 
-| Field                  | Type           | Description                             |
-| ---------------------- | -------------- | --------------------------------------- |
-| `id`                   | Integer        | StudentUnit ID                          |
-| `course_auth_id`       | Integer        | Links to student's enrollment           |
-| `inst_unit_id`         | Integer        | Links to instructor's classroom session |
-| `course_date_id`       | Integer        | Links to scheduled class date           |
-| `rules_accepted`       | Boolean        | Classroom rules acknowledged            |
-| `onboarding_completed` | Boolean        | Classroom onboarding finished           |
-| `joined_at`            | ISO 8601\|null | When student joined this classroom      |
+| Field            | Type           | Description                             |
+| ---------------- | -------------- | --------------------------------------- |
+| `id`             | Integer        | StudentUnit ID                          |
+| `course_auth_id` | Integer        | Links to student's enrollment           |
+| `inst_unit_id`   | Integer        | Links to instructor's classroom session |
+| `course_date_id` | Integer        | Links to scheduled class date           |
+| `joined_at`      | ISO 8601\|null | When student joined this classroom      |
 
 ---
 
 ### `studentLessons` (Array of Objects)
 
-**🚧 STATUS: NOT YET IMPLEMENTED** - This field is not currently returned by the API in the student poll endpoint.
+**✅ STATUS: IMPLEMENTED** - This field is returned by the API.
 
-**Purpose:** Lessons the student is taking or has completed in this course
+**Purpose:** Student-owned per-lesson completion records for the student's current `studentUnit`.
+
+**Note:** This is intentionally a minimal shape today for UI completion state (sidebar). More fields can be added later when needed.
 
 ```json
 [
     {
         "id": 5432,
-        "student_unit_id": 100782,
         "lesson_id": 101,
-        "lesson_title": "Introduction to Security Concepts",
-        "status": "active",
-        "started_at": "2026-02-04T10:30:00Z",
         "completed_at": null,
-        "paused_at": null,
-        "progress_percentage": 35
+        "is_completed": false
     },
     {
         "id": 5431,
-        "student_unit_id": 100782,
         "lesson_id": 100,
-        "lesson_title": "Course Overview",
-        "status": "completed",
-        "started_at": "2026-02-04T10:05:00Z",
         "completed_at": "2026-02-04T10:25:00Z",
-        "paused_at": null,
-        "progress_percentage": 100
+        "is_completed": true
     }
 ]
 ```
 
-| Field                 | Type           | Description                                    |
-| --------------------- | -------------- | ---------------------------------------------- |
-| `id`                  | Integer        | StudentLesson ID                               |
-| `student_unit_id`     | Integer        | Links to student's classroom participation     |
-| `lesson_id`           | Integer        | Which lesson this attempt is for               |
-| `lesson_title`        | String         | Lesson name for display                        |
-| `status`              | String         | `not_started`, `active`, `paused`, `completed` |
-| `started_at`          | ISO 8601\|null | When student started this lesson               |
-| `completed_at`        | ISO 8601\|null | When student completed this lesson             |
-| `paused_at`           | ISO 8601\|null | When lesson was paused (if applicable)         |
-| `progress_percentage` | Integer        | Student's progress on this lesson (0-100)      |
-
-**Status Values:**
-
-- `not_started`: Student hasn't started this lesson yet
-- `active`: Student currently working on this lesson
-- `paused`: Lesson in progress but temporarily paused
-- `completed`: Student finished this lesson
+| Field          | Type           | Description                               |
+| -------------- | -------------- | ----------------------------------------- |
+| `id`           | Integer        | StudentLesson ID                          |
+| `lesson_id`    | Integer        | Lesson template ID                        |
+| `completed_at` | ISO 8601\|null | When student completed this lesson        |
+| `is_completed` | Boolean        | Convenience flag (`completed_at != null`) |
 
 ---
 

@@ -284,7 +284,7 @@ class StudentDashboardController extends Controller
 
             // Get course to determine which Zoom account
             $course = $courseDate->course ?? $courseDate->CourseUnit->Course ?? null;
-            
+
             if (!$course) {
                 return [
                     'status' => 'disabled',
@@ -530,6 +530,8 @@ class StudentDashboardController extends Controller
             // -----------------------------------------------------------------
 
             $activeClassroom = null;
+            $activeStudentUnit = null;
+            $activeStudentLessons = [];
             try {
                 $today = now()->format('Y-m-d');
                 $courseIds = $courseAuths->pluck('course_id')->filter()->unique();
@@ -584,9 +586,24 @@ class StudentDashboardController extends Controller
                                 ->first();
 
                             if ($studentUnit) {
+                                $activeStudentUnit = $studentUnit;
+
                                 $completedLessonIds = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
                                     ->whereNotNull('completed_at')
                                     ->pluck('lesson_id')
+                                    ->toArray();
+
+                                // Provide full student lesson records for UI completion status.
+                                $activeStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $studentUnit->id)
+                                    ->get()
+                                    ->map(function ($sl) {
+                                        return [
+                                            'id' => (int) $sl->id,
+                                            'lesson_id' => (int) $sl->lesson_id,
+                                            'completed_at' => $sl->completed_at?->toISOString(),
+                                            'is_completed' => $sl->completed_at !== null,
+                                        ];
+                                    })
                                     ->toArray();
                             }
                         }
@@ -673,6 +690,16 @@ class StudentDashboardController extends Controller
                     ],
                     'validations_by_course_auth' => $validationsByCourseAuth,
                     'active_classroom' => $activeClassroom,
+                    // Student-owned classroom participation (if joined today)
+                    'studentUnit' => $activeStudentUnit ? [
+                        'id' => (int) $activeStudentUnit->id,
+                        'course_auth_id' => (int) $activeStudentUnit->course_auth_id,
+                        'inst_unit_id' => (int) $activeStudentUnit->inst_unit_id,
+                        'course_date_id' => (int) $activeStudentUnit->course_date_id,
+                        'joined_at' => $activeStudentUnit->joined_at?->toISOString(),
+                    ] : null,
+                    // Student-owned per-lesson completion for today
+                    'studentLessons' => $activeStudentLessons,
                     'notifications' => [],
                     'assignments' => [],
                     'challenges' => $challenges,
@@ -769,8 +796,12 @@ class StudentDashboardController extends Controller
             // Get today's InstLessons to determine lesson status
             $todaysInstLessons = collect();
             if ($instUnit) {
-                $instUnit->load('instLessons');
-                $todaysInstLessons = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                // Eager-load current (un-ended) breaks so pause timers stay stable across polls.
+                $todaysInstLessons = \App\Models\InstLesson::with([
+                    'Breaks' => function ($query) {
+                        $query->whereNull('ended_at')->orderByDesc('break_number');
+                    },
+                ])->where('inst_unit_id', $instUnit->id)
                     ->get()
                     ->keyBy('lesson_id');
             }
@@ -784,7 +815,8 @@ class StudentDashboardController extends Controller
                 foreach ($todaysInstLessons as $lessonId => $instLesson) {
                     if (!$instLesson->completed_at) {
                         $activeLessonId = $lessonId;
-                        $activeInstLesson = $instLesson->fresh();
+                        // Keep eager-loaded breaks attached; don't refresh() which would drop relations.
+                        $activeInstLesson = $instLesson;
                         break; // Only one lesson can be active at a time
                     }
                 }
@@ -835,6 +867,140 @@ class StudentDashboardController extends Controller
             })->sortBy('order')->values()->toArray();
 
             // Build final response with ONLY classroom data (no student-specific data)
+            // -----------------------------------------------------------------
+            // STUDENT ACTIVITY: LESSON PAUSED (student-owned)
+            // - Safe to run here even though this is a classroom endpoint because we can
+            //   derive the current student's StudentUnit from course_auth_id + course_date_id.
+            // - Idempotent: logs once per pause session (break started_at).
+            // -----------------------------------------------------------------
+            try {
+                if ($user && $courseDate && $activeInstLesson && $activeInstLesson->is_paused) {
+                    $currentBreak = $activeInstLesson->CurrentBreak();
+                    $pausedAt = $currentBreak?->started_at;
+                    if ($pausedAt) {
+                        $courseAuthId = (int) ($user->CourseAuths()->where('course_id', $courseId)->value('id') ?? 0);
+                        if ($courseAuthId > 0) {
+                            $studentUnit = \App\Models\StudentUnit::where('course_auth_id', $courseAuthId)
+                                ->where('course_date_id', $courseDate->id)
+                                ->first();
+
+                            if ($studentUnit) {
+                                $breakId = (int) ($currentBreak?->id ?? 0);
+                                $activityType = \App\Models\StudentActivity::suffixType(
+                                    \App\Models\StudentActivity::TYPE_LESSON_PAUSED,
+                                    $breakId
+                                );
+
+                                $alreadyLogged = \App\Models\StudentActivity::query()
+                                    ->where('user_id', $user->id)
+                                    ->where('student_unit_id', $studentUnit->id)
+                                    ->where('activity_type', $activityType)
+                                    ->whereBetween('created_at', [
+                                        $pausedAt->copy()->subSecond(),
+                                        $pausedAt->copy()->addSecond(),
+                                    ])
+                                    ->exists();
+
+                                if (!$alreadyLogged) {
+                                    $activity = new \App\Models\StudentActivity([
+                                        'user_id' => $user->id,
+                                        'course_auth_id' => $studentUnit->course_auth_id,
+                                        'course_date_id' => $studentUnit->course_date_id,
+                                        'student_unit_id' => $studentUnit->id,
+                                        'inst_unit_id' => $studentUnit->inst_unit_id,
+                                        'category' => \App\Models\StudentActivity::CATEGORY_INTERACTION,
+                                        'activity_type' => $activityType,
+                                        'description' => 'Lesson paused',
+                                        'data' => [
+                                            'base_activity_type' => \App\Models\StudentActivity::TYPE_LESSON_PAUSED,
+                                            'lesson_id' => (int) $activeInstLesson->lesson_id,
+                                            'inst_lesson_id' => (int) $activeInstLesson->id,
+                                            'paused_at' => $pausedAt->toIso8601String(),
+                                            'break_id' => $breakId,
+                                            'break_number' => (int) ($activeInstLesson->CurrentBreak()?->break_number ?? 0),
+                                        ],
+                                    ]);
+                                    $activity->created_at = $pausedAt;
+                                    $activity->updated_at = $pausedAt;
+                                    $activity->save();
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal
+            }
+
+            // -----------------------------------------------------------------
+            // STUDENT ACTIVITY: LESSON UNPAUSED (student-owned)
+            // - When instructor resumes, the most recent break gets an ended_at.
+            // - Log once per break session using ended_at as the event timestamp.
+            // -----------------------------------------------------------------
+            try {
+                if ($user && $courseDate && $activeInstLesson && !$activeInstLesson->is_paused) {
+                    $lastEndedBreak = $activeInstLesson->Breaks()
+                        ->whereNotNull('ended_at')
+                        ->orderByDesc('break_number')
+                        ->first();
+
+                    $unpausedAt = $lastEndedBreak?->ended_at;
+                    if ($unpausedAt) {
+                        $courseAuthId = (int) ($user->CourseAuths()->where('course_id', $courseId)->value('id') ?? 0);
+                        if ($courseAuthId > 0) {
+                            $studentUnit = \App\Models\StudentUnit::where('course_auth_id', $courseAuthId)
+                                ->where('course_date_id', $courseDate->id)
+                                ->first();
+
+                            if ($studentUnit) {
+                                $breakId = (int) ($lastEndedBreak?->id ?? 0);
+                                $activityType = \App\Models\StudentActivity::suffixType(
+                                    \App\Models\StudentActivity::TYPE_LESSON_UNPAUSED,
+                                    $breakId
+                                );
+
+                                $alreadyLogged = \App\Models\StudentActivity::query()
+                                    ->where('user_id', $user->id)
+                                    ->where('student_unit_id', $studentUnit->id)
+                                    ->where('activity_type', $activityType)
+                                    ->whereBetween('created_at', [
+                                        $unpausedAt->copy()->subSecond(),
+                                        $unpausedAt->copy()->addSecond(),
+                                    ])
+                                    ->exists();
+
+                                if (!$alreadyLogged) {
+                                    $activity = new \App\Models\StudentActivity([
+                                        'user_id' => $user->id,
+                                        'course_auth_id' => $studentUnit->course_auth_id,
+                                        'course_date_id' => $studentUnit->course_date_id,
+                                        'student_unit_id' => $studentUnit->id,
+                                        'inst_unit_id' => $studentUnit->inst_unit_id,
+                                        'category' => \App\Models\StudentActivity::CATEGORY_INTERACTION,
+                                        'activity_type' => $activityType,
+                                        'description' => 'Lesson resumed',
+                                        'data' => [
+                                            'base_activity_type' => \App\Models\StudentActivity::TYPE_LESSON_UNPAUSED,
+                                            'lesson_id' => (int) $activeInstLesson->lesson_id,
+                                            'inst_lesson_id' => (int) $activeInstLesson->id,
+                                            'paused_at' => $lastEndedBreak?->started_at?->toIso8601String(),
+                                            'unpaused_at' => $unpausedAt->toIso8601String(),
+                                            'break_id' => $breakId,
+                                            'break_number' => (int) ($lastEndedBreak?->break_number ?? 0),
+                                        ],
+                                    ]);
+                                    $activity->created_at = $unpausedAt;
+                                    $activity->updated_at = $unpausedAt;
+                                    $activity->save();
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -868,6 +1034,11 @@ class StudentDashboardController extends Controller
                         'started_at' => $activeInstLesson->started_at ?? $activeInstLesson->created_at,
                         'completed_at' => $activeInstLesson->completed_at,
                         'is_paused' => $activeInstLesson->is_paused,
+                        // IMPORTANT: stable pause timestamp for student countdown.
+                        // Do NOT use now() here or the student timer resets on refresh/poll.
+                        'paused_at' => $activeInstLesson->is_paused
+                            ? ($activeInstLesson->CurrentBreak()?->started_at?->toIso8601String())
+                            : null,
                     ] : null,
                     'zoom' => $this->getZoomDataForClassroom(
                         $courseDate,
@@ -963,7 +1134,12 @@ class StudentDashboardController extends Controller
                 $lessons = $allLessons ? $allLessons->toArray() : [];
             }
             if ($courseDate->instUnit) {
-                $todaysInstLessons = \App\Models\InstLesson::where('inst_unit_id', $courseDate->instUnit->id)
+                // Eager-load the current (un-ended) break so paused_at stays stable across polls.
+                $todaysInstLessons = \App\Models\InstLesson::with([
+                    'Breaks' => function ($query) {
+                        $query->whereNull('ended_at')->orderByDesc('break_number');
+                    },
+                ])->where('inst_unit_id', $courseDate->instUnit->id)
                     ->get()
                     ->keyBy('lesson_id');
             }
@@ -981,6 +1157,137 @@ class StudentDashboardController extends Controller
                     }
                 }
             }
+
+            // -----------------------------------------------------------------
+            // STUDENT ACTIVITY: LESSON PAUSED (student-owned)
+            // - When the instructor pauses the active lesson, students see the pause overlay.
+            // - Log a single activity row per pause session, keyed by the stable break started_at.
+            // - This runs inside the poll so it records even if the student refreshes.
+            // -----------------------------------------------------------------
+            try {
+                if ($user && $studentUnit && $activeLessonId) {
+                    $activeInstLesson = $todaysInstLessons->get($activeLessonId);
+                    $isPaused = (bool) ($activeInstLesson?->is_paused);
+
+                    if ($isPaused && $activeInstLesson) {
+                        $currentBreak = $activeInstLesson->Breaks?->first();
+                        $pausedAt = $currentBreak?->started_at;
+
+                        if ($pausedAt) {
+                            $breakId = (int) ($currentBreak?->id ?? 0);
+                            $activityType = \App\Models\StudentActivity::suffixType(
+                                \App\Models\StudentActivity::TYPE_LESSON_PAUSED,
+                                $breakId
+                            );
+
+                            $alreadyLogged = \App\Models\StudentActivity::query()
+                                ->where('user_id', $user->id)
+                                ->where('student_unit_id', $studentUnit->id)
+                                ->where('activity_type', $activityType)
+                                ->whereBetween('created_at', [
+                                    $pausedAt->copy()->subSecond(),
+                                    $pausedAt->copy()->addSecond(),
+                                ])
+                                ->exists();
+
+                            if (!$alreadyLogged) {
+                                $activity = new \App\Models\StudentActivity([
+                                    'user_id' => $user->id,
+                                    'course_auth_id' => $studentUnit->course_auth_id,
+                                    'course_date_id' => $studentUnit->course_date_id,
+                                    'student_unit_id' => $studentUnit->id,
+                                    'inst_unit_id' => $studentUnit->inst_unit_id,
+                                    'category' => \App\Models\StudentActivity::CATEGORY_INTERACTION,
+                                    'activity_type' => $activityType,
+                                    'description' => 'Lesson paused',
+                                    'data' => [
+                                        'base_activity_type' => \App\Models\StudentActivity::TYPE_LESSON_PAUSED,
+                                        'lesson_id' => (int) $activeLessonId,
+                                        'inst_lesson_id' => (int) $activeInstLesson->id,
+                                        'paused_at' => $pausedAt->toIso8601String(),
+                                        'break_id' => $breakId,
+                                        'break_number' => (int) ($currentBreak?->break_number ?? 0),
+                                    ],
+                                ]);
+
+                                // Make this event timestamp match the pause start time for idempotence.
+                                $activity->created_at = $pausedAt;
+                                $activity->updated_at = $pausedAt;
+                                $activity->save();
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal: never break polling if activity tracking fails.
+            }
+
+            // -----------------------------------------------------------------
+            // STUDENT ACTIVITY: LESSON UNPAUSED (student-owned)
+            // - When instructor resumes, the most recent break gets an ended_at.
+            // - Log once per break session using ended_at as the event timestamp.
+            // -----------------------------------------------------------------
+            try {
+                if ($user && $studentUnit && $activeLessonId) {
+                    $activeInstLesson = $todaysInstLessons->get($activeLessonId);
+                    $isPaused = (bool) ($activeInstLesson?->is_paused);
+
+                    if (!$isPaused && $activeInstLesson) {
+                        $lastEndedBreak = $activeInstLesson->Breaks()
+                            ->whereNotNull('ended_at')
+                            ->orderByDesc('break_number')
+                            ->first();
+
+                        $unpausedAt = $lastEndedBreak?->ended_at;
+                        if ($unpausedAt) {
+                            $breakId = (int) ($lastEndedBreak?->id ?? 0);
+                            $activityType = \App\Models\StudentActivity::suffixType(
+                                \App\Models\StudentActivity::TYPE_LESSON_UNPAUSED,
+                                $breakId
+                            );
+
+                            $alreadyLogged = \App\Models\StudentActivity::query()
+                                ->where('user_id', $user->id)
+                                ->where('student_unit_id', $studentUnit->id)
+                                ->where('activity_type', $activityType)
+                                ->whereBetween('created_at', [
+                                    $unpausedAt->copy()->subSecond(),
+                                    $unpausedAt->copy()->addSecond(),
+                                ])
+                                ->exists();
+
+                            if (!$alreadyLogged) {
+                                $activity = new \App\Models\StudentActivity([
+                                    'user_id' => $user->id,
+                                    'course_auth_id' => $studentUnit->course_auth_id,
+                                    'course_date_id' => $studentUnit->course_date_id,
+                                    'student_unit_id' => $studentUnit->id,
+                                    'inst_unit_id' => $studentUnit->inst_unit_id,
+                                    'category' => \App\Models\StudentActivity::CATEGORY_INTERACTION,
+                                    'activity_type' => $activityType,
+                                    'description' => 'Lesson resumed',
+                                    'data' => [
+                                        'base_activity_type' => \App\Models\StudentActivity::TYPE_LESSON_UNPAUSED,
+                                        'lesson_id' => (int) $activeLessonId,
+                                        'inst_lesson_id' => (int) $activeInstLesson->id,
+                                        'paused_at' => $lastEndedBreak?->started_at?->toIso8601String(),
+                                        'unpaused_at' => $unpausedAt->toIso8601String(),
+                                        'break_id' => $breakId,
+                                        'break_number' => (int) ($lastEndedBreak?->break_number ?? 0),
+                                    ],
+                                ]);
+
+                                $activity->created_at = $unpausedAt;
+                                $activity->updated_at = $unpausedAt;
+                                $activity->save();
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal
+            }
+
             $lessons = collect($lessons)->map(function ($lesson) use ($todaysInstLessons, $todaysStudentLessons, $isOnline, $isInstUnitCompleted, $activeLessonId) {
                 $lessonId = $lesson['id'];
                 $instLesson = $todaysInstLessons->get($lessonId);
@@ -1003,6 +1310,15 @@ class StudentDashboardController extends Controller
                     $status = 'incomplete';
                 }
                 $isPausedFlag = $instLesson ? $instLesson->is_paused : false;
+
+                // IMPORTANT: Don't use now() here.
+                // If we reset paused_at every poll, the client countdown never ticks.
+                $pausedAtIso = null;
+                if ($isPausedFlag && $instLesson) {
+                    $currentBreak = $instLesson->Breaks?->first();
+                    $pausedAtIso = $currentBreak?->started_at?->toIso8601String();
+                }
+
                 return [
                     'id' => $lessonId,
                     'title' => $lesson['name'] ?? $lesson['title'] ?? 'Lesson ' . $lessonId,
@@ -1013,7 +1329,7 @@ class StudentDashboardController extends Controller
                     'is_completed' => $isCompleted,
                     'is_active' => $isActive,
                     'is_paused' => $isPausedFlag,
-                    'paused_at' => $isPausedFlag ? now()->toIso8601String() : null,
+                    'paused_at' => $pausedAtIso,
                 ];
             })->sortBy('order')->values()->toArray();
 
@@ -1363,6 +1679,19 @@ class StudentDashboardController extends Controller
         $studentUnit->terms_accepted = true;
         $studentUnit->save();
 
+        // Track terms acceptance in student_activity table
+        \App\Models\StudentActivity::create([
+            'user_id' => $user->id,
+            'student_unit_id' => $studentUnit->id,
+            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+            'activity_type' => \App\Models\StudentActivity::TYPE_TERMS_ACCEPTED,
+            'description' => 'Student accepted course terms and conditions',
+            'data' => [
+                'course_date_id' => $courseDate->id,
+                'accepted_at' => now()->toIso8601String()
+            ]
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Terms accepted',
@@ -1582,6 +1911,20 @@ class StudentDashboardController extends Controller
         $studentUnit->verified = $verified;
         $studentUnit->save();
 
+        // Track ID card upload in student_activity table
+        \App\Models\StudentActivity::create([
+            'user_id' => $user->id,
+            'student_unit_id' => $studentUnit->id,
+            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+            'activity_type' => \App\Models\StudentActivity::TYPE_ID_CARD_UPLOADED,
+            'description' => 'Student uploaded ID card for verification',
+            'data' => [
+                'course_date_id' => $courseDate->id,
+                'file_path' => $path,
+                'uploaded_at' => now()->toIso8601String()
+            ]
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'ID card uploaded',
@@ -1638,6 +1981,20 @@ class StudentDashboardController extends Controller
         $verified['headshot_uploaded_at'] = now()->toISOString();
         $studentUnit->verified = $verified;
         $studentUnit->save();
+
+        // Track headshot upload in student_activity table
+        \App\Models\StudentActivity::create([
+            'user_id' => $user->id,
+            'student_unit_id' => $studentUnit->id,
+            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+            'activity_type' => \App\Models\StudentActivity::TYPE_HEADSHOT_UPLOADED,
+            'description' => 'Student uploaded headshot photo for verification',
+            'data' => [
+                'course_date_id' => $courseDate->id,
+                'file_path' => $path,
+                'uploaded_at' => now()->toIso8601String()
+            ]
+        ]);
 
         return response()->json([
             'success' => true,

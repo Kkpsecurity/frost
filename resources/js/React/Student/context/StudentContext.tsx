@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode } from 'react';
+import React, { createContext, ReactNode } from "react";
 
 /**
  * Student Context - Holds all student-related data from polling
@@ -21,6 +21,10 @@ export interface StudentContextType {
     } | null;
     // Student progress (not classroom progress): validation/upload state per courseAuth.
     validationsByCourseAuth?: Record<number, any> | null;
+    // Student-owned classroom participation + per-lesson completion (from student poll)
+    studentUnit?: any | null;
+    studentLessons?: any[];
+    activeClassroom?: any | null;
     notifications: any[];
     assignments: any[];
     selectedCourseAuthId: number | null;
@@ -29,7 +33,9 @@ export interface StudentContextType {
     error: string | null;
 }
 
-export const StudentContext = createContext<StudentContextType | undefined>(undefined);
+export const StudentContext = createContext<StudentContextType | undefined>(
+    undefined,
+);
 
 export const StudentContextProvider: React.FC<{
     value: StudentContextType;
@@ -48,7 +54,9 @@ export const StudentContextProvider: React.FC<{
 export const useStudent = () => {
     const context = React.useContext(StudentContext);
     if (!context) {
-        throw new Error('useStudent must be used within StudentContextProvider');
+        throw new Error(
+            "useStudent must be used within StudentContextProvider",
+        );
     }
     return context;
 };

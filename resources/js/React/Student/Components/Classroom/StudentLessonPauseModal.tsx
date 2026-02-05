@@ -22,53 +22,87 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
     breakDurationMinutes = 15,
     breakStartedAt,
 }) => {
-    const [remainingSeconds, setRemainingSeconds] = useState<number>(
-        breakDurationMinutes * 60,
-    );
-    const alertAudioRef = useRef<HTMLAudioElement | null>(null);
-    const warningAudioRef = useRef<HTMLAudioElement | null>(null);
+    const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
+    const audioContextRef = useRef<AudioContext | null>(null);
     const hasPlayedStartSound = useRef(false);
     const hasPlayedWarningSound = useRef(false);
 
-    // Initialize audio elements
+    // Initialize audio context
     useEffect(() => {
-        alertAudioRef.current = new Audio("/sounds/pause-warning.mp3");
-        warningAudioRef.current = new Audio("/sounds/pause-warning.mp3");
+        audioContextRef.current = new (
+            window.AudioContext || (window as any).webkitAudioContext
+        )();
         return () => {
-            if (alertAudioRef.current) {
-                alertAudioRef.current.pause();
-                alertAudioRef.current = null;
-            }
-            if (warningAudioRef.current) {
-                warningAudioRef.current.pause();
-                warningAudioRef.current = null;
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
             }
         };
     }, []);
 
+    // Function to play beep sound using Web Audio API
+    const playBeep = (
+        frequency: number = 800,
+        duration: number = 200,
+        repeat: number = 1,
+    ) => {
+        if (!audioContextRef.current) return;
+
+        const playOnce = (delay: number = 0) => {
+            setTimeout(() => {
+                const oscillator = audioContextRef.current!.createOscillator();
+                const gainNode = audioContextRef.current!.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContextRef.current!.destination);
+
+                oscillator.frequency.value = frequency;
+                oscillator.type = "sine";
+
+                gainNode.gain.setValueAtTime(
+                    0.3,
+                    audioContextRef.current!.currentTime,
+                );
+                gainNode.gain.exponentialRampToValueAtTime(
+                    0.01,
+                    audioContextRef.current!.currentTime + duration / 1000,
+                );
+
+                oscillator.start(audioContextRef.current!.currentTime);
+                oscillator.stop(
+                    audioContextRef.current!.currentTime + duration / 1000,
+                );
+            }, delay);
+        };
+
+        for (let i = 0; i < repeat; i++) {
+            playOnce(i * (duration + 100));
+        }
+    };
+
     // Play sound when pause starts
     useEffect(() => {
-        if (
-            isVisible &&
-            !hasPlayedStartSound.current &&
-            alertAudioRef.current
-        ) {
+        if (isVisible && !hasPlayedStartSound.current) {
             console.log("🔊 Playing pause start sound");
-            alertAudioRef.current.play().catch((err) => {
-                console.error("Failed to play pause start sound:", err);
-            });
+            playBeep(600, 150, 2); // Two beeps when pause starts
             hasPlayedStartSound.current = true;
         }
 
         if (!isVisible) {
             hasPlayedStartSound.current = false;
             hasPlayedWarningSound.current = false;
+            setRemainingSeconds(0);
         }
-    }, [isVisible]);
+    }, [isVisible, breakStartedAt]);
 
     // Calculate remaining time and play warning sound
     useEffect(() => {
-        if (!isVisible || !breakStartedAt) return;
+        if (!isVisible || !breakStartedAt) {
+            setRemainingSeconds(0);
+            return;
+        }
+
+        // Match instructor timer behavior: always compute from server break start time.
+        hasPlayedWarningSound.current = false;
 
         const interval = setInterval(() => {
             const startTime = new Date(breakStartedAt).getTime();
@@ -80,15 +114,9 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
             setRemainingSeconds(remaining);
 
             // Play warning sound at 1 minute before end
-            if (
-                remaining === 60 &&
-                !hasPlayedWarningSound.current &&
-                warningAudioRef.current
-            ) {
+            if (remaining === 60 && !hasPlayedWarningSound.current) {
                 console.log("🔊 Playing 1-minute warning sound");
-                warningAudioRef.current.play().catch((err) => {
-                    console.error("Failed to play warning sound:", err);
-                });
+                playBeep(1000, 300, 3); // Three urgent beeps at 1 minute remaining
                 hasPlayedWarningSound.current = true;
             }
         }, 1000);
@@ -108,8 +136,13 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
     // Calculate progress percentage
     const totalSeconds = breakDurationMinutes * 60;
     const elapsedSeconds = totalSeconds - remainingSeconds;
-    const progressPercentage = (elapsedSeconds / totalSeconds) * 100;
-    const isNearingEnd = remainingSeconds <= 60 && remainingSeconds > 0;
+    const isSynced = Boolean(breakStartedAt);
+    const progressPercentage = isSynced
+        ? (elapsedSeconds / totalSeconds) * 100
+        : 0;
+    const isNearingEnd =
+        isSynced && remainingSeconds <= 60 && remainingSeconds > 0;
+    const displayTime = isSynced ? formatTime(remainingSeconds) : "--:--";
 
     return (
         <>
@@ -190,7 +223,7 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                     marginBottom: "8px",
                                 }}
                             >
-                                {formatTime(remainingSeconds)}
+                                {displayTime}
                             </div>
                             <div
                                 style={{
@@ -198,7 +231,9 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                     color: "rgba(255, 255, 255, 0.6)",
                                 }}
                             >
-                                {breakDurationMinutes}-minute break
+                                {isSynced
+                                    ? `${breakDurationMinutes}-minute break`
+                                    : "Syncing break timer..."}
                             </div>
                             {/* Progress Bar */}
                             <div
