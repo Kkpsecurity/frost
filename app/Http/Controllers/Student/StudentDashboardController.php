@@ -264,6 +264,84 @@ class StudentDashboardController extends Controller
         return ZoomCreds::find(1); // instructor_admin@stgroupusa.com
     }
 
+    /**
+     * Get Zoom meeting data for classroom poll
+     * Returns Zoom status, credentials, and screen share URL for students
+     */
+    private function getZoomDataForClassroom($courseDate, $instUnit, $courseAuthId): array
+    {
+        try {
+            // If no active classroom session, Zoom is not available
+            if (!$instUnit || !$courseDate) {
+                return [
+                    'status' => 'disabled',
+                    'is_active' => false,
+                    'is_ready' => false,
+                    'screen_share_url' => null,
+                    'message' => 'No active classroom session',
+                ];
+            }
+
+            // Get course to determine which Zoom account
+            $course = $courseDate->course ?? $courseDate->CourseUnit->Course ?? null;
+            
+            if (!$course) {
+                return [
+                    'status' => 'disabled',
+                    'is_active' => false,
+                    'is_ready' => false,
+                    'screen_share_url' => null,
+                    'message' => 'Course not found',
+                ];
+            }
+
+            // Infer which Zoom credentials to use based on course and instructor
+            $zoomCreds = $this->inferZoomCredentials($course, $instUnit);
+
+            if (!$zoomCreds) {
+                return [
+                    'status' => 'disabled',
+                    'is_active' => false,
+                    'is_ready' => false,
+                    'screen_share_url' => null,
+                    'message' => 'No Zoom credentials configured',
+                ];
+            }
+
+            // Check if Zoom is enabled for this account
+            $isEnabled = ($zoomCreds->zoom_status ?? 'disabled') === 'enabled';
+
+            // Generate screen share URL for students
+            $screenShareUrl = null;
+            if ($isEnabled) {
+                $screenShareUrl = url("/classroom/portal/zoom/screen_share/{$courseAuthId}/{$courseDate->id}");
+            }
+
+            return [
+                'status' => $zoomCreds->zoom_status ?? 'disabled',
+                'is_active' => $isEnabled,
+                'is_ready' => $isEnabled,
+                'screen_share_url' => $screenShareUrl,
+                'meeting_id' => $zoomCreds->pmi ?? null,
+                'email' => $zoomCreds->zoom_email ?? null,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get Zoom data for classroom', [
+                'error' => $e->getMessage(),
+                'course_date_id' => $courseDate->id ?? null,
+                'inst_unit_id' => $instUnit->id ?? null,
+            ]);
+
+            return [
+                'status' => 'error',
+                'is_active' => false,
+                'is_ready' => false,
+                'screen_share_url' => null,
+                'message' => 'Error loading Zoom status',
+            ];
+        }
+    }
+
     private function getCsrfToken(Request $request): ?string
     {
         return $request->header('X-CSRF-TOKEN')
@@ -791,7 +869,11 @@ class StudentDashboardController extends Controller
                         'completed_at' => $activeInstLesson->completed_at,
                         'is_paused' => $activeInstLesson->is_paused,
                     ] : null,
-                    'zoom' => null, // TODO: Add zoom meeting data if needed for classroom poll
+                    'zoom' => $this->getZoomDataForClassroom(
+                        $courseDate,
+                        $instUnit,
+                        $user->CourseAuths()->where('course_id', $courseId)->value('id') ?? 0
+                    ),
                 ],
             ]);
         } catch (Exception $e) {
