@@ -50,10 +50,10 @@ class StudentLesson extends Model
         'student_unit_id'   => 'integer',
         'inst_lesson_id'    => 'integer',
 
-        'created_at'        => 'timestamp',
-        'updated_at'        => 'timestamp',
-        'dnc_at'            => 'timestamp',
-        'completed_at'      => 'timestamp',
+        'created_at'        => 'datetime',
+        'updated_at'        => 'datetime',
+        'dnc_at'            => 'datetime',
+        'completed_at'      => 'datetime',
         'completed_by'      => 'integer',   // IF instructor override
 
     ];
@@ -99,7 +99,10 @@ class StudentLesson extends Model
 
     public function LatestChallenge()
     {
-        return $this->hasOne(Challenge::class, 'student_lesson_id')->latest();
+        return $this->hasOne(Challenge::class, 'student_lesson_id')
+            ->whereNull('completed_at')
+            ->whereNull('failed_at')
+            ->latest();
     }
 
 

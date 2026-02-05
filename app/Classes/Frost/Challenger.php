@@ -8,6 +8,9 @@ namespace App\Classes\Frost;
  * @file Challenger.php
  * @brief Class for handling challenges in the Frost application.
  * @details This class provides methods to manage challenges, including sending, validating, and marking them as completed or failed.
+ *
+ * @deprecated This is a duplicate/legacy copy. Use App\Classes\Challenger instead.
+ * @see \App\Classes\Challenger
  */
 
 use Exception;

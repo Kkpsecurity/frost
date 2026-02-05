@@ -6,20 +6,18 @@
 import type { ClassroomPollDataType } from "../types/classroom";
 
 /**
- * Fetch classroom polling data from /classroom/classroom/poll endpoint
- * Returns complete classroom structure: course, lessons, instructor, config, etc.
+ * Fetch classroom polling data from /classroom/class/data endpoint
+ * Returns complete classroom structure: courseDate, lessons, instructor, etc.
  *
- * @param courseAuthId - Student's course authorization ID
- * @param courseDateId - Optional specific course date ID
- * @returns Complete classroom poll data
+ * @param courseDateId - The course date ID identifying which classroom
+ * @returns Complete classroom poll data (shared by all students)
  */
 export const fetchClassroomPollData = async (
-    courseAuthId: number,
-    courseDateId?: number
+    courseDateId: number
 ): Promise<ClassroomPollDataType> => {
-    // Use the existing /classroom/class/data endpoint
+    // Use course_date_id to identify which classroom (not which student)
     const response = await fetch(
-        `/classroom/class/data?course_auth_id=${courseAuthId}`
+        `/classroom/class/data?course_date_id=${courseDateId}`
     );
 
     if (!response.ok) {

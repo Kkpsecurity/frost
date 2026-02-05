@@ -62,6 +62,10 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
 
     const { courseDate, instUnit, studentUnit, course } = classroomContext;
 
+    // When the instructor ends the day, backend may still provide an InstUnit with completed_at/status.
+    // Treat that as ENDED so the student does not remain in WAITING.
+    const isEnded = !!(instUnit?.completed_at || instUnit?.status === "ended");
+
     // Student progress (validations) comes from the student poll, not the classroom poll.
     const validations = studentContext?.validationsByCourseAuth
         ? studentContext.validationsByCourseAuth[courseAuthId]
@@ -74,7 +78,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     //
     // studentUnit is NULL when it's a new day and student hasn't joined yet.
     // Once they complete onboarding, a StudentUnit will be created.
-    if (courseDate && instUnit) {
+    if (courseDate && instUnit && !isEnded) {
         // Get agreement status from student courses data (poll includes agreed_at)
         const courseData = studentContext?.courses?.find(
             (c: any) => c.id === courseAuthId,
@@ -128,8 +132,8 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         shouldShowOffline = true;
     } else {
         // Auto mode - use actual classroom state
-        shouldShowOnline = !!(courseDate && instUnit);
-        shouldShowOffline = !courseDate;
+        shouldShowOnline = !!(courseDate && instUnit && !isEnded);
+        shouldShowOffline = !courseDate || isEnded;
     }
 
     // 🎨 DEV TOGGLE UI (only in development mode)

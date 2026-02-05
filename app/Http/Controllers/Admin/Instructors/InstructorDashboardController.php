@@ -385,7 +385,11 @@ class InstructorDashboardController extends Controller
                     'user_type' => $chatMessage->student_id ? 'student' : 'instructor',
                 ],
                 'body' => (string) ($chatMessage->body ?? ''),
+                'message' => (string) ($chatMessage->body ?? ''), // Alias for compatibility
                 'created_at' => $createdAt,
+                'sender_type' => $chatMessage->student_id ? 'student' : 'instructor',
+                'sender_name' => $author ? trim(($author->fname ?? '') . ' ' . ($author->lname ?? '')) : 'Unknown',
+                'ai_sent' => (bool) ($chatMessage->ai_sent ?? false), // Include AI flag
             ];
         }
 
@@ -525,6 +529,99 @@ class InstructorDashboardController extends Controller
         return response()->json([
             'success' => true,
             'enabled' => ChatLogCache::IsEnabled($courseDateId),
+        ]);
+    }
+
+    /**
+     * Toggle AI Assistant and send introduction message when enabled
+     * Note: Requires 'ai_sent' boolean column in chat_logs table (see docs/chat-ai-integration-design.md)
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function toggleAiAssistant(Request $request)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'course_date_id' => 'required|integer',
+            'ai_enabled' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+            ], 422);
+        }
+
+        $courseDateId = (int) $request->input('course_date_id');
+        $aiEnabled = (bool) $request->input('ai_enabled');
+
+        // Store AI enabled state in cache (similar to chat enabled)
+        $cacheKey = "ai_assistant_enabled_{$courseDateId}";
+
+        \Log::info('AI Assistant Toggle', [
+            'course_date_id' => $courseDateId,
+            'ai_enabled' => $aiEnabled,
+            'instructor_id' => $admin->id,
+            'chat_enabled' => ChatLogCache::IsEnabled($courseDateId),
+        ]);
+
+        if ($aiEnabled) {
+            Cache::put($cacheKey, true, now()->addHours(24));
+
+            // Send AI introduction message to chat (as instructor with ai_sent flag)
+            $courseDate = \App\Models\CourseDate::find($courseDateId);
+            if ($courseDate && ChatLogCache::IsEnabled($courseDateId)) {
+                $introMessage = "👋 AI Assistant enabled! I'm here to help answer questions about the course material. Feel free to ask me anything related to what we're learning today!";
+
+                $chatLog = \App\Models\ChatLog::create([
+                    'course_date_id' => $courseDateId,
+                    'inst_id' => $admin->id, // AI messages sent under instructor's ID
+                    'student_id' => null,
+                    'body' => $introMessage,
+                    'ai_sent' => true,
+                ]);
+
+                \Log::info('AI Introduction Message Created', [
+                    'chat_log_id' => $chatLog->id,
+                    'course_date_id' => $courseDateId,
+                ]);
+            } else {
+                \Log::warning('AI Introduction NOT Created', [
+                    'course_date_found' => $courseDate ? 'yes' : 'no',
+                    'chat_enabled' => ChatLogCache::IsEnabled($courseDateId),
+                ]);
+            }
+        } else {
+            Cache::forget($cacheKey);
+
+            // Send AI goodbye message (as instructor with ai_sent flag)
+            $courseDate = \App\Models\CourseDate::find($courseDateId);
+            if ($courseDate && ChatLogCache::IsEnabled($courseDateId)) {
+                $goodbyeMessage = "AI Assistant disabled. Your instructor will continue to assist you directly.";
+
+                \App\Models\ChatLog::create([
+                    'course_date_id' => $courseDateId,
+                    'inst_id' => $admin->id,
+                    'student_id' => null,
+                    'body' => $goodbyeMessage,
+                    'ai_sent' => true,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'ai_enabled' => $aiEnabled,
+            'chat_enabled' => ChatLogCache::IsEnabled($courseDateId),
+            'message' => $aiEnabled ? 'AI Assistant enabled' : 'AI Assistant disabled',
+            'message_sent' => ($aiEnabled || !$aiEnabled) && ChatLogCache::IsEnabled($courseDateId),
         ]);
     }
 
@@ -941,6 +1038,35 @@ class InstructorDashboardController extends Controller
             // NOTE: Zoom credentials remain DISABLED by default
             // Instructor must manually enable screen sharing when ready
             // This prevents automatic screen sharing before instructor is prepared
+
+            // Force disable Zoom if it was left enabled from previous session
+            $course = $courseDate->CourseUnit?->Course;
+            if ($course) {
+                $courseTitle = strtoupper($course->title ?? '');
+
+                // Determine which Zoom credential should be used for this course
+                if (strpos($courseTitle, ' A') !== false || strpos($courseTitle, 'A40') !== false || strpos($courseTitle, 'A20') !== false) {
+                    $zoomEmail = 'instructor_admin@stgroupusa.com';
+                } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
+                    $zoomEmail = 'instructor_d@stgroupusa.com';
+                } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
+                    $zoomEmail = 'instructor_g@stgroupusa.com';
+                } else {
+                    $zoomEmail = 'instructor_admin@stgroupusa.com';
+                }
+
+                $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
+                if ($zoomCreds && $zoomCreds->zoom_status === 'enabled') {
+                    $zoomCreds->zoom_status = 'disabled';
+                    $zoomCreds->save();
+
+                    Log::info('Zoom automatically disabled during classroom claim', [
+                        'inst_unit_id' => $instUnit->id,
+                        'zoom_email' => $zoomEmail,
+                        'previous_status' => 'enabled',
+                    ]);
+                }
+            }
 
             // Get instructor and assistant names
             $instructor = \App\Models\User::find($admin->id);

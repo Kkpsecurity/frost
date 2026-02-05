@@ -28,6 +28,11 @@ class JSONCast implements CastsAttributes
             return null;
         }
 
+        // If the value is already an array (e.g., from PostgreSQL JSON type), return it as-is
+        if (is_array($value)) {
+            return $value;
+        }
+
         return json_decode($value, true);
     }
 

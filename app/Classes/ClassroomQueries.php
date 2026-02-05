@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Classes;
@@ -47,9 +48,8 @@ class ClassroomQueries
     // Shared
     //
     use ActiveInstLesson;
-    use RecentChatMessages;
+    use RecentChatMessages; // @deprecated - Use App\Classes\MiscQueries::RecentChatMessages() instead
 
     // Private methods / internal use only
     use StudentCanJoinLesson;
-
 }

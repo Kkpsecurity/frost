@@ -9,13 +9,16 @@ interface InstructorToolsProps {
     chatEnabled: boolean;
     handleChatToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
     isInstructor: boolean;
+    aiMonitoringEnabled?: boolean;
+    handleAiToggle?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    handlePresetsClick?: () => void;
 }
 
 const SwitchContainer = styled.div`
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 34px;
+    width: 46px;
+    height: 26px;
 `;
 
 const SwitchInput = styled.input`
@@ -34,19 +37,20 @@ const SwitchLabel = styled.label`
     background-color: ${(props) => (props.checked ? "#2196f3" : "#ccc")};
     -webkit-transition: 0.4s;
     transition: 0.4s;
-    border-radius: 34px;
+    border-radius: 26px;
 
     &::before {
         content: "";
         position: absolute;
-        left: 0px;
-        height: 26px;
-        width: 26px;
+        left: 2px;
+        top: 2px;
+        height: 22px;
+        width: 22px;
         background-color: white;
         -webkit-transition: 0.4s;
         transition: 0.4s;
         border-radius: 50%;
-        transform: ${(props) => (props.checked ? "translateX(26px)" : "none")};
+        transform: ${(props) => (props.checked ? "translateX(20px)" : "none")};
     }
 `;
 
@@ -55,10 +59,69 @@ const SwitchLabelText = styled.span`
     width: 50%;
     height: 100%;
     text-align: center;
-    line-height: 34px;
+    line-height: 26px;
     display: none;
     transition: color 0.3s;
     color: ${(props) => (props.checked ? "#fff" : "#000")};
+`;
+
+const AiButton = styled.button<{ enabled: boolean }>`
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid ${(props) => (props.enabled ? "#17a2b8" : "#6c757d")};
+    background-color: ${(props) => (props.enabled ? "#17a2b8" : "#6c757d")};
+    color: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+
+    &:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    i {
+        font-size: 0.9rem;
+    }
+`;
+
+const PresetsButton = styled.button`
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid #28a745;
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    handlePresetsClick,
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+
+    &:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    i {
+        font-size: 0.9rem;
+    }
 `;
 
 const InstructorTools: React.FC<InstructorToolsProps> = ({
@@ -66,6 +129,9 @@ const InstructorTools: React.FC<InstructorToolsProps> = ({
     chatEnabled,
     handleChatToggle,
     isInstructor,
+    aiMonitoringEnabled = false,
+    handleAiToggle,
+    handlePresetsClick,
 }) => {
     const methods = useForm();
 
@@ -93,8 +159,8 @@ const InstructorTools: React.FC<InstructorToolsProps> = ({
                                         backgroundColor: isInstructor
                                             ? ""
                                             : chatEnabled
-                                            ? "#fff"
-                                            : "#eee",
+                                              ? "#fff"
+                                              : "#eee",
                                     }}
                                 >
                                     {chatEnabled ? (
@@ -114,13 +180,17 @@ const InstructorTools: React.FC<InstructorToolsProps> = ({
                                     style={{
                                         float: "right",
                                         textAlign: "right",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "flex-end",
                                     }}
                                 >
                                     <FormProvider {...methods}>
                                         <form
                                             style={{
-                                                float: "right",
-                                                textAlign: "right",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "0px",
                                             }}
                                         >
                                             <SwitchContainer>
@@ -143,6 +213,43 @@ const InstructorTools: React.FC<InstructorToolsProps> = ({
                                                     </SwitchLabelText>
                                                 </SwitchLabel>
                                             </SwitchContainer>
+                                            {/* AI Toggle - Hidden for now, moving to Sentinel system
+                                            {handleAiToggle && (
+                                                <AiButton
+                                                    type="button"
+                                                    enabled={
+                                                        aiMonitoringEnabled
+                                                    }
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleAiToggle({
+                                                            target: {
+                                                                checked:
+                                                                    !aiMonitoringEnabled,
+                                                            },
+                                                        } as React.ChangeEvent<HTMLInputElement>);
+                                                    }}
+                                                >
+                                                    <i className="fas fa-robot"></i>
+                                                    AI{" "}
+                                                    {aiMonitoringEnabled
+                                                        ? "On"
+                                                        : "Off"}
+                                                </AiButton>
+                                            )}
+                                            */}
+                                            {handlePresetsClick && (
+                                                <PresetsButton
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handlePresetsClick();
+                                                    }}
+                                                >
+                                                    <i className="fas fa-list"></i>
+                                                    Presets
+                                                </PresetsButton>
+                                            )}
                                         </form>
                                     </FormProvider>
                                 </span>

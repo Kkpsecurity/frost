@@ -3,6 +3,7 @@
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Http\Controllers\Student\ClassroomChatController;
 use App\Http\Controllers\Student\AskInstructorController;
+use App\Http\Controllers\Student\ChallengeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,6 +60,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/classroom/chat-messages', [ClassroomChatController::class, 'postChatMessage'])
         ->name('classroom.chat.post-message');
+
+    /**
+     * Challenge System Routes (Step 2: Challenge Response Endpoint)
+     */
+    Route::post('/classroom/challenge-respond', [ChallengeController::class, 'respond'])
+        ->name('classroom.challenge.respond');
 
     /**
      * Ask Instructor (private queue)
@@ -219,7 +226,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/classroom/{id}', [StudentDashboardController::class, 'dashboard'])
         ->where('id', '[0-9]+')  // Only match numeric IDs
         ->name('classroom.course');
-
-
-
 });

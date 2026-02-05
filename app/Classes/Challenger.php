@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Classes;
@@ -22,21 +23,20 @@ class Challenger
     use AssertConfigTrait;
 
 
-    protected static $_config;
-    protected static $_ChallengerResponse;
-    protected static $_StudentLesson;
+    protected static object $_config;
+    protected static ChallengerResponse $_ChallengerResponse;
+    protected static StudentLesson $_StudentLesson;
 
 
-    public static function init( int|StudentLesson $StudentLesson = null ) : self
+    public static function init(int|StudentLesson $StudentLesson = null): self
     {
 
-        if ( is_object( self::$_config ) )
-        {
+        if (isset(self::$_config) && is_object(self::$_config)) {
             return new self();
         }
 
 
-        self::$_config = self::AssertConfig( 'challenger', [
+        self::$_config = self::AssertConfig('challenger', [
             'challenge_time',
             'challenge_expires_at',
             'lesson_start_min',
@@ -50,38 +50,32 @@ class Challenger
         self::_DevelMode();
 
 
-        self::$_ChallengerResponse = new ChallengerResponse( self::$_config->challenge_time );
+        self::$_ChallengerResponse = new ChallengerResponse(self::$_config->challenge_time);
 
 
-        if ( $StudentLesson )
-        {
-            if ( is_int( $StudentLesson ) )
-            {
-                self::$_StudentLesson = StudentLesson::firstOrFail( $StudentLesson );
-            }
-            else
-            {
+        if ($StudentLesson) {
+            if (is_int($StudentLesson)) {
+                self::$_StudentLesson = StudentLesson::firstOrFail($StudentLesson);
+            } else {
                 self::$_StudentLesson = $StudentLesson;
             }
         }
 
 
         return new self();
-
     }
 
 
-    public static function Ready( int|StudentLesson $StudentLesson, array $completed_lesson_ids ) : ?ChallengerResponse
+    public static function Ready(int|StudentLesson $StudentLesson, array $completed_lesson_ids): ?ChallengerResponse
     {
 
-        self::init( $StudentLesson );
+        self::init($StudentLesson);
 
         $debug_tag = 'Ready(SL:' . self::$_StudentLesson->id . ')';
 
 
         // TODO: remove this
-        if ( config( 'challenger.disabled' ) === true )
-        {
+        if (config('challenger.disabled') === true) {
             #kkpdebug( 'Challenger_Dbg', "{$debug_tag} *disabled*" );
             return null;
         }
@@ -91,9 +85,8 @@ class Challenger
         // Lesson already completed
         //
 
-        if ( in_array( $StudentLesson->lesson_id, $completed_lesson_ids ) )
-        {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} LessonID {$StudentLesson->lesson_id} previously completed" );
+        if (in_array($StudentLesson->lesson_id, $completed_lesson_ids)) {
+            kkpdebug('Challenger_Msg', "{$debug_tag} LessonID {$StudentLesson->lesson_id} previously completed");
             return null;
         }
 
@@ -102,16 +95,14 @@ class Challenger
         // StudentLesson already complete / DNC
         //
 
-        if ( self::$_StudentLesson->completed_at )
-        {
-            kkpdebug( 'Challenger_Dbg', "{$debug_tag} StudentLesson->completed_at" );
+        if (self::$_StudentLesson->completed_at) {
+            kkpdebug('Challenger_Dbg', "{$debug_tag} StudentLesson->completed_at");
             return null;
         }
 
-        if ( self::$_StudentLesson->dnc_at )
-        {
+        if (self::$_StudentLesson->dnc_at) {
 
-            kkpdebug( 'Challenger_Dbg', "{$debug_tag} StudentLesson->dnc_at" );
+            kkpdebug('Challenger_Dbg', "{$debug_tag} StudentLesson->dnc_at");
             return null;
         }
 
@@ -128,8 +119,7 @@ class Challenger
         // beginning of Lesson
         //
 
-        if ( ! $LatestChallenge )
-        {
+        if (! $LatestChallenge) {
             return self::_SendFirst(); // ?ChallengerResponse
         }
 
@@ -138,9 +128,8 @@ class Challenger
         // send Final challenge ?
         //
 
-        if ( $LatestChallenge->failed_at )
-        {
-            return self::_SendFinal( $LatestChallenge ); // ?ChallengerResponse
+        if ($LatestChallenge->failed_at) {
+            return self::_SendFinal($LatestChallenge); // ?ChallengerResponse
         }
 
 
@@ -148,9 +137,9 @@ class Challenger
         // send Current Challenge ?
         //
 
-        if ( self::_SendCurrent( $LatestChallenge ) ) // bool
+        if (self::_SendCurrent($LatestChallenge)) // bool
         {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} sending Current (CH:{$LatestChallenge->id})" );
+            kkpdebug('Challenger_Msg', "{$debug_tag} sending Current (CH:{$LatestChallenge->id})");
             return self::$_ChallengerResponse;
         }
 
@@ -159,25 +148,23 @@ class Challenger
         // send random challenge ?
         //
 
-        return self::_SendRandom( $LatestChallenge ); // ?ChallengerResponse
+        return self::_SendRandom($LatestChallenge); // ?ChallengerResponse
 
     }
 
 
-    public static function EOLReady( int|StudentLesson $StudentLesson, array $completed_lesson_ids ) : ?ChallengerResponse
+    public static function EOLReady(int|StudentLesson $StudentLesson, array $completed_lesson_ids): ?ChallengerResponse
     {
 
-        self::init( $StudentLesson );
+        self::init($StudentLesson);
 
         $debug_tag = 'EOLReady(SL:' . self::$_StudentLesson->id . ')';
 
 
         // TODO: remove this
-        if ( config( 'challenger.disabled' ) === true )
-        {
-            if ( ! $StudentLesson->completed_at && $StudentLesson->InstLesson->completed_at )
-            {
-                kkpdebug( 'Challenger_Dbg', "{$debug_tag} *disabled* Marking StudentLesson Completed" );
+        if (config('challenger.disabled') === true) {
+            if (! $StudentLesson->completed_at && $StudentLesson->InstLesson->completed_at) {
+                kkpdebug('Challenger_Dbg', "{$debug_tag} *disabled* Marking StudentLesson Completed");
                 self::$_StudentLesson->MarkCompleted();
             }
 
@@ -189,41 +176,37 @@ class Challenger
         // Lesson already completed
         //
 
-        if ( in_array( $StudentLesson->lesson_id, $completed_lesson_ids ) )
-        {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} LessonID {$StudentLesson->lesson_id} previously completed" );
+        if (in_array($StudentLesson->lesson_id, $completed_lesson_ids)) {
+            kkpdebug('Challenger_Msg', "{$debug_tag} LessonID {$StudentLesson->lesson_id} previously completed");
             return null;
         }
 
 
         return self::_SendEOL();
-
     }
 
 
-    public static function MarkCompleted( int|Challenge $Challenge ) : void
+    public static function MarkCompleted(int|Challenge $Challenge): void
     {
 
         self::init();
 
-        if ( is_int( $Challenge ) )
-        {
-            $Challenge = Challenge::findOrFail( $Challenge );
+        if (is_int($Challenge)) {
+            $Challenge = Challenge::findOrFail($Challenge);
         }
 
 
         $debug_tag = "MarkCompleted(CH:{$Challenge->id})";
 
 
-        if ( ! self::_ValidateChallenge( $Challenge ) )
-        {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} *** Marking Failed (failed validation) ***" );
-            self::MarkFailed( $Challenge );
+        if (! self::_ValidateChallenge($Challenge)) {
+            kkpdebug('Challenger_Msg', "{$debug_tag} *** Marking Failed (failed validation) ***");
+            self::MarkFailed($Challenge);
             return;
         }
 
 
-        kkpdebug( 'Challenger_Msg', $debug_tag );
+        kkpdebug('Challenger_Msg', $debug_tag);
         $Challenge->MarkCompleted();
 
 
@@ -231,9 +214,8 @@ class Challenger
         // EOL Challenge; give Student credit
         //
 
-        if ( $Challenge->is_eol )
-        {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} Challenge->is_eol :: Marking StudentLesson completed" );
+        if ($Challenge->is_eol) {
+            kkpdebug('Challenger_Msg', "{$debug_tag} Challenge->is_eol :: Marking StudentLesson completed");
             $Challenge->StudentLesson->MarkCompleted();
             return;
         }
@@ -243,25 +225,21 @@ class Challenger
         // ! EOL but Instructor closed the Lesson; give Student credit
         //
 
-        if ( $Challenge->StudentLesson->InstLesson->completed_at )
-        {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} *** InstLesson was marked completed *** Marking StudentLesson completed" );
+        if ($Challenge->StudentLesson->InstLesson->completed_at) {
+            kkpdebug('Challenger_Msg', "{$debug_tag} *** InstLesson was marked completed *** Marking StudentLesson completed");
             $Challenge->StudentLesson->MarkCompleted();
             return;
         }
-
-
     }
 
 
-    public static function MarkFailed( int|Challenge $Challenge ) : void
+    public static function MarkFailed(int|Challenge $Challenge): void
     {
 
         self::init();
 
-        if ( is_int( $Challenge ) )
-        {
-            $Challenge = Challenge::findOrFail( $Challenge );
+        if (is_int($Challenge)) {
+            $Challenge = Challenge::findOrFail($Challenge);
         }
 
 
@@ -272,39 +250,30 @@ class Challenger
         // sanity checks
         //
 
-        if ( $Challenge->completed_at )
-        {
-            kkpdebug( 'Challenger_ERR', "{$debug_tag} Challenge already completed_at" );
+        if ($Challenge->completed_at) {
+            kkpdebug('Challenger_ERR', "{$debug_tag} Challenge already completed_at");
             return;
         }
 
-        if ( $Challenge->failed_at )
-        {
-            kkpdebug( 'Challenger_ERR', "{$debug_tag} Challenge already failed_at" );
+        if ($Challenge->failed_at) {
+            kkpdebug('Challenger_ERR', "{$debug_tag} Challenge already failed_at");
             return;
         }
 
 
-        kkpdebug( 'Challenger_Msg', $debug_tag );
+        kkpdebug('Challenger_Msg', $debug_tag);
         $Challenge->MarkFailed();
 
 
-        if ( $Challenge->is_final )
-        {
+        if ($Challenge->is_final) {
 
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} Challenge->is_final *** Marking StudentLesson DNC ***" );
+            kkpdebug('Challenger_Msg', "{$debug_tag} Challenge->is_final *** Marking StudentLesson DNC ***");
             $Challenge->StudentLesson->MarkDNC();
+        } else if ($Challenge->is_eol) {
 
-        }
-        else if ( $Challenge->is_eol )
-        {
-
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} Challenge->is_eol *** Marking StudentLesson DNC ***" );
+            kkpdebug('Challenger_Msg', "{$debug_tag} Challenge->is_eol *** Marking StudentLesson DNC ***");
             $Challenge->StudentLesson->MarkDNC();
-
         }
-
-
     }
 
 
@@ -336,15 +305,16 @@ class Challenger
     ######################
 
 
-    protected static function _Randomizer( Carbon $start_timestamp, int $max_seconds ) : bool
+    protected static function _Randomizer(Carbon $start_timestamp, int $max_seconds): bool
     {
 
-        $minutes = Carbon::now()->diffInMinutes( $start_timestamp->addSeconds( $max_seconds ) );
+        $minutes = Carbon::now()->diffInMinutes($start_timestamp->addSeconds($max_seconds));
 
-        if ( $minutes < 1 ) { return true; }
+        if ($minutes < 1) {
+            return true;
+        }
 
-        return ( 0 == rand( 0, $minutes ) );
-
+        return (0 == rand(0, $minutes));
     }
 
 
@@ -356,7 +326,7 @@ class Challenger
     ################################
 
 
-    protected static function _ValidateChallenge( Challenge $Challenge ) : bool
+    protected static function _ValidateChallenge(Challenge $Challenge): bool
     {
 
         $debug_tag = "_ValidateChallenge(CH:{$Challenge->id})";
@@ -365,14 +335,12 @@ class Challenger
         // Challenge already marked
         //
 
-        if ( $Challenge->completed_at )
-        {
+        if ($Challenge->completed_at) {
             #kkpdebug( 'Challenger_Dbg', "{$debug_tag} Challenge->completed_at" );
             return false;
         }
 
-        if ( $Challenge->failed_at )
-        {
+        if ($Challenge->failed_at) {
             #kkpdebug( 'Challenger_Dbg', "{$debug_tag} Challenge->failed_at" );
             return false;
         }
@@ -381,10 +349,9 @@ class Challenger
         // Challenge expired
         //
 
-        if ( Carbon::now()->gt( Carbon::parse( $Challenge->expires_at ) ) )
-        {
-            kkpdebug( 'Challenger_Msg', "{$debug_tag} Challenge Expired *** Marking Failed ***" );
-            self::MarkFailed( $Challenge );
+        if (Carbon::now()->gt(Carbon::parse($Challenge->expires_at))) {
+            kkpdebug('Challenger_Msg', "{$debug_tag} Challenge Expired *** Marking Failed ***");
+            self::MarkFailed($Challenge);
             return false;
         }
 
@@ -393,7 +360,6 @@ class Challenger
         //
 
         return true;
-
     }
 
 
@@ -405,17 +371,28 @@ class Challenger
     ###################
 
 
-    protected static function _DevelMode() : void
+    protected static function _DevelMode(): void
     {
-        if ( ! app()->environment( 'production' ) )
-        {
-            self::$_config->lesson_start_min    = 30;
-            self::$_config->lesson_start_max    = 90;
-            self::$_config->lesson_random_min   = 120; // 2min
-            self::$_config->lesson_random_max   = 360; // 6min
-            self::$_config->final_challenge_min = 60;  // send it very soon
+        // Check if dev_mode is explicitly enabled in config, or if we're in non-production environment
+        $devModeEnabled = self::$_config->dev_mode ?? false;
+        $isNonProduction = ! app()->environment('production');
+
+        if ($devModeEnabled || $isNonProduction) {
+            // Use configured dev timings if available, otherwise use legacy hardcoded values
+            self::$_config->lesson_start_min    = self::$_config->dev_lesson_start_min ?? 30;
+            self::$_config->lesson_start_max    = self::$_config->dev_lesson_start_max ?? 120;
+            self::$_config->lesson_random_min   = self::$_config->dev_lesson_random_min ?? 60;
+            self::$_config->lesson_random_max   = self::$_config->dev_lesson_random_max ?? 180;
+            self::$_config->final_challenge_min = self::$_config->dev_final_challenge_min ?? 90;
+            self::$_config->final_challenge_max = self::$_config->dev_final_challenge_max ?? 240;
+
+            \Log::info('🚀 Challenger DEV MODE ENABLED', [
+                'dev_mode_flag' => $devModeEnabled,
+                'is_non_production' => $isNonProduction,
+                'lesson_start_window' => self::$_config->lesson_start_min . 's - ' . self::$_config->lesson_start_max . 's',
+                'lesson_random_window' => self::$_config->lesson_random_min . 's - ' . self::$_config->lesson_random_max . 's',
+                'final_challenge_window' => self::$_config->final_challenge_min . 's - ' . self::$_config->final_challenge_max . 's',
+            ]);
         }
     }
-
-
 }

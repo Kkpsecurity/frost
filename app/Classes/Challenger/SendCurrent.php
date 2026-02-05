@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Classes\Challenger;
 
+use App\Classes\ChallengerResponse;
 use App\Models\Challenge;
 
 
 trait SendCurrent
 {
-    protected static $_ChallengerResponse;
+    protected static ChallengerResponse $_ChallengerResponse;
 
     /**
      * Sends the current challenge.

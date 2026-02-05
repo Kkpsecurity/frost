@@ -8,6 +8,9 @@ namespace App\Classes\Frost;
  * @file ChallengerResponse.php
  * @brief Class for handling responses to challenges.
  * @details This class encapsulates the response details for a challenge, including time, ID, and status flags.
+ *
+ * @deprecated This is a duplicate/legacy copy. Use App\Classes\ChallengerResponse instead.
+ * @see \App\Classes\ChallengerResponse
  */
 
 use App\Models\Challenge;

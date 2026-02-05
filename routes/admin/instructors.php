@@ -67,6 +67,10 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
 
         Route::post('/send-message', [InstructorDashboardController::class, 'sendMessage'])
             ->name('chat.send');
+
+        // AI Assistant toggle
+        Route::post('/ai-monitoring-toggle', [InstructorDashboardController::class, 'toggleAiAssistant'])
+            ->name('ai.toggle');
     });
 
     // =====================================================

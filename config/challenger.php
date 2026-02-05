@@ -12,8 +12,12 @@ return [
     'lesson_start_max'      => 900,  // 15min
 
     // random window
-    'lesson_random_min'     => 600,  // 10min
-    'lesson_random_max'     => 1800, // 30min
+    'lesson_random_min'     => 600,  // 10min (with history: 2+ challenges)
+    'lesson_random_max'     => 1200, // 20min (with history: 2+ challenges)
+
+    // No history timing (fewer than 2 completed challenges)
+    'lesson_no_history_min' => 300,  // 5min
+    'lesson_no_history_max' => 900,  // 15min
 
     // NOT random
     'final_challenge_min'   => 600,  // 10min

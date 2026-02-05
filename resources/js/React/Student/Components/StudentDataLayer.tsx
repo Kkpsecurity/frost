@@ -4,6 +4,7 @@ import { Alert } from "react-bootstrap";
 import MainDashboard from "./Dashboard/MainDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
 import StudentLessonPauseModal from "./Classroom/StudentLessonPauseModal";
+import ChallengeModal, { ChallengeData } from "./Classroom/ChallengeModal";
 import {
     StudentContextProvider,
     StudentContextType,
@@ -112,6 +113,15 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     const [breaksRemaining, setBreaksRemaining] = useState<number | undefined>(
         undefined,
     );
+    const [breakDurationMinutes, setBreakDurationMinutes] =
+        useState<number>(15);
+    const [breakStartedAt, setBreakStartedAt] = useState<string | undefined>(
+        undefined,
+    );
+
+    // Challenge state
+    const [activeChallenge, setActiveChallenge] =
+        useState<ChallengeData | null>(null);
 
     // DEBUG: Log when showPauseModal changes
     useEffect(() => {
@@ -183,35 +193,52 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         staleTime: 4000, // Data is stale after 4 seconds
     });
 
-    // Classroom poll is the authoritative source of whether a CourseDate exists today.
-    // It must run even before a courseAuthId is selected.
+    // Classroom poll returns shared classroom data using course_date_id from student poll.
+    // This identifies WHICH classroom (not which student).
+    const courseDateId = studentData?.data?.active_classroom?.course_date_id;
+
     const {
         data: classroomData,
         isLoading: classroomLoading,
         error: classroomError,
     } = useQuery({
-        queryKey: ["classroom-poll", selectedCourseAuthId],
+        queryKey: ["classroom-poll", courseDateId],
         queryFn: async () => {
-            const url = selectedCourseAuthId
-                ? `/classroom/class/data?course_auth_id=${selectedCourseAuthId}`
+            const url = courseDateId
+                ? `/classroom/class/data?course_date_id=${courseDateId}`
                 : "/classroom/class/data";
             const response = await fetch(url);
             if (!response.ok) {
+                // Return empty classroom data structure on 404 (no classroom today)
+                if (response.status === 404) {
+                    return {
+                        success: true,
+                        data: {
+                            courseDate: null,
+                            courseUnit: null,
+                            instUnit: null,
+                            instructor: null,
+                            lessons: [],
+                            modality: "offline",
+                            activeLesson: null,
+                            zoom: null,
+                        },
+                    };
+                }
                 throw new Error(
                     `Failed to fetch classroom data: ${response.status}`,
                 );
             }
             return response.json();
         },
-        enabled: true,
+        enabled: true, // Always enabled, handle no courseDateId in backend
         placeholderData: keepPreviousData,
         refetchInterval: 5000, // Poll every 5 seconds
         staleTime: 4000, // Data is stale after 4 seconds
     });
 
-    // If the classroom poll detects a scheduled class, auto-select the matching courseAuthId so
-    // subsequent requests include student-owned data.
-    // BUT: Don't auto-select if user explicitly clicked Dashboard button
+    // Auto-select the course if student has an active classroom today
+    // Use student poll's active_classroom reference, not classroom poll
     useEffect(() => {
         // If user explicitly clicked Dashboard, don't auto-select
         if (userExplicitlySelectedDashboard) {
@@ -223,54 +250,32 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
         if (selectedCourseAuthId) return;
 
-        const classroomCourseDateId =
-            classroomData?.data?.courseDate?.id ?? null;
-        if (!classroomCourseDateId) return;
+        // Get active classroom reference from student poll
+        const activeClassroom = studentData?.data?.active_classroom;
+        if (!activeClassroom?.course_id) return;
 
-        // Prefer the explicit course_auth_id from the backend when available.
-        const resolvedCourseAuthId =
-            classroomData?.data?.course_auth_id ?? null;
-        if (resolvedCourseAuthId) {
-            const nextId = Number(resolvedCourseAuthId);
-            if (!Number.isNaN(nextId) && nextId > 0) {
-                console.log(
-                    "🎯 StudentDataLayer: Auto-selecting courseAuthId from classroom poll:",
-                    nextId,
-                );
-                setSelectedCourseAuthId(nextId);
-                return;
-            }
-        }
-
-        // Fallback: map classroom course_id to the student's enrollment list.
-        const classroomCourseId =
-            classroomData?.data?.course?.course_id ?? null;
-        if (!classroomCourseId) return;
-
+        // Find the matching course enrollment from student's courses
         const courses = studentData?.data?.courses ?? [];
         const match = courses.find(
-            (c: any) => Number(c?.course_id) === Number(classroomCourseId),
+            (c: any) =>
+                Number(c?.course_id) === Number(activeClassroom.course_id),
         );
-        if (!match?.course_auth_id) return;
 
-        const nextId = Number(match.course_auth_id);
+        if (!match?.id) return;
+
+        const nextId = Number(match.id); // This is the course_auth_id
         if (!Number.isNaN(nextId) && nextId > 0) {
             console.log(
-                "🎯 StudentDataLayer: Auto-selecting courseAuthId from classroom poll (mapped):",
+                "🎯 StudentDataLayer: Auto-selecting courseAuthId from active classroom:",
                 {
                     courseAuthId: nextId,
-                    courseId: classroomCourseId,
-                    courseDateId: classroomCourseDateId,
+                    courseId: activeClassroom.course_id,
+                    courseDateId: activeClassroom.course_date_id,
                 },
             );
             setSelectedCourseAuthId(nextId);
         }
-    }, [
-        classroomData,
-        studentData,
-        selectedCourseAuthId,
-        userExplicitlySelectedDashboard,
-    ]);
+    }, [studentData, selectedCourseAuthId, userExplicitlySelectedDashboard]);
 
     // =========================================================================
     // PAUSE DETECTION LOGIC
@@ -306,7 +311,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         // Check if the active lesson is paused
         if (activeLesson.is_paused) {
             console.log("🔴 PAUSE DETECTED - SETTING MODAL TO TRUE");
-            
+
             // Lesson is paused - show modal
             const lessonTitle =
                 classroomData?.data?.lessons?.find(
@@ -319,6 +324,16 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             const breaks = (classroomData?.data as any)?.breaks;
             if (breaks) {
                 setBreaksRemaining(breaks.breaks_remaining);
+
+                // Extract break duration if available (comes from backend)
+                if (breaks.break_duration_minutes) {
+                    setBreakDurationMinutes(breaks.break_duration_minutes);
+                }
+            }
+
+            // Extract break start time from active lesson
+            if (activeLesson.paused_at) {
+                setBreakStartedAt(activeLesson.paused_at);
             }
 
             console.log("🔴 ABOUT TO CALL setShowPauseModal(true)");
@@ -330,6 +345,8 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                 lessonId: activeLesson.lesson_id,
                 lessonTitle,
                 isPaused: activeLesson.is_paused,
+                breakDurationMinutes,
+                breakStartedAt: activeLesson.paused_at,
             });
         } else {
             // No paused lesson - hide modal
@@ -339,6 +356,81 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             setShowPauseModal(false);
         }
     }, [classroomData, showPauseModal]);
+
+    // Detect active challenge from classroom poll
+    useEffect(() => {
+        if (classroomData?.data?.challenge) {
+            const challenge = classroomData.data.challenge;
+
+            // Only show if not already showing same challenge
+            if (
+                !activeChallenge ||
+                activeChallenge.challenge_id !== challenge.challenge_id
+            ) {
+                console.log("🚨 Challenge detected:", challenge);
+                setActiveChallenge(challenge);
+            }
+        } else {
+            // No challenge - clear modal
+            if (activeChallenge) {
+                console.log("✅ Challenge cleared");
+                setActiveChallenge(null);
+            }
+        }
+    }, [classroomData]);
+
+    // Handle challenge completion
+    const handleChallengeComplete = async (
+        challengeId: number,
+    ): Promise<void> => {
+        console.log("✅ Submitting challenge completion:", challengeId);
+
+        try {
+            const response = await fetch("/classroom/challenge-respond", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                },
+                body: JSON.stringify({
+                    challenge_id: challengeId,
+                    completed: true,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(
+                    result.message || "Failed to submit challenge response",
+                );
+            }
+
+            console.log("✅ Challenge completed successfully:", result);
+
+            // Clear the modal immediately (next poll will confirm)
+            setActiveChallenge(null);
+        } catch (error) {
+            console.error("❌ Challenge completion failed:", error);
+            throw error; // Re-throw to trigger error handler
+        }
+    };
+
+    // Handle challenge errors
+    const handleChallengeError = (error: string): void => {
+        console.error("🚨 Challenge error:", error);
+        // Could show a toast notification here
+        // For now, modal will handle displaying the error
+    };
 
     // IMPORTANT UX BEHAVIOR:
     // - Show the full-page loader ONLY on the initial load when we have no data yet.
@@ -371,20 +463,20 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         classroomData?.data
             ? {
                   data: classroomData.data,
-                  course: classroomData.data.course || null,
+                  course: null, // Removed from classroom poll - use student poll
                   courseDate: classroomData.data.courseDate || null,
-                  instructor: classroomData.data.courseDate?.instructor || null,
+                  instructor: classroomData.data.instructor || null,
                   instUnit: classroomData.data.instUnit || null,
-                  studentUnit: classroomData.data.studentUnit || null,
+                  studentUnit: null, // Removed from classroom poll - use student poll
                   courseUnits:
                       classroomData.data.courseUnit?.course_units || [],
                   courseLessons: classroomData.data.lessons || [],
                   instLessons: classroomData.data.instUnit?.inst_lessons || [],
-                  config: classroomData.data.config || null,
+                  config: null, // Removed from classroom poll
                   isClassroomActive: isInstructorTeaching(classroomData.data),
                   isInstructorOnline:
-                      classroomData.data.courseDate?.instructor
-                          ?.online_status === "online" || false,
+                      classroomData.data.instructor?.online_status ===
+                          "online" || false,
                   classroomStatus: getClassroomStatus(
                       classroomData.data,
                   ) as any,
@@ -412,8 +504,19 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                     isVisible={showPauseModal}
                     lessonTitle={pausedLessonTitle}
                     breaksRemaining={breaksRemaining}
+                    breakDurationMinutes={breakDurationMinutes}
+                    breakStartedAt={breakStartedAt}
                 />
-                
+
+                {/* Challenge Modal - Shown when participation check is active */}
+                {activeChallenge && (
+                    <ChallengeModal
+                        challenge={activeChallenge}
+                        onComplete={handleChallengeComplete}
+                        onError={handleChallengeError}
+                    />
+                )}
+
                 {isInitialLoading ? (
                     <PageLoader />
                 ) : error && !studentData ? (

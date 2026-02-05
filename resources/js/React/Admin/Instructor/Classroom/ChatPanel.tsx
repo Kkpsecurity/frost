@@ -270,7 +270,16 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
     };
 
     // Get message style
-    const getMessageStyle = (senderType: string) => {
+    const getMessageStyle = (senderType: string, aiSent?: boolean) => {
+        // AI Assistant messages (sent by instructor but ai_sent=true)
+        if (aiSent) {
+            return {
+                bgClass: "bg-info text-white",
+                align: "flex-end",
+                icon: "fas fa-robot",
+            };
+        }
+
         return senderType === "instructor"
             ? {
                   bgClass: "bg-primary text-white",
@@ -352,15 +361,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
                 <h5 className="mb-0">
                     <i className="fas fa-comments me-2"></i>
                     💬 Live Chat
-                    {aiMonitoringEnabled && (
-                        <span
-                            className="badge bg-success ms-2"
-                            style={{ fontSize: "0.7rem" }}
-                        >
-                            <i className="fas fa-robot me-1"></i>
-                            AI Active
-                        </span>
-                    )}
                 </h5>
                 <div className="d-flex align-items-center gap-2">
                     <span className="badge badge-light">
@@ -370,6 +370,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
                         ></i>
                         {messages.length} messages
                     </span>
+                    {/* AI Toggle - Disabled for now, will be re-enabled with different approach later
                     <button
                         className={`btn btn-sm ${aiMonitoringEnabled ? "btn-info" : "btn-outline-info"}`}
                         onClick={handleToggleAi}
@@ -389,6 +390,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
                             </>
                         )}
                     </button>
+                    */}
                     <button
                         className={`btn btn-sm ${chatEnabled ? "btn-warning" : "btn-success"}`}
                         onClick={handleToggleChat}
@@ -431,7 +433,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
                 ) : (
                     <div className="messages-list">
                         {messages.map((msg) => {
-                            const style = getMessageStyle(msg.sender_type);
+                            const style = getMessageStyle(
+                                msg.sender_type,
+                                msg.ai_sent,
+                            );
+                            const isAI = msg.ai_sent === true;
                             return (
                                 <div
                                     key={msg.id}
@@ -460,7 +466,21 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
                                                 }}
                                             >
                                                 <strong>
+                                                    {isAI && (
+                                                        <i className="fas fa-robot me-1"></i>
+                                                    )}
                                                     {msg.sender_name}
+                                                    {isAI && (
+                                                        <span
+                                                            className="badge bg-light text-dark ms-1"
+                                                            style={{
+                                                                fontSize:
+                                                                    "0.65rem",
+                                                            }}
+                                                        >
+                                                            AI
+                                                        </span>
+                                                    )}
                                                 </strong>
                                                 <div>{msg.message}</div>
                                             </div>
@@ -474,7 +494,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ courseDateId, instUnitId }) => {
                                                 )}
                                             </small>
                                         </div>
-                                        {msg.sender_type === "instructor" && (
+                                        {(msg.sender_type === "instructor" ||
+                                            isAI) && (
                                             <i
                                                 className={`${style.icon} mt-1`}
                                                 style={{

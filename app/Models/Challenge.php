@@ -41,11 +41,11 @@ class Challenge extends Model
         'is_final'          => 'boolean',
         'is_eol'            => 'boolean',
 
-        'created_at'        => 'timestamp',
-        'updated_at'        => 'timestamp',
-        'expires_at'        => 'timestamp',
-        'completed_at'      => 'timestamp',
-        'failed_at'         => 'timestamp',
+        'created_at'        => 'datetime',
+        'updated_at'        => 'datetime',
+        'expires_at'        => 'datetime',
+        'completed_at'      => 'datetime',
+        'failed_at'         => 'datetime',
 
     ];
 

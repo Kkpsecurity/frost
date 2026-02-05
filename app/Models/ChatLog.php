@@ -48,6 +48,7 @@ class ChatLog extends Model
         'student_id'        => 'integer',
 
         'body'              => 'string',
+        'ai_sent'           => 'boolean',
 
     ];
 

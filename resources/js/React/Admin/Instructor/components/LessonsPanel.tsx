@@ -57,6 +57,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
     const [breakDurationMinutes, setBreakDurationMinutes] =
         useState<number>(15);
     const [breakTimeRemaining, setBreakTimeRemaining] = useState<number>(0);
+    const [endDayLoading, setEndDayLoading] = useState(false);
 
     // Check if Zoom is setup (zoom_creds.zoom_status === enabled)
     const isZoomReady = !!zoomReady;
@@ -282,6 +283,62 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
      */
     const isLessonCompleted = (lessonId: number): boolean => {
         return completedLessons.some((cl: any) => cl.lesson_id === lessonId);
+    };
+
+    const allLessonsCompleted =
+        lessons.length > 0 &&
+        lessons.every((lesson) => isLessonCompleted(lesson.id));
+
+    const endDay = async () => {
+        if (!instUnit?.id) {
+            setActionMessage("Unable to end day: missing class session.");
+            return;
+        }
+
+        if (!allLessonsCompleted) {
+            setActionMessage("Complete all lessons before ending the day.");
+            return;
+        }
+
+        if (activeLessonId) {
+            setActionMessage(
+                "A lesson is still marked in-progress. Complete it before ending the day.",
+            );
+            return;
+        }
+
+        const confirmed = window.confirm(
+            "Are you sure you want to end the day? This will close the class session.",
+        );
+        if (!confirmed) return;
+
+        setEndDayLoading(true);
+        setActionMessage(null);
+
+        try {
+            const res = await axios.post(
+                "/admin/instructors/classroom/end-class",
+                {
+                    inst_unit_id: instUnit.id,
+                },
+            );
+
+            const success = !!res?.data?.success;
+            if (success) {
+                window.location.href = "/admin/instructors";
+                return;
+            }
+
+            setActionMessage(res?.data?.message || "Failed to end day");
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to end day";
+            setActionMessage(message);
+        } finally {
+            setEndDayLoading(false);
+        }
     };
 
     /**
@@ -615,6 +672,26 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                         <div className="alert alert-info m-3">
                                             <i className="fas fa-info-circle mr-2" />
                                             {actionMessage}
+                                        </div>
+                                    )}
+
+                                    {allLessonsCompleted && (
+                                        <div className="m-3">
+                                            <div className="alert alert-success mb-2">
+                                                <i className="fas fa-check-circle mr-2" />
+                                                All lessons completed.
+                                            </div>
+                                            <button
+                                                className="btn btn-danger w-100"
+                                                disabled={endDayLoading}
+                                                onClick={endDay}
+                                                title="End the day and close this class session"
+                                            >
+                                                <i className="fas fa-flag-checkered me-1" />
+                                                {endDayLoading
+                                                    ? "Ending day..."
+                                                    : "End Day"}
+                                            </button>
                                         </div>
                                     )}
                                 </>

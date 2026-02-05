@@ -352,14 +352,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
             {/* Pause Overlay - Block all interactions when paused */}
 
 
-            {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
-            <SchoolDashboardTitleBar
-                title="Live Classroom"
-                subtitle={`Instructor: ${instructor?.name || "N/A"}`}
-                icon={<i className="fas fa-video"></i>}
-                onBackToDashboard={onBackToDashboard}
-                classroomStatus="ONLINE"
-            />
+
 
             <div
                 className="container-fluid px-0"

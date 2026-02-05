@@ -31,7 +31,7 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
     // Use hook to determine classroom state
     const { state, isClassroomActive, isClassroomPending } = useClassRouter(
         classroomData?.courseDates || [],
-        instructorData?.instUnit
+        instructorData?.instUnit,
     );
 
     const { instructor } = instructorData || {};
@@ -63,16 +63,43 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
             : "NO - INSTRUCTOR MODE",
     });
 
+    console.log("📚 InstructorDashboard: Course name data", {
+        state,
+        isOnline: state === "online",
+        courseDateCourseName: classroomData?.courseDates?.[0]?.course_name,
+        coursesTitle: classroomData?.courses?.[0]?.title,
+        courseDateCourseTitle: classroomData?.courseDates?.[0]?.course?.title,
+        instUnitCourseName: instructorData?.instUnit?.course_unit_name,
+        instUnitCourseTitle:
+            instructorData?.instUnit?.course_date?.course_unit?.course?.title,
+        instUnit: instructorData?.instUnit,
+        allCourseDates: classroomData?.courseDates,
+        allCourses: classroomData?.courses,
+    });
+
     const activeCourseName =
-        classroomData?.courseDates?.[0]?.course_name ||
-        classroomData?.courseDates?.[0]?.course?.title ||
+        instructorData?.instUnit?.course_date?.course_unit?.course?.title ||
         instructorData?.instUnit?.course_unit_name ||
+        classroomData?.courseDates?.[0]?.course_name ||
+        classroomData?.courses?.[0]?.title ||
+        classroomData?.courseDates?.[0]?.course?.title ||
         "Live Class";
+
+    console.log(
+        "🎯 InstructorDashboard: Selected course name:",
+        activeCourseName,
+    );
 
     const title =
         state === "online"
             ? activeCourseName
             : "Welcome: Florida Online Bulletin Board";
+
+    console.log("📋 InstructorDashboard: Final title being passed:", {
+        state,
+        title,
+        willShowCourseName: state === "online",
+    });
 
     return (
         <div className="m-0 p-0" style={{ margin: 0, padding: 0 }}>
@@ -113,5 +140,3 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({
 };
 
 export default InstructorDashboard;
-
-

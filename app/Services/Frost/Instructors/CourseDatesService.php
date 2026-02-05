@@ -174,12 +174,13 @@ class CourseDatesService
                 'students_in_system' => $totalStudents
             ]
         ];
-    }    /**
-         * Get course date statistics
-         *
-         * @param \Illuminate\Database\Query\Builder $courseDates
-         * @return array
-         */
+    }
+    /**
+     * Get course date statistics
+     *
+     * @param \Illuminate\Database\Query\Builder $courseDates
+     * @return array
+     */
     private function getCourseDateStatistics($courseDates): array
     {
         $totalCourseDates = $courseDates->count();
@@ -351,19 +352,27 @@ class CourseDatesService
                     // Use existing Classes instead of creating new queries
                     $courseUnit = $courseDate->GetCourseUnit();
                     $course = $courseDate->GetCourse();
-                    $instUnit = $courseDate->InstUnit;
+                    // IMPORTANT: CourseDate->InstUnit() only returns ACTIVE InstUnits (completed_at is null).
+                    // We need the latest InstUnit regardless of completion so the bulletin board can show
+                    // COMPLETED status and avoid offering "Start Class" again after end-of-day.
+                    $instUnit = $courseDate->InstUnits()->latest('created_at')->first();
 
                     // Use CourseUnitObj to get lesson count properly
                     $courseUnitObj = new \App\Classes\CourseUnitObj($courseUnit);
                     $lessonCount = $courseUnitObj->CourseUnitLessons()->count();
 
-                    // Use existing ClassroomQueries for student count
+                    // Student count on the bulletin board should reflect total participants for this class session.
+                    // (ActiveStudentUnits only counts currently-active students and becomes 0 after completion.)
                     $studentCount = 0;
-                    if ($instUnit && !$instUnit->completed_at) {
-                        // Class has started but not completed - use existing ActiveStudentUnits method
-                        $studentCount = \App\Classes\ClassroomQueries::ActiveStudentUnits($courseDate)->count();
+                    if ($instUnit) {
+                        try {
+                            $studentCount = \App\Models\StudentUnit::where('course_date_id', $courseDate->id)
+                                ->where('inst_unit_id', $instUnit->id)
+                                ->count();
+                        } catch (\Exception $e) {
+                            $studentCount = 0;
+                        }
                     }
-                    // If no InstUnit exists, class hasn't started, so student_count = 0
 
                     // DEBUG: Log what we found for this course date
                     Log::info('CourseDatesService: Using model relationships', [
@@ -409,112 +418,33 @@ class CourseDatesService
                         ]);
 
                         if ($instUnit->completed_at) {
-                            // Check if completed_at is actually for TODAY'S class
                             $completedAt = Carbon::parse($instUnit->completed_at);
-                            $courseDateDay = Carbon::parse($courseDate->starts_at)->format('Y-m-d');
-                            $completedDay = $completedAt->format('Y-m-d');
-
-                            if ($completedDay === $courseDateDay) {
-                                // InstUnit was completed TODAY - class actually finished
-                                $classStatus = 'completed';
-                                $buttons = ['info' => 'Class completed at ' . $completedAt->format('g:i A')];
-                                Log::info('CourseDatesService: Course marked as completed (same day)', [
-                                    'course_date_id' => $courseDate->id,
-                                    'completed_at' => $instUnit->completed_at,
-                                    'buttons' => $buttons
-                                ]);
-                            } else {
-                                // InstUnit completed on DIFFERENT day - treat as if no InstUnit exists
-                                Log::warning('CourseDatesService: InstUnit completed on different day', [
-                                    'course_date_id' => $courseDate->id,
-                                    'course_date_day' => $courseDateDay,
-                                    'completed_day' => $completedDay,
-                                    'completed_at' => $instUnit->completed_at
-                                ]);
-
-                                // Clear instructor data for stale InstUnit
-                                $instructor = null;
-                                $assistant = null;
-                                $instUnit = null;
-
-                                // Treat as unassigned since this is stale data
-                                if ($now->lt($startTime)) {
-                                    $classStatus = 'scheduled';
-                                    $buttons = ['info' => 'Class starts at ' . $startTime->format('g:i A')];
-                                } elseif ($now->between($startTime, $endTime) || $now->between($startTime->copy()->subHours(1), $endTime->copy()->addHours(1))) {
-                                    $classStatus = 'unassigned';
-                                    $buttons = ['start_class' => 'Start Class'];
-                                } else {
-                                    $classStatus = 'expired';
-                                    $buttons = ['info' => 'Class time has ended'];
-                                }
-                            }
+                            $classStatus = 'completed';
+                            $buttons = ['info' => 'Class completed at ' . $completedAt->format('g:i A')];
                         } else {
-                            // InstUnit exists but not completed - check if it's from the same day first
-                            $instUnitCreatedDay = Carbon::parse($instUnit->created_at)->format('Y-m-d');
-                            $courseDateDay = Carbon::parse($courseDate->starts_at)->format('Y-m-d');
+                            // InstUnit exists and is not completed: instructor is assigned.
+                            // Assignment may happen on a different day than the class date (pre-assignment),
+                            // so we must NOT clear the InstUnit just because created_at differs.
+                            if ($now->gte($startTime)) {
+                                $classStatus = 'in_progress';
 
-                            if ($instUnitCreatedDay !== $courseDateDay) {
-                                // Stale InstUnit from different day - treat as unassigned
-                                Log::warning('CourseDatesService: Uncompleted InstUnit from different day', [
-                                    'course_date_id' => $courseDate->id,
-                                    'course_date_day' => $courseDateDay,
-                                    'inst_unit_created_day' => $instUnitCreatedDay,
-                                    'created_at' => $instUnit->created_at
-                                ]);
-
-                                // Clear instructor data for stale InstUnit
-                                $instructor = null;
-                                $assistant = null;
-                                $instUnit = null;
-
-                                // Treat as unassigned
-                                // Get the pre-start window from settings (default: 60 minutes)
-                                $preStartMinutes = (int) (config('setting.instructor.pre_start_minutes', 60));
-                                $postEndHours = 1; // Allow starting up to 1 hour after for stale cases
-
-                                if ($now->lt($startTime->copy()->subMinutes($preStartMinutes))) {
-                                    // Before the allowed pre-start window
-                                    $classStatus = 'scheduled';
-                                    $buttons = ['info' => 'Class starts at ' . $startTime->format('g:i A')];
-                                } elseif ($now->between($startTime->copy()->subMinutes($preStartMinutes), $endTime->copy()->addHours($postEndHours))) {
-                                    // Within allowed window - allow starting
-                                    $classStatus = 'unassigned';
-                                    $buttons = ['start_class' => 'Start Class'];
+                                if ($currentUserId && $instUnit->created_by == $currentUserId) {
+                                    $buttons = [
+                                        'take_control' => 'Take Control',
+                                        'complete' => 'Complete Class'
+                                    ];
                                 } else {
-                                    $classStatus = 'expired';
-                                    $buttons = ['info' => 'Class time has ended'];
+                                    $buttons = [
+                                        'assist' => 'Join as Assistant'
+                                    ];
                                 }
                             } else {
-                                // InstUnit exists but not completed - check if class time has started
-                                if ($now->gte($startTime)) {
-                                    // Class time has started/passed and instructor is assigned
-                                    $classStatus = 'in_progress';
+                                $classStatus = 'assigned';
 
-                                    // Check if current user is the assigned instructor
-                                    if ($currentUserId && $instUnit->created_by == $currentUserId) {
-                                        // Current user IS the assigned instructor
-                                        $buttons = [
-                                            'take_control' => 'Take Control',
-                                            'complete' => 'Complete Class'
-                                        ];
-                                    } else {
-                                        // Current user is NOT the assigned instructor - show assistant view
-                                        $buttons = [
-                                            'assist' => 'Join as Assistant'
-                                        ];
-                                    }
+                                if ($currentUserId && $instUnit->created_by == $currentUserId) {
+                                    $buttons = ['info' => 'You are assigned - starts at ' . $startTime->format('g:i A')];
                                 } else {
-                                    // Before class time but instructor assigned
-                                    $classStatus = 'assigned';
-
-                                    if ($currentUserId && $instUnit->created_by == $currentUserId) {
-                                        // Current user IS the assigned instructor
-                                        $buttons = ['info' => 'You are assigned - starts at ' . $startTime->format('g:i A')];
-                                    } else {
-                                        // Current user is NOT the assigned instructor
-                                        $buttons = ['info' => 'Instructor: ' . (($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) . ' - starts at ' . $startTime->format('g:i A')];
-                                    }
+                                    $buttons = ['info' => 'Instructor: ' . (($instructor->fname ?? '') . ' ' . ($instructor->lname ?? '')) . ' - starts at ' . $startTime->format('g:i A')];
                                 }
                             }
                         }

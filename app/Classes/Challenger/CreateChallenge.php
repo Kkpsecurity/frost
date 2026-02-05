@@ -6,7 +6,7 @@ namespace App\Classes\Challenger;
 
 use Illuminate\Support\Carbon;
 
-use App\Classes\Frost\ChallengerResponse;
+use App\Classes\ChallengerResponse;
 
 use App\Services\RCache;
 use App\Models\Challenge;

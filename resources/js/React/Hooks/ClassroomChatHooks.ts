@@ -30,8 +30,9 @@ export function useClassroomChat(courseDateId: number | null) {
             return response.data;
         },
         gcTime: 5 * 60 * 1000,
-        staleTime: 2 * 1000,
-        refetchInterval: 3000,
+        staleTime: 0, // Always consider data stale, refetch every interval
+        refetchInterval: 3000, // Poll every 3 seconds
+        refetchIntervalInBackground: true, // Continue polling even when tab is inactive
     });
 }
 

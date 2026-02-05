@@ -5,6 +5,7 @@ import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import LessonSideBar from "../Common/LessonSideBar";
 import LessonProgressBar from "./LessonProgressBar";
 import ClassroomChatCard from "./ClassroomChatCard";
+import ChallengeHistory from "./ChallengeHistory";
 import { useClassroomSessionMode } from "@/React/Hooks/ClassroomAskInstructorHooks";
 import { useLessonSidebar } from "../../hooks/useLessonSidebar";
 
@@ -551,47 +552,10 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                     courseDateId={courseDateId}
                                 />
 
-                                {/* Course Documents Panel */}
-                                <div
-                                    className="card"
-                                    style={{
-                                        backgroundColor: "#34495e",
-                                        border: "none",
-                                    }}
-                                >
-                                    <div
-                                        className="card-header"
-                                        style={{
-                                            backgroundColor: "#2c3e50",
-                                            borderBottom:
-                                                "1px solid rgba(255,255,255,0.1)",
-                                        }}
-                                    >
-                                        <h6
-                                            className="mb-0"
-                                            style={{ color: "white" }}
-                                        >
-                                            <i className="fas fa-folder-open me-2"></i>
-                                            Course Documents
-                                        </h6>
-                                    </div>
-                                    <div className="card-body">
-                                        <div
-                                            style={{
-                                                color: "#95a5a6",
-                                                fontSize: "0.875rem",
-                                                textAlign: "center",
-                                                padding: "1rem 0",
-                                            }}
-                                        >
-                                            <i className="fas fa-file-pdf fa-2x mb-2"></i>
-                                            <p className="mb-0">
-                                                Course resources will appear
-                                                here
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* Challenge History */}
+                                <ChallengeHistory
+                                    challenges={student?.challenges}
+                                />
                             </div>
                         </div>
                     </div>

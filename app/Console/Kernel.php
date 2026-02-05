@@ -14,6 +14,14 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
+        // Reset all Zoom accounts to disabled at 5:00 AM daily (before class starts)
+        $schedule->command('zoom:disable-all --force')
+            ->dailyAt('05:00')
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/zoom-daily-reset.log'));
+
         // Ensure today's (or next class day) CourseDate exists before other classroom automation.
         // NOTE: With --simulate-weekend-monday, weekends can still have a "today" class date for testing.
         $schedule->command('course:ensure-today-date')
@@ -51,14 +59,12 @@ class Kernel extends ConsoleKernel
 
         // Close classroom sessions at midnight - Official end of class day
         // Even if class ends at 6 PM, schedule officially ends at 12:00 AM
-        if (app()->environment(['production', 'staging'])) {
-            $schedule->command('classrooms:close-sessions')
-                ->dailyAt('00:00') // Daily at midnight
-                ->timezone('America/New_York')
-                ->withoutOverlapping()
-                ->runInBackground()
-                ->appendOutputTo(storage_path('logs/classroom-session-closure.log'));
-        }
+        $schedule->command('classrooms:close-sessions')
+            ->dailyAt('00:00') // Daily at midnight
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/classroom-session-closure.log'));
 
         // Timeout abandoned offline sessions every 5 minutes
         // Marks sessions as failed, creates StudentLesson with dnc_at, deducts credits
@@ -90,7 +96,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
