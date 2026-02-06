@@ -264,7 +264,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                 >
                                     {/* Details Tab Content */}
                                     {activeTab === "details" && (
-                                        <TabDetails lessons={lessons} />
+                                        <TabDetails
+                                            courseAuthId={courseAuthId}
+                                            lessons={lessons}
+                                        />
                                     )}
 
                                     {/* Self Study Tab Content */}
