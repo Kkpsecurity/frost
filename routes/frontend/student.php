@@ -43,6 +43,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/classroom/class/data', [StudentDashboardController::class, 'getClassData'])
         ->name('classroom.class.data');
 
+    // Offline classroom: course-level documents (PDFs under public/docs/<course-slug>/)
+    Route::get('/classroom/course/documents', [StudentDashboardController::class, 'getCourseDocuments'])
+        ->name('classroom.course.documents');
+
+    // Offline / self-study: fetch course lessons with completion markers
+    Route::get('/classroom/self-study/lessons', [StudentDashboardController::class, 'getSelfStudyLessons'])
+        ->name('classroom.self-study.lessons');
+
     /**
      * New Configuration-Based Student Data Routes
      */

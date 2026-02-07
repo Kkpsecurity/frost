@@ -8,6 +8,8 @@ interface LessonSideBarProps {
     getLessonStatusColor: (lesson: any, index: number) => string;
     getLessonTextColor: (lesson: any, index: number) => string;
     getLessonStatusIcon: (lesson: any, index: number) => React.ReactNode;
+    onSelectLesson?: (lessonId: number) => void;
+    selectedLessonId?: number | null;
 }
 
 const LessonSideBar: React.FC<LessonSideBarProps> = ({
@@ -18,6 +20,8 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
     getLessonStatusColor,
     getLessonTextColor,
     getLessonStatusIcon,
+    onSelectLesson,
+    selectedLessonId,
 }) => {
     return (
         <div
@@ -85,6 +89,11 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                 lessonId,
                                 index,
                             );
+                            const isSelected =
+                                typeof selectedLessonId === "number"
+                                    ? Number(selectedLessonId) ===
+                                      Number(lessonId)
+                                    : false;
 
                             return (
                                 <div
@@ -93,8 +102,18 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                     style={{
                                         backgroundColor: baseColor,
                                         borderRadius: "0.25rem",
-                                        border: "none",
+                                        border: isSelected
+                                            ? "2px solid rgba(255,255,255,0.55)"
+                                            : "none",
                                         boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                        cursor: onSelectLesson
+                                            ? "pointer"
+                                            : "default",
+                                    }}
+                                    onClick={() => {
+                                        if (onSelectLesson) {
+                                            onSelectLesson(Number(lessonId));
+                                        }
                                     }}
                                 >
                                     <div className="d-flex justify-content-between align-items-start mb-2">

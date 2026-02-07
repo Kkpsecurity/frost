@@ -6,6 +6,11 @@ import { useLessonSidebar } from "../../hooks/useLessonSidebar";
 import { useClassroom } from "../../context/ClassroomContext";
 import { useStudent } from "../../context/StudentContext";
 import TabDetails from "../OfflineTabSystem/TabDetails";
+import TabSelfStudy from "../OfflineTabSystem/TabSelfStudy";
+import TabDocumentation from "../OfflineTabSystem/TabDocumentation";
+
+const OFFLINE_ACTIVE_TAB_STORAGE_KEY = "offline_active_tab";
+const OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY = "offline_self_study_session";
 
 interface MainOfflineProps {
     courseAuthId: number;
@@ -31,10 +36,84 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     const classroomContext = useClassroom();
     const studentContext = useStudent();
 
+    const [selectedLessonId, setSelectedLessonId] = useState<number | null>(
+        null,
+    );
+
+    const [selfStudyLessons, setSelfStudyLessons] = useState<any[]>([]);
+    const [isLoadingSelfStudyLessons, setIsLoadingSelfStudyLessons] =
+        useState(false);
+
     // Tab state management
     const [activeTab, setActiveTab] = useState<
         "details" | "self-study" | "documentation"
     >("details");
+
+    // Restore last active tab (and active self-study session) on refresh.
+    const didRestoreRef = React.useRef(false);
+    React.useEffect(() => {
+        if (didRestoreRef.current) return;
+        didRestoreRef.current = true;
+
+        const isValidTab = (
+            value: any,
+        ): value is "details" | "self-study" | "documentation" => {
+            return (
+                value === "details" ||
+                value === "self-study" ||
+                value === "documentation"
+            );
+        };
+
+        try {
+            const storedTab = localStorage.getItem(
+                OFFLINE_ACTIVE_TAB_STORAGE_KEY,
+            );
+            if (isValidTab(storedTab)) {
+                setActiveTab(storedTab);
+            }
+        } catch {
+            // ignore
+        }
+
+        try {
+            const raw = localStorage.getItem(
+                OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY,
+            );
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (!parsed?.sessionId || !parsed?.lessonId) return;
+            if (Number(parsed.courseAuthId) !== Number(courseAuthId)) return;
+
+            if (parsed.expiresAt) {
+                const expiresAt = new Date(parsed.expiresAt);
+                if (
+                    Number.isFinite(expiresAt.getTime()) &&
+                    expiresAt <= new Date()
+                ) {
+                    localStorage.removeItem(
+                        OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY,
+                    );
+                    return;
+                }
+            }
+
+            // If a session exists, prioritize jumping back into Self Study.
+            setActiveTab("self-study");
+            setSelectedLessonId(Number(parsed.lessonId));
+        } catch {
+            // ignore
+        }
+    }, [courseAuthId]);
+
+    // Persist last active tab selection.
+    React.useEffect(() => {
+        try {
+            localStorage.setItem(OFFLINE_ACTIVE_TAB_STORAGE_KEY, activeTab);
+        } catch {
+            // ignore
+        }
+    }, [activeTab]);
 
     // OFFLINE MODE: ALL lessons for the entire course (not just today)
     // Backend returns all lessons across all course units when no courseDate exists
@@ -66,10 +145,13 @@ const MainOffline: React.FC<MainOfflineProps> = ({
               ]
             : backendLessons;
 
-    const lessons = mockLessons;
+    const lessons =
+        selfStudyLessons && selfStudyLessons.length > 0
+            ? selfStudyLessons
+            : mockLessons;
     const studentLessons = studentContext?.studentLessons || [];
     const activeLesson = null; // No active lesson in offline mode
-    const isLoadingLessons = false; // Replace with real loading state
+    const isLoadingLessons = isLoadingSelfStudyLessons;
 
     // 🔍 DEBUG: Log lessons data
     console.log("📚 MainOffline Lessons:", {
@@ -93,6 +175,57 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         studentLessons,
         activeLesson,
     });
+
+    React.useEffect(() => {
+        let isCancelled = false;
+
+        const load = async () => {
+            if (!courseAuthId) return;
+
+            setIsLoadingSelfStudyLessons(true);
+            try {
+                const response = await fetch(
+                    `/classroom/self-study/lessons?course_auth_id=${courseAuthId}`,
+                    {
+                        method: "GET",
+                        headers: { Accept: "application/json" },
+                    },
+                );
+                const payload = await response.json();
+
+                if (isCancelled) return;
+
+                if (response.ok && payload?.success && payload?.data?.lessons) {
+                    setSelfStudyLessons(payload.data.lessons);
+                }
+            } catch {
+                // non-fatal: fall back to context/mock lessons
+            } finally {
+                if (!isCancelled) setIsLoadingSelfStudyLessons(false);
+            }
+        };
+
+        load();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [courseAuthId]);
+
+    React.useEffect(() => {
+        if (selectedLessonId !== null) return;
+        if (!lessons || lessons.length === 0) return;
+
+        const firstIncomplete = lessons.find((l: any) => {
+            return !(
+                l?.is_completed === true ||
+                l?.status === "completed" ||
+                l?.completed_at != null
+            );
+        });
+
+        setSelectedLessonId(Number(firstIncomplete?.id ?? lessons[0]?.id));
+    }, [lessons, selectedLessonId]);
 
     return (
         <FrostDashboardWrapper>
@@ -122,6 +255,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                     getLessonStatusColor={getLessonStatusColor}
                                     getLessonTextColor={getLessonTextColor}
                                     getLessonStatusIcon={getLessonStatusIcon}
+                                    selectedLessonId={selectedLessonId}
+                                    onSelectLesson={setSelectedLessonId}
                                 />
                             </div>
                             {/* Main Content Area */}
@@ -272,41 +407,22 @@ const MainOffline: React.FC<MainOfflineProps> = ({
 
                                     {/* Self Study Tab Content */}
                                     {activeTab === "self-study" && (
-                                        <div className="self-study-tab">
-                                            <h3
-                                                style={{
-                                                    color: "white",
-                                                    marginBottom: "1.5rem",
-                                                }}
-                                            >
-                                                <i className="fas fa-play-circle me-2"></i>
-                                                Self Study Mode
-                                            </h3>
-                                            <p style={{ color: "#95a5a6" }}>
-                                                Video lessons, practice
-                                                exercises, and interactive
-                                                content.
-                                            </p>
-                                        </div>
+                                        <TabSelfStudy
+                                            courseAuthId={courseAuthId}
+                                            lessons={lessons}
+                                            selectedLessonId={selectedLessonId}
+                                            onSelectLesson={setSelectedLessonId}
+                                            onLessonsUpdated={
+                                                setSelfStudyLessons
+                                            }
+                                        />
                                     )}
 
                                     {/* Documentation Tab Content */}
                                     {activeTab === "documentation" && (
-                                        <div className="documentation-tab">
-                                            <h3
-                                                style={{
-                                                    color: "white",
-                                                    marginBottom: "1.5rem",
-                                                }}
-                                            >
-                                                <i className="fas fa-folder-open me-2"></i>
-                                                Course Documentation
-                                            </h3>
-                                            <p style={{ color: "#95a5a6" }}>
-                                                PDF resources, handbooks, and
-                                                reference materials.
-                                            </p>
-                                        </div>
+                                        <TabDocumentation
+                                            courseAuthId={courseAuthId}
+                                        />
                                     )}
                                 </div>
                             </div>

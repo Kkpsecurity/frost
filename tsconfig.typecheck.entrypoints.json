@@ -1,0 +1,13 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true
+    },
+    "include": [],
+    "files": [
+        "resources/js/admin.ts",
+        "resources/js/instructor.ts",
+        "resources/js/support.ts",
+        "resources/js/student.ts"
+    ]
+}

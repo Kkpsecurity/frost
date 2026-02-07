@@ -67,7 +67,8 @@ class StudentLessonSessionController extends Controller
                 'lesson_id' => $lessonId,
                 'course_auth_id' => $courseAuthId,
                 'video_duration_seconds' => $videoDurationSeconds,
-                'auth_user' => Auth::user() ? Auth::user()->toArray() : null,
+                // Avoid assuming the auth user object implements toArray()
+                'auth_user_id' => $studentId,
             ]);
 
             // Check for duplicate active session
@@ -90,26 +91,42 @@ class StudentLessonSessionController extends Controller
             }
 
             // Check quota availability
-            $quota = StudentVideoQuota::where('user_id', $studentId)->first();
-            if (!$quota) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'No video quota found. Please contact support.',
-                ], 403);
-            }
+            // Create quota record if missing (matches LessonSessionService behavior)
+            $quota = StudentVideoQuota::firstOrCreate(
+                ['user_id' => $studentId],
+                ['total_hours' => 10.00, 'used_hours' => 0.00, 'refunded_hours' => 0.00]
+            );
 
-            $videoDurationMinutes = ceil($videoDurationSeconds / 60);
-            if (!$quota->hasEnoughQuota($videoDurationMinutes)) {
+            // IMPORTANT: quota must cover the full session duration, not just video length.
+            // Session duration includes:
+            // - video minutes
+            // - buffer minutes
+            // - pause allocation minutes
+            $videoDurationMinutes = (int) ceil($videoDurationSeconds / 60);
+            $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
+
+            // Mirror pause allocation calculation used by LessonSessionService
+            // (LessonSessionService uses PauseTimeCalculator)
+            $pauseData = app(\App\Services\PauseTimeCalculator::class)
+                ->calculate($videoDurationSeconds);
+
+            $pauseMinutes = (int) ($pauseData['total_minutes'] ?? 0);
+            $requiredMinutes = $videoDurationMinutes + $bufferMinutes + $pauseMinutes;
+
+            if (!$quota->hasEnoughQuota($requiredMinutes)) {
                 return response()->json([
                     'success' => false,
                     'error' => sprintf(
                         'Insufficient video quota. Required: %d minutes, Available: %d minutes',
-                        $videoDurationMinutes,
+                        $requiredMinutes,
                         $quota->getRemainingMinutes()
                     ),
                     'quota' => [
                         'remaining_minutes' => $quota->getRemainingMinutes(),
-                        'required_minutes' => $videoDurationMinutes,
+                        'required_minutes' => $requiredMinutes,
+                        'video_minutes' => $videoDurationMinutes,
+                        'buffer_minutes' => $bufferMinutes,
+                        'pause_minutes' => $pauseMinutes,
                     ]
                 ], 403);
             }
@@ -160,7 +177,6 @@ class StudentLessonSessionController extends Controller
                     'total_minutes' => $quota->total_hours * 60,
                 ]
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -225,8 +241,7 @@ class StudentLessonSessionController extends Controller
 
             // Update progress
             $selfStudyLesson->updateProgress(
-                $validated['playback_seconds'],
-                $validated['completion_percentage']
+                $validated['playback_seconds']
             );
 
             Log::debug('Progress updated', [
@@ -245,7 +260,6 @@ class StudentLessonSessionController extends Controller
                     'meets_threshold' => $selfStudyLesson->meetsCompletionThreshold(),
                 ]
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -332,7 +346,6 @@ class StudentLessonSessionController extends Controller
                         : 0,
                 ]
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -416,7 +429,6 @@ class StudentLessonSessionController extends Controller
                 'quota_consumed_minutes' => $result['quota_consumed'],
                 'threshold_met' => $selfStudyLesson->meetsCompletionThreshold(),
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -494,7 +506,6 @@ class StudentLessonSessionController extends Controller
                     'quotaConsumed' => $selfStudyLesson->quota_consumed_minutes,
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get session status', [
                 'student_id' => Auth::id(),

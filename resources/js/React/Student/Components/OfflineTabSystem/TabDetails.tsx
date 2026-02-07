@@ -236,7 +236,9 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                                 {idCardUrl ? (
                                     <button
                                         type="button"
-                                        onClick={() => setIsIdCardModalOpen(true)}
+                                        onClick={() =>
+                                            setIsIdCardModalOpen(true)
+                                        }
                                         title="Preview ID Card"
                                         style={{
                                             display: "block",

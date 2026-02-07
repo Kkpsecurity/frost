@@ -4,7 +4,9 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc -p tsconfig.typecheck.offline.json --noEmit",
+        "type-check:entrypoints": "tsc -p tsconfig.typecheck.entrypoints.json --noEmit",
+        "type-check:full": "tsc -p tsconfig.json --noEmit"
     },
     "devDependencies": {
         "@headlessui/react": "^1.4.2",

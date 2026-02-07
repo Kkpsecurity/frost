@@ -36,6 +36,7 @@ use App\Services\PauseAllocationService;
 use App\Models\ZoomCreds;
 use App\Classes\Challenger;
 use App\Models\StudentLesson;
+use App\Models\StudentVideoQuota;
 
 // NOTE: Some legacy services were referenced here historically but do not exist in this repo.
 
@@ -1114,6 +1115,173 @@ class StudentDashboardController extends Controller
     }
 
     /**
+     * Offline classroom helper: return course-level documents for a specific enrollment.
+     *
+     * Archive reference:
+     * - app/Http/Controllers/Archived/StudentPortalController.php
+     * - $CourseAuth->GetCourse()->getDocs()
+     */
+    public function getCourseDocuments(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                ], 401);
+            }
+
+            $courseAuthId = (int) $request->query('course_auth_id');
+            if ($courseAuthId <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'course_auth_id is required',
+                ], 422);
+            }
+
+            $courseAuth = CourseAuth::with(['Course'])
+                ->where('id', $courseAuthId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$courseAuth) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Enrollment not found',
+                ], 404);
+            }
+
+            $course = $courseAuth->Course;
+            $documents = $course ? $course->GetDocs() : [];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'course_auth_id' => (int) $courseAuthId,
+                    // Shape: { [filename.pdf]: url }
+                    'documents' => $documents,
+                ],
+            ]);
+        } catch (Exception $e) {
+            Log::error('Course documents error', [
+                'error' => $e->getMessage(),
+                'course_auth_id' => $request->query('course_auth_id'),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load course documents',
+            ], 500);
+        }
+    }
+
+    /**
+     * Offline/self-study: Get course lessons for an enrollment with completion markers.
+     *
+     * Archive reference:
+     * - app/Http/Controllers/Archived/React_Traits/SelfStudyTrait.php::SelfStudyLessons
+     */
+    public function getSelfStudyLessons(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                ], 401);
+            }
+
+            $courseAuthId = (int) $request->query('course_auth_id');
+            if ($courseAuthId <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'course_auth_id is required',
+                ], 422);
+            }
+
+            $courseAuth = CourseAuth::query()
+                ->where('id', $courseAuthId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$courseAuth) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Enrollment not found',
+                ], 404);
+            }
+
+            $course = $courseAuth->GetCourse();
+            $lessons = $course ? $course->GetLessons() : collect();
+
+            $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
+            /** @var \App\Services\PauseTimeCalculator $pauseCalculator */
+            $pauseCalculator = app(\App\Services\PauseTimeCalculator::class);
+
+            // Completion keys come from PCLCache
+            $pcl = $courseAuth->PCLCache();
+            $completedLessonIds = is_array($pcl) ? array_keys($pcl) : [];
+
+            $payloadLessons = $lessons->map(function ($lesson) use ($completedLessonIds, $bufferMinutes, $pauseCalculator) {
+                $lessonId = (int) ($lesson->id ?? 0);
+                $isCompleted = in_array($lessonId, $completedLessonIds);
+
+                $creditMinutes = (int) ($lesson->credit_minutes ?? 0);
+                $videoSeconds = (int) ($lesson->video_seconds ?? 0);
+                $effectiveVideoSeconds = $videoSeconds > 0
+                    ? $videoSeconds
+                    : max(60, $creditMinutes * 60);
+
+                $videoDurationMinutes = (int) ceil($effectiveVideoSeconds / 60);
+                $pauseData = $pauseCalculator->calculate($effectiveVideoSeconds);
+                $pauseMinutes = (int) ($pauseData['total_minutes'] ?? 0);
+                $requiredMinutes = $videoDurationMinutes + $bufferMinutes + $pauseMinutes;
+
+                return [
+                    'id' => $lessonId,
+                    'lesson_id' => $lessonId,
+                    'title' => (string) ($lesson->title ?? ('Lesson ' . $lessonId)),
+                    'description' => (string) ($lesson->description ?? ''),
+                    'duration_minutes' => $creditMinutes,
+                    'video_seconds' => $videoSeconds,
+                    'effective_video_seconds' => $effectiveVideoSeconds,
+                    'video_minutes' => $videoDurationMinutes,
+                    'buffer_minutes' => $bufferMinutes,
+                    'pause_minutes' => $pauseMinutes,
+                    'required_minutes' => $requiredMinutes,
+                    'order' => (int) ($lesson->order ?? 0),
+                    'is_completed' => $isCompleted,
+                    'status' => $isCompleted ? 'completed' : 'incomplete',
+                    'is_active' => false,
+                    'is_paused' => false,
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'course_auth_id' => $courseAuthId,
+                    'lessons' => $payloadLessons,
+                ],
+            ]);
+        } catch (Exception $e) {
+            Log::error('Self-study lessons error', [
+                'error' => $e->getMessage(),
+                'course_auth_id' => $request->query('course_auth_id'),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load self-study lessons',
+            ], 500);
+        }
+    }
+
+    /**
      * Poll: Get classroom data for active course date
      * Called every 5 seconds from StudentDataLayer.tsx
      */
@@ -1542,26 +1710,17 @@ class StudentDashboardController extends Controller
                 ], 401);
             }
 
-            // TODO: Replace with actual database table when created
-            // For now, return mock data matching the expected structure
-            $quotaData = [
-                'total_hours' => 10.0,
-                'used_hours' => 0.0,
-                'remaining_hours' => 10.0,
-                'refunded_hours' => 0.0,
-            ];
+            $quota = StudentVideoQuota::firstOrCreate(
+                ['user_id' => $user->id],
+                ['total_hours' => 10.0, 'used_hours' => 0.0, 'refunded_hours' => 0.0]
+            );
 
-            // Future implementation with database:
-            // $quota = StudentVideoQuota::firstOrCreate(
-            //     ['user_id' => $user->id],
-            //     ['total_hours' => 10.0, 'used_hours' => 0.0, 'refunded_hours' => 0.0]
-            // );
-            // $quotaData = [
-            //     'total_hours' => $quota->total_hours,
-            //     'used_hours' => $quota->used_hours,
-            //     'remaining_hours' => $quota->total_hours - $quota->used_hours + $quota->refunded_hours,
-            //     'refunded_hours' => $quota->refunded_hours,
-            // ];
+            $quotaData = [
+                'total_hours' => (float) $quota->total_hours,
+                'used_hours' => (float) $quota->used_hours,
+                'remaining_hours' => (float) $quota->getRemainingHours(),
+                'refunded_hours' => (float) $quota->refunded_hours,
+            ];
 
             return response()->json([
                 'success' => true,

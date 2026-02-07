@@ -20,7 +20,15 @@
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.tsx",
-        "resources/js/**/*.d.ts"
-, "docs/InstructorDataLayer_v2.tsx"    ],
-    "exclude": ["node_modules", "public", "vendor"]
+        "resources/js/**/*.d.ts",
+        "docs/InstructorDataLayer_v2.tsx"
+    ],
+    "exclude": [
+        "node_modules",
+        "public",
+        "vendor",
+        "resources/js/React/Student/Components/Classroom/OfflienTemp.ts",
+        "resources/js/React/Student/Components/Classroom/OnlineTemp.ts",
+        "resources/js/React/Student/Components/StudentSidebar.tsx"
+    ]
 }

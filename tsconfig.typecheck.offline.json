@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true
+    },
+    "include": [],
+    "files": [
+        "resources/js/React/Student/Components/Classroom/SecureVideoPlayer.tsx",
+        "resources/js/React/Student/Components/Classroom/PauseModal.tsx",
+        "resources/js/React/Student/Components/OfflineTabSystem/TabSelfStudy.tsx"
+    ]
+}

@@ -10,21 +10,22 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Exception;
 
 /**
  * LessonSessionService
- * 
+ *
  * Orchestrates the complete lesson session lifecycle including:
  * - Session initialization with quota validation
  * - Pause time calculation and tracking
  * - Progress monitoring and completion
  * - Quota consumption with rounding
  * - Failed lesson recovery with refunds
- * 
+ *
  * This is the main service that coordinates PauseTimeCalculator and
  * QuotaRoundingService to implement the complete session management system.
- * 
+ *
  * @package App\Services
  */
 class LessonSessionService
@@ -59,13 +60,13 @@ class LessonSessionService
 
     /**
      * Start a new lesson session
-     * 
+     *
      * Creates a SelfStudyLesson record with:
      * - Unique session ID
      * - Calculated pause time allowance
      * - Session expiration timestamp
      * - Initial quota tracking fields
-     * 
+     *
      * Validates student has sufficient quota before starting.
      *
      * @param User $student The student starting the lesson
@@ -73,7 +74,7 @@ class LessonSessionService
      * @param int $lessonId The lesson ID
      * @param int $videoDurationSeconds The video duration in seconds
      * @return array{success: bool, session: SelfStudyLesson|null, message: string, error: string|null}
-     * 
+     *
      * @throws Exception If quota validation fails or database error occurs
      */
     public function startSession(
@@ -86,13 +87,18 @@ class LessonSessionService
             DB::beginTransaction();
 
             // Check if student already has an active session for this lesson
-            $existingSession = SelfStudyLesson::where('course_auth_id', $courseAuthId)
+            $existingSessionQuery = SelfStudyLesson::where('course_auth_id', $courseAuthId)
                 ->where('lesson_id', $lessonId)
                 ->whereNotNull('agreed_at')
                 ->whereNull('completed_at')
-                ->whereNull('dnc_at')
-                ->where('session_expires_at', '>', now())
-                ->first();
+                ->where('session_expires_at', '>', now());
+
+            // Some environments may not yet have self_study_lessons.dnc_at.
+            if (Schema::hasColumn('self_study_lessons', 'dnc_at')) {
+                $existingSessionQuery->whereNull('dnc_at');
+            }
+
+            $existingSession = $existingSessionQuery->first();
 
             if ($existingSession) {
                 DB::rollBack();
@@ -112,7 +118,7 @@ class LessonSessionService
 
             // Calculate pause time allowance
             $pauseData = $this->pauseCalculator->calculate($videoDurationSeconds);
-            
+
             // Calculate expected session duration (video + buffer + pause time)
             $bufferMinutes = config('self_study.session_buffer_minutes', 15);
             $videoDurationMinutes = ceil($videoDurationSeconds / 60);
@@ -121,10 +127,10 @@ class LessonSessionService
             // Validate sufficient quota
             if (!$quota->hasEnoughQuota($sessionDurationMinutes)) {
                 DB::rollBack();
-                
+
                 $remainingMinutes = $quota->getRemainingMinutes();
                 $requiredMinutes = $sessionDurationMinutes;
-                
+
                 return [
                     'success' => false,
                     'session' => null,
@@ -174,10 +180,9 @@ class LessonSessionService
                 'message' => 'Session started successfully',
                 'error' => null,
             ];
-
         } catch (Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Failed to start lesson session', [
                 'student_id' => $student->id,
                 'course_auth_id' => $courseAuthId,
@@ -197,7 +202,7 @@ class LessonSessionService
 
     /**
      * Complete a lesson session
-     * 
+     *
      * Marks session as completed, rounds and consumes quota,
      * checks completion threshold, and updates student progress.
      *
@@ -249,14 +254,13 @@ class LessonSessionService
                 'success' => true,
                 'passed' => $passed,
                 'quota_consumed' => $roundedQuotaMinutes,
-                'message' => $passed 
+                'message' => $passed
                     ? 'Lesson completed successfully'
                     : 'Lesson incomplete - did not meet 80% threshold',
             ];
-
         } catch (Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Failed to complete lesson session', [
                 'student_id' => $student->id,
                 'session_id' => $session->session_id,
@@ -274,7 +278,7 @@ class LessonSessionService
 
     /**
      * Handle online lesson pass for failed self-study lesson
-     * 
+     *
      * When a student passes a lesson in live classroom after failing
      * in self-study, this method:
      * - Marks the failed session with redo_passed = true
@@ -322,7 +326,7 @@ class LessonSessionService
             // Refund the quota
             $refundMinutes = $failedSession->quota_consumed_minutes;
             $quota = StudentVideoQuota::where('user_id', $student->id)->first();
-            
+
             if ($quota) {
                 $quota->refundQuota($refundMinutes);
             }
@@ -341,10 +345,9 @@ class LessonSessionService
                 'refunded_minutes' => $refundMinutes,
                 'message' => "Quota refunded: {$refundMinutes} minutes returned to your account",
             ];
-
         } catch (Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Failed to handle online lesson pass', [
                 'student_id' => $student->id,
                 'failed_session_id' => $failedSession->session_id,
@@ -368,7 +371,7 @@ class LessonSessionService
     public function getSessionSummary(SelfStudyLesson $session): array
     {
         $videoDurationMinutes = ceil($session->video_duration_seconds / 60);
-        
+
         return [
             'session_id' => $session->session_id,
             'status' => $session->getStatus(),

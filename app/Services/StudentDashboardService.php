@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\ClassroomDashboardService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
 use Exception;
 
@@ -29,8 +30,6 @@ class StudentDashboardService
     {
         $this->user = $user;
         $this->classroomService = new ClassroomDashboardService($user);
-
-
     }
 
     /**
@@ -185,7 +184,6 @@ class StudentDashboardService
             }
 
             return $allCourseAuths;
-
         } catch (Exception $e) {
             Log::error('StudentDashboardService: Error getting course auths', [
                 'user_id' => $this->user?->id,
@@ -229,7 +227,7 @@ class StudentDashboardService
                 $unit = $courseUnitObj->CourseUnit();
                 $unitLessons = $courseUnitObj->CourseUnitLessons();
 
-                                Log::info('StudentDashboardService: Processing course unit with CourseUnitObj', [
+                Log::info('StudentDashboardService: Processing course unit with CourseUnitObj', [
                     'unit_id' => $unit->id,
                     'unit_title' => $unit->title,
                     'unit_ordering' => $unit->ordering,
@@ -290,7 +288,6 @@ class StudentDashboardService
                 'modality' => 'self_paced', // Indicate self-paced mode
                 'current_day_only' => false, // Show all lessons
             ];
-
         } catch (Exception $e) {
             Log::error('StudentDashboardService: Error getting lessons with helper classes', [
                 'course_auth_id' => $courseAuth->id ?? 'unknown',
@@ -334,7 +331,6 @@ class StudentDashboardService
                 ->exists();
 
             return $studentLesson;
-
         } catch (Exception $e) {
             Log::error('StudentDashboardService: Error checking lesson completion', [
                 'course_auth_id' => $courseAuth->id,
@@ -376,7 +372,6 @@ class StudentDashboardService
             }
 
             return false;
-
         } catch (Exception $e) {
             Log::error('StudentDashboardService: Error checking lesson completion from student units', [
                 'lesson_id' => $lesson->id,
@@ -450,10 +445,13 @@ class StudentDashboardService
             if ($this->user && $lookupCourseAuthId) {
                 // CRITICAL: Check for FAILED lessons FIRST (dnc_at IS NOT NULL)
                 // This ensures failed attempts take priority over completed ones
-                $failedSelfStudyLesson = \App\Models\SelfStudyLesson::where('course_auth_id', $lookupCourseAuthId)
-                    ->where('lesson_id', $lesson->id)
-                    ->whereNotNull('dnc_at')
-                    ->first();
+                $failedSelfStudyLesson = null;
+                if (Schema::hasColumn('self_study_lessons', 'dnc_at')) {
+                    $failedSelfStudyLesson = \App\Models\SelfStudyLesson::where('course_auth_id', $lookupCourseAuthId)
+                        ->where('lesson_id', $lesson->id)
+                        ->whereNotNull('dnc_at')
+                        ->first();
+                }
 
                 if ($failedSelfStudyLesson) {
                     // Failed offline attempt - mark as "failed" so it shows in retry list
@@ -501,7 +499,6 @@ class StudentDashboardService
                 'has_student_lesson' => false,
                 'has_self_study_lesson' => false,
             ];
-
         } catch (Exception $e) {
             Log::error('StudentDashboardService: Error getting lesson status', [
                 'lesson_id' => $lesson->id,
