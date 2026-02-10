@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Web\BlogController;
+use App\Http\Controllers\Frontend\Blog\BlogController;
 use Illuminate\Support\Facades\Route;
 
 /*

@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\Web\SitePageController;
+use App\Http\Controllers\Frontend\Site\SitePageController;
+use App\Http\Controllers\Frontend\Site\RangesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,3 +24,7 @@ Route::match(['GET', 'POST'], '/pages/{page?}', [SitePageController::class, 'ren
 // Contact form submission route
 Route::post('/contact/send', [SitePageController::class, 'sendContactEmail'])
     ->name('contact.send');
+
+// Ranges page with Google Maps
+Route::get('/ranges', [RangesController::class, 'index'])
+    ->name('ranges.index');

@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\Web\CoursesController;
-use App\Http\Controllers\Web\ScheduleController;
-use App\Http\Controllers\Web\EnrollmentController;
+use App\Http\Controllers\Frontend\Courses\CoursesController;
+use App\Http\Controllers\Frontend\Site\ScheduleController;
+use App\Http\Controllers\Frontend\Courses\EnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,15 +24,15 @@ Route::get('/courses/list', [CoursesController::class, 'list'])
 Route::get('/courses/schedules', [ScheduleController::class, 'index'])
     ->name('courses.schedules');
 
-Route::get('/api/courses/schedule-data', [App\Http\Controllers\Web\Courses\CourseController::class, 'getScheduleData'])
+Route::get('/api/courses/schedule-data', [App\Http\Controllers\Frontend\Courses\CourseController::class, 'getScheduleData'])
     ->name('courses.schedule.data');
-
-Route::get('/courses/{course}', [CoursesController::class, 'show'])
-    ->name('courses.show');
 
 Route::get('/courses/enroll/{course}', [CoursesController::class, 'enroll'])
     ->name('courses.enroll')
     ->middleware('auth');
+
+Route::get('/courses/{course}', [CoursesController::class, 'show'])
+    ->name('courses.show');
 
 // Legacy route alias for backwards compatibility
 Route::get('/enroll/{course}', [CoursesController::class, 'enroll'])
@@ -48,5 +48,3 @@ Route::post('/courses/enroll/{course}', [EnrollmentController::class, 'AutoPayFl
 Route::post('/enroll/{course}', [EnrollmentController::class, 'AutoPayFlowPro'])
     ->name('enroll.process')
     ->middleware('auth');
-
-
