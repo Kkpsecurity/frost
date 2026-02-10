@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Student;
+namespace App\Http\Controllers\Frontend\Student;
 
 use Exception;
 use Illuminate\View\View;
@@ -525,31 +525,15 @@ class StudentDashboardController extends Controller
                 try {
                     $examObj = $courseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
                     $activeExamAuth = $courseAuth->ActiveExamAuth();
-                    $exam = $courseAuth->GetCourse()?->GetExam();
-
-                    // Debug logging for exam data
-                    if ($exam) {
-                        \Log::info("Exam found for course_auth_id {$courseAuth->id}: exam_id={$exam->id}, num_questions={$exam->num_questions}, num_to_pass={$exam->num_to_pass}, policy_expire_seconds={$exam->policy_expire_seconds}");
-                    } else {
-                        \Log::warning("No exam found for course_auth_id {$courseAuth->id}, course_id={$courseAuth->course_id}");
-                    }
 
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = [
                         'is_ready' => (bool) ($examObj->is_ready ?? false),
                         'next_attempt_at' => $examObj->next_attempt_at ?? null,
                         'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
                         'has_active_attempt' => $activeExamAuth !== null,
-                        'exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
-                        'exam_id' => $exam?->id,
-                        'num_questions' => $exam?->num_questions,
-                        'num_to_pass' => $exam?->num_to_pass,
-                        'policy_expire_seconds' => $exam?->policy_expire_seconds,
-                        // Debug info
-                        '_debug_has_exam' => $exam !== null,
-                        '_debug_course_id' => $courseAuth->course_id,
+                        'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
                     ];
                 } catch (\Throwable $e) {
-                    \Log::error("Error getting exam data for course_auth_id {$courseAuth->id}: " . $e->getMessage());
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = null;
                 }
             }
@@ -636,7 +620,6 @@ class StudentDashboardController extends Controller
                                 if ($activeCourseAuth) {
                                     $examObj = $activeCourseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
                                     $activeExamAuth = $activeCourseAuth->ActiveExamAuth();
-                                    $exam = $activeCourseAuth->GetCourse()?->GetExam();
 
                                     $activeStudentExam = [
                                         'is_ready' => (bool) ($examObj->is_ready ?? false),
@@ -644,11 +627,6 @@ class StudentDashboardController extends Controller
                                         'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
                                         'has_active_attempt' => $activeExamAuth !== null,
                                         'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
-                                        // Add exam configuration
-                                        'exam_id' => $exam?->id,
-                                        'num_questions' => $exam?->num_questions,
-                                        'num_to_pass' => $exam?->num_to_pass,
-                                        'policy_expire_seconds' => $exam?->policy_expire_seconds,
                                     ];
                                 }
                             } catch (\Throwable $e) {
@@ -2057,7 +2035,22 @@ class StudentDashboardController extends Controller
         $headshotExists = !empty($verified['headshot_path']);
         $identityVerified = (bool) ($idCardExists && $headshotExists);
 
-        if (!$termsAccepted || !$rulesAccepted || !$identityVerified) {
+        // Only terms and rules are REQUIRED for onboarding completion
+        // Identity verification is tracked but not required
+        if (!$termsAccepted || !$rulesAccepted) {
+            // Log detailed onboarding failure information for debugging
+            \Log::warning('Onboarding incomplete', [
+                'user_id' => $user->id,
+                'student_unit_id' => $studentUnit->id,
+                'course_date_id' => $courseDate->id,
+                'terms_accepted' => $termsAccepted,
+                'rules_accepted' => $rulesAccepted,
+                'identity_verified' => $identityVerified,
+                'id_card_exists' => $idCardExists,
+                'headshot_exists' => $headshotExists,
+                'course_auth_id' => $studentUnit->course_auth_id,
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Onboarding is not complete',

@@ -15,6 +15,7 @@ interface MainOnlineProps {
     student: any;
     validations?: any;
     onBackToDashboard: () => void;
+    onExamClick?: () => void;
     devModeToggle?: React.ReactNode;
 }
 
@@ -38,6 +39,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     student,
     validations,
     onBackToDashboard,
+    onExamClick,
     devModeToggle,
 }) => {
     const studentContext = useStudent();
@@ -197,6 +199,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                 subtitle={`Instructor: ${instructorName}`}
                 icon={<i className="fas fa-video"></i>}
                 onBackToDashboard={onBackToDashboard}
+                onExamClick={onExamClick}
                 classroomStatus="ONLINE"
                 devModeToggle={devModeToggle}
             />

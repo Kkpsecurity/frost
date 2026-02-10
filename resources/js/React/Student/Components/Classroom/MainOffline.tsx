@@ -16,6 +16,7 @@ interface MainOfflineProps {
     courseAuthId: number;
     student: any;
     onBackToDashboard: () => void;
+    onExamClick?: () => void;
     devModeToggle?: React.ReactNode;
 }
 
@@ -31,6 +32,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     courseAuthId,
     student,
     onBackToDashboard,
+    onExamClick,
     devModeToggle,
 }) => {
     const classroomContext = useClassroom();
@@ -235,6 +237,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                 subtitle="Complete lessons at your own pace"
                 icon={<i className="fas fa-book-open"></i>}
                 onBackToDashboard={onBackToDashboard}
+                onExamClick={onExamClick}
                 classroomStatus="OFFLINE"
                 devModeToggle={devModeToggle}
             />

@@ -195,6 +195,26 @@ Route::middleware(['auth'])->group(function () {
         ->name('classroom.lesson.session-status');
 
     /**
+     * Dev Tools Routes (only in debug mode)
+     */
+    Route::post('/classroom/dev/complete-all-lessons', [\App\Http\Controllers\Student\DevToolsController::class, 'completeAllLessons'])
+        ->name('classroom.dev.complete-all-lessons');
+
+    /**
+     * Exam API Routes
+     */
+    Route::get('/api/exam/auth/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'getExamAuth'])
+        ->where('examAuth', '[0-9]+')
+        ->name('api.exam.auth');
+
+    Route::post('/api/exam/begin', [\App\Http\Controllers\Student\ExamController::class, 'beginExam'])
+        ->name('api.exam.begin');
+
+    Route::post('/api/exam/submit/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'submitExam'])
+        ->where('examAuth', '[0-9]+')
+        ->name('api.exam.submit');
+
+    /**
      * Student Activity Tracking Routes
      */
     Route::prefix('api/student/activity')->group(function () {

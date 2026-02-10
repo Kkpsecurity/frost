@@ -97,6 +97,16 @@ class ExamAuth extends Model
         return $this->belongsTo(CourseAuth::class, 'course_auth_id');
     }
 
+    public function exam()
+    {
+        return $this->belongsTo(Exam::class, 'exam_id');
+    }
+
+    public function course()
+    {
+        return $this->hasOneThrough(Course::class, CourseAuth::class, 'id', 'id', 'course_auth_id', 'course_id');
+    }
+
     public function HiddenBy()
     {
         return $this->belongsTo(User::class, 'hidden_by');

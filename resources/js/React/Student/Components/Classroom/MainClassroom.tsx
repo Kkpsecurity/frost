@@ -5,6 +5,7 @@ import MainOffline from "./MainOffline";
 import MainOnline from "./MainOnline";
 import OnboardingFlow from "./OnboardingFlow";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
+import ExamRoom from "../Exam/ExamRoom";
 
 interface MainClassroomProps {
     courseAuthId: number;
@@ -33,6 +34,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     const classroomContext = useClassroom();
     const studentContext = useStudent();
     const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
+    const [showExamRoom, setShowExamRoom] = useState(false); // Exam room state
 
     // 🎨 DEV MODE: Toggle between online/offline views for design testing
     const [devMode, setDevMode] = useState<"auto" | "online" | "offline">(
@@ -40,6 +42,80 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     );
     // Show toggle in all modes for now (remove this line later to restrict to dev only)
     const showToggle = true; // TODO: Change to import.meta.env.DEV when done testing
+
+    // 🛠️ DEV TOOLS: Lesson management functions
+    const handleCompleteAllLessons = async (mode: "online" | "offline") => {
+        const modeLabel =
+            mode === "online" ? "ONLINE (Live Class)" : "OFFLINE (Self-Study)";
+        if (
+            !confirm(
+                `Mark ALL lessons as complete in ${modeLabel} mode?\n\nThis will ${mode === "online" ? "create StudentLesson records" : "create SelfStudyLesson records"}.`,
+            )
+        )
+            return;
+
+        try {
+            const response = await fetch(
+                "/classroom/dev/complete-all-lessons",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || "",
+                    },
+                    body: JSON.stringify({
+                        course_auth_id: courseAuthId,
+                        mode: mode,
+                    }),
+                },
+            );
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(`${data.message}\n\nPolling will refresh automatically.`);
+            } else {
+                alert(`Failed: ${data.error || "Unknown error"}`);
+            }
+        } catch (error) {
+            console.error("Error completing lessons:", error);
+            alert("Error completing lessons: " + error);
+        }
+    };
+
+    const handleResetProgress = async () => {
+        if (
+            !confirm(
+                "Reset ALL lesson progress? This will clear all completion data.",
+            )
+        )
+            return;
+        alert(
+            "Reset functionality not yet implemented - requires backend endpoint",
+        );
+    };
+
+    // 🎓 EXAM: Handler for exam button click
+    const handleExamClick = () => {
+        setShowExamRoom(true);
+    };
+
+    const handleExamExit = () => {
+        setShowExamRoom(false);
+    };
+
+    // Show Exam Room if requested
+    if (showExamRoom) {
+        return (
+            <ExamRoom
+                courseAuthId={courseAuthId}
+                onBackToDashboard={handleExamExit}
+            />
+        );
+    }
 
     // Loading classroom data
     if (!classroomContext) {
@@ -138,65 +214,124 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
 
     // 🎨 DEV TOGGLE UI (only in development mode)
     const DevModeToggle = showToggle ? (
-        <div className="btn-group" role="group" aria-label="View mode toggle">
-            <button
-                type="button"
-                onClick={() => setDevMode("auto")}
-                className="btn btn-sm"
-                title="Auto mode"
-                style={{
-                    backgroundColor:
-                        devMode === "auto"
-                            ? "#3498db"
-                            : "rgba(255,255,255,0.2)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    padding: "6px 12px",
-                    fontSize: "0.85rem",
-                    fontWeight: "600",
-                }}
+        <>
+            <div
+                className="btn-group me-2"
+                role="group"
+                aria-label="View mode toggle"
             >
-                Auto
-            </button>
-            <button
-                type="button"
-                onClick={() => setDevMode("online")}
-                className="btn btn-sm"
-                title="Force online view"
-                style={{
-                    backgroundColor:
-                        devMode === "online"
-                            ? "#27ae60"
-                            : "rgba(255,255,255,0.2)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    padding: "6px 12px",
-                    fontSize: "0.85rem",
-                    fontWeight: "600",
-                }}
-            >
-                Online
-            </button>
-            <button
-                type="button"
-                onClick={() => setDevMode("offline")}
-                className="btn btn-sm"
-                title="Force offline view"
-                style={{
-                    backgroundColor:
-                        devMode === "offline"
-                            ? "#e67e22"
-                            : "rgba(255,255,255,0.2)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.3)",
-                    padding: "6px 12px",
-                    fontSize: "0.85rem",
-                    fontWeight: "600",
-                }}
-            >
-                Offline
-            </button>
-        </div>
+                <button
+                    type="button"
+                    onClick={() => setDevMode("auto")}
+                    className="btn btn-sm"
+                    title="Auto mode"
+                    style={{
+                        backgroundColor:
+                            devMode === "auto"
+                                ? "#3498db"
+                                : "rgba(255,255,255,0.2)",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    Auto
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setDevMode("online")}
+                    className="btn btn-sm"
+                    title="Force online view"
+                    style={{
+                        backgroundColor:
+                            devMode === "online"
+                                ? "#27ae60"
+                                : "rgba(255,255,255,0.2)",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    Online
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setDevMode("offline")}
+                    className="btn btn-sm"
+                    title="Force offline view"
+                    style={{
+                        backgroundColor:
+                            devMode === "offline"
+                                ? "#e67e22"
+                                : "rgba(255,255,255,0.2)",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    Offline
+                </button>
+            </div>
+            <div className="btn-group" role="group" aria-label="Lesson tools">
+                <button
+                    type="button"
+                    onClick={() => handleCompleteAllLessons("online")}
+                    className="btn btn-sm"
+                    title="Complete all lessons (Online/Live Class mode)"
+                    style={{
+                        backgroundColor: "#27ae60",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    <i className="fas fa-check-double me-1"></i>
+                    Complete Online
+                </button>
+                <button
+                    type="button"
+                    onClick={() => handleCompleteAllLessons("offline")}
+                    className="btn btn-sm"
+                    title="Complete all lessons (Offline/Self-Study mode)"
+                    style={{
+                        backgroundColor: "#3498db",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    <i className="fas fa-check-double me-1"></i>
+                    Complete Offline
+                </button>
+                <button
+                    type="button"
+                    onClick={handleResetProgress}
+                    className="btn btn-sm"
+                    title="Reset all lesson progress"
+                    style={{
+                        backgroundColor: "#e74c3c",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    <i className="fas fa-redo me-1"></i>
+                    Reset
+                </button>
+            </div>
+        </>
     ) : null;
 
     // ONLINE: Live class in session (instructor has started)
@@ -207,6 +342,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                 student={student}
                 validations={validations || null}
                 onBackToDashboard={onBackToDashboard}
+                onExamClick={handleExamClick}
                 devModeToggle={DevModeToggle}
             />
         );
@@ -219,6 +355,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                 courseAuthId={courseAuthId}
                 student={student}
                 onBackToDashboard={onBackToDashboard}
+                onExamClick={handleExamClick}
                 devModeToggle={DevModeToggle}
             />
         );
@@ -248,6 +385,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                     subtitle={`Waiting for instructor | Student: ${student?.name || "N/A"}`}
                     icon={<i className="fas fa-clock"></i>}
                     onBackToDashboard={onBackToDashboard}
+                    onExamClick={handleExamClick}
                     classroomStatus="WAITING"
                     devModeToggle={DevModeToggle}
                 />
@@ -577,6 +715,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
             courseAuthId={courseAuthId}
             student={student}
             onBackToDashboard={onBackToDashboard}
+            onExamClick={handleExamClick}
             devModeToggle={DevModeToggle}
         />
     );

@@ -207,7 +207,7 @@ return [
         /*
          * Application-specific
          */
-        // KKP\Laravel\ServiceProviders\CollectionMacroServiceProvider::class,
+        KKP\Laravel\ServiceProviders\CollectionMacroServiceProvider::class,
         KKP\Laravel\ServiceProviders\JSDataServiceProvider::class,
 
         // App\Providers\KeymasterServiceProvider::class,

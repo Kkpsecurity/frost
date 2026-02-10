@@ -7,6 +7,7 @@ const SchoolDashboardTitleBar = ({
     subtitle,
     icon,
     onBackToDashboard,
+    onExamClick,
     classroomStatus = null,
     devModeToggle = null,
 }: SchoolDashboardTitleBarProps) => {
@@ -24,8 +25,13 @@ const SchoolDashboardTitleBar = ({
     );
 
     const handleExamClick = () => {
-        // Exam UI is not yet implemented in the React classroom.
-        // This preserves the desired UX (button appears only when qualified) without hard-wiring routes.
+        // If onExamClick handler is provided, use it
+        if (onExamClick) {
+            onExamClick();
+            return;
+        }
+
+        // Fallback behavior if no handler provided
         const nextAttemptAt = effectiveStudentExam?.next_attempt_at;
 
         if (nextAttemptAt) {

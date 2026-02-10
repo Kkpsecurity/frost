@@ -39,6 +39,7 @@ export type SchoolDashboardTitleBarProps = {
     icon?: React.ReactNode;
     className?: string;
     onBackToDashboard?: () => void;
+    onExamClick?: () => void;
     classroomStatus?: "ONLINE" | "WAITING" | "OFFLINE" | null;
     devModeToggle?: React.ReactNode;
 };
