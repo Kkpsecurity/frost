@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Notifications\Account\ProfileUpdatedNotification;
+use App\Events\Payment\PaymentMethodAdded;
+use App\Events\Payment\PaymentMethodRemoved;
+use App\Notifications\Payment\DefaultPaymentUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -75,8 +79,10 @@ class ProfileController extends Controller
                 ['value' => json_encode($savedMethods)]
             );
 
-            return response()->json(['success' => true, 'message' => 'Payment method added successfully']);
+            // Dispatch event to send notification
+            event(new PaymentMethodAdded($user, $newMethod));
 
+            return response()->json(['success' => true, 'message' => 'Payment method added successfully']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Failed to add payment method: ' . $e->getMessage()]);
         }
@@ -131,8 +137,20 @@ class ProfileController extends Controller
                 ['value' => json_encode($savedMethods)]
             );
 
-            return response()->json(['success' => true, 'message' => 'Default payment method updated']);
+            // Send notification about default payment method change
+            // Find the method that was set as default
+            $defaultMethod = null;
+            foreach ($savedMethods as $method) {
+                if ($method['is_default']) {
+                    $defaultMethod = $method;
+                    break;
+                }
+            }
+            if ($defaultMethod) {
+                $user->notify(new DefaultPaymentUpdatedNotification($defaultMethod));
+            }
 
+            return response()->json(['success' => true, 'message' => 'Default payment method updated']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Failed to update default payment method: ' . $e->getMessage()]);
         }
@@ -192,8 +210,10 @@ class ProfileController extends Controller
                 ['value' => json_encode($savedMethods)]
             );
 
-            return response()->json(['success' => true, 'message' => 'Payment method deleted successfully']);
+            // Dispatch event to send notification
+            event(new PaymentMethodRemoved($user, $methodToDelete));
 
+            return response()->json(['success' => true, 'message' => 'Payment method deleted successfully']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Failed to delete payment method: ' . $e->getMessage()]);
         }
@@ -220,7 +240,7 @@ class ProfileController extends Controller
         // Get user data for each section
         $profileData = $this->getProfileData($user);
         $settingsData = $this->getSettingsData($user);
-        $alertsData = $this->getAlertsData($user);
+        $notificationsData = $this->getNotificationsData($user);
         $ordersData = $this->getOrdersData($user);
         $paymentsData = $this->getPaymentsData($user); // New payments section
 
@@ -228,12 +248,12 @@ class ProfileController extends Controller
         $stripeEnabled = !empty(setting('payments.stripe.test_secret_key')) || !empty(setting('payments.stripe.live_secret_key'));
         $paypalEnabled = !empty(setting('payments.paypal.client_id'));
 
-        return view('student.account.index', compact(
+        return view('frontend.account.index', compact(
             'user',
             'activeSection',
             'profileData',
             'settingsData',
-            'alertsData',
+            'notificationsData',
             'ordersData',
             'paymentsData',
             'stripeEnabled',
@@ -257,7 +277,8 @@ class ProfileController extends Controller
                 'last_login' => $user->updated_at->format('M j, Y g:i A'),
             ],
             'avatar' => [
-                'current_avatar' => $user->avatar_url ?? null,
+                'current_avatar' => $user->getAvatar('regular'),
+                'has_custom_avatar' => $user->hasCustomAvatar(),
                 'use_gravatar' => $user->use_gravatar ?? false,
             ],
             'student_info' => $user->student_info ?? [],
@@ -275,7 +296,7 @@ class ProfileController extends Controller
             'email_preferences' => [
                 'email_opt_in' => $user->email_opt_in ?? false,
             ],
-            'preferences' => $user->UserPrefs->pluck('value', 'key')->toArray(),
+            'preferences' => $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray(),
             'privacy_settings' => [
                 'profile_visibility' => 'private', // default
             ],
@@ -288,40 +309,43 @@ class ProfileController extends Controller
     }
 
     /**
-     * Get alerts tab data
+     * Get notifications preferences data
      */
-    private function getAlertsData($user)
+    private function getNotificationsData($user)
     {
-        // Get recent alerts/notifications
-        $recentAlerts = collect([
-            [
-                'id' => 1,
-                'type' => 'info',
-                'title' => 'Course Enrollment',
-                'message' => 'You have been enrolled in a new course',
-                'created_at' => now()->subDays(2),
-                'read' => false,
-            ],
-            [
-                'id' => 2,
-                'type' => 'warning',
-                'title' => 'Profile Update Required',
-                'message' => 'Please update your profile information',
-                'created_at' => now()->subWeek(),
-                'read' => true,
-            ],
-        ]);
+        // Get user preferences
+        $userPrefs = $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
+
+        // Get channel preferences (default all enabled)
+        $channels = [
+            'database' => isset($userPrefs['notification_channel_database']) ? (bool)$userPrefs['notification_channel_database'] : true,
+            'mail' => isset($userPrefs['notification_channel_mail']) ? (bool)$userPrefs['notification_channel_mail'] : true,
+            'browser' => isset($userPrefs['notification_channel_browser']) ? (bool)$userPrefs['notification_channel_browser'] : true,
+        ];
+
+        // Get individual notification preferences
+        $notifications = [];
+        $notificationConfig = config('user_notifications.notifications', []);
+
+        foreach ($notificationConfig as $category => $categoryNotifications) {
+            foreach ($categoryNotifications as $notification) {
+                if ($notification['user_controllable'] ?? false) {
+                    $key = $notification['key'];
+                    // Default to enabled if not set
+                    $notifications[$key] = isset($userPrefs['notification_' . $key]) ? (bool)$userPrefs['notification_' . $key] : true;
+                }
+            }
+        }
 
         return [
-            'recent_alerts' => $recentAlerts,
-            'unread_count' => $recentAlerts->where('read', false)->count(),
-            'alert_preferences' => [
-                'email_alerts' => true,
-                'browser_notifications' => false,
-            ],
+            'channels' => $channels,
+            'notifications' => $notifications,
         ];
     }
 
+    /**
+     * Get alerts tab data
+     */
     /**
      * Get orders tab data
      */
@@ -482,19 +506,67 @@ class ProfileController extends Controller
     public function updateProfile(Request $request)
     {
         $request->validate([
-            'fname' => 'required|string|max:255',
-            'lname' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . Auth::id(),
+            'student_info.initials' => 'nullable|string|max:5',
+            'student_info.suffix' => 'nullable|string|max:10',
+            'student_info.dob' => 'nullable|date|before:today',
+            'student_info.phone' => 'nullable|string|max:20',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'use_gravatar' => 'nullable|boolean',
         ]);
 
         $user = Auth::user();
-        $user->update([
-            'fname' => $request->fname,
-            'lname' => $request->lname,
-            'email' => $request->email,
-        ]);
 
-        return redirect()->route('account.index', ['tab' => 'profile'])
+        // Update basic fields
+        $user->fname = $request->first_name;
+        $user->lname = $request->last_name;
+        $user->email = $request->email;
+
+        // Update student_info JSON field
+        $studentInfo = $user->student_info ?? [];
+        if ($request->has('student_info')) {
+            $studentInfo['initials'] = $request->input('student_info.initials');
+            $studentInfo['suffix'] = $request->input('student_info.suffix');
+            $studentInfo['dob'] = $request->input('student_info.dob');
+            $studentInfo['phone'] = $request->input('student_info.phone');
+        }
+        $user->student_info = $studentInfo;
+
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
+            $user->use_gravatar = false;
+        }
+
+        // Handle gravatar preference
+        if ($request->has('use_gravatar')) {
+            $user->use_gravatar = $request->boolean('use_gravatar');
+            if ($user->use_gravatar) {
+                $user->avatar = null; // Clear uploaded avatar if using gravatar
+            }
+        }
+
+        $user->save();
+
+        // Track what was updated for notification
+        $updatedFields = [];
+        if ($request->filled('fname') || $request->filled('lname')) {
+            $updatedFields[] = 'name';
+        }
+        if ($request->filled('student_info')) {
+            $updatedFields[] = 'student_info';
+        }
+        if ($request->hasFile('avatar') || $request->has('use_gravatar')) {
+            $updatedFields[] = 'avatar';
+        }
+
+        // Send notification
+        $user->notify(new ProfileUpdatedNotification($updatedFields));
+
+        return redirect()->route('account.index', ['section' => 'profile'])
             ->with('success', 'Profile updated successfully!');
     }
 
@@ -506,12 +578,141 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         // Update email preferences
-        $user->update([
-            'email_opt_in' => $request->boolean('email_opt_in'),
-        ]);
+        $user->email_opt_in = $request->boolean('email_opt_in');
 
-        return redirect()->route('account.index', ['tab' => 'settings'])
+        // Update notification settings (stored in user_prefs)
+        if ($request->has('notifications')) {
+            foreach ($request->notifications as $key => $value) {
+                \App\Models\UserPref::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'pref_name' => 'notification_' . $key,
+                    ],
+                    [
+                        'pref_value' => $value ? '1' : '0',
+                    ]
+                );
+            }
+        }
+
+        // Update preferences (stored in user_prefs)
+        if ($request->has('preferences')) {
+            foreach ($request->preferences as $key => $value) {
+                \App\Models\UserPref::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'pref_name' => $key,
+                    ],
+                    [
+                        'pref_value' => $value,
+                    ]
+                );
+            }
+        }
+
+        // Update privacy settings (stored in user_prefs)
+        if ($request->has('profile_visibility')) {
+            \App\Models\UserPref::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'pref_name' => 'profile_visibility',
+                ],
+                [
+                    'pref_value' => $request->profile_visibility,
+                ]
+            );
+        }
+
+        $user->save();
+
+        return redirect()->route('account.index', ['section' => 'settings'])
             ->with('success', 'Settings updated successfully!');
+    }
+
+    /**
+     * Update notification preferences
+     */
+    public function updateNotifications(Request $request)
+    {
+        $user = Auth::user();
+
+        // Get all notification definitions from config
+        $notificationConfig = config('user_notifications.notifications', []);
+        $allNotifications = [];
+
+        // Flatten all notifications from all categories
+        foreach ($notificationConfig as $category => $notifications) {
+            foreach ($notifications as $notification) {
+                if ($notification['user_controllable'] ?? false) {
+                    $allNotifications[$notification['key']] = $notification;
+                }
+            }
+        }
+
+        // Update global channel preferences
+        if ($request->has('channels')) {
+            foreach ($request->channels as $channel => $enabled) {
+                \App\Models\UserPref::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'pref_name' => 'notification_channel_' . $channel,
+                    ],
+                    [
+                        'pref_value' => $enabled ? '1' : '0',
+                    ]
+                );
+            }
+        }
+
+        // Update individual notification preferences
+        // Only allow updating notifications that are user_controllable
+        if ($request->has('notifications')) {
+            foreach ($request->notifications as $key => $enabled) {
+                // Verify this notification is user_controllable
+                if (isset($allNotifications[$key])) {
+                    \App\Models\UserPref::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'pref_name' => 'notification_' . $key,
+                        ],
+                        [
+                            'pref_value' => $enabled ? '1' : '0',
+                        ]
+                    );
+                }
+            }
+
+            // Disable any notifications that weren't checked (user unchecked them)
+            foreach ($allNotifications as $key => $notification) {
+                if (!isset($request->notifications[$key])) {
+                    \App\Models\UserPref::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'pref_name' => 'notification_' . $key,
+                        ],
+                        [
+                            'pref_value' => '0',
+                        ]
+                    );
+                }
+            }
+        } else {
+            // If no notifications are checked, disable all user_controllable notifications
+            foreach ($allNotifications as $key => $notification) {
+                \App\Models\UserPref::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'pref_name' => 'notification_' . $key,
+                    ],
+                    [
+                        'pref_value' => '0',
+                    ]
+                );
+            }
+        }
+
+        return redirect()->route('account.index', ['section' => 'notifications'])
+            ->with('success', 'Notification preferences updated successfully!');
     }
 
     /**
@@ -531,5 +732,33 @@ class ProfileController extends Controller
         // In the future, this could generate and return a PDF invoice
         return redirect()->route('account.index', ['tab' => 'orders'])
             ->with('info', 'Invoice download feature coming soon. Order #' . $order->id . ' details are available in your order history.');
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllNotificationsRead()
+    {
+        $user = Auth::user();
+        $user->unreadNotifications->markAsRead();
+
+        return back()->with('success', 'All notifications marked as read');
+    }
+
+    /**
+     * Mark a single notification as read and redirect
+     */
+    public function markNotificationRead($notificationId)
+    {
+        $user = Auth::user();
+        $notification = $user->notifications()->findOrFail($notificationId);
+
+        // Mark as read
+        $notification->markAsRead();
+
+        // Redirect to the notification's URL if available, otherwise to notifications page
+        $redirectUrl = $notification->data['url'] ?? route('account.index', ['section' => 'notifications']);
+
+        return redirect($redirectUrl);
     }
 }

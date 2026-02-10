@@ -40,7 +40,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/account', [App\Http\Controllers\Student\ProfileController::class, 'index'])->name('account.index');
     Route::post('/account/profile', [App\Http\Controllers\Student\ProfileController::class, 'updateProfile'])->name('account.profile.update');
     Route::post('/account/settings', [App\Http\Controllers\Student\ProfileController::class, 'updateSettings'])->name('account.settings.update');
+    Route::post('/account/notifications', [App\Http\Controllers\Student\ProfileController::class, 'updateNotifications'])->name('account.notifications.update');
     Route::get('/account/invoice/{order}', [App\Http\Controllers\Student\ProfileController::class, 'downloadInvoice'])->name('student.invoice');
+
+    // Notification routes
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\Student\ProfileController::class, 'markAllNotificationsRead'])->name('notifications.mark-all-read');
+    Route::get('/notifications/{notification}/read', [App\Http\Controllers\Student\ProfileController::class, 'markNotificationRead'])->name('notifications.mark-read');
 
     // Payment method management routes
     Route::prefix('account/payments')->name('account.payments.')->group(function () {
