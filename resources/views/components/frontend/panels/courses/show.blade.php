@@ -2,14 +2,36 @@
 
 @push('component-styles')
     <link rel="stylesheet" href="{{ asset('css/components/course-details.css') }}">
-@endpu                                <a href="{{ route('payments.course', $course['id']) }}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-graduation-cap me-2"></i>Enroll Now
-                                </a><div class="frost-secondary-bg py-5">
+@endpush
+
+<div class="frost-secondary-bg py-5">
     <div class="container">
         <div class="row">
             <div class="col-lg-8">
                 {{-- Course Details Content --}}
                 <div class="course-details-wrapper">
+                    @php
+                        $alertMapping = [
+                            'success' => 'success',
+                            'status' => 'success',
+                            'warning' => 'warning',
+                            'info' => 'info',
+                            'error' => 'danger',
+                            'danger' => 'danger',
+                        ];
+                    @endphp
+
+                    @foreach ($alertMapping as $key => $variant)
+                        @if (session()->has($key))
+                            <div class="alert alert-{{ $variant }} alert-dismissible shadow-sm rounded-3 mb-4 bg-opacity-90 text-light"
+                                role="alert">
+                                {{ session($key) }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                    aria-label="Close"></button>
+                            </div>
+                        @endif
+                    @endforeach
+
                     {{-- Course Header --}}
                     <div class="course-details-header mb-4">
                         <div class="d-flex align-items-start">
@@ -17,18 +39,19 @@
                                 <i class="{{ $course['icon'] ?? 'fas fa-graduation-cap' }} text-primary fa-4x"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h1 class="course-title-large text-white">{{ $course['title'] ?? 'Course Details' }}</h1>
-                                @if(isset($course['type']))
+                                <h1 class="course-title-large text-white">{{ $course['title'] ?? 'Course Details' }}
+                                </h1>
+                                @if (isset($course['type']))
                                     <p class="course-type-large text-white-50 lead mb-2">{{ $course['type'] }}</p>
                                 @endif
-                                @if(isset($course['badge']))
+                                @if (isset($course['badge']))
                                     <div class="course-badge-large mb-3">
                                         <span class="badge bg-primary">{{ $course['badge'] }}</span>
                                     </div>
                                 @endif
                             </div>
                         </div>
-                        @if(isset($course['description']))
+                        @if (isset($course['description']))
                             <div class="course-description-full mt-4">
                                 <p class="lead text-white-50">{{ $course['description'] }}</p>
                             </div>
@@ -36,7 +59,7 @@
                     </div>
 
                     {{-- Course Overview --}}
-                    @if(isset($course['fullDescription']))
+                    @if (isset($course['fullDescription']))
                         <div class="mb-5">
                             <h3 class="section-title text-white">Course Overview</h3>
                             <div class="course-description-full text-white-50">
@@ -46,24 +69,26 @@
                     @endif
 
                     {{-- What You'll Learn --}}
-                    @if(isset($course['features']) && is_array($course['features']))
+                    @if (isset($course['features']) && is_array($course['features']))
                         <div class="mb-5">
                             <h3 class="section-title text-white">What You'll Learn</h3>
                             <ul class="feature-list-detailed">
-                                @foreach($course['features'] as $feature)
-                                    <li><i class="fas fa-check text-success"></i><span class="text-white-50">{{ $feature }}</span></li>
+                                @foreach ($course['features'] as $feature)
+                                    <li><i class="fas fa-check text-success"></i><span
+                                            class="text-white-50">{{ $feature }}</span></li>
                                 @endforeach
                             </ul>
                         </div>
                     @endif
 
                     {{-- Requirements --}}
-                    @if(isset($course['requirements']) && is_array($course['requirements']))
+                    @if (isset($course['requirements']) && is_array($course['requirements']))
                         <div class="mb-5">
                             <h3 class="section-title text-white">Requirements</h3>
                             <ul class="requirements-list">
-                                @foreach($course['requirements'] as $requirement)
-                                    <li><i class="fas fa-info-circle text-info"></i><span class="text-white-50">{{ $requirement }}</span></li>
+                                @foreach ($course['requirements'] as $requirement)
+                                    <li><i class="fas fa-info-circle text-info"></i><span
+                                            class="text-white-50">{{ $requirement }}</span></li>
                                 @endforeach
                             </ul>
                         </div>
@@ -83,37 +108,38 @@
 
                             {{-- Course Meta Information --}}
                             <div class="course-meta-info mb-4">
-                                @if(isset($course['duration']))
+                                @if (isset($course['duration']))
                                     <div class="info-item d-flex justify-content-between">
                                         <span class="info-label"><i class="fas fa-clock me-1"></i>Duration:</span>
                                         <span class="info-value">{{ $course['duration'] }}</span>
                                     </div>
                                 @endif
-                                @if(isset($course['format']))
+                                @if (isset($course['format']))
                                     <div class="info-item d-flex justify-content-between">
                                         <span class="info-label"><i class="fas fa-laptop me-1"></i>Format:</span>
                                         <span class="info-value">{{ $course['format'] }}</span>
                                     </div>
                                 @endif
-                                @if(isset($course['level']))
+                                @if (isset($course['level']))
                                     <div class="info-item d-flex justify-content-between">
                                         <span class="info-label"><i class="fas fa-signal me-1"></i>Level:</span>
                                         <span class="info-value">{{ $course['level'] }}</span>
                                     </div>
                                 @endif
-                                @if(isset($course['language']))
+                                @if (isset($course['language']))
                                     <div class="info-item d-flex justify-content-between">
                                         <span class="info-label"><i class="fas fa-language me-1"></i>Language:</span>
                                         <span class="info-value">{{ $course['language'] }}</span>
                                     </div>
                                 @endif
-                                @if(isset($course['certification']))
+                                @if (isset($course['certification']))
                                     <div class="info-item d-flex justify-content-between">
-                                        <span class="info-label"><i class="fas fa-certificate me-1"></i>Certification:</span>
+                                        <span class="info-label"><i
+                                                class="fas fa-certificate me-1"></i>Certification:</span>
                                         <span class="info-value">{{ $course['certification'] }}</span>
                                     </div>
                                 @endif
-                                @if(isset($course['classSize']))
+                                @if (isset($course['classSize']))
                                     <div class="info-item d-flex justify-content-between">
                                         <span class="info-label"><i class="fas fa-users me-1"></i>Class Size:</span>
                                         <span class="info-value">{{ $course['classSize'] }}</span>
@@ -122,11 +148,12 @@
                             </div>
 
                             {{-- Course Benefits --}}
-                            @if(isset($course['certification']) || isset($course['features']))
+                            @if (isset($course['certification']) || isset($course['features']))
                                 <div class="enrollment-features mb-4">
-                                    @if(isset($course['certification']))
+                                    @if (isset($course['certification']))
                                         <div class="feature-item mb-2">
-                                            <i class="fas fa-certificate text-success me-2"></i>{{ $course['certification'] }}
+                                            <i
+                                                class="fas fa-certificate text-success me-2"></i>{{ $course['certification'] }}
                                         </div>
                                     @endif
                                     <div class="feature-item mb-2">
@@ -140,8 +167,8 @@
 
                             {{-- Action Buttons --}}
                             <div class="course-actions d-grid gap-2">
-                                <a href="{{ route('payments.course', $course['id']) }}" class="btn btn-primary btn-lg"
-                                   onclick="console.log('Enrolling in course {{ $course['id'] }}', '{{ route('payments.course', $course['id']) }}'); return true;">
+                                <a href="{{ route('courses.enroll', $course['id']) }}" class="btn btn-primary btn-lg"
+                                    onclick="console.log('Enrolling in course {{ $course['id'] }}', '{{ route('courses.enroll', $course['id']) }}'); return true;">
                                     <i class="fas fa-graduation-cap me-2"></i>Enroll Now
                                 </a>
                                 <a href="{{ route('courses.list') }}" class="btn btn-outline-secondary">
