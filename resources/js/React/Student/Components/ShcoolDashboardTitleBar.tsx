@@ -10,19 +10,67 @@ const SchoolDashboardTitleBar = ({
     onExamClick,
     classroomStatus = null,
     devModeToggle = null,
+    courseAuthId = null,
 }: SchoolDashboardTitleBarProps) => {
     const { studentExam, studentExamsByCourseAuth, selectedCourseAuthId } =
         useStudent();
 
+    // Use explicitly passed courseAuthId if available, otherwise fall back to selectedCourseAuthId
+    const effectiveCourseAuthId = courseAuthId ?? selectedCourseAuthId;
+
     const effectiveStudentExam =
-        (selectedCourseAuthId
-            ? studentExamsByCourseAuth?.[selectedCourseAuthId]
+        (effectiveCourseAuthId
+            ? studentExamsByCourseAuth?.[effectiveCourseAuthId]
             : null) ?? studentExam;
 
-    const showExamButton = Boolean(
+    // 🔍 DEBUG: Log exam button visibility logic
+    console.group("🎓 SchoolDashboardTitleBar Exam Button Debug");
+    console.log("Props courseAuthId:", courseAuthId);
+    console.log("Context selectedCourseAuthId:", selectedCourseAuthId);
+    console.log("Effective courseAuthId:", effectiveCourseAuthId);
+    console.log("Full studentExamsByCourseAuth:", studentExamsByCourseAuth);
+    console.log("Effective exam data:", effectiveStudentExam);
+
+    if (effectiveStudentExam) {
+        console.log("✅ Exam data found:");
+        console.log("  - is_ready:", effectiveStudentExam.is_ready);
+        console.log(
+            "  - has_active_attempt:",
+            effectiveStudentExam.has_active_attempt,
+        );
+        console.log(
+            "  - next_attempt_at:",
+            effectiveStudentExam.next_attempt_at,
+        );
+    } else {
+        console.warn(
+            "❌ No exam data found for courseAuthId:",
+            effectiveCourseAuthId,
+        );
+        console.log(
+            "Available courseAuthIds in studentExamsByCourseAuth:",
+            studentExamsByCourseAuth
+                ? Object.keys(studentExamsByCourseAuth)
+                : "null",
+        );
+    }
+
+    // 🎯 TEMPORARY FIX: Show exam button if onExamClick handler is provided
+    // This bypasses the backend check while we fix the opcache/PDO issue
+    const showExamButtonBackend = Boolean(
         effectiveStudentExam?.has_active_attempt ||
         effectiveStudentExam?.is_ready,
     );
+
+    const showExamButton = Boolean(onExamClick) || showExamButtonBackend;
+
+    console.log(
+        "Backend check - showExamButtonBackend:",
+        showExamButtonBackend,
+    );
+    console.log("Has onExamClick handler:", Boolean(onExamClick));
+    console.log("Final decision - showExamButton:", showExamButton);
+    console.groupEnd();
 
     const handleExamClick = () => {
         // If onExamClick handler is provided, use it

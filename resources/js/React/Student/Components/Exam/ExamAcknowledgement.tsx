@@ -15,12 +15,16 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
 
     // Check if studentExam has the flat fields directly (from polling)
     // or nested exam object (from examAuth state)
-    const exam = studentExam?.exam || (studentExam?.exam_id ? {
-        id: studentExam.exam_id,
-        num_questions: studentExam.num_questions,
-        num_to_pass: studentExam.num_to_pass,
-        policy_expire_seconds: studentExam.policy_expire_seconds,
-    } : null);
+    const exam =
+        studentExam?.exam ||
+        (studentExam?.exam_id
+            ? {
+                  id: studentExam.exam_id,
+                  num_questions: studentExam.num_questions,
+                  num_to_pass: studentExam.num_to_pass,
+                  policy_expire_seconds: studentExam.policy_expire_seconds,
+              }
+            : null);
     const errorMessage = studentExam?.error;
 
     if (errorMessage) {
@@ -53,7 +57,12 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 <i className="fas fa-exclamation-triangle me-2"></i>
                                 Exam Configuration Error
                             </h4>
-                            <p style={{ color: "#ecf0f1", marginBottom: "1.5rem" }}>
+                            <p
+                                style={{
+                                    color: "#ecf0f1",
+                                    marginBottom: "1.5rem",
+                                }}
+                            >
                                 {errorMessage}
                             </p>
                             <div
@@ -66,12 +75,28 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <strong>Debug Information:</strong>
-                                <div style={{ marginTop: "0.5rem", fontFamily: "monospace", fontSize: "0.9rem" }}>
-                                    <div>studentExam available: {studentExam ? "Yes" : "No"}</div>
-                                    <div>exam object: {exam ? "Yes" : "No"}</div>
+                                <div
+                                    style={{
+                                        marginTop: "0.5rem",
+                                        fontFamily: "monospace",
+                                        fontSize: "0.9rem",
+                                    }}
+                                >
+                                    <div>
+                                        studentExam available:{" "}
+                                        {studentExam ? "Yes" : "No"}
+                                    </div>
+                                    <div>
+                                        exam object: {exam ? "Yes" : "No"}
+                                    </div>
                                     {studentExam && (
                                         <div style={{ marginTop: "0.5rem" }}>
-                                            Raw data: {JSON.stringify(studentExam, null, 2)}
+                                            Raw data:{" "}
+                                            {JSON.stringify(
+                                                studentExam,
+                                                null,
+                                                2,
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -127,7 +152,8 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 Exam Configuration Missing
                             </h4>
                             <p style={{ color: "#ecf0f1" }}>
-                                The exam configuration could not be loaded. The exam object is missing.
+                                The exam configuration could not be loaded. The
+                                exam object is missing.
                             </p>
                             <button
                                 className="btn btn-lg mt-3"
@@ -244,6 +270,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
 
                         <div className="d-flex justify-content-center gap-3">
                             <button
+                                type="button"
                                 className="btn btn-lg px-5 py-3"
                                 onClick={onBeginExam}
                                 style={{
@@ -258,6 +285,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 Begin Exam
                             </button>
                             <button
+                                type="button"
                                 className="btn btn-lg px-4 py-3"
                                 onClick={onBackToDashboard}
                                 style={{

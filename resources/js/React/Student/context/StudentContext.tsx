@@ -5,6 +5,36 @@ import React, { createContext, ReactNode } from "react";
  * Contains: user info, courses, progress, assignments, etc.
  */
 
+export interface LessonPayloadEntry {
+    id: number;
+    lesson_id: number;
+    is_completed?: boolean;
+    status?: string;
+    completed_at?: string | null;
+    [key: string]: any;
+}
+
+export interface CourseAuthLessonPayload {
+    course_auth_id: number;
+    lessons: LessonPayloadEntry[];
+}
+
+export interface StudentExam {
+    is_ready: boolean;
+    next_attempt_at: string | null;
+    missing_id_file: boolean;
+    has_active_attempt: boolean;
+    active_exam_auth_id: number | null;
+    exam_id: number | null;
+    num_questions: number | null;
+    num_to_pass: number | null;
+    policy_expire_seconds: number | null;
+    has_previous_attempt: boolean;
+    previous_exam_passed: boolean;
+    previous_exam_score: string | null;
+    previous_exam_completed_at: string | null;
+}
+
 export interface StudentContextType {
     student: {
         id: number;
@@ -26,9 +56,10 @@ export interface StudentContextType {
     studentLessons?: any[];
     activeClassroom?: any | null;
     // Student-owned exam readiness/attempt (from student poll)
-    studentExam?: any | null;
+    studentExam?: StudentExam | null;
     // Student-owned exam readiness/attempt for all enrollments
-    studentExamsByCourseAuth?: Record<number, any> | null;
+    studentExamsByCourseAuth?: Record<number, StudentExam> | null;
+    lessonsByCourseAuth?: Record<number, CourseAuthLessonPayload> | null;
     notifications: any[];
     assignments: any[];
     selectedCourseAuthId: number | null;

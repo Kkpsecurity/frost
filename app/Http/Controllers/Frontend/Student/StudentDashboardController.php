@@ -470,7 +470,7 @@ class StudentDashboardController extends Controller
 
             // Get ALL student's course authorizations with course data
             $courseAuths = $user->courseAuths()
-                ->with(['Course', 'LatestExamAuth'])
+                ->with(['Course'])
                 ->get();
 
             // Map course auths to course list for dashboard
@@ -533,7 +533,16 @@ class StudentDashboardController extends Controller
                         'has_active_attempt' => $activeExamAuth !== null,
                         'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
                     ];
+
+                    \Log::info("✅ Exam data for courseAuthId {$courseAuth->id}: is_ready=" . ($examObj->is_ready ? 'true' : 'false'));
                 } catch (\Throwable $e) {
+                    \Log::error("❌ Exception getting exam data for courseAuthId {$courseAuth->id}: " . $e->getMessage(), [
+                        'course_id' => $courseAuth->course_id,
+                        'exception' => get_class($e),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = null;
                 }
             }
@@ -614,7 +623,7 @@ class StudentDashboardController extends Controller
                             try {
                                 $activeCourseAuth = $courseAuths->firstWhere('id', $courseAuthId);
                                 if (! $activeCourseAuth) {
-                                    $activeCourseAuth = CourseAuth::with('LatestExamAuth')->find($courseAuthId);
+                                    $activeCourseAuth = CourseAuth::with('Course')->find($courseAuthId);
                                 }
 
                                 if ($activeCourseAuth) {

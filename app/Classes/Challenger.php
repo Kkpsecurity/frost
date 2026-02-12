@@ -13,6 +13,7 @@ use App\Classes\ChallengerResponse;
 use App\Classes\Challenger\TraitLoader;
 use App\Models\Challenge;
 use App\Models\StudentLesson;
+use Illuminate\Support\Facades\Log;
 use KKP\Laravel\Traits\AssertConfigTrait;
 
 
@@ -28,7 +29,7 @@ class Challenger
     protected static StudentLesson $_StudentLesson;
 
 
-    public static function init(int|StudentLesson $StudentLesson = null): self
+    public static function init(int|StudentLesson|null $StudentLesson = null): self
     {
 
         if (isset(self::$_config) && is_object(self::$_config)) {
@@ -55,7 +56,7 @@ class Challenger
 
         if ($StudentLesson) {
             if (is_int($StudentLesson)) {
-                self::$_StudentLesson = StudentLesson::firstOrFail($StudentLesson);
+                self::$_StudentLesson = StudentLesson::findOrFail($StudentLesson);
             } else {
                 self::$_StudentLesson = $StudentLesson;
             }
@@ -386,7 +387,7 @@ class Challenger
             self::$_config->final_challenge_min = self::$_config->dev_final_challenge_min ?? 90;
             self::$_config->final_challenge_max = self::$_config->dev_final_challenge_max ?? 240;
 
-            \Log::info('🚀 Challenger DEV MODE ENABLED', [
+            Log::info('🚀 Challenger DEV MODE ENABLED', [
                 'dev_mode_flag' => $devModeEnabled,
                 'is_non_production' => $isNonProduction,
                 'lesson_start_window' => self::$_config->lesson_start_min . 's - ' . self::$_config->lesson_start_max . 's',

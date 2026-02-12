@@ -152,10 +152,12 @@ class CoursesController extends Controller
             abort(404, 'Course not found');
         }
 
-        // Check if user is already enrolled
-        if (auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id)) {
-            return redirect()->route('courses.show', $course->id)
-                ->with('warning', 'You are already enrolled in this course.');
+        // Check if user is already enrolled - warn but allow re-enrollment (for renewals/prepay)
+        $existingEnrollment = auth()->user()->ActiveCourseAuths->firstWhere('course_id', $course->id);
+        if ($existingEnrollment) {
+            \Log::info('User ' . auth()->id() . ' already has active enrollment for course ' . $course->id . ' - allowing re-enrollment for renewal/prepay');
+            // Store warning to show on payment page
+            session()->flash('enrollment_warning', 'Note: You already have an active enrollment for this course. This purchase will extend or renew your access.');
         }
 
         try {

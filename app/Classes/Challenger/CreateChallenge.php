@@ -13,7 +13,7 @@ use App\Models\Challenge;
 
 use App\Models\StudentLesson;
 
-use function App\Helpers\kkpdebug;
+use App\Helpers\kkpdebug;
 
 trait CreateChallenge
 {

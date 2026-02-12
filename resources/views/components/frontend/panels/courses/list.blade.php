@@ -20,23 +20,26 @@
                         {{-- Course Header --}}
                         <div class="course-header">
                             <div class="course-icon">
-                                <i class="{{ $course->course_type === 'G' ? 'fas fa-shield-alt' : 'fas fa-user-shield' }}"></i>
+                                <i
+                                    class="{{ $course->course_type === 'G' ? 'fas fa-shield-alt' : 'fas fa-user-shield' }}"></i>
                             </div>
-                            <div class="course-class-badge">{{ $course->course_type === 'G' ? 'CLASS G' : 'CLASS D' }}</div>
-                            <div class="course-type">{{ $course->course_type === 'G' ? 'Armed Security' : 'Unarmed Security' }}</div>
+                            <div class="course-class-badge">{{ $course->course_type === 'G' ? 'CLASS G' : 'CLASS D' }}
+                            </div>
+                            <div class="course-type">
+                                {{ $course->course_type === 'G' ? 'Armed Security' : 'Unarmed Security' }}</div>
                         </div>
 
                         <div class="course-body">
                             <h4 class="course-title">{{ $course->title_long ?? $course->title }}</h4>
 
-                            @if($course->description)
+                            @if ($course->description)
                                 <p class="course-description">{{ Str::limit($course->description, 100) }}</p>
                             @endif
 
                             {{-- Course Statistics --}}
                             <div class="course-stats mb-3">
                                 <div class="row text-center">
-                                    @if($course->total_units > 0)
+                                    @if ($course->total_units > 0)
                                         <div class="col-4">
                                             <div class="stat-item">
                                                 <i class="fas fa-book text-info"></i>
@@ -45,7 +48,7 @@
                                             </div>
                                         </div>
                                     @endif
-                                    @if($course->total_lessons > 0)
+                                    @if ($course->total_lessons > 0)
                                         <div class="col-4">
                                             <div class="stat-item">
                                                 <i class="fas fa-play-circle text-success"></i>
@@ -58,7 +61,7 @@
                                         <div class="stat-item">
                                             <i class="fas fa-clock text-warning"></i>
                                             <div class="stat-number">
-                                                @if($course->calculated_total_minutes > 0)
+                                                @if ($course->calculated_total_minutes > 0)
                                                     {{ ceil($course->calculated_total_minutes / 60) }}
                                                 @elseif($course->total_minutes > 0)
                                                     {{ ceil($course->total_minutes / 60) }}
@@ -73,12 +76,14 @@
                             </div>
 
                             {{-- Key Features from Lessons --}}
-                            @if(!empty($course->key_features))
+                            @if (!empty($course->key_features))
                                 <div class="course-features">
                                     <h6 class="features-title">Key Topics:</h6>
                                     <ul class="feature-list">
-                                        @foreach(array_slice($course->key_features, 0, 4) as $feature)
-                                            <li><i class="fas fa-check text-success me-1"></i>{{ Str::limit($feature, 35) }}</li>
+                                        @foreach (array_slice($course->key_features, 0, 4) as $feature)
+                                            <li><i
+                                                    class="fas fa-check text-success me-1"></i>{{ Str::limit($feature, 35) }}
+                                            </li>
                                         @endforeach
                                     </ul>
                                 </div>
@@ -86,7 +91,7 @@
 
                             {{-- Course Meta --}}
                             <div class="course-meta">
-                                @if($course->duration_days > 0)
+                                @if ($course->duration_days > 0)
                                     <span class="duration">
                                         <i class="fas fa-calendar me-1"></i>{{ $course->duration_days }} Days
                                     </span>
@@ -103,8 +108,10 @@
                                 <span class="price-note">USD</span>
                             </div>
                             <div class="course-actions">
-                                <a href="{{ route('courses.show', $course->id) }}" class="btn btn-outline-primary btn-sm me-2">Learn More</a>
-                                <a href="{{ route('payments.course', $course->id) }}" class="btn btn-primary btn-sm">Enroll Now</a>
+                                <a href="{{ route('courses.show', $course->id) }}"
+                                    class="btn btn-outline-primary btn-sm me-2">Learn More</a>
+                                <a href="{{ route('courses.enroll', $course->id) }}"
+                                    class="btn btn-primary btn-sm">Enroll Now</a>
                             </div>
                         </div>
                     </div>
@@ -123,6 +130,3 @@
 
     </div>
 </div>
-
-
-

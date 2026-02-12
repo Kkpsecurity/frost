@@ -8,7 +8,9 @@
             border-radius: 20px;
         }
     </style>
+
     @include('frontend.partials.breadcrumbs')
+
     <section class="dashboard bg-light" style="margin-top: -40px;  min-height: 700px; height: auto;">
         <div class="container">
 

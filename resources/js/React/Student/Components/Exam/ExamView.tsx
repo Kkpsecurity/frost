@@ -1,88 +1,166 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 interface ExamViewProps {
     examAuth: any;
     onSubmitExam: (answers: Record<number, number>) => void;
     onBackToDashboard: () => void;
+    showDevTools?: boolean;
 }
 
 const ExamView: React.FC<ExamViewProps> = ({
     examAuth,
     onSubmitExam,
     onBackToDashboard,
+    showDevTools,
 }) => {
-    const [answers, setAnswers] = useState<Record<number, number>>({});
-    const [timeRemaining, setTimeRemaining] = useState<number>(0);
+    const devEnabled = (() => {
+        if (showDevTools) return true;
+        try {
+            if (new URLSearchParams(window.location.search).has("dev")) {
+                return true;
+            }
+            return window.localStorage.getItem("frost_dev_tools") === "1";
+        } catch {
+            return false;
+        }
+    })();
+
+    const [answers, setAnswers] = useState<Record<number, number>>(() => {
+        const examAuthId = examAuth?.id;
+        if (!examAuthId) return {};
+        try {
+            const raw = window.localStorage.getItem(
+                `frost_exam_answers_${examAuthId}`,
+            );
+            return raw ? JSON.parse(raw) : {};
+        } catch {
+            return {};
+        }
+    });
     const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
-    useEffect(() => {
-        // Calculate time remaining
-        if (examAuth.expires_at) {
-            const expiresAt = new Date(examAuth.expires_at).getTime();
-            const now = new Date().getTime();
-            const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
-            setTimeRemaining(remaining);
-        }
-    }, [examAuth]);
-
-    useEffect(() => {
-        // Countdown timer
-        if (timeRemaining <= 0) {
-            // Time's up - auto submit
-            handleSubmit();
-            return;
-        }
-
-        const timer = setInterval(() => {
-            setTimeRemaining((prev) => {
-                if (prev <= 1) {
-                    handleSubmit();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [timeRemaining]);
-
-    const formatTime = (seconds: number) => {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    };
+    const totalQuestions = examAuth.questions?.length || 0;
+    const answeredQuestions = Object.keys(answers).length;
+    const allAnswered =
+        totalQuestions > 0 && answeredQuestions >= totalQuestions;
 
     const handleAnswerChange = (questionId: number, answerValue: number) => {
-        setAnswers({
-            ...answers,
-            [questionId]: answerValue,
+        const examAuthId = examAuth?.id;
+        setAnswers((prev) => {
+            const next = {
+                ...prev,
+                [questionId]: answerValue,
+            };
+            if (examAuthId) {
+                try {
+                    window.localStorage.setItem(
+                        `frost_exam_answers_${examAuthId}`,
+                        JSON.stringify(next),
+                    );
+                } catch {
+                    // ignore
+                }
+            }
+            return next;
         });
     };
 
-    const handleSubmit = () => {
-        // Check if all questions are answered
-        const totalQuestions = examAuth.questions?.length || 0;
-        const answeredQuestions = Object.keys(answers).length;
+    useEffect(() => {
+        const examAuthId = examAuth?.id;
+        if (!examAuthId) {
+            setAnswers({});
+            return;
+        }
 
-        if (answeredQuestions < totalQuestions && timeRemaining > 0) {
-            if (
-                !confirm(
-                    `You have only answered ${answeredQuestions} out of ${totalQuestions} questions. Submit anyway?`,
-                )
-            ) {
-                return;
-            }
+        try {
+            const raw = window.localStorage.getItem(
+                `frost_exam_answers_${examAuthId}`,
+            );
+            setAnswers(raw ? JSON.parse(raw) : {});
+        } catch {
+            setAnswers({});
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [examAuth?.id]);
+
+    const handleSubmit = () => {
+        // Prevent premature submits
+        if (!allAnswered) {
+            alert(
+                `Please answer all questions before submitting. (${answeredQuestions}/${totalQuestions})`,
+            );
+            return;
         }
 
         onSubmitExam(answers);
     };
 
-    const getTimerColor = () => {
-        if (timeRemaining < 300) return "#dc3545"; // Red - less than 5 min
-        if (timeRemaining < 600) return "#ffc107"; // Yellow - less than 10 min
-        return "#28a745"; // Green
+    const handleDevAutofill = () => {
+        const examAuthId = examAuth?.id;
+        const questions = Array.isArray(examAuth?.questions)
+            ? examAuth.questions
+            : [];
+
+        if (!examAuthId || questions.length === 0) {
+            alert("No exam questions available to auto-fill.");
+            return;
+        }
+
+        const next: Record<number, number> = {};
+        const randomSeed = Math.random().toString(36).substring(7);
+
+        console.log(
+            `🎲 DEV Auto-fill: Generating random answers (seed: ${randomSeed})...`,
+        );
+
+        for (const question of questions) {
+            const questionId = Number(question?.id);
+            if (!questionId) continue;
+
+            // Collect all available answers
+            const availableAnswers: number[] = [];
+            for (let answerNum = 1; answerNum <= 5; answerNum++) {
+                const answerText = question[`answer_${answerNum}`];
+                if (answerText) {
+                    availableAnswers.push(answerNum);
+                }
+            }
+
+            // Pick a random answer from available answers
+            if (availableAnswers.length > 0) {
+                const randomIndex = Math.floor(
+                    Math.random() * availableAnswers.length,
+                );
+                next[questionId] = availableAnswers[randomIndex];
+                console.log(
+                    `  Q${questionId}: Selected answer ${availableAnswers[randomIndex]} from [${availableAnswers.join(", ")}]`,
+                );
+            }
+        }
+
+        console.log(
+            `🎲 DEV Auto-fill complete: ${Object.keys(next).length} questions answered (ExamAuth ID: ${examAuthId})`,
+        );
+
+        setAnswers(next);
+        try {
+            window.localStorage.setItem(
+                `frost_exam_answers_${examAuthId}`,
+                JSON.stringify(next),
+            );
+            console.log(
+                `💾 Saved answers to localStorage for exam ${examAuthId}`,
+            );
+        } catch {
+            console.error("Failed to save answers to localStorage");
+        }
+
+        alert(
+            `✅ Randomly filled ${Object.keys(next).length} answers! (Seed: ${randomSeed})\nCheck console for details.`,
+        );
     };
+
+    const getTimerColor = () => "#6c757d";
 
     return (
         <div
@@ -116,7 +194,7 @@ const ExamView: React.FC<ExamViewProps> = ({
                         <div>
                             <i className="fas fa-clock me-2"></i>
                             <strong style={{ fontSize: "1.5rem" }}>
-                                {formatTime(timeRemaining)}
+                                Timer disabled
                             </strong>
                         </div>
                         <div>
@@ -126,6 +204,23 @@ const ExamView: React.FC<ExamViewProps> = ({
                             <span>Answered: {Object.keys(answers).length}</span>
                         </div>
                     </div>
+
+                    {devEnabled && (
+                        <div className="mt-2 text-end">
+                            <button
+                                type="button"
+                                className="btn btn-sm"
+                                style={{
+                                    backgroundColor: "#6f42c1",
+                                    border: "none",
+                                    color: "white",
+                                }}
+                                onClick={handleDevAutofill}
+                            >
+                                DEV: Auto Fill Answers
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -252,17 +347,43 @@ const ExamView: React.FC<ExamViewProps> = ({
                             }}
                         >
                             <div className="card-body p-4 text-center">
+                                {devEnabled && (
+                                    <div className="mb-3">
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm me-2"
+                                            style={{
+                                                backgroundColor: "#6f42c1",
+                                                border: "none",
+                                                color: "white",
+                                            }}
+                                            onClick={handleDevAutofill}
+                                        >
+                                            DEV: Auto Fill Answers
+                                        </button>
+                                    </div>
+                                )}
+
                                 <button
                                     className="btn btn-primary btn-lg px-5 py-3"
                                     onClick={handleSubmit}
+                                    disabled={!allAnswered}
                                     style={{
                                         fontSize: "1.25rem",
                                         borderRadius: "8px",
+                                        opacity: allAnswered ? 1 : 0.6,
                                     }}
                                 >
                                     <i className="fas fa-check me-2"></i>
                                     Submit Exam
                                 </button>
+
+                                {!allAnswered && (
+                                    <div className="mt-3 text-muted">
+                                        Answer all questions to enable submit. (
+                                        {answeredQuestions}/{totalQuestions})
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

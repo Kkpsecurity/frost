@@ -28,6 +28,7 @@ interface OnboardingState {
 
 /**
  * OnboardingFlow - Multi-step onboarding process for students
+ * Last updated: 2026-02-11 - Fixed hoisting issue
  *
  * Steps:
  * 1. Student Agreement (Terms of Service)
@@ -48,11 +49,17 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     validations,
     onComplete,
 }) => {
+    console.log(
+        "🎓 OnboardingFlow VERSION 3.0 RENDERING - HOISTING FULLY FIXED",
+    );
+
     const getTodayKey = () => {
         try {
-            return new Date().toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+            return new Date()
+                .toLocaleString("en-US", { weekday: "long" })
+                .toLowerCase();
         } catch {
-            return 'monday';
+            return "monday";
         }
     };
 
@@ -60,29 +67,34 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         const headshot = validations?.headshot;
         if (!headshot) return null;
 
-        if (typeof headshot === 'string') return headshot;
+        if (typeof headshot === "string") return headshot;
         if (Array.isArray(headshot)) return headshot.find(Boolean) || null;
 
         // Backend sends { monday: url|null, ... } (object)
-        if (typeof headshot === 'object') {
+        if (typeof headshot === "object") {
             const todayKey = getTodayKey();
             const todayUrl = headshot?.[todayKey];
-            if (typeof todayUrl === 'string' && todayUrl.length > 0) return todayUrl;
-            const firstUrl = Object.values(headshot).find((v: any) => typeof v === 'string' && v.length > 0);
+            if (typeof todayUrl === "string" && todayUrl.length > 0)
+                return todayUrl;
+            const firstUrl = Object.values(headshot).find(
+                (v: any) => typeof v === "string" && v.length > 0,
+            );
             return (firstUrl as string) || null;
         }
 
         return null;
     };
 
-    const derivedIdCardUploaded = !!(validations?.idcard);
-    const derivedHeadshotUploaded = !!getHeadshotUrlFromValidations();
-
-    const idCardUrl: string | null = typeof validations?.idcard === 'string' ? validations.idcard : null;
-    const todayHeadshotUrl: string | null = getHeadshotUrlFromValidations();
-
     // Check agreement status from courseAuth (one-time per course)
-    const hasAgreedToTerms = courseAuth?.agreed_at !== null && courseAuth?.agreed_at !== undefined;
+    const hasAgreedToTerms =
+        courseAuth?.agreed_at !== null && courseAuth?.agreed_at !== undefined;
+
+    // Derived values (moved after function declarations)
+    const derivedIdCardUploaded = !!validations?.idcard;
+    const derivedHeadshotUploaded = !!getHeadshotUrlFromValidations();
+    const idCardUrl: string | null =
+        typeof validations?.idcard === "string" ? validations.idcard : null;
+    const todayHeadshotUrl: string | null = getHeadshotUrlFromValidations();
 
     const [state, setState] = useState<OnboardingState>({
         currentStep: 1,
@@ -107,16 +119,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     React.useEffect(() => {
         const initialStep = getInitialStep();
         if (initialStep !== state.currentStep) {
-            setState(prev => ({ ...prev, currentStep: initialStep }));
+            setState((prev) => ({ ...prev, currentStep: initialStep }));
         }
     }, []);
 
     // Keep onboarding status in sync with the classroom poll so refresh + polling reflect completion.
     React.useEffect(() => {
-        const nextIdCardUploaded = !!(validations?.idcard);
+        const nextIdCardUploaded = !!validations?.idcard;
         const nextHeadshotUploaded = !!getHeadshotUrlFromValidations();
 
-        setState(prev => {
+        setState((prev) => {
             const shouldUpdate =
                 prev.idCardUploaded !== nextIdCardUploaded ||
                 prev.headshotUploaded !== nextHeadshotUploaded;
@@ -177,7 +189,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error.response?.data?.message || "Failed to accept rules",
+                error:
+                    error.response?.data?.message || "Failed to accept rules",
             }));
         }
     };
@@ -203,7 +216,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error.response?.data?.message || "Failed to upload ID card",
+                error:
+                    error.response?.data?.message || "Failed to upload ID card",
             }));
         }
     };
@@ -216,9 +230,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             formData.append("course_date_id", courseDateId.toString());
             formData.append("headshot", file);
 
-            await axios.post("/classroom/id-verification/upload-headshot", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await axios.post(
+                "/classroom/id-verification/upload-headshot",
+                formData,
+                {
+                    headers: { "Content-Type": "multipart/form-data" },
+                },
+            );
 
             setState((prev) => ({
                 ...prev,
@@ -231,7 +249,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error.response?.data?.message || "Failed to upload headshot",
+                error:
+                    error.response?.data?.message ||
+                    "Failed to upload headshot",
             }));
         }
     };
@@ -271,8 +291,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                 step === state.currentStep
                                     ? "#3498db"
                                     : step < state.currentStep
-                                    ? "#2ecc71"
-                                    : "#95a5a6",
+                                      ? "#2ecc71"
+                                      : "#95a5a6",
                             transition: "all 0.3s",
                         }}
                     />
@@ -314,10 +334,16 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     }}
                 >
                     <h4 className="mb-1" style={{ color: "white" }}>
-                        <i className="fas fa-clipboard-check me-2" style={{ color: "#3498db" }}></i>
+                        <i
+                            className="fas fa-clipboard-check me-2"
+                            style={{ color: "#3498db" }}
+                        ></i>
                         Classroom Onboarding
                     </h4>
-                    <p className="mb-0" style={{ color: "#95a5a6", fontSize: "0.875rem" }}>
+                    <p
+                        className="mb-0"
+                        style={{ color: "#95a5a6", fontSize: "0.875rem" }}
+                    >
                         Step {state.currentStep} of 4
                     </p>
                 </div>
@@ -342,19 +368,37 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                     {/* Step 1: Terms of Service - Show validation if already agreed */}
                     {state.currentStep === 1 && state.termsAccepted && (
-                        <div className="text-center" style={{ padding: "2rem" }}>
+                        <div
+                            className="text-center"
+                            style={{ padding: "2rem" }}
+                        >
                             <i
                                 className="fas fa-check-circle"
-                                style={{ fontSize: "3rem", color: "#2ecc71", marginBottom: "1rem" }}
+                                style={{
+                                    fontSize: "3rem",
+                                    color: "#2ecc71",
+                                    marginBottom: "1rem",
+                                }}
                             ></i>
-                            <h5 style={{ color: "white", marginBottom: "0.5rem" }}>
+                            <h5
+                                style={{
+                                    color: "white",
+                                    marginBottom: "0.5rem",
+                                }}
+                            >
                                 Validating Step 1
                             </h5>
                             <p style={{ color: "#95a5a6" }}>
-                                Agreement already on file. Moving to next step...
+                                Agreement already on file. Moving to next
+                                step...
                             </p>
-                            <div className="spinner-border text-primary mt-2" role="status">
-                                <span className="visually-hidden">Loading...</span>
+                            <div
+                                className="spinner-border text-primary mt-2"
+                                role="status"
+                            >
+                                <span className="visually-hidden">
+                                    Loading...
+                                </span>
                             </div>
                         </div>
                     )}
@@ -408,7 +452,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                             <div className="text-center mb-4">
                                 <i
                                     className="fas fa-check-circle"
-                                    style={{ fontSize: "4rem", color: "#2ecc71" }}
+                                    style={{
+                                        fontSize: "4rem",
+                                        color: "#2ecc71",
+                                    }}
                                 ></i>
                             </div>
 
@@ -421,7 +468,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                             <p
                                 className="text-center"
-                                style={{ color: "#ecf0f1", marginBottom: "2rem" }}
+                                style={{
+                                    color: "#ecf0f1",
+                                    marginBottom: "2rem",
+                                }}
                             >
                                 You're all set to enter the classroom.
                             </p>
@@ -438,14 +488,23 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                 <div
                                     style={{
                                         flex: "1 1 320px",
-                                        backgroundColor: "rgba(255,255,255,0.04)",
+                                        backgroundColor:
+                                            "rgba(255,255,255,0.04)",
                                         border: "1px solid rgba(255,255,255,0.1)",
                                         borderRadius: "0.75rem",
                                         padding: "1rem",
                                     }}
                                 >
-                                    <div style={{ color: "#ecf0f1", marginBottom: "0.75rem" }}>
-                                        <i className="fas fa-id-card me-2" style={{ color: "#3498db" }}></i>
+                                    <div
+                                        style={{
+                                            color: "#ecf0f1",
+                                            marginBottom: "0.75rem",
+                                        }}
+                                    >
+                                        <i
+                                            className="fas fa-id-card me-2"
+                                            style={{ color: "#3498db" }}
+                                        ></i>
                                         ID Card
                                     </div>
                                     {idCardUrl ? (
@@ -456,26 +515,38 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                                 width: "100%",
                                                 maxHeight: "260px",
                                                 objectFit: "contain",
-                                                backgroundColor: "rgba(0,0,0,0.25)",
+                                                backgroundColor:
+                                                    "rgba(0,0,0,0.25)",
                                                 borderRadius: "0.5rem",
                                             }}
                                         />
                                     ) : (
-                                        <div style={{ color: "#95a5a6" }}>No ID card image found.</div>
+                                        <div style={{ color: "#95a5a6" }}>
+                                            No ID card image found.
+                                        </div>
                                     )}
                                 </div>
 
                                 <div
                                     style={{
                                         flex: "1 1 320px",
-                                        backgroundColor: "rgba(255,255,255,0.04)",
+                                        backgroundColor:
+                                            "rgba(255,255,255,0.04)",
                                         border: "1px solid rgba(255,255,255,0.1)",
                                         borderRadius: "0.75rem",
                                         padding: "1rem",
                                     }}
                                 >
-                                    <div style={{ color: "#ecf0f1", marginBottom: "0.75rem" }}>
-                                        <i className="fas fa-user-circle me-2" style={{ color: "#3498db" }}></i>
+                                    <div
+                                        style={{
+                                            color: "#ecf0f1",
+                                            marginBottom: "0.75rem",
+                                        }}
+                                    >
+                                        <i
+                                            className="fas fa-user-circle me-2"
+                                            style={{ color: "#3498db" }}
+                                        ></i>
                                         Headshot (Today)
                                     </div>
                                     {todayHeadshotUrl ? (
@@ -486,12 +557,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                                 width: "100%",
                                                 maxHeight: "260px",
                                                 objectFit: "contain",
-                                                backgroundColor: "rgba(0,0,0,0.25)",
+                                                backgroundColor:
+                                                    "rgba(0,0,0,0.25)",
                                                 borderRadius: "0.5rem",
                                             }}
                                         />
                                     ) : (
-                                        <div style={{ color: "#95a5a6" }}>No headshot image found for today.</div>
+                                        <div style={{ color: "#95a5a6" }}>
+                                            No headshot image found for today.
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -502,16 +576,22 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         display: "flex",
                                         alignItems: "center",
                                         padding: "0.75rem",
-                                        backgroundColor: "rgba(46, 204, 113, 0.1)",
+                                        backgroundColor:
+                                            "rgba(46, 204, 113, 0.1)",
                                         borderRadius: "0.5rem",
                                         marginBottom: "0.5rem",
                                     }}
                                 >
                                     <i
                                         className="fas fa-check-circle me-3"
-                                        style={{ color: "#2ecc71", fontSize: "1.25rem" }}
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
                                     ></i>
-                                    <span style={{ color: "#ecf0f1" }}>Terms Accepted</span>
+                                    <span style={{ color: "#ecf0f1" }}>
+                                        Terms Accepted
+                                    </span>
                                 </div>
 
                                 <div
@@ -519,16 +599,22 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         display: "flex",
                                         alignItems: "center",
                                         padding: "0.75rem",
-                                        backgroundColor: "rgba(46, 204, 113, 0.1)",
+                                        backgroundColor:
+                                            "rgba(46, 204, 113, 0.1)",
                                         borderRadius: "0.5rem",
                                         marginBottom: "0.5rem",
                                     }}
                                 >
                                     <i
                                         className="fas fa-check-circle me-3"
-                                        style={{ color: "#2ecc71", fontSize: "1.25rem" }}
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
                                     ></i>
-                                    <span style={{ color: "#ecf0f1" }}>Rules Acknowledged</span>
+                                    <span style={{ color: "#ecf0f1" }}>
+                                        Rules Acknowledged
+                                    </span>
                                 </div>
 
                                 <div
@@ -536,15 +622,21 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         display: "flex",
                                         alignItems: "center",
                                         padding: "0.75rem",
-                                        backgroundColor: "rgba(46, 204, 113, 0.1)",
+                                        backgroundColor:
+                                            "rgba(46, 204, 113, 0.1)",
                                         borderRadius: "0.5rem",
                                     }}
                                 >
                                     <i
                                         className="fas fa-check-circle me-3"
-                                        style={{ color: "#2ecc71", fontSize: "1.25rem" }}
+                                        style={{
+                                            color: "#2ecc71",
+                                            fontSize: "1.25rem",
+                                        }}
                                     ></i>
-                                    <span style={{ color: "#ecf0f1" }}>Identity Verified</span>
+                                    <span style={{ color: "#ecf0f1" }}>
+                                        Identity Verified
+                                    </span>
                                 </div>
                             </div>
 
@@ -552,7 +644,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                 className="btn btn-success w-100"
                                 onClick={handleCompleteOnboarding}
                                 disabled={state.loading}
-                                style={{ fontSize: "1.1rem", padding: "0.75rem" }}
+                                style={{
+                                    fontSize: "1.1rem",
+                                    padding: "0.75rem",
+                                }}
                             >
                                 {state.loading ? (
                                     <>

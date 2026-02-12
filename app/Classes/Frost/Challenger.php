@@ -390,4 +390,34 @@ class Challenger
             self::$_config->final_challenge_min = 60;  // send it very soon
         }
     }
+
+    protected static function _SendFirst(): ?ChallengerResponse
+    {
+        // TODO: Implement first challenge logic
+        return self::$_ChallengerResponse;
+    }
+
+    protected static function _SendFinal(Challenge $LatestChallenge): ?ChallengerResponse
+    {
+        // TODO: Implement final challenge logic
+        return self::$_ChallengerResponse;
+    }
+
+    protected static function _SendCurrent(Challenge $LatestChallenge): bool
+    {
+        // TODO: Implement current challenge logic
+        return false;
+    }
+
+    protected static function _SendRandom(Challenge $LatestChallenge): ?ChallengerResponse
+    {
+        // TODO: Implement random challenge logic
+        return null;
+    }
+
+    protected static function _SendEOL(): ?ChallengerResponse
+    {
+        // TODO: Implement end of lesson challenge logic
+        return self::$_ChallengerResponse;
+    }
 }

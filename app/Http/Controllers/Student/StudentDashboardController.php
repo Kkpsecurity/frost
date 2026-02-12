@@ -447,10 +447,15 @@ class StudentDashboardController extends Controller
     }
 
     /**
-     * Poll: Get student-specific data
-     * Called every 5 seconds from StudentDataLayer.tsx
+     * Get student polling data (simplified version)
+     *
+     * This endpoint provides the specific data structure needed for student polling as defined in the
+     * student-poll-array-structure.md documentation.
+     * ❌ DOES NOT INCLUDE CLASSROOM DATA - Use /classroom/class/data for that
+     *
+     * @return JsonResponse
      */
-    public function getStudentPollData(Request $request): JsonResponse
+    public function getStudentPollData(): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -470,7 +475,7 @@ class StudentDashboardController extends Controller
 
             // Get ALL student's course authorizations with course data
             $courseAuths = $user->courseAuths()
-                ->with(['Course', 'LatestExamAuth'])
+                ->with(['Course'])
                 ->get();
 
             // Map course auths to course list for dashboard
@@ -525,7 +530,15 @@ class StudentDashboardController extends Controller
                 try {
                     $examObj = $courseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
                     $activeExamAuth = $courseAuth->ActiveExamAuth();
-                    $exam = $courseAuth->GetCourse()?->GetExam();
+                    $latestExamAuth = $courseAuth->LatestExamAuth();
+
+                    \Log::info("Building exam data for course_auth_id {$courseAuth->id}");
+
+                    $course = $courseAuth->GetCourse();
+                    \Log::info("Got course for course_auth_id {$courseAuth->id}: course_id={$course->id}");
+
+                    $exam = $course?->GetExam();
+                    \Log::info("Got exam for course_auth_id {$courseAuth->id}: " . ($exam ? "exam_id={$exam->id}" : "NULL"));
 
                     // Debug logging for exam data
                     if ($exam) {
@@ -539,11 +552,18 @@ class StudentDashboardController extends Controller
                         'next_attempt_at' => $examObj->next_attempt_at ?? null,
                         'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
                         'has_active_attempt' => $activeExamAuth !== null,
+                        // Keep legacy key for older clients, but prefer active_exam_auth_id
                         'exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
+                        'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
                         'exam_id' => $exam?->id,
                         'num_questions' => $exam?->num_questions,
                         'num_to_pass' => $exam?->num_to_pass,
                         'policy_expire_seconds' => $exam?->policy_expire_seconds,
+                        // Add previous exam attempt information
+                        'has_previous_attempt' => $latestExamAuth !== null,
+                        'previous_exam_passed' => $latestExamAuth?->is_passed ?? false,
+                        'previous_exam_score' => $latestExamAuth?->score ?? null,
+                        'previous_exam_completed_at' => $latestExamAuth?->completed_at ?? null,
                         // Debug info
                         '_debug_has_exam' => $exam !== null,
                         '_debug_course_id' => $courseAuth->course_id,
@@ -551,6 +571,22 @@ class StudentDashboardController extends Controller
                 } catch (\Throwable $e) {
                     \Log::error("Error getting exam data for course_auth_id {$courseAuth->id}: " . $e->getMessage());
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = null;
+                }
+            }
+
+            $lessonsByCourseAuth = [];
+            foreach ($courseAuths as $courseAuth) {
+                try {
+                    $lessonsByCourseAuth[(int) $courseAuth->id] = $this->buildCourseAuthLessonPayload($courseAuth);
+                } catch (\Throwable $e) {
+                    Log::error('Failed to build lesson payload for student poll', [
+                        'course_auth_id' => $courseAuth->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $lessonsByCourseAuth[(int) $courseAuth->id] = [
+                        'course_auth_id' => (int) $courseAuth->id,
+                        'lessons' => [],
+                    ];
                 }
             }
 
@@ -630,12 +666,13 @@ class StudentDashboardController extends Controller
                             try {
                                 $activeCourseAuth = $courseAuths->firstWhere('id', $courseAuthId);
                                 if (! $activeCourseAuth) {
-                                    $activeCourseAuth = CourseAuth::with('LatestExamAuth')->find($courseAuthId);
+                                    $activeCourseAuth = CourseAuth::with('Course')->find($courseAuthId);
                                 }
 
                                 if ($activeCourseAuth) {
                                     $examObj = $activeCourseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
                                     $activeExamAuth = $activeCourseAuth->ActiveExamAuth();
+                                    $latestExamAuth = $activeCourseAuth->LatestExamAuth();
                                     $exam = $activeCourseAuth->GetCourse()?->GetExam();
 
                                     $activeStudentExam = [
@@ -649,7 +686,17 @@ class StudentDashboardController extends Controller
                                         'num_questions' => $exam?->num_questions,
                                         'num_to_pass' => $exam?->num_to_pass,
                                         'policy_expire_seconds' => $exam?->policy_expire_seconds,
+                                        // Add previous exam attempt information
+                                        'has_previous_attempt' => $latestExamAuth !== null,
+                                        'previous_exam_passed' => $latestExamAuth?->is_passed ?? false,
+                                        'previous_exam_score' => $latestExamAuth?->score ?? null,
+                                        'previous_exam_completed_at' => $latestExamAuth?->completed_at ?? null,
                                     ];
+
+                                    \Log::debug('Student Poll: Exam data for course_auth_id ' . $courseAuthId, [
+                                        'activeStudentExam' => $activeStudentExam,
+                                        'latestExamAuth_id' => $latestExamAuth?->id,
+                                    ]);
                                 }
                             } catch (\Throwable $e) {
                                 // Non-fatal: exam subsystem may be partially enabled.
@@ -778,6 +825,7 @@ class StudentDashboardController extends Controller
                     'notifications' => [],
                     'assignments' => [],
                     'challenges' => $challenges,
+                    'lessons_by_course_auth' => $lessonsByCourseAuth,
                 ],
             ]);
         } catch (Exception $e) {
@@ -1236,58 +1284,11 @@ class StudentDashboardController extends Controller
                 ], 404);
             }
 
-            $course = $courseAuth->GetCourse();
-            $lessons = $course ? $course->GetLessons() : collect();
-
-            $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
-            /** @var \App\Services\PauseTimeCalculator $pauseCalculator */
-            $pauseCalculator = app(\App\Services\PauseTimeCalculator::class);
-
-            // Completion keys come from PCLCache
-            $pcl = $courseAuth->PCLCache();
-            $completedLessonIds = is_array($pcl) ? array_keys($pcl) : [];
-
-            $payloadLessons = $lessons->map(function ($lesson) use ($completedLessonIds, $bufferMinutes, $pauseCalculator) {
-                $lessonId = (int) ($lesson->id ?? 0);
-                $isCompleted = in_array($lessonId, $completedLessonIds);
-
-                $creditMinutes = (int) ($lesson->credit_minutes ?? 0);
-                $videoSeconds = (int) ($lesson->video_seconds ?? 0);
-                $effectiveVideoSeconds = $videoSeconds > 0
-                    ? $videoSeconds
-                    : max(60, $creditMinutes * 60);
-
-                $videoDurationMinutes = (int) ceil($effectiveVideoSeconds / 60);
-                $pauseData = $pauseCalculator->calculate($effectiveVideoSeconds);
-                $pauseMinutes = (int) ($pauseData['total_minutes'] ?? 0);
-                $requiredMinutes = $videoDurationMinutes + $bufferMinutes + $pauseMinutes;
-
-                return [
-                    'id' => $lessonId,
-                    'lesson_id' => $lessonId,
-                    'title' => (string) ($lesson->title ?? ('Lesson ' . $lessonId)),
-                    'description' => (string) ($lesson->description ?? ''),
-                    'duration_minutes' => $creditMinutes,
-                    'video_seconds' => $videoSeconds,
-                    'effective_video_seconds' => $effectiveVideoSeconds,
-                    'video_minutes' => $videoDurationMinutes,
-                    'buffer_minutes' => $bufferMinutes,
-                    'pause_minutes' => $pauseMinutes,
-                    'required_minutes' => $requiredMinutes,
-                    'order' => (int) ($lesson->order ?? 0),
-                    'is_completed' => $isCompleted,
-                    'status' => $isCompleted ? 'completed' : 'incomplete',
-                    'is_active' => false,
-                    'is_paused' => false,
-                ];
-            })->values();
+            $payload = $this->buildCourseAuthLessonPayload($courseAuth);
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'course_auth_id' => $courseAuthId,
-                    'lessons' => $payloadLessons,
-                ],
+                'data' => $payload,
             ]);
         } catch (Exception $e) {
             Log::error('Self-study lessons error', [
@@ -1299,6 +1300,110 @@ class StudentDashboardController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to load self-study lessons',
+            ], 500);
+        }
+    }
+
+    private function buildCourseAuthLessonPayload(CourseAuth $courseAuth): array
+    {
+        $course = $courseAuth->GetCourse();
+        $lessons = $course ? $course->GetLessons() : collect();
+
+        $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
+        /** @var \App\Services\PauseTimeCalculator $pauseCalculator */
+        $pauseCalculator = app(\App\Services\PauseTimeCalculator::class);
+
+        $pcl = $courseAuth->PCLCache();
+        $completedLessonIds = is_array($pcl) ? array_keys($pcl) : [];
+
+        $payloadLessons = $lessons->map(function ($lesson) use ($completedLessonIds, $bufferMinutes, $pauseCalculator) {
+            $lessonId = (int) ($lesson->id ?? 0);
+            $isCompleted = in_array($lessonId, $completedLessonIds);
+
+            $creditMinutes = (int) ($lesson->credit_minutes ?? 0);
+            $videoSeconds = (int) ($lesson->video_seconds ?? 0);
+            $effectiveVideoSeconds = $videoSeconds > 0
+                ? $videoSeconds
+                : max(60, $creditMinutes * 60);
+
+            $videoDurationMinutes = (int) ceil($effectiveVideoSeconds / 60);
+            $pauseData = $pauseCalculator->calculate($effectiveVideoSeconds);
+            $pauseMinutes = (int) ($pauseData['total_minutes'] ?? 0);
+            $requiredMinutes = $videoDurationMinutes + $bufferMinutes + $pauseMinutes;
+
+            return [
+                'id' => $lessonId,
+                'lesson_id' => $lessonId,
+                'title' => (string) ($lesson->title ?? ('Lesson ' . $lessonId)),
+                'description' => (string) ($lesson->description ?? ''),
+                'duration_minutes' => $creditMinutes,
+                'video_seconds' => $videoSeconds,
+                'effective_video_seconds' => $effectiveVideoSeconds,
+                'video_minutes' => $videoDurationMinutes,
+                'buffer_minutes' => $bufferMinutes,
+                'pause_minutes' => $pauseMinutes,
+                'required_minutes' => $requiredMinutes,
+                'order' => (int) ($lesson->order ?? 0),
+                'is_completed' => $isCompleted,
+                'status' => $isCompleted ? 'completed' : 'incomplete',
+                'is_active' => false,
+                'is_paused' => false,
+            ];
+        })->values();
+
+        return [
+            'course_auth_id' => (int) $courseAuth->id,
+            'lessons' => $payloadLessons,
+        ];
+    }
+
+    public function getCourseAuthLessons(Request $request, int $courseAuthId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                ], 401);
+            }
+
+            if ($courseAuthId <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'course_auth_id is required',
+                ], 422);
+            }
+
+            $courseAuth = CourseAuth::query()
+                ->where('id', $courseAuthId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$courseAuth) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Enrollment not found',
+                ], 404);
+            }
+
+            $payload = $this->buildCourseAuthLessonPayload($courseAuth);
+
+            return response()->json([
+                'success' => true,
+                'course_auth_id' => $payload['course_auth_id'],
+                'lessons' => $payload['lessons'],
+            ]);
+        } catch (Exception $e) {
+            Log::error('Course auth lessons error', [
+                'error' => $e->getMessage(),
+                'course_auth_id' => $courseAuthId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load lessons for enrollment',
             ], 500);
         }
     }

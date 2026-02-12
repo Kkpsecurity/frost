@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useClassroom } from "../../context/ClassroomContext";
 import { useStudent } from "../../context/StudentContext";
 import MainOffline from "./MainOffline";
@@ -35,6 +35,21 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     const studentContext = useStudent();
     const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
     const [showExamRoom, setShowExamRoom] = useState(false); // Exam room state
+    const [hasExitedExamRoom, setHasExitedExamRoom] = useState(false); // Track if user explicitly exited
+
+    // Resume exam immediately on refresh (before polls finish)
+    useEffect(() => {
+        try {
+            const raw = window.localStorage.getItem(
+                `frost_exam_active_exam_auth_id_${courseAuthId}`,
+            );
+            if (raw) {
+                setShowExamRoom(true);
+            }
+        } catch {
+            // ignore
+        }
+    }, [courseAuthId]);
 
     // 🎨 DEV MODE: Toggle between online/offline views for design testing
     const [devMode, setDevMode] = useState<"auto" | "online" | "offline">(
@@ -101,118 +116,15 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     // 🎓 EXAM: Handler for exam button click
     const handleExamClick = () => {
         setShowExamRoom(true);
+        setHasExitedExamRoom(false); // Reset exit flag when entering exam room
     };
 
     const handleExamExit = () => {
         setShowExamRoom(false);
+        setHasExitedExamRoom(true); // Mark that user explicitly exited
     };
 
-    // Show Exam Room if requested
-    if (showExamRoom) {
-        return (
-            <ExamRoom
-                courseAuthId={courseAuthId}
-                onBackToDashboard={handleExamExit}
-            />
-        );
-    }
-
-    // Loading classroom data
-    if (!classroomContext) {
-        return (
-            <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ minHeight: "400px" }}
-            >
-                <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">
-                            Loading classroom...
-                        </span>
-                    </div>
-                    <p className="mt-3">Loading classroom...</p>
-                </div>
-            </div>
-        );
-    }
-
-    const { courseDate, instUnit, studentUnit, course } = classroomContext;
-
-    // When the instructor ends the day, backend may still provide an InstUnit with completed_at/status.
-    // Treat that as ENDED so the student does not remain in WAITING.
-    const isEnded = !!(instUnit?.completed_at || instUnit?.status === "ended");
-
-    // Student progress (validations) comes from the student poll, not the classroom poll.
-    const validations = studentContext?.validationsByCourseAuth
-        ? studentContext.validationsByCourseAuth[courseAuthId]
-        : null;
-
-    // ONBOARDING GATE: Check if student needs to complete onboarding
-    // Show onboarding when:
-    // 1. Class is live (courseDate + instUnit exist)
-    // 2. AND (studentUnit doesn't exist YET OR onboarding is not complete)
-    //
-    // studentUnit is NULL when it's a new day and student hasn't joined yet.
-    // Once they complete onboarding, a StudentUnit will be created.
-    if (courseDate && instUnit && !isEnded) {
-        // Get agreement status from student courses data (poll includes agreed_at)
-        const courseData = studentContext?.courses?.find(
-            (c: any) => c.id === courseAuthId,
-        );
-
-        // Determine if onboarding is needed
-        // Check validations.onboarding_completed instead of studentUnit.onboarding_completed
-        // Validations object manages all onboarding requirements (terms, rules, identity)
-        const needsOnboarding = !validations?.onboarding_completed;
-
-        console.log("🔍 Onboarding check:", {
-            hasStudentUnit: !!studentUnit,
-            studentUnitId: studentUnit?.id,
-            hasValidations: !!validations,
-            onboarding_completed: validations?.onboarding_completed,
-            needsOnboarding: needsOnboarding,
-        });
-
-        if (needsOnboarding) {
-            return (
-                <OnboardingFlow
-                    key={onboardingKey}
-                    courseAuthId={courseAuthId}
-                    courseDateId={courseDate.id}
-                    studentUnitId={studentUnit?.id || 0} // 0 means "create new"
-                    studentUnit={studentUnit || null}
-                    student={student}
-                    course={course}
-                    courseAuth={courseData} // Pass course data which includes agreed_at
-                    validations={validations || null}
-                    onComplete={() => {
-                        // Force classroom context to refresh by incrementing key
-                        setOnboardingKey((prev) => prev + 1);
-                        console.log(
-                            "✅ Onboarding complete - polling will refresh automatically",
-                        );
-                    }}
-                />
-            );
-        }
-    }
-
-    // 🎨 DEV MODE: Simplified view override for layout testing
-    // When devMode is set, bypass normal logic and show the selected view
-    let shouldShowOnline = false;
-    let shouldShowOffline = false;
-
-    if (devMode === "online") {
-        shouldShowOnline = true;
-    } else if (devMode === "offline") {
-        shouldShowOffline = true;
-    } else {
-        // Auto mode - use actual classroom state
-        shouldShowOnline = !!(courseDate && instUnit && !isEnded);
-        shouldShowOffline = !courseDate || isEnded;
-    }
-
-    // 🎨 DEV TOGGLE UI (only in development mode)
+    // � DEV TOGGLE UI (defined early to avoid hoisting issues)
     const DevModeToggle = showToggle ? (
         <>
             <div
@@ -334,6 +246,145 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         </>
     ) : null;
 
+    // �🎓 AUTO-DETECT: Check if all lessons are complete for auto-redirect to Exam Room
+    const studentExam =
+        studentContext?.studentExamsByCourseAuth?.[courseAuthId];
+
+    // Check multiple conditions for exam eligibility:
+    // 1. Backend says exam is ready (studentExam?.is_ready)
+    // 2. Has active exam attempt (studentExam?.has_active_attempt)
+    // 3. OR if studentExam exists at all (even if null/undefined, button shows so assume eligible)
+    const allLessonsComplete =
+        studentExam?.is_ready ||
+        studentExam?.has_active_attempt ||
+        (courseAuthId &&
+            studentContext?.studentExamsByCourseAuth?.[courseAuthId] !==
+                undefined);
+
+    console.log("🎓 ExamRoom Auto-Detection:", {
+        courseAuthId,
+        studentExam,
+        allLessonsComplete,
+        devMode,
+        showExamRoom,
+        hasExitedExamRoom,
+    });
+
+    // Auto-redirect to Exam Room if all lessons complete (unless dev mode overrides or user explicitly exited)
+    const shouldAutoShowExamRoom =
+        devMode === "auto" &&
+        allLessonsComplete &&
+        !showExamRoom &&
+        !hasExitedExamRoom;
+
+    // Show Exam Room if manually triggered OR auto-detected
+    if (showExamRoom || shouldAutoShowExamRoom) {
+        return (
+            <ExamRoom
+                courseAuthId={courseAuthId}
+                onBackToDashboard={handleExamExit}
+                devModeToggle={DevModeToggle}
+            />
+        );
+    }
+
+    // Loading classroom data
+    if (!classroomContext) {
+        return (
+            <div
+                className="d-flex justify-content-center align-items-center"
+                style={{ minHeight: "400px" }}
+            >
+                <div className="text-center">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">
+                            Loading classroom...
+                        </span>
+                    </div>
+                    <p className="mt-3">Loading classroom...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const { courseDate, instUnit, studentUnit, course } = classroomContext;
+
+    // When the instructor ends the day, backend may still provide an InstUnit with completed_at/status.
+    // Treat that as ENDED so the student does not remain in WAITING.
+    const isEnded = !!(instUnit?.completed_at || instUnit?.status === "ended");
+
+    // Student progress (validations) comes from the student poll, not the classroom poll.
+    const validations = studentContext?.validationsByCourseAuth
+        ? studentContext.validationsByCourseAuth[courseAuthId]
+        : null;
+
+    // ONBOARDING GATE: Check if student needs to complete onboarding
+    // Show onboarding when:
+    // 1. Class is live (courseDate + instUnit exist)
+    // 2. AND (studentUnit doesn't exist YET OR onboarding is not complete)
+    //
+    // studentUnit is NULL when it's a new day and student hasn't joined yet.
+    // Once they complete onboarding, a StudentUnit will be created.
+    if (courseDate && instUnit && !isEnded) {
+        // Get agreement status from student courses data (poll includes agreed_at)
+        const courseData = studentContext?.courses?.find(
+            (c: any) => c.id === courseAuthId,
+        );
+
+        // Determine if onboarding is needed
+        // Check validations.onboarding_completed instead of studentUnit.onboarding_completed
+        // Validations object manages all onboarding requirements (terms, rules, identity)
+        const needsOnboarding = !validations?.onboarding_completed;
+
+        console.log("🔍 Onboarding check:", {
+            hasStudentUnit: !!studentUnit,
+            studentUnitId: studentUnit?.id,
+            hasValidations: !!validations,
+            onboarding_completed: validations?.onboarding_completed,
+            needsOnboarding: needsOnboarding,
+        });
+
+        if (needsOnboarding) {
+            return (
+                <OnboardingFlow
+                    key={onboardingKey}
+                    courseAuthId={courseAuthId}
+                    courseDateId={courseDate.id}
+                    studentUnitId={studentUnit?.id || 0} // 0 means "create new"
+                    studentUnit={studentUnit || null}
+                    student={student}
+                    course={course}
+                    courseAuth={courseData} // Pass course data which includes agreed_at
+                    validations={validations || null}
+                    onComplete={() => {
+                        // Force classroom context to refresh by incrementing key
+                        setOnboardingKey((prev) => prev + 1);
+                        console.log(
+                            "✅ Onboarding complete - polling will refresh automatically",
+                        );
+                    }}
+                />
+            );
+        }
+    }
+
+    // 🎨 DEV MODE: Simplified view override for layout testing
+    // When devMode is set, bypass normal logic and show the selected view
+    let shouldShowOnline = false;
+    let shouldShowOffline = false;
+
+    if (devMode === "online") {
+        shouldShowOnline = true;
+    } else if (devMode === "offline") {
+        shouldShowOffline = true;
+    } else {
+        // Auto mode - use actual classroom state
+        shouldShowOnline = !!(courseDate && instUnit && !isEnded);
+        shouldShowOffline = !courseDate || isEnded;
+    }
+
+    // DevModeToggle already defined above (moved to avoid hoisting issues)
+
     // ONLINE: Live class in session (instructor has started)
     if (shouldShowOnline) {
         return (
@@ -344,6 +395,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                 onBackToDashboard={onBackToDashboard}
                 onExamClick={handleExamClick}
                 devModeToggle={DevModeToggle}
+                courseAuthId={courseAuthId}
             />
         );
     }

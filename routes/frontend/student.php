@@ -128,6 +128,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/student/find-active-class', [StudentDashboardController::class, 'findActiveClass'])
         ->name('api.student.find-active-class');
 
+    Route::get('/api/student/course-auth/{courseAuthId}/lessons', [StudentDashboardController::class, 'getCourseAuthLessons'])
+        ->where('courseAuthId', '[0-9]+')
+        ->name('api.student.course-auth.lessons');
+
     /**
      * Student ID Verification Routes
      */
@@ -203,16 +207,28 @@ Route::middleware(['auth'])->group(function () {
     /**
      * Exam API Routes
      */
-    Route::get('/api/exam/auth/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'getExamAuth'])
+    Route::get('/classroom/exam/auth/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'getExamAuth'])
         ->where('examAuth', '[0-9]+')
-        ->name('api.exam.auth');
+        ->name('exam.auth');
 
-    Route::post('/api/exam/begin', [\App\Http\Controllers\Student\ExamController::class, 'beginExam'])
-        ->name('api.exam.begin');
+    Route::post('/classroom/exam/begin', [\App\Http\Controllers\Student\ExamController::class, 'beginExam'])
+        ->name('exam.begin');
 
-    Route::post('/api/exam/submit/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'submitExam'])
+    Route::post('/classroom/exam/start/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'startExamTimer'])
         ->where('examAuth', '[0-9]+')
-        ->name('api.exam.submit');
+        ->name('exam.start');
+
+    Route::post('/classroom/exam/submit/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'submitExam'])
+        ->where('examAuth', '[0-9]+')
+        ->name('exam.submit');
+
+    // Get all exam attempts for review
+    Route::get('/classroom/exam/attempts', [\App\Http\Controllers\Student\ExamController::class, 'getExamAttempts'])
+        ->name('exam.attempts');
+
+    // Dev-only route to reset exam attempts
+    Route::post('/classroom/exam/reset', [\App\Http\Controllers\Student\ExamController::class, 'resetExam'])
+        ->name('exam.reset');
 
     /**
      * Student Activity Tracking Routes

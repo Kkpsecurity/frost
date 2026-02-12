@@ -17,6 +17,7 @@ interface MainOnlineProps {
     onBackToDashboard: () => void;
     onExamClick?: () => void;
     devModeToggle?: React.ReactNode;
+    courseAuthId?: number;
 }
 
 /**
@@ -41,6 +42,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     onBackToDashboard,
     onExamClick,
     devModeToggle,
+    courseAuthId,
 }) => {
     const studentContext = useStudent();
     // Extract classroom data (handle if classroom is wrapped in context)
@@ -202,6 +204,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                 onExamClick={onExamClick}
                 classroomStatus="ONLINE"
                 devModeToggle={devModeToggle}
+                courseAuthId={courseAuthId}
             />
             <div
                 className="container-fluid px-0"

@@ -28,6 +28,11 @@ require __DIR__ . '/frontend/student.php';
 require __DIR__ . '/frontend/courses.php';
 
 /**
+ * Payment & Checkout Routes
+ */
+require __DIR__ . '/frontend/payments.php';
+
+/**
  * Blog Section Routes
  */
 require __DIR__ . '/frontend/blog.php';

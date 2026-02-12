@@ -16,25 +16,26 @@ use Illuminate\Support\Carbon;
 
 use App\Models\ExamAuth;
 use App\Classes\ExamAuthObj;
-
+use Illuminate\Support\Facades\Log;
 
 trait ExamsTrait
 {
 
 
-    public function LatestExamAuth()
+    public function LatestExamAuth(): ?ExamAuth
     {
-
-        return $this->hasOne(ExamAuth::class, 'course_auth_id')
+        return ExamAuth::where('course_auth_id', $this->id)
             ->whereNull('hidden_at')
-            ->orderBy('completed_at', 'DESC');
+            ->orderBy('completed_at', 'DESC')
+            ->first();
     }
 
 
     public function ActiveExamAuth(): ?ExamAuth
     {
+        $ExamAuth = $this->LatestExamAuth();
 
-        if (! $ExamAuth = $this->LatestExamAuth) {
+        if (! $ExamAuth) {
             return null;
         }
 
@@ -45,73 +46,81 @@ trait ExamsTrait
 
     public function ExamReady(): bool
     {
+        return $this->ExamReadinessFailureReason() === null;
+    }
 
+    public function ExamReadinessFailureReason(): ?array
+    {
         if (! $this->IsActive()) {
-            return false;
+            \Log::debug('ExamReadinessFailureReason: Course is not active', [
+                'course_auth_id' => $this->id,
+            ]);
+            return ['reason' => 'inactive'];
         }
 
+        $ExamAuth = $this->LatestExamAuth();
 
-        //
-        // check last Exam
-        //
+        Log::debug('ExamReadinessFailureReason: Checking latest exam', [
+            'course_auth_id' => $this->id,
+            'has_exam_auth' => $ExamAuth !== null,
+            'exam_auth_id' => $ExamAuth?->id,
+            'is_passed' => $ExamAuth?->is_passed,
+            'next_attempt_at' => $ExamAuth?->next_attempt_at,
+            'completed_at' => $ExamAuth?->completed_at,
+        ]);
 
-        if ($ExamAuth = $this->LatestExamAuth) {
+        if ($ExamAuth) {
 
             if ($ExamAuth->is_passed) {
-                // shouldn't get here
-                return false;
+                Log::debug('ExamReadinessFailureReason: Already passed', [
+                    'course_auth_id' => $this->id,
+                    'exam_auth_id' => $ExamAuth->id,
+                ]);
+                return ['reason' => 'already_passed'];
             }
 
-            return Carbon::now()->gt(Carbon::parse($ExamAuth->next_attempt_at));
-        }
+            $nextAttempt = $ExamAuth->next_attempt_at
+                ? Carbon::parse($ExamAuth->next_attempt_at)
+                : null;
 
-        //
-        // check Admin override
-        //
+            if ($nextAttempt && ! Carbon::now()->gt($nextAttempt)) {
+                Log::debug('ExamReadinessFailureReason: In cooldown period', [
+                    'course_auth_id' => $this->id,
+                    'exam_auth_id' => $ExamAuth->id,
+                    'next_attempt_at' => $nextAttempt->toIso8601String(),
+                    'now' => Carbon::now()->toIso8601String(),
+                ]);
+                return [
+                    'reason' => 'cooldown',
+                    'next_attempt_at' => $nextAttempt->toIso8601String(),
+                ];
+            }
+        }
 
         if ($this->exam_admin_id) {
-            return true;
+            Log::debug('ExamReadinessFailureReason: Admin override - ready', [
+                'course_auth_id' => $this->id,
+                'exam_admin_id' => $this->exam_admin_id,
+            ]);
+            return null;
         }
-
-        //
-        // check all lessons completed
-        //
 
         if (! $this->AllLessonsCompleted()) {
-            return false;
+            Log::debug('ExamReadinessFailureReason: Lessons not completed', [
+                'course_auth_id' => $this->id,
+            ]);
+            return ['reason' => 'lessons'];
         }
 
-        return true;
+        Log::debug('ExamReadinessFailureReason: Ready for exam', [
+            'course_auth_id' => $this->id,
+        ]);
+
+        return null;
     }
 
 
-    // TODO: remove this
-    /*
-    public function NextAttempt( string $fmt = null ) : ?string
-    {
-
-        if ( ! $this->IsActive() )
-        {
-            return null;
-        }
-
-        if ( ! $ExamAuth = $this->LatestExamAuth )
-        {
-            return null;
-        }
-
-        if ( $ExamAuth->is_passed )
-        {
-            return null;
-        }
-
-        return $ExamAuth->NextAttemptAt( $fmt );
-
-    }
-    */
-
-
-    public function ClassroomExam(string $fmt = null): stdClass
+    public function ClassroomExam(string &$fmt = null): stdClass
     {
 
         $res = (object) [
@@ -160,7 +169,9 @@ trait ExamsTrait
         // verify there is a previous exam
         //
 
-        if (! $ExamAuth = $this->LatestExamAuth) {
+        $ExamAuth = $this->LatestExamAuth();
+
+        if (! $ExamAuth) {
             return $res;
         }
 

@@ -15,8 +15,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
-
-
 use RCache;
 
 
@@ -26,31 +24,46 @@ trait LessonsTrait
 
     public function AllLessonsCompleted(): bool
     {
+        $totalLessons = $this->GetCourse()->GetLessons()->count();
 
-        $completed_lesson_ids = $this->PCLCache();
-
-        foreach ($this->GetCourse()->GetLessons() as $Lesson) {
-            if (! isset($completed_lesson_ids[$Lesson->id])) {
-                return false;
-            }
+        if ($totalLessons == 0) {
+            return false;
         }
 
-        return true;
+        $completedLessons = $this->CompletedLessons();
+        return count($completedLessons) >= $totalLessons;
     }
-
 
     public function CompletedLessons(string $carbon_format = null): array
     {
+        try {
+            \Log::info("CompletedLessons START for courseAuth {$this->id}");
 
-        $lessons = [];
+            $lessons = [];
 
 
-        foreach ($this->StudentUnits as $StudentUnit) {
+            foreach ($this->StudentUnits as $StudentUnit) {
 
-            foreach ($StudentUnit->StudentLessons()->whereNotNull('completed_at')->get() as $StudentLesson) {
+                foreach ($StudentUnit->StudentLessons()->whereNotNull('completed_at')->get() as $StudentLesson) {
 
-                $lesson_id    = $StudentLesson->lesson_id;
-                $completed_at = Carbon::parse($StudentLesson->completed_at);
+                    $lesson_id    = $StudentLesson->lesson_id;
+                    $completed_at = Carbon::parse($StudentLesson->completed_at);
+
+                    if (isset($lessons[$lesson_id])) {
+                        if ($completed_at->gt($lessons[$lesson_id])) {
+                            $lessons[$lesson_id] = $completed_at;
+                        }
+                    } else {
+                        $lessons[$lesson_id] = $completed_at;
+                    }
+                }
+            }
+
+
+            foreach ($this->SelfStudyLessons()->whereNotNull('completed_at')->get() as $SelfStudyLesson) {
+
+                $lesson_id    = $SelfStudyLesson->lesson_id;
+                $completed_at = Carbon::parse($SelfStudyLesson->completed_at);
 
                 if (isset($lessons[$lesson_id])) {
                     if ($completed_at->gt($lessons[$lesson_id])) {
@@ -60,44 +73,43 @@ trait LessonsTrait
                     $lessons[$lesson_id] = $completed_at;
                 }
             }
-        }
 
 
-        foreach ($this->SelfStudyLessons()->whereNotNull('completed_at')->get() as $SelfStudyLesson) {
+            if ($carbon_format) {
 
-            $lesson_id    = $SelfStudyLesson->lesson_id;
-            $completed_at = Carbon::parse($SelfStudyLesson->completed_at);
+                $timezone = $this->UserTimezone($this->GetUser());
 
-            if (isset($lessons[$lesson_id])) {
-                if ($completed_at->gt($lessons[$lesson_id])) {
-                    $lessons[$lesson_id] = $completed_at;
+                foreach ($lessons as $lesson_id => $completed_at) {
+                    $lessons[$lesson_id] = $completed_at->tz($timezone)->isoFormat($carbon_format);
                 }
-            } else {
-                $lessons[$lesson_id] = $completed_at;
             }
+
+            \Log::info("CompletedLessons END for courseAuth {$this->id}", ['count' => count($lessons)]);
+            return $lessons;
+        } catch (\Throwable $e) {
+            \Log::error("CompletedLessons EXCEPTION for courseAuth {$this->id}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-
-
-        if ($carbon_format) {
-
-            $timezone = $this->UserTimezone($this->GetUser());
-
-            foreach ($lessons as $lesson_id => $completed_at) {
-                $lessons[$lesson_id] = $completed_at->tz($timezone)->isoFormat($carbon_format);
-            }
-        }
-
-
-        return $lessons;
     }
 
 
     public function IncompleteLessons(): Collection
     {
+        $pcl_cache = $this->PCLCache();
+        $cache_keys = array_keys($pcl_cache);
+
+        \Log::info('IncompleteLessons Debug', [
+            'course_auth_id' => $this->id,
+            'pcl_cache_type' => gettype($pcl_cache),
+            'pcl_cache_keys' => $cache_keys,
+            'cache_keys_type' => gettype($cache_keys),
+        ]);
 
         return $this->GetCourse()
             ->GetLessons()
-            ->whereNotIn('id', array_keys($this->PCLCache()));
+            ->whereNotIn('id', $cache_keys);
     }
 
 

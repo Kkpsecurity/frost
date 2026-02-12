@@ -42,6 +42,7 @@ export type SchoolDashboardTitleBarProps = {
     onExamClick?: () => void;
     classroomStatus?: "ONLINE" | "WAITING" | "OFFLINE" | null;
     devModeToggle?: React.ReactNode;
+    courseAuthId?: number | null;
 };
 
 export type SchoolNavBarProps = {

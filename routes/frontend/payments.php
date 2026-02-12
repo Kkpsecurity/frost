@@ -15,6 +15,7 @@
  */
 
 use App\Http\Controllers\Frontend\Payments\PaymentController;
+use App\Http\Controllers\Frontend\Payments\CheckoutController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,16 +27,51 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Payment gateway page - shows payment form
-Route::get('/payments/{payment}', [PaymentController::class, 'show'])
+// Checkout page - select payment method
+Route::get('/checkout/{order}', [CheckoutController::class, 'show'])
+    ->name('checkout.show')
+    ->middleware('auth');
+
+// Process payment method selection
+Route::post('/checkout/{order}/process', [CheckoutController::class, 'processPayment'])
+    ->name('checkout.process')
+    ->middleware('auth');
+
+// PayFlowPro payment gateway
+Route::get('/payments/payflowpro/{payment}', [PaymentController::class, 'showPayFlowPro'])
     ->name('payments.payflowpro')
     ->middleware('auth');
 
-// Payment return/callback route
+Route::post('/payments/payflowpro/{payment}/process', [PaymentController::class, 'processPayFlowPro'])
+    ->name('payments.payflowpro.process')
+    ->middleware('auth');
+
+// Stripe payment gateway
+Route::get('/payments/stripe/{payment}', [PaymentController::class, 'showStripe'])
+    ->name('payments.stripe')
+    ->middleware('auth');
+
+Route::post('/payments/stripe/{payment}/intent', [PaymentController::class, 'createStripeIntent'])
+    ->name('payments.stripe.intent')
+    ->middleware('auth');
+
+Route::post('/payments/stripe/{payment}/confirm', [PaymentController::class, 'confirmStripe'])
+    ->name('payments.stripe.confirm')
+    ->middleware('auth');
+
+// PayPal payment gateway
+Route::get('/payments/paypal/{payment}', [PaymentController::class, 'showPayPal'])
+    ->name('payments.paypal')
+    ->middleware('auth');
+
+Route::post('/payments/paypal/{payment}/process', [PaymentController::class, 'processPayPal'])
+    ->name('payments.paypal.process')
+    ->middleware('auth');
+
+// Legacy routes (keep for backward compatibility)
 Route::post('/payments/{payment}/return', [PaymentController::class, 'handleReturn'])
     ->name('payments.payflowpro.payment_return');
 
-// Get payment token (AJAX)
 Route::get('/payments/{payment}/token', [PaymentController::class, 'getToken'])
     ->name('payments.payflowpro.get_token')
     ->middleware('auth');

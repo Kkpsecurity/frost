@@ -19,8 +19,10 @@ class ExamAuthObserver
             $ExamAuth->created_at = Carbon::now();
         }
 
-        $ExamAuth->expires_at      = $ExamAuth->MakeExpiresAt();
-        $ExamAuth->next_attempt_at = $ExamAuth->MakeNextAttemptAt();
+        // Don't set expires_at yet - timer starts when user clicks "Begin Exam" on acknowledgement screen
+        // Set next_attempt_at to now (no cooldown for new exams)
+        // $ExamAuth->expires_at      = $ExamAuth->MakeExpiresAt();
+        $ExamAuth->next_attempt_at = Carbon::now();
 
         if (! $ExamAuth->question_ids) {
             kkpdebug('Observer', 'Adding question_ids to ExamAuth');

@@ -25,11 +25,12 @@ class EnrollmentController extends Controller
         // Debug logging to track enrollment attempts
         Log::info('Enrollment attempt for course ' . $Course->id . ' by user ' . Auth::id());
 
-        // Check if user is already enrolled
-        if (Auth::user()->ActiveCourseAuths->firstWhere('course_id', $Course->id)) {
-            Log::info('User ' . Auth::id() . ' already enrolled in course ' . $Course->id);
-            return redirect()->route('courses.show', $Course->id)
-                ->with('warning', 'You are already enrolled in this course.');
+        // Check if user is already enrolled - warn but allow re-enrollment (for renewals/prepay)
+        $existingEnrollment = Auth::user()->ActiveCourseAuths->firstWhere('course_id', $Course->id);
+        if ($existingEnrollment) {
+            Log::info('User ' . Auth::id() . ' already has active enrollment for course ' . $Course->id . ' - allowing re-enrollment for renewal/prepay');
+            // Store warning to show after payment page loads
+            session()->flash('enrollment_warning', 'Note: You already have an active enrollment for this course. This purchase will extend or renew your access.');
         }
 
         // Check if course is active
@@ -44,11 +45,10 @@ class EnrollmentController extends Controller
             $Order = $this->GetOrder($Course);
             Log::info('Order created with ID: ' . $Order->id);
 
-            $Payment = $this->GetPayment($Order);
-            Log::info('Payment created with ID: ' . $Payment->id);
-
-            Log::info('Redirecting to payment gateway for payment ' . $Payment->id);
-            return redirect()->route('payments.payflowpro', $Payment);
+            // Redirect to checkout page where user can select payment method
+            // Don't create payment yet - let them choose payment method first
+            Log::info('Redirecting to checkout page for order ' . $Order->id);
+            return redirect()->route('checkout.show', $Order->id);
         } catch (\Exception $e) {
             Log::error('Enrollment error for course ' . $Course->id . ': ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());

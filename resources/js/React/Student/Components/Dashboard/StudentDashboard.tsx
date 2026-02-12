@@ -2,8 +2,17 @@ import React from "react";
 import StudentCoursesTable from "../Tables/StudentCoursesTable";
 
 interface StudentDashboardProps {
-    data?: any;
-    courseAuthId?: number | null;
+    student: any;
+    courseAuths: any[];
+    lessons: any;
+    hasLessons: boolean;
+    selectedCourseAuthId: number | null;
+    validations: any;
+    instructor: any;
+    courseDates: any[];
+    instUnit: any;
+    studentAttendance: any;
+    studentUnits: any[];
 }
 
 interface Course {
@@ -16,14 +25,23 @@ interface Course {
 }
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({
-    data,
-    courseAuthId,
+    student,
+    courseAuths,
+    lessons,
+    hasLessons,
+    selectedCourseAuthId,
+    validations,
+    instructor,
+    courseDates,
+    instUnit,
+    studentAttendance,
+    studentUnits,
 }) => {
-    const courses: Course[] = data?.courses || [];
-    const progress = data?.progress || {
-        total_courses: 0,
-        completed: 0,
-        in_progress: 0,
+    const courses: Course[] = courseAuths || [];
+    const progress = {
+        total_courses: courses.length,
+        completed: courses.filter((c) => c.status === "completed").length,
+        in_progress: courses.filter((c) => c.status === "in_progress").length,
     };
 
     const formatDate = (dateString: string) => {

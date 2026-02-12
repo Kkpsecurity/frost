@@ -240,6 +240,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                 onExamClick={onExamClick}
                 classroomStatus="OFFLINE"
                 devModeToggle={devModeToggle}
+                courseAuthId={courseAuthId}
             />
             <div className="container-fluid px-0">
                 <div className="row g-0">
