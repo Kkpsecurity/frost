@@ -201,7 +201,7 @@ return [
         App\Providers\BladeServiceProvider::class,
         // App\Providers\ComposerServiceProvider::class,
         App\Providers\EventServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
+        // App\Providers\RouteServiceProvider::class, // Removed in Laravel 11 - routes now in bootstrap/app.php
         App\Providers\SentinelServiceProvider::class,
 
         /*

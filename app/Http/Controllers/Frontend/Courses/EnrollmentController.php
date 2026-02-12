@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 
 use App\Services\RCache;
-use App\Classes\PaymentQueries;
+use App\Classes\Admin\PaymentQueries;
 use App\Models\Course;
 use App\Models\CourseAuth;
 use App\Models\Order;

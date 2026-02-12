@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Classes\ExamAuthObj;
+use App\Classes\Students\ExamAuthObj;
 use App\Models\CourseAuth;
 use App\Models\ExamAuth;
 use Illuminate\Http\JsonResponse;

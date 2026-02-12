@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Student;
 
-use App\Classes\ClassroomSessionModeCache;
+use App\Classes\Support\ClassroomSessionModeCache;
 use App\Http\Controllers\Controller;
 use App\Models\InstructorQuestion;
 use Illuminate\Http\JsonResponse;

@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
-use App\Classes\Keymaster;
+use App\Classes\Support\Keymaster;
 
 
 class KeymasterServiceProvider extends ServiceProvider implements DeferrableProvider
@@ -13,7 +13,7 @@ class KeymasterServiceProvider extends ServiceProvider implements DeferrableProv
 
     public function register()
     {
-        $this->app->singleton( Keymaster::class, function( $app ) {
+        $this->app->singleton(Keymaster::class, function ($app) {
             return new Keymaster;
         });
     }
@@ -25,7 +25,6 @@ class KeymasterServiceProvider extends ServiceProvider implements DeferrableProv
 
     public function provides()
     {
-        return [ Keymaster::class ];
+        return [Keymaster::class];
     }
-
 }

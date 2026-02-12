@@ -15,7 +15,7 @@ use stdClass;
 use Illuminate\Support\Carbon;
 
 use App\Models\ExamAuth;
-use App\Classes\ExamAuthObj;
+use App\Classes\Students\ExamAuthObj;
 use Illuminate\Support\Facades\Log;
 
 trait ExamsTrait

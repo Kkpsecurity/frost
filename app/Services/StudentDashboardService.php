@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Collection;
 use Exception;
 
-use App\Classes\CourseAuthObj;
-use App\Classes\CourseUnitObj;
+use App\Classes\Students\CourseAuthObj;
+use App\Classes\Support\CourseUnitObj;
 
 /**
  * Student Dashboard Service

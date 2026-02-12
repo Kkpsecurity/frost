@@ -11,22 +11,22 @@ namespace App\Classes\Frost;
  */
 
 // Instructor
-use App\Classes\ClassroomQueries\InitInstUnit;
-use App\Classes\ClassroomQueries\InitInstLesson;
-use App\Classes\ClassroomQueries\RecentInstUnits;
-use App\Classes\ClassroomQueries\CompleteInstUnit;
-use App\Classes\ClassroomQueries\ActiveStudentUnits;
-use App\Classes\ClassroomQueries\CompletedInstLessons;
-use App\Classes\ClassroomQueries\InstructorDashboardCourseDates;
+use App\Classes\Instructors\InitInstUnit;
+use App\Classes\Instructors\InitInstLesson;
+use App\Classes\Instructors\RecentInstUnits;
+use App\Classes\Instructors\CompleteInstUnit;
+use App\Classes\Instructors\ActiveStudentUnits;
+use App\Classes\Instructors\CompletedInstLessons;
+use App\Classes\Instructors\InstructorDashboardCourseDates;
 // Student
-use App\Classes\ClassroomQueries\InitStudentUnit;
-use App\Classes\ClassroomQueries\EOLStudentLesson;
-use App\Classes\ClassroomQueries\InitStudentLesson;
+use App\Classes\Students\InitStudentUnit;
+use App\Classes\Students\EOLStudentLesson;
+use App\Classes\Students\InitStudentLesson;
 // Shared
-use App\Classes\ClassroomQueries\ActiveInstLesson;
-use App\Classes\ClassroomQueries\RecentChatMessages;
+use App\Classes\Support\ActiveInstLesson;
+use App\Classes\Support\RecentChatMessages;
 // Private
-use App\Classes\ClassroomQueries\StudentCanJoinLesson;
+use App\Classes\Students\StudentCanJoinLesson;
 
 
 class ClassroomQueries

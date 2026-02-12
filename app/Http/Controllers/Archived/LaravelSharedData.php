@@ -8,11 +8,11 @@ use App\RCache;
 use App\Models\User;
 use App\Models\Validation;
 use App\Models\CourseAuth;
-use App\Classes\CourseAuthObj;
+use App\Classes\Students\CourseAuthObj;
 use App\Classes\ClassroomQueries;
-use App\Classes\ValidationsPhotos;
+use App\Classes\Students\ValidationsPhotos;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Storage;
 
 class LaravelSharedData extends Controller
 {
@@ -38,9 +38,9 @@ class LaravelSharedData extends Controller
 
         $validation = "";
 
-        // in this InitStudentUnit  is for the rinstructor not the student 
+        // in this InitStudentUnit  is for the rinstructor not the student
         // here we are create the student sturctor
-        
+
         $user->studentUnit = null;
         if ($courseDate) {
             if ($studentUnit = StudentUnit::where('course_date_id', $courseDate->id)->where('course_auth_id', $courseAuth->id)->first()) {

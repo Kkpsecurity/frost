@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 
-use App\Classes\ResetRecords;
+use App\Classes\Admin\ResetRecords;
 
 class ResetClassroom extends Command
 {

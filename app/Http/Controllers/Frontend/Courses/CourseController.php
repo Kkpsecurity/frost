@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Frontend\Courses;
 
-use App\Classes\MiscQueries;
+use App\Classes\Support\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseDate;

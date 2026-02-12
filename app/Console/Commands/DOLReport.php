@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 use App\Helpers\PgTk;
-use App\Classes\Frost\DOLRecordPDF;
+use App\Classes\Admin\DOLRecords\DOLRecordPDF;
 
 
 class DOLReport extends Command

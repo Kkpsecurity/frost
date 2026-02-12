@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace App\Classes\Frost;
 
@@ -14,9 +16,9 @@ use App\Services\RCache;
 
 use App\Models\ExamAuth;
 
-use App\Classes\ExamAuthObj\Scoring;
-use App\Classes\ExamAuthObj\Handlers;
-use App\Classes\ExamAuthObj\Internals;
+use App\Classes\Students\ExamAuthObj\Scoring;
+use App\Classes\Students\ExamAuthObj\Handlers;
+use App\Classes\Students\ExamAuthObj\Internals;
 
 
 class ExamAuthObj

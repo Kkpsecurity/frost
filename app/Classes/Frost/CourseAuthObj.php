@@ -26,7 +26,7 @@ use App\Models\User;
 use App\Models\Course;
 use App\Models\CourseAuth;
 
-use App\Classes\CourseUnitObj;
+use App\Classes\Support\CourseUnitObj;
 
 class CourseAuthObj
 {

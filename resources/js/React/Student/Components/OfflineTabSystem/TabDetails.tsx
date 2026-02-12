@@ -3,6 +3,7 @@ import { Modal } from "react-bootstrap";
 import OfflineTabsQuickStats from "../OfflineTabsQuickStats";
 import { useStudent } from "../../context/StudentContext";
 import CaptureDevices from "../Classroom/Onboarding/Video/CaptureDevices";
+import SignaturePad from "./SignaturePad";
 
 type OfflineLessonLike = {
     is_completed?: boolean;
@@ -32,6 +33,9 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
     const [currentStep, setCurrentStep] = React.useState<number>(2);
 
     const [isIdCardModalOpen, setIsIdCardModalOpen] = React.useState(false);
+    const [savedSignature, setSavedSignature] = React.useState<string | null>(
+        null,
+    );
 
     const validations = student?.validationsByCourseAuth
         ? student.validationsByCourseAuth[courseAuthId]
@@ -383,7 +387,7 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                     </div>
                 </div>
 
-                {/* Signatures (placeholder) */}
+                {/* Signatures */}
                 <div className="col-12 col-lg-6">
                     <div className="card" style={cardStyle}>
                         <div className="card-body">
@@ -395,14 +399,78 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                                 Signatures
                             </h6>
 
-                            <div className="mt-2" style={{ color: "#ecf0f1" }}>
-                                <div style={mutedText}>
-                                    Signature capture will appear here.
-                                </div>
-                                <div className="mt-2" style={mutedText}>
-                                    This panel is reserved for the student
-                                    signature box.
-                                </div>
+                            <div className="mt-2">
+                                {savedSignature ? (
+                                    <div>
+                                        <div
+                                            style={{
+                                                color: "#ecf0f1",
+                                                marginBottom: "0.5rem",
+                                            }}
+                                        >
+                                            <strong>Saved Signature:</strong>
+                                        </div>
+                                        <div
+                                            style={{
+                                                border: "2px solid #34495e",
+                                                borderRadius: "0.5rem",
+                                                padding: "0.5rem",
+                                                backgroundColor: "#ecf0f1",
+                                                display: "inline-block",
+                                                marginBottom: "0.75rem",
+                                            }}
+                                        >
+                                            <img
+                                                src={savedSignature}
+                                                alt="Saved Signature"
+                                                style={{
+                                                    display: "block",
+                                                    maxWidth: "100%",
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <button
+                                                className="btn btn-sm btn-outline-light"
+                                                onClick={() =>
+                                                    setSavedSignature(null)
+                                                }
+                                            >
+                                                <i className="fas fa-edit me-1"></i>
+                                                Create New Signature
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div
+                                            style={{
+                                                color: "#ecf0f1",
+                                                marginBottom: "0.75rem",
+                                            }}
+                                        >
+                                            Please sign below:
+                                        </div>
+                                        <SignaturePad
+                                            onSave={(dataUrl) => {
+                                                setSavedSignature(dataUrl);
+                                                console.log(
+                                                    "Signature saved:",
+                                                    dataUrl.substring(0, 50) +
+                                                        "...",
+                                                );
+                                            }}
+                                            width={350}
+                                            height={150}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-3" style={mutedText}>
+                                <i className="fas fa-info-circle me-1"></i>
+                                Your signature will be used for course
+                                completion certificates.
                             </div>
                         </div>
                     </div>

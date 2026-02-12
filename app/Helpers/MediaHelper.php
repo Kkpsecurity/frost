@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use App\Classes\MediaManager;
+use App\Classes\Admin\MediaManager;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
@@ -49,7 +49,6 @@ class MediaHelper
 
             // Return default placeholder or original asset() call as ultimate fallback
             return asset($path);
-
         } catch (\Exception $e) {
             // Log the error but don't break the page
             Log::warning("MediaHelper: Failed to generate URL for {$path} on disk {$disk}: " . $e->getMessage());

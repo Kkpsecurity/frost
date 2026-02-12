@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
 
-use App\Classes\Payments\PayPalRESTObj;
+use App\Classes\Admin\Payments\PayPalRESTObj;
 use App\Http\Controllers\Web\EnrollmentController;
 use App\Http\Controllers\Web\Payments\PayFlowProController;
 
@@ -28,14 +29,14 @@ use App\RCache;
 use App\Classes\Challenger;
 use App\Classes\ChatLogCache;
 use App\Classes\ClassroomQueries;
-use App\Classes\CourseAuthObj;
+use App\Classes\Students\CourseAuthObj;
 use App\Classes\ExamAuthObj;
-use App\Classes\Keymaster;
-use App\Classes\MiscQueries;
-use App\Classes\PaymentQueries;
-use App\Classes\ResetRecords;
-use App\Classes\TrackingQueries;
-use App\Classes\VideoCallRequest;
+use App\Classes\Support\Keymaster;
+use App\Classes\Support\MiscQueries;
+use App\Classes\Admin\PaymentQueries;
+use App\Classes\Admin\ResetRecords;
+use App\Classes\Admin\TrackingQueries;
+use App\Classes\Instructors\VideoCallRequest;
 use App\Helpers\DateHelpers;
 use App\Helpers\DevHelpers;
 use App\Helpers\RangeSelect;
@@ -76,11 +77,7 @@ class SATTest
 
 
 
-    public function TestMe()
-    {
-
-
-    }
+    public function TestMe() {}
 
 
     public function Display()
@@ -103,7 +100,9 @@ class SATTest
         #include base_path( '/sat/challenger.php' );
         #include base_path( '/sat/igbdemo.php' );
 
-        if ( $dumpdata ?? false ) { return dumpcap( $dumpdata ); }
+        if ($dumpdata ?? false) {
+            return dumpcap($dumpdata);
+        }
 
 
 
@@ -146,33 +145,32 @@ ROW;
         # default
         #
 
-        include base_path( '/sat/dump_courses.php' );
+        include base_path('/sat/dump_courses.php');
         return sat_dump_courses();
-
     }
 
 
     public function NewCourseDates()
     {
-        include base_path( '/sat/new_course_dates.php' );
+        include base_path('/sat/new_course_dates.php');
         return sat_new_course_dates();
     }
 
     public function ExtendCourseHours()
     {
-        include base_path( '/sat/new_course_dates.php' );
+        include base_path('/sat/new_course_dates.php');
         return sat_extend_hours();
     }
 
     public function SelfStudyLesons()
     {
-        include base_path( '/sat/self_study_lessons.php' );
+        include base_path('/sat/self_study_lessons.php');
         return self_study_lessons();
     }
 
     public function KKPS3Test()
     {
-        include base_path( '/sat/kkps3.php' );
+        include base_path('/sat/kkps3.php');
         return kkps3_test();
     }
 
@@ -183,23 +181,17 @@ ROW;
     //
 
 
-    public function ISODate( $timestamp ) : string
+    public function ISODate($timestamp): string
     {
 
-        if ( ! $timestamp )
-        {
+        if (! $timestamp) {
             return '';
         }
 
-        if ( ! is_a( $timestamp, 'Illuminate\Support\Carbon' ) )
-        {
-            $timestamp = Carbon::parse( $timestamp );
+        if (! is_a($timestamp, 'Illuminate\Support\Carbon')) {
+            $timestamp = Carbon::parse($timestamp);
         }
 
-        return $timestamp->tz( 'America/New_York' )->isoFormat( 'ddd MM/DD HH:mm:ss.SSSSSS zz' );
-
+        return $timestamp->tz('America/New_York')->isoFormat('ddd MM/DD HH:mm:ss.SSSSSS zz');
     }
-
-
-
 }

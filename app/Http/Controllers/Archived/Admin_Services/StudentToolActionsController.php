@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin\Services;
 
 
-use Auth; 
+use Auth;
 use Carbon\Carbon;
 use App\Models\CourseAuth;
 use App\Models\StudentUnit;
 use Illuminate\Http\Request;
 use App\Models\StudentLesson;
-use App\Classes\TrackingQueries;
+use App\Classes\Admin\TrackingQueries;
 use App\Http\Controllers\Controller;
 
 class StudentToolActionsController extends Controller
@@ -103,15 +103,15 @@ class StudentToolActionsController extends Controller
                 'success' => false,
                 'message' => "Student Lesson not found for given ID",
             ]);
-        }        
+        }
 
-        if($error = $studentLesson->ClearDNC()) {
-            return response()->json(['success' => false, 'message' => $error]);    
+        if ($error = $studentLesson->ClearDNC()) {
+            return response()->json(['success' => false, 'message' => $error]);
         }
 
         return response()->json(['success' => true, 'message' => "Student DNC'ed has been Revoked"]);
     }
-   
+
     public function reEnterAccess(Request $request)
     {
         // Validate the request input
@@ -133,9 +133,9 @@ class StudentToolActionsController extends Controller
         // Check if the student already has access
         if (
             StudentLesson::where('student_unit_id', $studentUnitId)
-                ->where('lesson_id', $instLesson->lesson_id)
-                ->where('inst_lesson_id', $instLesson->id)
-                ->exists()
+            ->where('lesson_id', $instLesson->lesson_id)
+            ->where('inst_lesson_id', $instLesson->id)
+            ->exists()
         ) {
             return response()->json([
                 'success' => false,
@@ -155,5 +155,4 @@ class StudentToolActionsController extends Controller
             'message' => "Student has been granted access to this lesson",
         ]);
     }
-
 }

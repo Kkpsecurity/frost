@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin\Frost;
 
 use App\Models\InstUnit;
@@ -16,12 +17,12 @@ use App\Models\StudentUnit;
 use App\Models\UserBrowser;
 use Illuminate\Http\Request;
 use App\Models\StudentLesson;
-use App\Classes\CourseAuthObj;
-use App\Classes\TrackingQueries;
+use App\Classes\Students\CourseAuthObj;
+use App\Classes\Admin\TrackingQueries;
 use App\Traits\PageMetaDataTrait;
 use App\Classes\ClassroomQueries;
 use App\Http\Controllers\Controller;
-use App\Classes\ValidationsPhotos;
+use App\Classes\Students\ValidationsPhotos;
 use App\Models\Challenge;
 use App\Models\CourseUnitLesson;
 use Illuminate\Support\Facades\Storage;
@@ -204,7 +205,7 @@ class SupportController extends Controller
 
         $CourseDates = ClassroomQueries::InstructorDashboardCourseDates();
 
-        // get by todays date :: 
+        // get by todays date ::
         foreach ($CourseDates as $key => $CourseDate) {
             $InstUnit = InstUnit::whereDate('created_at', '>=', Carbon::today()->toDateString())->where('course_date_id', $CourseDate->id)->first();
 
@@ -220,7 +221,7 @@ class SupportController extends Controller
     protected function initializeStudentData($student_id, $CourseDates)
     {
         /**
-         * Get the Student 
+         * Get the Student
          */
         $student = User::find($student_id);
         $student->avatar = $student->getAvatar('thumb');
@@ -241,7 +242,7 @@ class SupportController extends Controller
         $this->setClassData('selectedCourseAuthId', $currentCourseAuth ? $currentCourseAuth->id : null);
 
         /**
-         * Get All Student Units based off the courseAuths 
+         * Get All Student Units based off the courseAuths
          */
         $studentUnits = StudentUnit::whereIn('course_auth_id', $CourseAuths->pluck('id'))->get();
         $this->setClassData('studentUnits', $studentUnits->toArray());
@@ -256,7 +257,7 @@ class SupportController extends Controller
 
         // Set the grouped lessons as class data
         $this->setClassData('studentLessons', $groupedStudentLessons->toArray());
-        
+
         /**
          * Get the current studentUnit which should base of today date
          */
@@ -379,8 +380,6 @@ class SupportController extends Controller
         }
 
         $this->setClassData('lessons', $lessonsMap);
-
-
     }
 
     protected function initializeOfflineClassRoom()
@@ -394,14 +393,11 @@ class SupportController extends Controller
 
         $this->setClassData('lessons', $lessonsMap);
         $this->setClassData('isClassLive', false);
-
-
-
     }
 
     /**
      * Fetches headshots or ID cards based on type and validates the existence of necessary records.
-     * 
+     *
      * @param string $type Type of the image required ('headshot' or 'idcard')
      * @param CourseAuth $CourseAuth The course authorization object
      * @return string The image or error message
@@ -492,7 +488,6 @@ class SupportController extends Controller
             $this->setClassData('activeLesson', null);
             $this->setClassData('lessonInProgress', false);
         }
-
     }
 
     protected function assignedInstructor($CourseDate = null)
@@ -546,5 +541,4 @@ class SupportController extends Controller
 
         return []; // Return an empty array if the key doesn't exist
     }
-
 }

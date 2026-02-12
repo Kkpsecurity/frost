@@ -60,7 +60,7 @@ class CreateSiteConfig extends Command
     protected function _GetCastTo(): string
     {
 
-        $casts = SiteConfig::Casts();
+        $casts = SiteConfig::allowedCasts();
         unset($casts['htmltext']); // should not do this via command line
         $casts = array_keys($casts);
 

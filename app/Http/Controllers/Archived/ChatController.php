@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\React;
 
 use App\Models\InstUnit;
@@ -6,7 +7,7 @@ use App\Models\User;
 use App\Models\ChatLog;
 use Illuminate\Http\Request;
 use App\Classes\ChatLogCache;
-use App\Classes\MiscQueries;
+use App\Classes\Support\MiscQueries;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
@@ -53,7 +54,6 @@ class ChatController extends Controller
             $chat->save();
 
             return response()->json(['success' => true, 'message' => 'Message sent'], 200);
-
         } else if ($request->isMethod('get')) {
 
             if (!ChatLogCache::IsEnabled($course_date_id)) {
@@ -62,7 +62,7 @@ class ChatController extends Controller
 
             #logger( "ChatLog UserID {$user_id}" );
 
-            $chat_messages = MiscQueries::RecentChatMessages( $course_date_id, $user_id );
+            $chat_messages = MiscQueries::RecentChatMessages($course_date_id, $user_id);
 
             if (!$chat_messages->count()) {
                 return response()->json(['success' => true, 'message' => 'No messages found'], 200);
@@ -81,7 +81,7 @@ class ChatController extends Controller
                         "user_type" => $chat_message->student_id ? 'student' : 'instructor'
                     ],
                     'body' => $chat_message->body,
-                    'created_at' => $chat_message->CreatedAt( 'HH:mm:ss' ),
+                    'created_at' => $chat_message->CreatedAt('HH:mm:ss'),
                 ];
                 $chats[] = $chat;
             }
@@ -102,5 +102,4 @@ class ChatController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Chat System ' . (ChatLogCache::IsEnabled($course_date_id) ? 'Enabled' : 'Disabled')]);
     }
-
 }

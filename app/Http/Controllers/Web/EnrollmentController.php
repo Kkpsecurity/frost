@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 
 use App\Services\RCache;
-use App\Classes\PaymentQueries;
+use App\Classes\Admin\PaymentQueries;
 use App\Models\Course;
 use App\Models\CourseAuth;
 use App\Models\Order;
@@ -20,14 +20,13 @@ class EnrollmentController extends Controller
 {
 
 
-    public function AutoPayFlowPro( Course $Course ) : RedirectResponse
+    public function AutoPayFlowPro(Course $Course): RedirectResponse
     {
         // Debug logging to track enrollment attempts
         Log::info('Enrollment attempt for course ' . $Course->id . ' by user ' . Auth::id());
 
         // Check if user is already enrolled
-        if ( Auth::user()->ActiveCourseAuths->firstWhere( 'course_id', $Course->id ) )
-        {
+        if (Auth::user()->ActiveCourseAuths->firstWhere('course_id', $Course->id)) {
             Log::info('User ' . Auth::id() . ' already enrolled in course ' . $Course->id);
             return redirect()->route('courses.show', $Course->id)
                 ->with('warning', 'You are already enrolled in this course.');
@@ -60,14 +59,13 @@ class EnrollmentController extends Controller
     }
 
 
-    public function TestAutoPayFlowPro( Course $Course ) : array
+    public function TestAutoPayFlowPro(Course $Course): array
     {
 
-        $Order   = $this->GetOrder( $Course );
-        $Payment = $this->GetPayment( $Order );
+        $Order   = $this->GetOrder($Course);
+        $Payment = $this->GetPayment($Order);
 
-        return [ $Order, $Payment ];
-
+        return [$Order, $Payment];
     }
 
 
@@ -79,28 +77,25 @@ class EnrollmentController extends Controller
     ##############################
 
 
-    public static function GetOrder( Course $Course ) : Order
+    public static function GetOrder(Course $Course): Order
     {
 
-        if ( $Order = PaymentQueries::GetIncompleteOrder( $Course ) )
-        {
+        if ($Order = PaymentQueries::GetIncompleteOrder($Course)) {
             return $Order;
         }
 
 
-        if ( app()->environment( 'production' ) )
-        {
+        if (app()->environment('production')) {
 
             return Order::create([
 
                 'user_id'           => Auth::id(),
                 'course_id'         => $Course->id,
-                'payment_type_id'   => RCache::PaymentTypes( 'PayFlowPro', 'name' )->id,
+                'payment_type_id'   => RCache::PaymentTypes('PayFlowPro', 'name')->id,
                 'course_price'      => $Course->price,
                 'total_price'       => $Course->price,
 
             ])->refresh();
-
         }
 
 
@@ -109,16 +104,16 @@ class EnrollmentController extends Controller
         //
 
 
-        $filename = storage_path( 'devel/last_order_id' );
-        $order_id = (int) file_get_contents( $filename ) + 1;
-        file_put_contents( $filename, $order_id );
+        $filename = storage_path('devel/last_order_id');
+        $order_id = (int) file_get_contents($filename) + 1;
+        file_put_contents($filename, $order_id);
 
         return Order::forceCreate([
 
             'id'                => $order_id,
             'user_id'           => Auth::id(),
             'course_id'         => $Course->id,
-            'payment_type_id'   => RCache::PaymentTypes( 'PayFlowPro', 'name' )->id,
+            'payment_type_id'   => RCache::PaymentTypes('PayFlowPro', 'name')->id,
             'course_price'      => $Course->price,
             'total_price'       => $Course->price,
 
@@ -140,8 +135,7 @@ class EnrollmentController extends Controller
     public function GetPayment(Order $Order): Payment
     {
         // Check if payment already exists for this order
-        if ($Payment = $Order->payments()->first())
-        {
+        if ($Payment = $Order->payments()->first()) {
             return $Payment;
         }
 
@@ -155,6 +149,4 @@ class EnrollmentController extends Controller
             'status' => 'pending'
         ]);
     }
-
-
 }

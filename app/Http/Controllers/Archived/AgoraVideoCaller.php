@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Controllers\React;
 
 
 use App\Models\CourseAuth;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Classes\VideoCallRequest;
+use App\Classes\Instructors\VideoCallRequest;
 
 
 class AgoraVideoCaller
@@ -52,10 +53,10 @@ class AgoraVideoCaller
 
     public function callStudent(Request $request)
     {
-        VideoCallRequest::InstCallSetReady($request->course_date_id, $request->student_id); //void      
+        VideoCallRequest::InstCallSetReady($request->course_date_id, $request->student_id); //void
         $course_auth_id = CourseAuth::where('user_id', $request->student_id)->first()->id;
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Call Request',
             'course_auth_id' => $course_auth_id
         ]);
@@ -71,7 +72,6 @@ class AgoraVideoCaller
         } else {
             return response()->json(['success' => false, 'message' => 'Unable to start call'], 200);
         }
-
     }
 
     /**
@@ -88,13 +88,13 @@ class AgoraVideoCaller
         }
     }
 
-    
+
     /**
      * Instructor Ends Call
      */
     public function endCallRequest(Request $request)
     {
-        if(!$request->course_date_id || !$request->student_id){
+        if (!$request->course_date_id || !$request->student_id) {
             return response()->json(['success' => false, 'message' => 'Invalid End Call Request'], 400);
         }
 
@@ -103,9 +103,9 @@ class AgoraVideoCaller
     }
 
 
-/**********************************************************
- * Student Methods
- */
+    /**********************************************************
+     * Student Methods
+     */
 
     /**
      * Sends A call Request to the Instructor
@@ -128,13 +128,13 @@ class AgoraVideoCaller
      */
     public function studentCancelCall($course_date_id, $user_id)
     {
-        
+
         if (!$course_date_id || !$user_id) {
             return response()->json(['success' => false, 'message' => 'Invalid Call Canceled Request'], 400);
-        }   
-        
+        }
+
         VideoCallRequest::CallDeleteAll($course_date_id, $user_id);
-           
+
         return response()->json(['success' => true, 'message' => 'Call Request Canceled']);
     }
 
@@ -195,21 +195,4 @@ class AgoraVideoCaller
             return response()->json(['success' => false, 'message' => 'Student not in Queue', 'inQueue' => false], 200);
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

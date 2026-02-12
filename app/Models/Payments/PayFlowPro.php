@@ -41,8 +41,8 @@ use App\Services\RCache;
 use App\Jobs\PayPalGetSaleDetails;
 use App\Models\Payments\PaymentModel;
 
-use App\Classes\Payments\PayFlowProTrait;
-use App\Classes\Payments\PayPalHelpersTrait;
+use App\Classes\Admin\Payments\PayFlowProTrait;
+use App\Classes\Admin\Payments\PayPalHelpersTrait;
 
 
 

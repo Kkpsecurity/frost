@@ -21,7 +21,7 @@ use App\Models\CourseUnit;
 use App\Models\StudentUnit;
 use App\Models\User;
 use App\Models\Validation;
-use App\Classes\ClassroomQueries;
+use App\Classes\Support\ClassroomQueries;
 use App\Traits\PageMetaDataTrait;
 use App\Http\Controllers\Controller;
 
@@ -34,7 +34,7 @@ use App\Services\StudentUnitService;
 use App\Services\SelfStudyLessonService;
 use App\Services\PauseAllocationService;
 use App\Models\ZoomCreds;
-use App\Classes\Challenger;
+use App\Classes\Students\Challenger;
 use App\Models\StudentLesson;
 use App\Models\StudentVideoQuota;
 

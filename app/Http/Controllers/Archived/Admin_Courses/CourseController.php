@@ -1,17 +1,21 @@
-<?php namespace App\Http\Controllers\Admin\Courses;
+<?php
+
+namespace App\Http\Controllers\Admin\Courses;
 
 
-use App\Classes\SwiftCrud;
+use App\Classes\Admin\SwiftCrud;
 use App\Models\CourseDate;
 use App\Models\InstUnit;
 use Illuminate\Http\Request;
 use App\Traits\PageMetaDataTrait;
 use App\Http\Controllers\Controller;
 
-class CourseController extends Controller {
+class CourseController extends Controller
+{
     use PageMetaDataTrait;
 
-    protected function getTableExcludes() : array {
+    protected function getTableExcludes(): array
+    {
         return [];
     }
 
@@ -20,7 +24,8 @@ class CourseController extends Controller {
      * table, create, edit are the db fields
      * view is the blade view to be used
      */
-    protected function getFieldViews() : array {
+    protected function getFieldViews(): array
+    {
         $crudViews = [
             'table' => [
                 'id',
@@ -31,18 +36,19 @@ class CourseController extends Controller {
             'create' => [],
             'edit' => [],
             'view' => 'details',
-        ];  
+        ];
         return $crudViews;
     }
-   
-    
-    public function dashboard(Request $request) {
+
+
+    public function dashboard(Request $request)
+    {
 
         /**
          * Instantiate SwiftCrud
          */
         $crud = new SwiftCrud(new CourseDate());
-       
+
         $data = [];
 
         /**
@@ -50,13 +56,13 @@ class CourseController extends Controller {
          */
         $query = InstUnit::query();
         $query = $crud->prepareCrudFilters($query, $request);
-        
+
         /**
          * manage the sort column and direction
          */
         $sortColumn = request()->get('sort_column', 'course_date_id');
-        $sortDirection = request()->get('sort_direction', 'desc'); 
-       
+        $sortDirection = request()->get('sort_direction', 'desc');
+
         /**
          * If System Admin or Admin, show all records
          */
@@ -72,7 +78,7 @@ class CourseController extends Controller {
                 ->latest('created_at')
                 ->paginate(10);
         }
-        
+
         /**
          * Generate the View
          */
@@ -85,8 +91,7 @@ class CourseController extends Controller {
                 'parent_route' => 'admin.courses.dashboard',
             ]),
         ], self::renderPageMeta('admin_user_accounts'));
-        
+
         return view('admin.courses.dashboard', compact('content'));
     }
-    
 }

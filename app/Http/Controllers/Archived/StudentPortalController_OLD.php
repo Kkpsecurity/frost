@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\React;
 
 use DB;
@@ -14,7 +15,7 @@ use App\Models\InstLesson;
 use App\Classes\Challenger;
 use Illuminate\Http\Request;
 use App\Models\StudentLesson;
-use App\Classes\TrackingQueries;
+use App\Classes\Admin\TrackingQueries;
 use App\Traits\PageMetaDataTrait;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +28,7 @@ use Illuminate\Contracts\Encryption\DecryptException;
 
 use App\Classes\ChatLogCache;
 use App\Classes\ClassroomQueries;
-use App\Classes\PollingLog;
+use App\Classes\Support\PollingLog;
 
 # use RCache;
 use KKP\Laravel\PgTk;
@@ -35,8 +36,8 @@ use App\Helpers\Helpers;
 use App\Models\CourseAuth;
 use App\Models\CourseDate;
 use App\Models\StudentUnit;
-use App\Classes\CourseAuthObj;
-use App\Classes\ValidationsPhotos;
+use App\Classes\Students\CourseAuthObj;
+use App\Classes\Students\ValidationsPhotos;
 use Illuminate\Support\Facades\Cache;
 use KKP\Laravel\Traits\StoragePathTrait;
 use Illuminate\Validation\ValidationException;
@@ -99,9 +100,10 @@ class StudentPortalController extends Controller
             'email' => 'student@example.com',
             'avatar' => null,
         ]);
-    }    /**
-         * API: Get comprehensive classroom data
-         */
+    }
+    /**
+     * API: Get comprehensive classroom data
+     */
     public function getClassroomDashboardData()
     {
         // Dummy data for now - will be replaced with master endpoint responses
@@ -185,9 +187,10 @@ class StudentPortalController extends Controller
                 'overallProgress' => 47,
             ],
         ]);
-    }    /**
-         * API: Mark message as read
-         */
+    }
+    /**
+     * API: Mark message as read
+     */
     public function markMessageRead($messageId)
     {
         // Dummy response for now
@@ -405,12 +408,9 @@ class StudentPortalController extends Controller
                  */
                 $studentLesson = ClassroomQueries::InitStudentLesson($StudentUnit);
                 $this->setClassData('studentLesson', $studentLesson);
-
-
             } catch (\Exception $e) {
                 Log::error("Error retrieving student unit data: " . $e->getMessage());
             }
-
         } else {
             $this->setClassData('studentUnit', null);
             $this->setClassData('student_unit_id', null);
@@ -531,9 +531,8 @@ class StudentPortalController extends Controller
         /**
          * PollingLog
          */
-        if ( $studentLesson )
-        {
-            ( new PollingLog( $studentLesson ) )->Save();
+        if ($studentLesson) {
+            (new PollingLog($studentLesson))->Save();
         }
 
 
@@ -705,7 +704,6 @@ class StudentPortalController extends Controller
          * started the course
          */
         $this->setClassData('gettingStarted', Auth::user()->GetPref("{$CourseAuth->id}:getting_started") ? true : false);
-
     }
 
     protected function initializeStudent($CourseAuth)
@@ -850,7 +848,7 @@ class StudentPortalController extends Controller
 
     public function studentMarkCompleted(Request $request)
     {
-	    #Challenger::MarkCompleted($request->challenge_id);
+        #Challenger::MarkCompleted($request->challenge_id);
         Challenger::MarkCompleted($request->input('challenge_id'));
         return response()->json(['success' => true]);
     }
@@ -858,7 +856,7 @@ class StudentPortalController extends Controller
     public function studentChallengeExpired(Request $request)
     {
         #Challenger::MarkFailed($request->challenge_id);
-        Challenger::MarkFailed($request->input('challenge_id') );
+        Challenger::MarkFailed($request->input('challenge_id'));
         return response()->json(['success' => true]);
     }
 
@@ -1001,7 +999,8 @@ class StudentPortalController extends Controller
             ], 422);
         }
     }
-    public function generateZoomSignature($meetingNumber, $role) {
+    public function generateZoomSignature($meetingNumber, $role)
+    {
         $sdkKey = config('zoom.api_key');
         $sdkSecret = config('zoom.api_secret');
         $iat = time();
@@ -1018,5 +1017,4 @@ class StudentPortalController extends Controller
 
         return JWT::encode($payload, $sdkSecret, 'HS256');
     }
-
 } // End of Class

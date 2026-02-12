@@ -1,15 +1,16 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\User;
-use App\Classes\ClassroomQueries;
+use App\Classes\Support\ClassroomQueries;
 
 define('INSTRUCTOR_ROLE_ID', 3);
 
 class InstructorServices
 {
     private $user;
-    
+
     public function __construct(User $user)
     {
         $this->user = $user->where('role_id', INSTRUCTOR_ROLE_ID)->get();
@@ -22,12 +23,12 @@ class InstructorServices
 
     public function validateInstructor($CourseDates)
     {
-        $authUser = auth()->user(); 
+        $authUser = auth()->user();
         if (!$authUser) {
             return false;
         }
 
-       
+
         // Extract and merge 'created_by' and 'assistant_id' from InstUnit
         $createdByIds = $CourseDates->pluck('InstUnit.created_by')->filter()->unique();
         $assistantIds = $CourseDates->pluck('InstUnit.assistant_id')->filter()->unique();
@@ -56,8 +57,8 @@ class InstructorServices
             }
         }
 
-         // Assign user role based on the last course, if applicable
-         if (!empty($CourseDates) && ($lastCourse = $CourseDates->last()) && $lastCourse->InstUnit) {
+        // Assign user role based on the last course, if applicable
+        if (!empty($CourseDates) && ($lastCourse = $CourseDates->last()) && $lastCourse->InstUnit) {
             $data['instructor']['userRole'] = $authUser->id === $lastCourse->InstUnit->created_by ? 'instructor' : 'assistant';
         } else {
             $data['instructor']['userRole'] = 'unknown'; // Or set a default role
@@ -65,5 +66,4 @@ class InstructorServices
 
         return $data;
     }
-   
 }

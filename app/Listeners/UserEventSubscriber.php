@@ -12,20 +12,20 @@ use Illuminate\Auth\Events\Logout;
 // use Illuminate\Auth\Events\Registered;
 
 use App\Services\RCache;
-use App\Classes\Redirectors\ExamRedirector;
-# use App\Classes\Redirectors\RangeDateRedirector;
+use App\Classes\Students\ExamRedirector;
+# use App\Classes\Admin\RangeDateRedirector;
 
 
 class UserEventSubscriber
 {
 
 
-    public function handleUserAuthenticated( Authenticated $event ) : void
+    public function handleUserAuthenticated(Authenticated $event): void
     {
 
-        kkpdebug( 'UserEvent', "User Authenticated :: {$event->user}" );
+        kkpdebug('UserEvent', "User Authenticated :: {$event->user}");
 
-        RCache::StoreUser( $event->user );
+        RCache::StoreUser($event->user);
 
         $event->user->InitPrefs();
 
@@ -35,23 +35,21 @@ class UserEventSubscriber
     }
 
 
-    public function handleUserLogin( Login $event ) : void
+    public function handleUserLogin(Login $event): void
     {
 
-        kkpdebug( 'UserEvent', "User Logged In :: {$event->user}" );
+        kkpdebug('UserEvent', "User Logged In :: {$event->user}");
 
-        RCache::StoreUser( $event->user );
+        RCache::StoreUser($event->user);
 
         $event->user->InitPrefs();
-
     }
 
 
-    public function handleUserLogout( Logout $event ) : void
+    public function handleUserLogout(Logout $event): void
     {
 
-        kkpdebug( 'UserEvent', "User Logged Out :: {$event->user}" );
-
+        kkpdebug('UserEvent', "User Logged Out :: {$event->user}");
     }
 
 
@@ -63,22 +61,22 @@ class UserEventSubscriber
     */
 
 
-    public function subscribe( $events ) : void
+    public function subscribe($events): void
     {
 
         $events->listen(
             'Illuminate\Auth\Events\Authenticated',
-            [ UserEventSubscriber::class, 'handleUserAuthenticated' ]
+            [UserEventSubscriber::class, 'handleUserAuthenticated']
         );
 
         $events->listen(
             'Illuminate\Auth\Events\Login',
-            [ UserEventSubscriber::class, 'handleUserLogin' ]
+            [UserEventSubscriber::class, 'handleUserLogin']
         );
 
         $events->listen(
             'Illuminate\Auth\Events\Logout',
-            [ UserEventSubscriber::class, 'handleUserLogout' ]
+            [UserEventSubscriber::class, 'handleUserLogout']
         );
 
         /*
@@ -87,7 +85,5 @@ class UserEventSubscriber
             [ UserEventSubscriber::class, 'handleUserRegistered' ]
         );
         */
-
     }
-
 }

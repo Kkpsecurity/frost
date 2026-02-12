@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Traits\StudentLesson;
 
-use App\Classes\Challenger;
+use App\Classes\Students\Challenger;
 
 
 trait ClearDNC

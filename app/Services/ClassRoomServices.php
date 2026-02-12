@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Classes\ChatLogCache;
-use App\Classes\ClassroomQueries;
-use App\Classes\VideoCallRequest;
+use App\Classes\Admin\ChatLogCache;
+use App\Classes\Support\ClassroomQueries;
+use App\Classes\Instructors\VideoCallRequest;
 use App\Helpers\Helpers;
 use App\Models\InstLesson;
 use App\Models\StudentUnit;
@@ -108,8 +108,4 @@ class ClassRoomServices
 
         return $classData;
     }
-
-
 }
-
-

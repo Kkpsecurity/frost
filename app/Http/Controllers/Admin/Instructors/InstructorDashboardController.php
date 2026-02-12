@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Instructors;
 
 use App\Http\Controllers\Controller;
-use App\Classes\ChatLogCache;
-use App\Classes\InstructorChatPresets;
-use App\Classes\MiscQueries;
+use App\Classes\Admin\ChatLogCache;
+use App\Classes\Instructors\InstructorChatPresets;
+use App\Classes\Support\MiscQueries;
 use App\Traits\PageMetaDataTrait;
 use App\Traits\StoragePathTrait;
 use App\Models\CourseDate;

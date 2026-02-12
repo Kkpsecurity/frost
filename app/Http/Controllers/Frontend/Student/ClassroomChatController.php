@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Frontend\Student;
 
-use App\Classes\ChatLogCache;
-use App\Classes\MiscQueries;
+use App\Classes\Admin\ChatLogCache;
+use App\Classes\Support\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\ChatLog;
 use App\Models\InstUnit;

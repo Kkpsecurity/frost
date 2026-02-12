@@ -8,7 +8,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-use App\Classes\Payments\PayPalRESTObj;
+use App\Classes\Admin\Payments\PayPalRESTObj;
 use App\Models\Payments\PaymentModel;
 
 
@@ -25,25 +25,20 @@ class PayPalGetSaleDetails implements ShouldQueue
     protected $Payment;
 
 
-    public function __construct( PaymentModel $Payment )
+    public function __construct(PaymentModel $Payment)
     {
 
         $this->Payment = $Payment->withoutRelations();
 
-        $this->onQueue( 'paypal_rest' );
-
+        $this->onQueue('paypal_rest');
     }
 
 
     public function handle()
     {
 
-        if ( $this->Payment->pp_ppref )
-        {
-            ( new PayPalRESTObj( $this->Payment ) )->GetSaleDetails();
+        if ($this->Payment->pp_ppref) {
+            (new PayPalRESTObj($this->Payment))->GetSaleDetails();
         }
-
     }
-
-
 }

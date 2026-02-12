@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Web\Courses;
 
-use App\Classes\MiscQueries;
+use App\Classes\Support\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseDate;
@@ -94,10 +94,10 @@ class CourseController extends Controller
                 switch ($courseFilter) {
                     case 'D40':
                         return strpos(strtolower($course->title), 'd40') !== false ||
-                               strpos(strtolower($course->title), 'armed') !== false;
+                            strpos(strtolower($course->title), 'armed') !== false;
                     case 'G28':
                         return strpos(strtolower($course->title), 'g28') !== false ||
-                               strpos(strtolower($course->title), 'unarmed') !== false;
+                            strpos(strtolower($course->title), 'unarmed') !== false;
                     default:
                         return true;
                 }
@@ -131,6 +131,4 @@ class CourseController extends Controller
             'events' => $allEvents
         ]);
     }
-
-
 }

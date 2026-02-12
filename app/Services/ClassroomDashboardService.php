@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\CourseDate;
-use App\Classes\ClassroomQueries;
+use App\Classes\Support\ClassroomQueries;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
@@ -82,7 +82,6 @@ class ClassroomDashboardService
             ]);
 
             return collect();
-
         } catch (Exception $e) {
             Log::error('ClassroomDashboardService: Error getting instructor data', [
                 'user_id' => $this->user?->id,
@@ -157,7 +156,6 @@ class ClassroomDashboardService
             ]);
 
             return $activeCourses;
-
         } catch (Exception $e) {
             Log::error('ClassroomDashboardService: Error getting course dates', [
                 'user_id' => $this->user?->id,
@@ -312,7 +310,6 @@ class ClassroomDashboardService
                 'student_unit_id' => $studentUnitId,
                 'timestamp' => now(),
             ]);
-
         } catch (Exception $e) {
             Log::error('ClassroomDashboardService: Error updating heartbeat', [
                 'student_unit_id' => $studentUnitId,
@@ -347,7 +344,6 @@ class ClassroomDashboardService
             }
 
             return false;
-
         } catch (Exception $e) {
             Log::error('ClassroomDashboardService: Error checking session expiration', [
                 'student_unit_id' => $studentUnitId,
@@ -392,7 +388,6 @@ class ClassroomDashboardService
                 'lesson_id' => $activeLesson->lesson_id,
                 'reason' => $reason,
             ]);
-
         } catch (Exception $e) {
             Log::error('ClassroomDashboardService: Error failing active lesson', [
                 'student_unit_id' => $studentUnitId,
@@ -434,7 +429,6 @@ class ClassroomDashboardService
                 'user_id' => $studentUnit->user_id,
                 'reason' => $reason,
             ]);
-
         } catch (Exception $e) {
             Log::error('ClassroomDashboardService: Error recording student leave', [
                 'student_unit_id' => $studentUnitId,

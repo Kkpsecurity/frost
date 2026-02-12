@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\ChatLog;
-use App\Classes\ChatLogCache;
+use App\Classes\Admin\ChatLogCache;
 
 
 class ChatLogObserver

@@ -69,7 +69,7 @@ class SiteConfig extends Model
      */
 
 
-    public static function Casts(): array
+    public static function allowedCasts(): array
     {
         return [
             'bool'      => 'Boolean',

@@ -11,8 +11,8 @@ use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
 use App\Traits\PageMetaDataTrait;
 
-use App\Classes\Payments\PayFlowProObj;
-use App\Classes\Payments\PayPalHelpersTrait;
+use App\Classes\Admin\Payments\PayFlowProObj;
+use App\Classes\Admin\Payments\PayPalHelpersTrait;
 use App\Models\CourseAuth;
 use App\Models\Payments\PayFlowPro;
 use KKP\Laravel\PgTk;
@@ -25,26 +25,25 @@ class PayFlowProController extends Controller
     use PageMetaDataTrait;
 
 
-    public function index( Request $Request, PayFlowPro $PayFlowPro )
+    public function index(Request $Request, PayFlowPro $PayFlowPro)
     {
 
         $view = 'frontend.payments.payflowpro';
 
-        $content = self::renderPageMeta( $view );
+        $content = self::renderPageMeta($view);
 
 
         $Order         = $PayFlowPro->Order;
         $Course        = $PayFlowPro->Order->GetCourse();
-        $payflow_route = ( new PayFlowProObj( $PayFlowPro ) )->PayFlowLinkURL();
-        $return_route  = route( 'payments.payflowpro', $PayFlowPro );
-        $token_route   = route( 'payments.payflowpro.get_token', $PayFlowPro );
+        $payflow_route = (new PayFlowProObj($PayFlowPro))->PayFlowLinkURL();
+        $return_route  = route('payments.payflowpro', $PayFlowPro);
+        $token_route   = route('payments.payflowpro.get_token', $PayFlowPro);
 
-        return view( $view, compact([ 'content', 'Course', 'Order', 'PayFlowPro', 'payflow_route', 'return_route', 'token_route' ]) );
-
+        return view($view, compact(['content', 'Course', 'Order', 'PayFlowPro', 'payflow_route', 'return_route', 'token_route']));
     }
 
 
-    public function HandleReturn( Request $Request, PayFlowPro $PayFlowPro ) : RedirectResponse
+    public function HandleReturn(Request $Request, PayFlowPro $PayFlowPro): RedirectResponse
     {
 
         //
@@ -57,9 +56,8 @@ class PayFlowProController extends Controller
         #    return redirect( '/' )->with( 'error', 'Invalid HTTP_REFERER' );
         #}
 
-        if ( ! $Request->has( 'RESULT' ) )
-        {
-            return redirect( '/' )->with( 'error', 'Invalid RESULT' );
+        if (! $Request->has('RESULT')) {
+            return redirect('/')->with('error', 'Invalid RESULT');
         }
 
 
@@ -68,9 +66,8 @@ class PayFlowProController extends Controller
         //   TODO: revisit this
         //
 
-        if ( ! Auth::check() )
-        {
-            Auth::login( $PayFlowPro->Order->GetUser() );
+        if (! Auth::check()) {
+            Auth::login($PayFlowPro->Order->GetUser());
         }
 
 
@@ -84,9 +81,9 @@ class PayFlowProController extends Controller
         $PayFlowPro->update([
 
             'cc_last_at'        => $timestamp,
-            'cc_last_result'    => $Request->input( 'RESULT'  ),
-            'cc_last_respmsg'   => $Request->input( 'RESPMSG' ),
-            'cc_last_data'      => json_encode( $_POST ),  // don't trust $Response->all()
+            'cc_last_result'    => $Request->input('RESULT'),
+            'cc_last_respmsg'   => $Request->input('RESPMSG'),
+            'cc_last_data'      => json_encode($_POST),  // don't trust $Response->all()
 
         ]);
 
@@ -96,16 +93,14 @@ class PayFlowProController extends Controller
         //
 
 
-        if ( $Request->input( 'RESULT' ) !== '0' )
-        {
+        if ($Request->input('RESULT') !== '0') {
 
-            $payment_error = $PayFlowPro::TransactionError( (int) $Request->input( 'RESULT' ) );
+            $payment_error = $PayFlowPro::TransactionError((int) $Request->input('RESULT'));
 
-            logger( "Payment Error: {$payment_error} -- OrderID: {$PayFlowPro->Order->id} -- User: {$PayFlowPro->Order->GetUser()}" );
+            logger("Payment Error: {$payment_error} -- OrderID: {$PayFlowPro->Order->id} -- User: {$PayFlowPro->Order->GetUser()}");
 
-            return redirect()->route( 'payments.payflowpro', $PayFlowPro )
-                              ->with( 'error', $payment_error );
-
+            return redirect()->route('payments.payflowpro', $PayFlowPro)
+                ->with('error', $payment_error);
         }
 
 
@@ -118,17 +113,15 @@ class PayFlowProController extends Controller
         $PayFlowPro->ResetTokenVars(); // doesn't save
 
         $PayFlowPro->completed_at  = $timestamp;
-        $PayFlowPro->pp_pnref      = $Request->input( 'PNREF' );
-        $PayFlowPro->pp_ppref      = $Request->input( 'PPREF' );
+        $PayFlowPro->pp_pnref      = $Request->input('PNREF');
+        $PayFlowPro->pp_ppref      = $Request->input('PPREF');
 
-        if ( $Request->has( 'AMT' ) )
-        {
-            $PayFlowPro->cc_amount = $Request->input( 'AMT' );
+        if ($Request->has('AMT')) {
+            $PayFlowPro->cc_amount = $Request->input('AMT');
         }
 
-        if ( $Request->has( 'TRANSTIME' ) )
-        {
-            $PayFlowPro->cc_transtime = $PayFlowPro::Date_to_UTC( $Request->input( 'TRANSTIME' ) );
+        if ($Request->has('TRANSTIME')) {
+            $PayFlowPro->cc_transtime = $PayFlowPro::Date_to_UTC($Request->input('TRANSTIME'));
         }
 
         $PayFlowPro->save();
@@ -161,8 +154,7 @@ class PayFlowProController extends Controller
         // fin
         //
 
-        return redirect()->route( 'order.completed', $PayFlowPro->Order );
-
+        return redirect()->route('order.completed', $PayFlowPro->Order);
     }
 
 
@@ -174,21 +166,18 @@ class PayFlowProController extends Controller
     #########################
 
 
-    public function GetToken( PayFlowPro $PayFlowPro ) : JsonResponse
+    public function GetToken(PayFlowPro $PayFlowPro): JsonResponse
     {
 
-        abort_unless( $PayFlowPro->id, 500, 'Missing PayFlowPro' );
+        abort_unless($PayFlowPro->id, 500, 'Missing PayFlowPro');
 
 
-        $PayFlowProObj = new PayFlowProObj( $PayFlowPro );
+        $PayFlowProObj = new PayFlowProObj($PayFlowPro);
 
-        if ( ! $PayFlowProObj->TokenIsValid() )
-        {
+        if (! $PayFlowProObj->TokenIsValid()) {
             $PayFlowProObj->SetToken(); // updates $PayFlowPro
-        }
-        else
-        {
-            $PayFlowPro->increment( 'pp_token_count' );
+        } else {
+            $PayFlowPro->increment('pp_token_count');
         }
 
 
@@ -198,8 +187,5 @@ class PayFlowProController extends Controller
             'SECURETOKEN'   => $PayFlowPro->pp_token,
 
         ]);
-
     }
-
-
 }

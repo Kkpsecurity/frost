@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Support\DeferrableProvider;
 
-use App\Classes\KKPS3;
+use App\Classes\Support\KKPS3;
 
 
 class KKPS3ServiceProvider extends ServiceProvider implements DeferrableProvider

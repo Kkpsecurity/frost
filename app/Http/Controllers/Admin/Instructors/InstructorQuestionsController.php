@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin\Instructors;
 
-use App\Classes\ChatLogCache;
-use App\Classes\ClassroomSessionModeCache;
+use App\Classes\Admin\ChatLogCache;
+use App\Classes\Support\ClassroomSessionModeCache;
 use App\Http\Controllers\Controller;
 use App\Models\AiChatLog;
 use App\Models\ChatLog;

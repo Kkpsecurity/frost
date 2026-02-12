@@ -3,8 +3,8 @@
 namespace App\Traits;
 
 use Auth;
-use Route;
 use Request;
+use Route;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 
@@ -13,8 +13,10 @@ trait RedirectorTrait
 
 
     protected static $_always_ignore_routes = [
+
         // DO NOT put logout here
         'impersonate',
+
     ];
 
 
