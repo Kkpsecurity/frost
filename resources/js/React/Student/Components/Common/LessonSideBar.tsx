@@ -10,6 +10,8 @@ interface LessonSideBarProps {
     getLessonStatusIcon: (lesson: any, index: number) => React.ReactNode;
     onSelectLesson?: (lessonId: number) => void;
     selectedLessonId?: number | null;
+    activeSessionLessonId?: number | null; // Lesson with active video session
+    disableNavigation?: boolean; // Disable all navigation during active session
 }
 
 const LessonSideBar: React.FC<LessonSideBarProps> = ({
@@ -22,6 +24,8 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
     getLessonStatusIcon,
     onSelectLesson,
     selectedLessonId,
+    activeSessionLessonId,
+    disableNavigation = false,
 }) => {
     return (
         <div
@@ -94,45 +98,86 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                     ? Number(selectedLessonId) ===
                                       Number(lessonId)
                                     : false;
+                            const hasActiveSession =
+                                typeof activeSessionLessonId === "number" &&
+                                Number(activeSessionLessonId) ===
+                                    Number(lessonId);
+                            const isDisabled =
+                                disableNavigation &&
+                                !hasActiveSession &&
+                                !isSelected;
 
                             return (
                                 <div
                                     key={lesson.id}
                                     className="lesson-item mb-2 p-3"
                                     style={{
-                                        backgroundColor: baseColor,
+                                        backgroundColor: isSelected
+                                            ? "#3498db"
+                                            : isDisabled
+                                              ? "#2c3e50"
+                                              : baseColor,
                                         borderRadius: "0.25rem",
                                         border: isSelected
-                                            ? "2px solid rgba(255,255,255,0.55)"
-                                            : "none",
-                                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                                        cursor: onSelectLesson
-                                            ? "pointer"
-                                            : "default",
+                                            ? "3px solid #2ecc71"
+                                            : hasActiveSession
+                                              ? "2px solid #e74c3c"
+                                              : "1px solid rgba(255,255,255,0.1)",
+                                        boxShadow: isSelected
+                                            ? "0 4px 8px rgba(52,152,219,0.4)"
+                                            : "0 1px 3px rgba(0,0,0,0.1)",
+                                        cursor:
+                                            isDisabled || !onSelectLesson
+                                                ? "not-allowed"
+                                                : "pointer",
+                                        opacity: isDisabled ? 0.5 : 1,
+                                        transition: "all 0.2s ease",
+                                        position: "relative",
                                     }}
                                     onClick={() => {
-                                        if (onSelectLesson) {
+                                        if (!isDisabled && onSelectLesson) {
                                             onSelectLesson(Number(lessonId));
                                         }
                                     }}
                                 >
+                                    {hasActiveSession && (
+                                        <div
+                                            className="badge position-absolute top-0 end-0 m-2"
+                                            style={{
+                                                backgroundColor: "#e74c3c",
+                                                fontSize: "0.65rem",
+                                            }}
+                                        >
+                                            <i className="fas fa-play me-1"></i>
+                                            PLAYING
+                                        </div>
+                                    )}
                                     <div className="d-flex justify-content-between align-items-start mb-2">
                                         <div
                                             style={{
-                                                color: textColor,
+                                                color: isSelected
+                                                    ? "white"
+                                                    : textColor,
                                                 fontSize: "0.95rem",
-                                                fontWeight: "600",
+                                                fontWeight: isSelected
+                                                    ? "700"
+                                                    : "600",
                                                 flex: 1,
                                             }}
                                         >
                                             {lesson.title}
+                                            {isSelected && (
+                                                <i className="fas fa-check-circle ms-2"></i>
+                                            )}
                                         </div>
                                         {getLessonStatusIcon(lesson, index)}
                                     </div>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <small
                                             style={{
-                                                color: textColor,
+                                                color: isSelected
+                                                    ? "rgba(255,255,255,0.9)"
+                                                    : textColor,
                                                 fontSize: "0.8rem",
                                                 opacity: 0.9,
                                             }}
@@ -144,16 +189,27 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                         </small>
                                         <small
                                             style={{
-                                                color: textColor,
+                                                color: isSelected
+                                                    ? "rgba(255,255,255,0.95)"
+                                                    : textColor,
                                                 fontSize: "0.8rem",
                                                 fontWeight: "600",
                                             }}
                                         >
-                                            {isCompleted
-                                                ? "Completed"
-                                                : inProgress
-                                                  ? "In Progress"
-                                                  : "Pending"}
+                                            {isDisabled ? (
+                                                <span
+                                                    style={{ color: "#95a5a6" }}
+                                                >
+                                                    <i className="fas fa-lock me-1"></i>
+                                                    Locked
+                                                </span>
+                                            ) : isCompleted ? (
+                                                "Completed"
+                                            ) : inProgress ? (
+                                                "In Progress"
+                                            ) : (
+                                                "Pending"
+                                            )}
                                         </small>
                                     </div>
                                 </div>

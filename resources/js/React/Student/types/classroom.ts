@@ -55,6 +55,7 @@ export interface LessonType {
     is_active: boolean;
     is_paused?: boolean;
     paused_at?: string | null;
+    video_url?: string | null; // S3 signed URL for video (null if no video)
 }
 
 /**

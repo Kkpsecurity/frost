@@ -130,10 +130,6 @@ Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(functi
         ->name('session.leave');
     Route::post('/session/check-or-create', [App\Http\Controllers\Student\ClassroomController::class, 'checkOrCreateSession'])
         ->name('session.check-or-create');
-
-    // VIDEO QUOTA MANAGEMENT ROUTES
-    Route::get('/video-quota', [App\Http\Controllers\Student\StudentDashboardController::class, 'getVideoQuota'])
-        ->name('video-quota');
 });
 
 /**

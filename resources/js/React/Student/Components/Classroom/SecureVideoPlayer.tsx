@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import ReactPlayer from "react-player";
 import PauseModal from "./PauseModal";
 
 interface SecureVideoPlayerProps {
@@ -12,6 +11,8 @@ interface SecureVideoPlayerProps {
         pause_remaining_minutes: number;
         completion_percentage?: number;
         completionPercentage?: number;
+        playbackProgressSeconds?: number;
+        playback_progress_seconds?: number;
         pause_allocation?: {
             total_minutes: number;
             pauses: Array<{
@@ -34,6 +35,7 @@ interface SecureVideoPlayerProps {
     pauseWarningSeconds?: number;
     pauseAlertSound?: string;
     requireUserPlay?: boolean;
+    useViewportHeight?: boolean;
     onComplete: () => void;
     onProgress: (data: { playedSeconds: number; percentage: number }) => void;
     onError: (error: string) => void;
@@ -49,17 +51,23 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     pauseWarningSeconds = 30,
     pauseAlertSound = "/sounds/pause-warning.mp3",
     requireUserPlay = false,
+    useViewportHeight = false,
     onComplete,
     onProgress,
     onError,
 }) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
+    const initialSessionIdRef = useRef<string | null>(null);
 
     const resolvedSessionId =
         (activeSession as any)?.session_id ?? (activeSession as any)?.sessionId;
     const resolvedCompletionPercentage =
         (activeSession as any)?.completion_percentage ??
         (activeSession as any)?.completionPercentage ??
+        0;
+    const resolvedPlaybackProgressSeconds =
+        (activeSession as any)?.playbackProgressSeconds ??
+        (activeSession as any)?.playback_progress_seconds ??
         0;
 
     // Playback state
@@ -68,6 +76,8 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [furthestPointReached, setFurthestPointReached] = useState(0);
+    const [volume, setVolume] = useState(1.0); // Volume from 0.0 to 1.0
+    const [isMuted, setIsMuted] = useState(false);
 
     // Pause tracking
     const [pauseStartTime, setPauseStartTime] = useState<number | null>(null);
@@ -94,7 +104,36 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     const currentPause =
         pauseAllocation.pauses[currentPauseIndex] || pauseAllocation.pauses[0];
 
+    // Pause limits (display only for now)
+    const MAX_PAUSES = 3;
+    const configuredPauseCount = Array.isArray(pauseAllocation.pauses)
+        ? pauseAllocation.pauses.length
+        : 0;
+    const pausesAllowed = Math.min(configuredPauseCount, MAX_PAUSES);
+    const pausesUsed = Math.min(currentPauseIndex, pausesAllowed);
+    const pausesRemaining = Math.max(0, pausesAllowed - pausesUsed);
+
     const isPlaybackLocked = requireUserPlay && !hasUserStarted;
+
+    // Keep the real video element in sync with React state.
+    useEffect(() => {
+        if (simulationMode) return;
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (playing && !isPlaybackLocked) {
+            const playPromise = video.play();
+            // Ignore autoplay-related errors; the UI is user-driven.
+            if (
+                playPromise &&
+                typeof (playPromise as any).catch === "function"
+            ) {
+                (playPromise as any).catch(() => undefined);
+            }
+        } else {
+            video.pause();
+        }
+    }, [playing, isPlaybackLocked, simulationMode]);
 
     // Initialize duration from lesson duration_minutes in simulation mode
     useEffect(() => {
@@ -102,13 +141,62 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
             const durationInSeconds = lesson.duration_minutes * 60;
             setDuration(durationInSeconds);
         }
+
+        // Restore volume from localStorage
+        try {
+            const savedVolume = localStorage.getItem("video_player_volume");
+            if (savedVolume) {
+                const vol = parseFloat(savedVolume);
+                if (!isNaN(vol) && vol >= 0 && vol <= 1) {
+                    setVolume(vol);
+                }
+            }
+        } catch {
+            // ignore
+        }
     }, [simulationMode, lesson.duration_minutes]);
 
-    // Always start paused when a session is loaded/mounted.
-    // Playback should only begin after an explicit user click on the Play button.
+    // Persist volume to localStorage
     useEffect(() => {
-        setPlaying(false);
-        setHasUserStarted(false);
+        try {
+            localStorage.setItem("video_player_volume", volume.toString());
+        } catch {
+            // ignore
+        }
+
+        // Apply volume to video element if it exists
+        if (videoRef.current) {
+            videoRef.current.volume = volume;
+        }
+    }, [volume]);
+
+    // Apply mute state to video element
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.muted = isMuted;
+        }
+    }, [isMuted]);
+
+    // Always start paused when a NEW session is loaded/mounted.
+    // Playback should only begin after an explicit user click on the Play button.
+    // Only reset if the session ID actually changed (new session started)
+    useEffect(() => {
+        if (!resolvedSessionId) return;
+
+        // Track initial session ID on mount
+        if (!initialSessionIdRef.current) {
+            initialSessionIdRef.current = resolvedSessionId;
+            setPlaying(false);
+            setHasUserStarted(false);
+            return;
+        }
+
+        // Only reset if session ID changed (different session)
+        if (initialSessionIdRef.current !== resolvedSessionId) {
+            initialSessionIdRef.current = resolvedSessionId;
+            setPlaying(false);
+            setHasUserStarted(false);
+        }
     }, [resolvedSessionId]);
 
     // Safety: if something tries to autoplay before the student presses Play,
@@ -184,9 +272,17 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
     // Initialize furthest point from session completion percentage
     useEffect(() => {
-        if (duration > 0 && resolvedCompletionPercentage > 0) {
+        if (
+            duration > 0 &&
+            (resolvedCompletionPercentage > 0 ||
+                resolvedPlaybackProgressSeconds > 0)
+        ) {
+            // Prefer exact seconds over percentage
             const savedPosition =
-                (resolvedCompletionPercentage / 100) * duration;
+                resolvedPlaybackProgressSeconds > 0
+                    ? resolvedPlaybackProgressSeconds
+                    : (resolvedCompletionPercentage / 100) * duration;
+
             setFurthestPointReached(savedPosition);
             setCurrentTime(savedPosition);
 
@@ -197,7 +293,12 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 videoRef.current.currentTime = savedPosition;
             }
         }
-    }, [duration, resolvedCompletionPercentage, simulationMode]);
+    }, [
+        duration,
+        resolvedCompletionPercentage,
+        resolvedPlaybackProgressSeconds,
+        simulationMode,
+    ]);
 
     // Handle play/pause
     const handlePlayPause = () => {
@@ -449,15 +550,21 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 maxWidth: "100%",
                 marginLeft: 0,
                 marginRight: 0,
+                height: useViewportHeight ? "100vh" : undefined,
+                display: useViewportHeight ? "flex" : undefined,
+                flexDirection: useViewportHeight ? "column" : undefined,
             }}
         >
-            {/* Video Player Container (YouTube-style 16:9) */}
+            {/* Video Player Container */}
             <div
-                className="video-container ratio ratio-16x9 mb-3"
+                className={`video-container${useViewportHeight ? "" : " ratio ratio-16x9"} ${useViewportHeight ? "mb-2" : "mb-3"}`}
                 style={{
                     backgroundColor: "#000",
                     borderRadius: "8px",
                     overflow: "hidden",
+                    position: "relative",
+                    flex: useViewportHeight ? 1 : undefined,
+                    minHeight: useViewportHeight ? 0 : undefined,
                 }}
             >
                 {simulationMode ? (
@@ -580,18 +687,27 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                             height: "100%",
                         }}
                     >
-                        <ReactPlayer
+                        <video
                             ref={videoRef}
                             src={videoUrl}
-                            playing={playing && !isPlaybackLocked}
-                            controls={false} // Use custom controls
-                            width="100%"
-                            height="100%"
-                            disablePictureInPicture={true}
+                            playsInline
+                            preload="metadata"
+                            controls={false}
+                            muted={isMuted}
+                            disablePictureInPicture
+                            controlsList="nodownload noplaybackrate"
                             onTimeUpdate={handleVideoTimeUpdate}
                             onSeeking={handleVideoSeeking}
                             onLoadedMetadata={(e) => {
                                 const video = e.currentTarget;
+
+                                // Apply volume immediately on metadata load.
+                                try {
+                                    video.volume = volume;
+                                } catch {
+                                    // ignore
+                                }
+
                                 if (
                                     Number.isFinite(video.duration) &&
                                     video.duration > 0
@@ -600,19 +716,109 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                 }
 
                                 if (
-                                    resolvedCompletionPercentage > 0 &&
+                                    (resolvedCompletionPercentage > 0 ||
+                                        resolvedPlaybackProgressSeconds > 0) &&
                                     Number.isFinite(video.duration) &&
                                     video.duration > 0
                                 ) {
                                     const savedPosition =
-                                        (resolvedCompletionPercentage / 100) *
-                                        video.duration;
+                                        resolvedPlaybackProgressSeconds > 0
+                                            ? resolvedPlaybackProgressSeconds
+                                            : (resolvedCompletionPercentage /
+                                                  100) *
+                                              video.duration;
                                     setFurthestPointReached(savedPosition);
                                     setCurrentTime(savedPosition);
                                     video.currentTime = savedPosition;
                                 }
+
+                                // Ensure we stay paused when locked.
+                                if (isPlaybackLocked) {
+                                    video.pause();
+                                }
+                            }}
+                            onPlay={() => {
+                                // If something tries to autoplay while locked, immediately stop it.
+                                if (isPlaybackLocked) {
+                                    try {
+                                        videoRef.current?.pause();
+                                    } catch {
+                                        // ignore
+                                    }
+                                }
+                            }}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                backgroundColor: "black",
+                                pointerEvents: isPlaybackLocked
+                                    ? "none"
+                                    : "auto",
                             }}
                         />
+
+                        {/* Playback lock overlay (real video) */}
+                        {isPlaybackLocked && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    background:
+                                        "linear-gradient(135deg, rgba(30,60,114,0.85) 0%, rgba(42,82,152,0.85) 100%)",
+                                    color: "white",
+                                    textAlign: "center",
+                                    padding: "24px",
+                                }}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setHasUserStarted(true);
+                                        setPlaying(true);
+                                    }}
+                                    style={{
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "white",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        cursor: "pointer",
+                                        padding: 0,
+                                    }}
+                                >
+                                    <i
+                                        className="fas fa-play-circle fa-6x mb-3"
+                                        style={{
+                                            color: "white",
+                                            opacity: 0.9,
+                                        }}
+                                    ></i>
+                                    <h3
+                                        style={{
+                                            color: "white",
+                                            marginBottom: "8px",
+                                        }}
+                                    >
+                                        Ready to start
+                                    </h3>
+                                    <p
+                                        style={{
+                                            color: "rgba(255,255,255,0.85)",
+                                            marginBottom: 0,
+                                        }}
+                                    >
+                                        Press Play when you're ready.
+                                    </p>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -677,6 +883,17 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                     </small>
                 </div>
 
+                {/* Pause Limits */}
+                <div className="d-flex justify-content-between mb-3">
+                    <small style={{ color: "#95a5a6" }}>
+                        <i className="fas fa-pause-circle me-2"></i>
+                        Pause limit: {pausesAllowed} (max {MAX_PAUSES})
+                    </small>
+                    <small style={{ color: "#95a5a6" }}>
+                        Pauses remaining: {pausesRemaining}
+                    </small>
+                </div>
+
                 {/* Control Buttons */}
                 <div className="d-flex gap-2 align-items-center">
                     <button
@@ -697,6 +914,42 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                         ></i>
                         {playing ? "Pause" : "Play"}
                     </button>
+
+                    {/* Volume Controls */}
+                    <div className="d-flex align-items-center gap-2 ms-2">
+                        <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => setIsMuted(!isMuted)}
+                            title={isMuted ? "Unmute" : "Mute"}
+                        >
+                            <i
+                                className={`fas ${isMuted ? "fa-volume-mute" : volume > 0.5 ? "fa-volume-up" : "fa-volume-down"}`}
+                            ></i>
+                        </button>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={isMuted ? 0 : volume}
+                            onChange={(e) => {
+                                const newVolume = parseFloat(e.target.value);
+                                setVolume(newVolume);
+                                if (newVolume > 0 && isMuted) {
+                                    setIsMuted(false);
+                                }
+                            }}
+                            className="form-range"
+                            style={{
+                                width: "100px",
+                                cursor: "pointer",
+                            }}
+                            title={`Volume: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+                        />
+                        <small style={{ color: "#95a5a6", minWidth: "35px" }}>
+                            {Math.round((isMuted ? 0 : volume) * 100)}%
+                        </small>
+                    </div>
 
                     {furthestProgressPercentage >= completionThreshold && (
                         <button

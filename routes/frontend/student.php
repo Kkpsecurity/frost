@@ -218,7 +218,7 @@ Route::middleware(['auth'])->group(function () {
 
     /**
      * Self-Study Lesson Session Management Routes (Phase 5)
-     * Controller: StudentLessonSessionController
+     * Controller: \App\Http\Controllers\Student\StudentLessonSessionController
      */
     Route::post('/classroom/lesson/start-session', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'startSession'])
         ->name('classroom.lesson.start-session');
@@ -244,6 +244,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/classroom/dev/reset-all-lessons', [\App\Http\Controllers\Frontend\Student\StudentDevToolsController::class, 'resetAllLessons'])
         ->name('classroom.dev.reset-all-lessons');
+
+    Route::post('/classroom/dev/reset-video-quota', [\App\Http\Controllers\Student\DevToolsController::class, 'resetVideoQuota'])
+        ->name('classroom.dev.reset-video-quota');
 
     /**
      * Exam API Routes

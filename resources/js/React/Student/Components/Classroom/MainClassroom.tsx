@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useClassroom } from "../../context/ClassroomContext";
 import { useStudent } from "../../context/StudentContext";
 import MainOffline from "./MainOffline";
@@ -33,6 +34,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
 }) => {
     const classroomContext = useClassroom();
     const studentContext = useStudent();
+    const queryClient = useQueryClient();
     const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
     const [showExamRoom, setShowExamRoom] = useState(false); // Exam room state
     const [hasExitedExamRoom, setHasExitedExamRoom] = useState(false); // Track if user explicitly exited
@@ -184,6 +186,45 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         }
     };
 
+    const handleResetVideoQuota = async () => {
+        if (!confirm("Reset video quota back to default (10 hours)?")) return;
+
+        try {
+            const response = await fetch(
+                "/classroom/dev/reset-video-quota",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document
+                                .querySelector('meta[name="csrf-token"]')
+                                ?.getAttribute("content") || "",
+                        Accept: "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({}),
+                },
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data?.success) {
+                alert(`❌ Failed: ${data?.error || "Unknown error"}`);
+                return;
+            }
+
+            // Refresh quota everywhere (Self-Study tab uses this query).
+            queryClient.invalidateQueries({ queryKey: ["video-quota"] });
+
+            alert("✅ Video quota reset.");
+        } catch (error) {
+            console.error("Error resetting video quota:", error);
+            alert("❌ Error resetting video quota: " + error);
+        }
+    };
+
     // 🎓 EXAM: Handler for exam button click
     const handleExamClick = () => {
         setShowExamRoom(true);
@@ -312,6 +353,24 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                 >
                     <i className="fas fa-redo me-1"></i>
                     Reset
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleResetVideoQuota}
+                    className="btn btn-sm"
+                    title="Reset video quota"
+                    style={{
+                        backgroundColor: "#8e44ad",
+                        color: "#fff",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        padding: "6px 12px",
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                    }}
+                >
+                    <i className="fas fa-stopwatch me-1"></i>
+                    Reset Quota
                 </button>
             </div>
         </>

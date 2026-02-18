@@ -228,6 +228,11 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                     getLessonStatusColor={getLessonStatusColor}
                                     getLessonTextColor={getLessonTextColor}
                                     getLessonStatusIcon={getLessonStatusIcon}
+                                    selectedLessonId={activeLesson?.id || null}
+                                    activeSessionLessonId={
+                                        activeLesson?.id || null
+                                    }
+                                    disableNavigation={false}
                                 />
                             </div>
 

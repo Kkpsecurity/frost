@@ -8,6 +8,7 @@ use App\Models\StudentLesson;
 use App\Models\StudentUnit;
 use App\Models\CourseAuth;
 use App\Models\Lesson;
+use App\Models\StudentVideoQuota;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -214,6 +215,55 @@ class DevToolsController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to complete lessons',
+                'debug' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset the authenticated student's video quota (self-study quota).
+     *
+     * POST /classroom/dev/reset-video-quota
+     */
+    public function resetVideoQuota(Request $request)
+    {
+        if (!config('app.debug')) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Dev tools only available in debug mode',
+            ], 403);
+        }
+
+        $userId = Auth::id();
+
+        try {
+            $quota = StudentVideoQuota::firstOrCreate(
+                ['user_id' => $userId],
+                ['total_hours' => 10.00, 'used_hours' => 0.00, 'refunded_hours' => 0.00]
+            );
+
+            $quota->resetQuota();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Video quota reset',
+                'data' => [
+                    'total_hours' => (float) $quota->total_hours,
+                    'used_hours' => (float) $quota->used_hours,
+                    'remaining_hours' => (float) $quota->getRemainingHours(),
+                    'refunded_hours' => (float) $quota->refunded_hours,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Dev Tools: Failed to reset video quota', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to reset video quota',
                 'debug' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }

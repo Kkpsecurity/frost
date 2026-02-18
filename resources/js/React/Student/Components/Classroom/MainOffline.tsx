@@ -46,6 +46,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     const [isLoadingSelfStudyLessons, setIsLoadingSelfStudyLessons] =
         useState(false);
 
+    // Track active self-study session for sidebar
+    const [activeSelfStudySessionLessonId, setActiveSelfStudySessionLessonId] =
+        useState<number | null>(null);
+
     // Tab state management
     const [activeTab, setActiveTab] = useState<
         "details" | "self-study" | "documentation"
@@ -260,7 +264,24 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                     getLessonTextColor={getLessonTextColor}
                                     getLessonStatusIcon={getLessonStatusIcon}
                                     selectedLessonId={selectedLessonId}
-                                    onSelectLesson={setSelectedLessonId}
+                                    onSelectLesson={(lessonId) => {
+                                        // Prevent navigation during active session unless clearing it
+                                        if (
+                                            activeSelfStudySessionLessonId &&
+                                            lessonId !==
+                                                activeSelfStudySessionLessonId
+                                        ) {
+                                            // User is trying to switch lessons during active session
+                                            return;
+                                        }
+                                        setSelectedLessonId(lessonId);
+                                    }}
+                                    activeSessionLessonId={
+                                        activeSelfStudySessionLessonId
+                                    }
+                                    disableNavigation={
+                                        activeSelfStudySessionLessonId !== null
+                                    }
                                 />
                             </div>
                             {/* Main Content Area */}
@@ -418,6 +439,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             onSelectLesson={setSelectedLessonId}
                                             onLessonsUpdated={
                                                 setSelfStudyLessons
+                                            }
+                                            onActiveSessionChange={
+                                                setActiveSelfStudySessionLessonId
                                             }
                                         />
                                     )}

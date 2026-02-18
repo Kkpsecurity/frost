@@ -31,6 +31,7 @@ class Lesson extends Model
         'title'             => 'string',  // 64
         'credit_minutes'    => 'integer',
         'video_seconds'     => 'integer',
+        'video_url'         => 'string',
 
     ];
 
@@ -116,5 +117,67 @@ class Lesson extends Model
     public function SelfStudyMinSeconds(): int
     {
         return $this->video_seconds - 300;  // 5 minutes
+    }
+
+
+    //
+    // S3 Video Methods
+    //
+
+
+    /**
+     * Check if lesson has a video URL assigned
+     */
+    public function hasVideo(): bool
+    {
+        return !empty($this->video_url);
+    }
+
+    /**
+     * Get the full S3 URL for the video
+     * Note: Using s3_media disk which doesn't have a 'root' prefix
+     */
+    public function getVideoUrl(): ?string
+    {
+        if (!$this->hasVideo()) {
+            return null;
+        }
+
+        // Build direct S3 URL without root prefix
+        $bucket = config('filesystems.disks.s3.bucket');
+        $region = config('filesystems.disks.s3.region');
+        return "https://{$bucket}.s3.{$region}.amazonaws.com/{$this->video_url}";
+    }
+
+    /**
+     * Get a temporary signed URL for secure video access
+     *
+     * @param int $expiresInMinutes Default 60 minutes
+     * Note: Using s3_media disk which doesn't have a 'root' prefix
+     */
+    public function getSignedVideoUrl(int $expiresInMinutes = 60): ?string
+    {
+        if (!$this->hasVideo()) {
+            return null;
+        }
+
+        // Use AWS SDK directly to avoid the 'root' prefix issue
+        $s3Client = \Storage::disk('s3')->getClient();
+        $bucket = config('filesystems.disks.s3.bucket');
+
+        try {
+            $cmd = $s3Client->getCommand('GetObject', [
+                'Bucket' => $bucket,
+                'Key' => $this->video_url, // Direct key without root prefix
+            ]);
+
+            $request = $s3Client->createPresignedRequest($cmd, "+{$expiresInMinutes} minutes");
+            return (string) $request->getUri();
+        } catch (\Exception $e) {
+            \Log::error("Failed to generate signed URL for video: {$this->video_url}", [
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

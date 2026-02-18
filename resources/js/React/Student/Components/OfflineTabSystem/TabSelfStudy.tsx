@@ -15,6 +15,7 @@ type SelfStudyLesson = {
     pause_minutes?: number;
     required_minutes?: number;
     is_completed?: boolean;
+    video_url?: string;
 };
 
 type ActiveSession = {
@@ -28,6 +29,7 @@ type ActiveSession = {
     totalPauseAllowed: number;
     pauseUsed: number;
     videoDurationSeconds: number;
+    video_url?: string; // Cached signed URL to prevent regeneration
 };
 
 interface TabSelfStudyProps {
@@ -36,6 +38,7 @@ interface TabSelfStudyProps {
     selectedLessonId: number | null;
     onSelectLesson: (lessonId: number) => void;
     onLessonsUpdated?: (lessons: SelfStudyLesson[]) => void;
+    onActiveSessionChange?: (lessonId: number | null) => void;
 }
 
 const cardStyle: React.CSSProperties = {
@@ -54,6 +57,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
     selectedLessonId,
     onSelectLesson,
     onLessonsUpdated,
+    onActiveSessionChange,
 }) => {
     const {
         quota,
@@ -126,6 +130,9 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
             setActiveSession(parsed as ActiveSession);
             setIsPlayerUnlocked(false);
             onSelectLesson(Number(parsed.lessonId));
+
+            // Notify parent about restored session
+            onActiveSessionChange?.(Number(parsed.lessonId));
         } catch {
             // ignore
         }
@@ -185,6 +192,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                     totalPauseAllowed: Number(s.totalPauseAllowed || 0),
                     pauseUsed: Number(s.pauseUsed || 0),
                     videoDurationSeconds: Number(s.videoDurationSeconds || 0),
+                    video_url: activeSession.video_url, // Preserve cached URL to prevent video restarts
                 };
 
                 setActiveSession(hydrated);
@@ -272,13 +280,18 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                 videoDurationSeconds: Number(
                     session.videoDurationSeconds || videoDurationSeconds,
                 ),
+                video_url: selectedLesson.video_url || undefined, // Cache the signed URL
             };
 
             setActiveSession(normalized);
             setIsPlayerUnlocked(false);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
 
-            await refreshLessons();
+            // Notify parent about active session
+            onActiveSessionChange?.(normalized.lessonId);
+
+            // Don't refresh lessons during active playback - it regenerates URLs and restarts video
+            // await refreshLessons();
         } catch (e: any) {
             setError(e?.message || "Failed to start session");
         } finally {
@@ -310,6 +323,10 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
 
             localStorage.removeItem(STORAGE_KEY);
             setActiveSession(null);
+
+            // Notify parent that session ended
+            onActiveSessionChange?.(null);
+
             await refreshLessons();
         } catch (e: any) {
             setError(e?.message || "Failed to complete session");
@@ -322,6 +339,19 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
         Boolean(activeSession?.sessionId) &&
         Boolean(selectedLesson?.id) &&
         Number(activeSession?.lessonId) === Number(selectedLesson?.id);
+
+    // Memoize videoUrl to prevent reference changes that cause video player resets
+    const stableVideoUrl = React.useMemo(() => {
+        if (isSessionForSelectedLesson && activeSession.video_url) {
+            return activeSession.video_url;
+        }
+        return selectedLesson?.video_url || "";
+    }, [
+        isSessionForSelectedLesson,
+        activeSession?.video_url,
+        selectedLesson?.id,
+        selectedLesson?.video_url,
+    ]);
 
     const allottedMinutes = selectedLesson?.duration_minutes || 0;
     const videoMinutes =
@@ -356,6 +386,52 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
         const remainingMs = expiresMs - nowTick;
         return Math.max(0, Math.ceil(remainingMs / 60000));
     }, [activeSession?.expiresAt, nowTick]);
+
+    // Memoize activeSession object to prevent video player remounting
+    const stableActiveSession = React.useMemo(() => {
+        if (!activeSession) return null;
+        return {
+            session_id: activeSession.sessionId,
+            sessionId: activeSession.sessionId,
+            lesson_id: activeSession.lessonId,
+            lessonId: activeSession.lessonId,
+            time_remaining_minutes:
+                typeof sessionTimeRemainingMinutes === "number"
+                    ? sessionTimeRemainingMinutes
+                    : allottedMinutes,
+            pause_remaining_minutes: pauseRemainingMinutes,
+            completion_percentage:
+                Number(activeSession.completionPercentage) || 0,
+            completionPercentage:
+                Number(activeSession.completionPercentage) || 0,
+            playbackProgressSeconds:
+                Number(activeSession.playbackProgressSeconds) || 0,
+        };
+    }, [
+        activeSession?.sessionId,
+        activeSession?.lessonId,
+        activeSession?.completionPercentage,
+        activeSession?.playbackProgressSeconds,
+        sessionTimeRemainingMinutes,
+        pauseRemainingMinutes,
+        allottedMinutes,
+    ]);
+
+    // Memoize lesson object to prevent video player remounting
+    const stableLesson = React.useMemo(() => {
+        if (!selectedLesson) return null;
+        return {
+            id: selectedLesson.id,
+            title: selectedLesson.title,
+            description: selectedLesson.description || "",
+            duration_minutes: selectedLesson.duration_minutes,
+        };
+    }, [
+        selectedLesson?.id,
+        selectedLesson?.title,
+        selectedLesson?.description,
+        selectedLesson?.duration_minutes,
+    ]);
 
     return (
         <div className="self-study-tab">
@@ -575,80 +651,74 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <SecureVideoPlayer
-                                                    activeSession={{
-                                                        session_id:
-                                                            activeSession.sessionId,
-                                                        lesson_id:
-                                                            activeSession.lessonId,
-                                                        time_remaining_minutes:
-                                                            typeof sessionTimeRemainingMinutes ===
-                                                            "number"
-                                                                ? sessionTimeRemainingMinutes
-                                                                : allottedMinutes,
-                                                        pause_remaining_minutes:
-                                                            pauseRemainingMinutes,
-                                                        completion_percentage:
-                                                            Number(
-                                                                activeSession.completionPercentage,
-                                                            ) || 0,
-                                                    }}
-                                                    lesson={{
-                                                        id: selectedLesson.id,
-                                                        title: selectedLesson.title,
-                                                        description:
-                                                            selectedLesson.description ||
-                                                            "",
-                                                        duration_minutes:
-                                                            selectedLesson.duration_minutes,
-                                                    }}
-                                                    videoUrl={""}
-                                                    simulationMode={true}
-                                                    simulationSpeed={10}
-                                                    requireUserPlay={true}
-                                                    onComplete={
-                                                        handleCompleteSession
-                                                    }
-                                                    onProgress={(data) => {
-                                                        // Keep local session (and localStorage) aligned for refresh resume UX.
-                                                        setActiveSession(
-                                                            (prev) => {
-                                                                if (!prev)
-                                                                    return prev;
-                                                                const next: ActiveSession =
-                                                                    {
-                                                                        ...prev,
-                                                                        playbackProgressSeconds:
-                                                                            Math.floor(
+                                                <div className="mt-2">
+                                                    <div className="mb-2">
+                                                        <div style={mutedText}>
+                                                            {
+                                                                selectedLesson.title
+                                                            }
+                                                        </div>
+                                                    </div>
+
+                                                    <SecureVideoPlayer
+                                                        key={`video-${selectedLesson.id}-${activeSession.sessionId}`}
+                                                        activeSession={
+                                                            stableActiveSession
+                                                        }
+                                                        lesson={stableLesson}
+                                                        videoUrl={
+                                                            stableVideoUrl
+                                                        }
+                                                        simulationMode={
+                                                            !stableVideoUrl
+                                                        }
+                                                        simulationSpeed={10}
+                                                        requireUserPlay={true}
+                                                        useViewportHeight={true}
+                                                        onComplete={
+                                                            handleCompleteSession
+                                                        }
+                                                        onProgress={(data) => {
+                                                            // Keep local session (and localStorage) aligned for refresh resume UX.
+                                                            setActiveSession(
+                                                                (prev) => {
+                                                                    if (!prev)
+                                                                        return prev;
+                                                                    const next: ActiveSession =
+                                                                        {
+                                                                            ...prev,
+                                                                            playbackProgressSeconds:
+                                                                                Math.floor(
+                                                                                    Number(
+                                                                                        data.playedSeconds ||
+                                                                                            0,
+                                                                                    ),
+                                                                                ),
+                                                                            completionPercentage:
                                                                                 Number(
-                                                                                    data.playedSeconds ||
+                                                                                    data.percentage ||
                                                                                         0,
                                                                                 ),
+                                                                        };
+                                                                    try {
+                                                                        localStorage.setItem(
+                                                                            STORAGE_KEY,
+                                                                            JSON.stringify(
+                                                                                next,
                                                                             ),
-                                                                        completionPercentage:
-                                                                            Number(
-                                                                                data.percentage ||
-                                                                                    0,
-                                                                            ),
-                                                                    };
-                                                                try {
-                                                                    localStorage.setItem(
-                                                                        STORAGE_KEY,
-                                                                        JSON.stringify(
-                                                                            next,
-                                                                        ),
-                                                                    );
-                                                                } catch {
-                                                                    // ignore
-                                                                }
-                                                                return next;
-                                                            },
-                                                        );
-                                                    }}
-                                                    onError={(message) => {
-                                                        setError(message);
-                                                    }}
-                                                />
+                                                                        );
+                                                                    } catch {
+                                                                        // ignore
+                                                                    }
+                                                                    return next;
+                                                                },
+                                                            );
+                                                        }}
+                                                        onError={(message) => {
+                                                            setError(message);
+                                                        }}
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                     ) : null}

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Illuminate\Database\QueryException;
@@ -347,6 +348,24 @@ class StudentDashboardController extends Controller
     {
         return $request->header('X-CSRF-TOKEN')
             ?? $request->header('x-csrf-token');
+    }
+
+    /**
+     * Get cached signed URL for a lesson video
+     * Cache for 50 minutes (slightly less than 60-minute expiration)
+     * This prevents video restarts caused by URL regeneration on every poll
+     */
+    private function getCachedSignedVideoUrl(\App\Models\Lesson $lesson): ?string
+    {
+        if (!$lesson->hasVideo()) {
+            return null;
+        }
+
+        $cacheKey = "lesson_video_url_{$lesson->id}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(50), function () use ($lesson) {
+            return $lesson->getSignedVideoUrl(60);
+        });
     }
 
     private function decodeVerifiedData($verified): array
@@ -1311,8 +1330,15 @@ class StudentDashboardController extends Controller
 
     private function buildCourseAuthLessonPayload(CourseAuth $courseAuth): array
     {
+        // Get lessons from cache first to know which lessons are in the course
         $course = $courseAuth->GetCourse();
-        $lessons = $course ? $course->GetLessons() : collect();
+        $cachedLessons = $course ? $course->GetLessons() : collect();
+
+        // Get lesson IDs and re-fetch from database with video_url field
+        $lessonIds = $cachedLessons->pluck('id')->filter();
+        $lessons = $lessonIds->isNotEmpty()
+            ? \App\Models\Lesson::whereIn('id', $lessonIds)->get()->keyBy('id')
+            : collect();
 
         $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
         /** @var \App\Services\PauseTimeCalculator $pauseCalculator */
@@ -1336,6 +1362,9 @@ class StudentDashboardController extends Controller
             $pauseMinutes = (int) ($pauseData['total_minutes'] ?? 0);
             $requiredMinutes = $videoDurationMinutes + $bufferMinutes + $pauseMinutes;
 
+            // Get video URL if lesson has S3 video (cached to prevent restarts)
+            $videoUrl = $this->getCachedSignedVideoUrl($lesson);
+
             return [
                 'id' => $lessonId,
                 'lesson_id' => $lessonId,
@@ -1353,6 +1382,7 @@ class StudentDashboardController extends Controller
                 'status' => $isCompleted ? 'completed' : 'incomplete',
                 'is_active' => false,
                 'is_paused' => false,
+                'video_url' => $videoUrl,
             ];
         })->values();
 
@@ -1647,6 +1677,11 @@ class StudentDashboardController extends Controller
                 $status = 'incomplete';
                 $isCompleted = false;
                 $isActive = false;
+
+                // Get the actual Lesson model for video_url (cached to prevent restarts)
+                $lessonModel = \App\Models\Lesson::find($lessonId);
+                $videoUrl = $lessonModel ? $this->getCachedSignedVideoUrl($lessonModel) : null;
+
                 if (!$instLesson) {
                     $status = 'incomplete';
                 } elseif ($lessonId === $activeLessonId && !$instLesson->completed_at && $instLesson->is_paused) {
@@ -1682,6 +1717,7 @@ class StudentDashboardController extends Controller
                     'is_active' => $isActive,
                     'is_paused' => $isPausedFlag,
                     'paused_at' => $pausedAtIso,
+                    'video_url' => $videoUrl, // S3 signed URL for video (null if no video)
                 ];
             })->sortBy('order')->values()->toArray();
 
