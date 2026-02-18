@@ -32,24 +32,24 @@ class SupportController extends Controller
 
             // Build query
             $usersQuery = User::query()
-                ->where(function($q) use ($query) {
+                ->where(function ($q) use ($query) {
                     $q->where('fname', 'ilike', "%{$query}%")
-                      ->orWhere('lname', 'ilike', "%{$query}%")
-                      ->orWhere('email', 'ilike', "%{$query}%")
-                      ->orWhereRaw("CONCAT(fname, ' ', lname) ILIKE ?", ["%{$query}%"])
-                      ->orWhereRaw("CONCAT(lname, ' ', fname) ILIKE ?", ["%{$query}%"]);
+                        ->orWhere('lname', 'ilike', "%{$query}%")
+                        ->orWhere('email', 'ilike', "%{$query}%")
+                        ->orWhereRaw("CONCAT(fname, ' ', lname) ILIKE ?", ["%{$query}%"])
+                        ->orWhereRaw("CONCAT(lname, ' ', fname) ILIKE ?", ["%{$query}%"]);
                 });
 
             // If not admin/sys-admin, filter out admin roles
             if (!$canSearchAll) {
-                $usersQuery->whereDoesntHave('roles', function($q) {
+                $usersQuery->whereDoesntHave('roles', function ($q) {
                     $q->whereIn('name', ['admin', 'sys-admin', 'support']);
                 });
             }
 
             $users = $usersQuery->limit(20)->get();
 
-            $results = $users->map(function($user) {
+            $results = $users->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -158,7 +158,7 @@ class SupportController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        return $courseAuths->map(function($courseAuth) {
+        return $courseAuths->map(function ($courseAuth) {
             return [
                 'id' => $courseAuth->id,
                 'course_id' => $courseAuth->course_id,
@@ -230,13 +230,14 @@ class SupportController extends Controller
         }
 
         // Get student lessons (lesson progress)
-        $studentLessons = \App\Models\StudentLesson::whereIn('student_unit_id',
+        $studentLessons = \App\Models\StudentLesson::whereIn(
+            'student_unit_id',
             $studentUnits->pluck('id')
         )
-        ->with(['Lesson'])
-        ->orderBy('created_at', 'desc')
-        ->limit(100)
-        ->get();
+            ->with(['Lesson'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
 
         foreach ($studentLessons as $studentLesson) {
             $lesson = $studentLesson->Lesson;
@@ -266,8 +267,44 @@ class SupportController extends Controller
             }
         }
 
+        // Get detailed student activity tracking (onboarding, agreements, interactions)
+        // Get the student_unit_ids for this course auth
+        $studentUnitIds = $studentUnits->pluck('id');
+
+        if ($studentUnitIds->isNotEmpty()) {
+            $studentActivities = \App\Models\StudentActivity::where('user_id', $studentId)
+                ->whereIn('student_unit_id', $studentUnitIds)
+                ->orderBy('created_at', 'desc')
+                ->limit(200)
+                ->get();
+
+            foreach ($studentActivities as $activity) {
+                // Format the description based on activity type
+                $description = $activity->description ?: $this->formatActivityDescription($activity->activity_type);
+
+                // Include relevant activities (skip low-level tracking like tab visibility)
+                $includedCategories = [
+                    \App\Models\StudentActivity::CATEGORY_ENTRY,
+                    \App\Models\StudentActivity::CATEGORY_NAVIGATION,
+                    \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+                    \App\Models\StudentActivity::CATEGORY_INTERACTION,
+                ];
+
+                if (in_array($activity->category, $includedCategories)) {
+                    $activities[] = [
+                        'id' => 'activity_' . $activity->id,
+                        'date' => \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d'),
+                        'type' => $activity->activity_type,
+                        'description' => $description,
+                        'details' => $activity->data ? json_encode($activity->data) : null,
+                        'timestamp' => \Carbon\Carbon::parse($activity->created_at)->toIso8601String(),
+                    ];
+                }
+            }
+        }
+
         // Sort activities by timestamp (most recent first)
-        usort($activities, function($a, $b) {
+        usort($activities, function ($a, $b) {
             return strtotime($b['timestamp']) - strtotime($a['timestamp']);
         });
 
@@ -388,11 +425,12 @@ class SupportController extends Controller
         $studentUnits = $courseAuth->StudentUnits()->get();
 
         // Get all StudentLessons from these StudentUnits (live/presence lessons)
-        $studentLessonsMap = \App\Models\StudentLesson::whereIn('student_unit_id',
+        $studentLessonsMap = \App\Models\StudentLesson::whereIn(
+            'student_unit_id',
             $studentUnits->pluck('id')
         )
-        ->get()
-        ->keyBy('lesson_id');
+            ->get()
+            ->keyBy('lesson_id');
 
         // Get all SelfStudyLessons for this CourseAuth
         $selfStudyLessonsMap = \App\Models\SelfStudyLesson::where('course_auth_id', $courseAuth->id)
@@ -663,7 +701,6 @@ class SupportController extends Controller
                 'message' => 'Student details updated successfully',
                 'student' => $this->getStudentDetails($studentId),
             ]);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -681,5 +718,28 @@ class SupportController extends Controller
                 'message' => 'Failed to update student details: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Format activity type into human-readable description
+     */
+    private function formatActivityDescription($activityType)
+    {
+        $descriptions = [
+            'onboarding_completed' => 'Completed onboarding',
+            \App\Models\StudentActivity::TYPE_RULES_ACCEPTED => 'Accepted classroom rules',
+            \App\Models\StudentActivity::TYPE_AGREEMENT_ACCEPTED => 'Accepted agreement',
+            \App\Models\StudentActivity::TYPE_LESSON_STARTED => 'Started lesson',
+            \App\Models\StudentActivity::TYPE_LESSON_COMPLETED => 'Completed lesson',
+            \App\Models\StudentActivity::TYPE_LESSON_PAUSED => 'Paused lesson',
+            \App\Models\StudentActivity::TYPE_LESSON_UNPAUSED => 'Resumed lesson',
+            \App\Models\StudentActivity::TYPE_EXAM_STARTED => 'Started exam',
+            \App\Models\StudentActivity::TYPE_EXAM_SUBMITTED => 'Submitted exam',
+            \App\Models\StudentActivity::TYPE_BUTTON_CLICK => 'Interacted with interface',
+            \App\Models\StudentActivity::TYPE_TAB_HIDDEN => 'Tab became inactive',
+            \App\Models\StudentActivity::TYPE_TAB_VISIBLE => 'Tab became active',
+        ];
+
+        return $descriptions[$activityType] ?? $activityType;
     }
 }

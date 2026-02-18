@@ -89,6 +89,15 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/cron-startup-check.log'));
+
+        // Send exam reminders daily at 9:00 AM ET
+        // Reminds students about ready but not-started exams at configurable intervals (3, 7, 14 days)
+        $schedule->command('exams:send-reminders')
+            ->dailyAt('09:00')
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/exam-reminders.log'));
     }
 
     /**

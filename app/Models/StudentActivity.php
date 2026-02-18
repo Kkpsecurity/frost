@@ -72,6 +72,17 @@ class StudentActivity extends Model
     public const TYPE_LESSON_PAUSED = 'lesson_paused';
     public const TYPE_LESSON_UNPAUSED = 'lesson_unpaused';
 
+    // Exam progress
+    public const TYPE_EXAM_READY = 'exam_ready';
+    public const TYPE_EXAM_AUTHORIZED = 'exam_authorized';
+    public const TYPE_EXAM_STARTED = 'exam_started';
+    public const TYPE_EXAM_SUBMITTED = 'exam_submitted';
+    public const TYPE_EXAM_PASSED = 'exam_passed';
+    public const TYPE_EXAM_FAILED = 'exam_failed';
+    public const TYPE_EXAM_EXPIRED = 'exam_expired';
+    public const TYPE_RETAKE_AVAILABLE = 'retake_available';
+    public const TYPE_ADMIN_OVERRIDE = 'admin_override';
+
     public static function lessonType(string $baseType, int $lessonId): string
     {
         if ($lessonId <= 0) {

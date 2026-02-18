@@ -10,8 +10,6 @@ use App\Models\Challenge;
 
 trait SendCurrent
 {
-    protected static ChallengerResponse $_ChallengerResponse;
-
     /**
      * Sends the current challenge.
      *

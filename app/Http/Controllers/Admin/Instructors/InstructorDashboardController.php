@@ -2011,10 +2011,19 @@ class InstructorDashboardController extends Controller
             $breaksTaken = 0;
             $currentBreakStartedAt = null;
 
+            // Count total breaks taken across ALL lessons in this InstUnit (per-day limit)
+            $allInstLessonIds = \App\Models\InstLesson::where('inst_unit_id', $instUnit->id)
+                ->pluck('id');
+
+            if ($allInstLessonIds->isNotEmpty()) {
+                $breaksTaken = \App\Models\InstLessonBreak::whereIn('inst_lesson_id', $allInstLessonIds)
+                    ->count();
+            }
+
+            // Get current break info if there's an active lesson
             if ($instUnitLesson) {
                 $instLesson = \App\Models\InstLesson::find($instUnitLesson->inst_lesson_id);
                 if ($instLesson) {
-                    $breaksTaken = $instLesson->BreaksTaken();
                     $currentBreak = $instLesson->CurrentBreak();
                     $currentBreakStartedAt = $currentBreak?->started_at?->toIso8601String();
                 }

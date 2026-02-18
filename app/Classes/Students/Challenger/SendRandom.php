@@ -12,9 +12,6 @@ use App\Models\Challenge;
 
 trait SendRandom
 {
-    protected static $_StudentLesson;
-    protected static $_config;
-
     protected static function _SendRandom(Challenge $Challenge): ?ChallengerResponse
     {
 

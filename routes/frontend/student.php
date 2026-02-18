@@ -153,6 +153,38 @@ Route::middleware(['auth'])->group(function () {
         ->name('classroom.id-verification.summary');
 
     /**
+     * Student Onboarding Routes
+     */
+    Route::post('/classroom/student/onboarding/complete', [StudentDashboardController::class, 'completeOnboarding'])
+        ->name('classroom.student.onboarding.complete');
+
+    Route::post('/classroom/student/onboarding/accept-terms', [StudentDashboardController::class, 'acceptTerms'])
+        ->name('classroom.student.onboarding.accept-terms');
+
+    Route::post('/classroom/student/onboarding/accept-rules', [StudentDashboardController::class, 'acceptRules'])
+        ->name('classroom.student.onboarding.accept-rules');
+
+    Route::get('/classroom/student/onboarding/check-agreement/{courseAuthId}', [StudentDashboardController::class, 'checkAgreementStatus'])
+        ->where('courseAuthId', '[0-9]+')
+        ->name('classroom.student.onboarding.check-agreement');
+
+    Route::get('/classroom/student/onboarding/check-rules/{courseAuthId}/{courseDateId}', [StudentDashboardController::class, 'checkRulesStatus'])
+        ->where('courseAuthId', '[0-9]+')
+        ->where('courseDateId', '[0-9]+')
+        ->name('classroom.student.onboarding.check-rules');
+
+    Route::get('/classroom/student/onboarding/check-headshot', [StudentDashboardController::class, 'checkHeadshotStatus'])
+        ->name('classroom.student.onboarding.check-headshot');
+
+    Route::get('/classroom/student/onboarding/check-id-card/{courseAuthId}', [StudentDashboardController::class, 'checkIdCardStatus'])
+        ->where('courseAuthId', '[0-9]+')
+        ->name('classroom.student.onboarding.check-id-card');
+
+    Route::get('/classroom/student/onboarding/course-dates-headshots/{courseAuthId}', [StudentDashboardController::class, 'getCourseDatesWithHeadshots'])
+        ->where('courseAuthId', '[0-9]+')
+        ->name('classroom.student.onboarding.course-dates-headshots');
+
+    /**
      * Student Session & Lesson Management Routes (Phase 1)
      */
     // Session synchronization endpoints
@@ -203,6 +235,9 @@ Route::middleware(['auth'])->group(function () {
      */
     Route::post('/classroom/dev/complete-all-lessons', [\App\Http\Controllers\Student\DevToolsController::class, 'completeAllLessons'])
         ->name('classroom.dev.complete-all-lessons');
+
+    Route::post('/classroom/dev/reset-all-lessons', [\App\Http\Controllers\Frontend\Student\StudentDevToolsController::class, 'resetAllLessons'])
+        ->name('classroom.dev.reset-all-lessons');
 
     /**
      * Exam API Routes

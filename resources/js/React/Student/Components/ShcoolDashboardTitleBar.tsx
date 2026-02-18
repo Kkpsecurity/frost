@@ -55,21 +55,21 @@ const SchoolDashboardTitleBar = ({
         );
     }
 
-    // 🎯 TEMPORARY FIX: Show exam button if onExamClick handler is provided
-    // This bypasses the backend check while we fix the opcache/PDO issue
-    const showExamButtonBackend = Boolean(
+    // 🎯 Show exam button ONLY if backend confirms readiness:
+    // 1. Backend says exam is ready (is_ready=true means all lessons completed + no blocking conditions)
+    // 2. Student has an active exam attempt
+    //
+    // Note: is_ready already checks AllLessonsCompleted() on backend via ExamReady()
+    // We REMOVED the onExamClick override to strictly enforce lesson completion requirement
+    const showExamButton = Boolean(
         effectiveStudentExam?.has_active_attempt ||
-        effectiveStudentExam?.is_ready,
+        effectiveStudentExam?.is_ready, // is_ready=true means lessons complete + exam available
     );
 
-    const showExamButton = Boolean(onExamClick) || showExamButtonBackend;
-
-    console.log(
-        "Backend check - showExamButtonBackend:",
-        showExamButtonBackend,
-    );
-    console.log("Has onExamClick handler:", Boolean(onExamClick));
-    console.log("Final decision - showExamButton:", showExamButton);
+    console.log("Exam button visibility check:");
+    console.log("  - has_active_attempt:", effectiveStudentExam?.has_active_attempt);
+    console.log("  - is_ready:", effectiveStudentExam?.is_ready);
+    console.log("  - Final showExamButton:", showExamButton);
     console.groupEnd();
 
     const handleExamClick = () => {

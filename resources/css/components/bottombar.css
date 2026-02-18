@@ -173,6 +173,7 @@
 @media (max-width: 991px) {
     .header-area .navbar-toggler {
         display: block !important; /* Show on mobile */
+        margin-right: 20px !important; /* Force spacing from edge */
     }
 
     .header-area {
@@ -181,6 +182,25 @@
 
     .header-area .row {
         min-height: calc(var(--botbar-height) - 10px);
+    }
+
+    .header-area .container-sm-fluid {
+        padding-right: 1rem;
+    }
+
+    /* Center logo and hamburger on mobile */
+    .header-area .logo {
+        justify-content: flex-start;
+    }
+
+    .header-area .mobile-view {
+        width: 100%;
+    }
+
+    .header-area .mobile-view img {
+        width: auto !important;
+        max-width: 200px;
+        height: auto;
     }
 
     .header-area .desktop-view {

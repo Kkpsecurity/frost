@@ -42,6 +42,26 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\Payment\RefundProcessed::class => [
             \App\Listeners\Payment\SendRefundProcessedNotification::class,
         ],
+
+        // Exam Events
+        \App\Events\Exam\ExamAuthorized::class => [
+            \App\Listeners\Exam\SendExamAuthorizedNotification::class,
+        ],
+        \App\Events\Exam\ExamStarted::class => [
+            \App\Listeners\Exam\SendExamStartedNotification::class,
+        ],
+        \App\Events\Exam\ExamCompleted::class => [
+            \App\Listeners\Exam\SendExamCompletedNotifications::class,
+        ],
+        \App\Events\Exam\ExamTimeWarning::class => [
+            \App\Listeners\Exam\SendExamTimeWarningNotification::class,
+        ],
+        \App\Events\Exam\RetakeAvailable::class => [
+            \App\Listeners\Exam\SendRetakeAvailableNotification::class,
+        ],
+        \App\Events\Exam\ExamOverridden::class => [
+            \App\Listeners\Exam\SendExamOverriddenNotification::class,
+        ],
     ];
 
     /**

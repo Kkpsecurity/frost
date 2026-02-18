@@ -17,11 +17,6 @@ use App\Helpers\kkpdebug;
 
 trait CreateChallenge
 {
-
-    protected static ChallengerResponse $_ChallengerResponse;
-    protected static StudentLesson $_StudentLesson;
-    protected static object $_config;
-
     protected static function _CreateChallenge(?array $flags = null): ?ChallengerResponse
     {
 

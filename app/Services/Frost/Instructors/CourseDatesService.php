@@ -358,7 +358,7 @@ class CourseDatesService
                     $instUnit = $courseDate->InstUnits()->latest('created_at')->first();
 
                     // Use CourseUnitObj to get lesson count properly
-                    $courseUnitObj = new \App\Classes\CourseUnitObj($courseUnit);
+                    $courseUnitObj = new \App\Classes\Support\CourseUnitObj($courseUnit);
                     $lessonCount = $courseUnitObj->CourseUnitLessons()->count();
 
                     // Student count on the bulletin board should reflect total participants for this class session.

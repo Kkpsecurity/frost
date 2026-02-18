@@ -12,6 +12,10 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use KKP\Laravel\PgTk;
 
+// Exam Events
+use App\Events\Exam\ExamStarted;
+use App\Events\Exam\ExamCompleted;
+
 class ExamController extends Controller
 {
     /**
@@ -198,6 +202,9 @@ class ExamController extends Controller
                 'expires_at' => $expiresAt,
             ])->save();
 
+            // Dispatch event for notifications
+            event(new ExamStarted($examAuth));
+
             return response()->json([
                 'success' => true,
                 'expires_at' => $examAuth->expires_at ? Carbon::parse($examAuth->expires_at)->timestamp : null,
@@ -240,8 +247,11 @@ class ExamController extends Controller
             // Score the exam
             $ExamAuthObj->Score($scoringRequest);
 
+            // Dispatch event for notifications (handles pass/fail/expired logic in listener)
+            event(new ExamCompleted($examAuth->refresh()));
+
             // Return updated exam data
-            return $this->getExamAuth($examAuth->refresh());
+            return $this->getExamAuth($examAuth);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

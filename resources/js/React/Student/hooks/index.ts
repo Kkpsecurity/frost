@@ -5,6 +5,8 @@
 
 export { useGetStudentData } from './useGetStudentData';
 export { useGetClassData } from './useGetClassData';
+export { useStudentPoll } from './useStudentPoll';
+export { useClassroomPoll } from './useClassroomPoll';
 
 // Re-export types for convenience
 export type {

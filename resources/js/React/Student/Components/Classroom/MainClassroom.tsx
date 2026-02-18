@@ -104,13 +104,84 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     const handleResetProgress = async () => {
         if (
             !confirm(
-                "Reset ALL lesson progress? This will clear all completion data.",
+                "Reset ALL lesson progress? This will clear all completion data (StudentLessons, SelfStudyLessons, Challenges, StudentUnits).\n\nThis cannot be undone!",
             )
         )
             return;
-        alert(
-            "Reset functionality not yet implemented - requires backend endpoint",
-        );
+
+        try {
+            const response = await fetch("/classroom/dev/reset-all-lessons", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                },
+                body: JSON.stringify({
+                    course_auth_id: courseAuthId,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Reset exam room state to return to normal classroom
+                setShowExamRoom(false);
+                setHasExitedExamRoom(false);
+
+                // Clear any localStorage/sessionStorage that might cache exam state
+                try {
+                    Object.keys(localStorage).forEach((key) => {
+                        if (
+                            key.includes("exam") ||
+                            key.includes("student") ||
+                            key.includes("classroom")
+                        ) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                    Object.keys(sessionStorage).forEach((key) => {
+                        if (
+                            key.includes("exam") ||
+                            key.includes("student") ||
+                            key.includes("classroom")
+                        ) {
+                            sessionStorage.removeItem(key);
+                        }
+                    });
+                } catch (e) {
+                    console.warn("Could not clear storage:", e);
+                }
+
+                alert(
+                    `✅ Reset Complete!\n\nDeleted:\n` +
+                        `- ${data.counts.student_lessons} StudentLessons\n` +
+                        `- ${data.counts.self_study_lessons} SelfStudyLessons\n` +
+                        `- ${data.counts.challenges} Challenges\n` +
+                        `- ${data.counts.validations} Validations\n` +
+                        `- ${data.counts.student_units} StudentUnits\n` +
+                        `- ${data.counts.exam_auths} ExamAuths\n\n` +
+                        `Page will reload in 1 second...`,
+                );
+
+                // Force page reload to clear all cached polling data
+                setTimeout(() => {
+                    console.log("🔄 Forcing page reload after reset...");
+                    // Use hard reload to bypass all caches
+                    window.location.href =
+                        window.location.href.split("?")[0] +
+                        "?_reload=" +
+                        Date.now();
+                }, 1000);
+            } else {
+                alert(`❌ Failed: ${data.error || "Unknown error"}`);
+            }
+        } catch (error) {
+            console.error("Error resetting lessons:", error);
+            alert("❌ Error resetting lessons: " + error);
+        }
     };
 
     // 🎓 EXAM: Handler for exam button click
@@ -250,16 +321,12 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     const studentExam =
         studentContext?.studentExamsByCourseAuth?.[courseAuthId];
 
-    // Check multiple conditions for exam eligibility:
+    // Check if exam is actually ready (not just if the key exists)
+    // Only show exam room if:
     // 1. Backend says exam is ready (studentExam?.is_ready)
-    // 2. Has active exam attempt (studentExam?.has_active_attempt)
-    // 3. OR if studentExam exists at all (even if null/undefined, button shows so assume eligible)
+    // 2. OR student has an active exam attempt (studentExam?.has_active_attempt)
     const allLessonsComplete =
-        studentExam?.is_ready ||
-        studentExam?.has_active_attempt ||
-        (courseAuthId &&
-            studentContext?.studentExamsByCourseAuth?.[courseAuthId] !==
-                undefined);
+        studentExam?.is_ready || studentExam?.has_active_attempt;
 
     console.log("🎓 ExamRoom Auto-Detection:", {
         courseAuthId,

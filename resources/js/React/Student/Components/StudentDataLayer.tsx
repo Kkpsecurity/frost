@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "./Dashboard/MainDashboard";
 import PageLoader from "../../Shared/Components/Widgets/PageLoader";
@@ -17,6 +16,7 @@ import {
     isInstructorTeaching,
     getClassroomStatus,
 } from "../services/classroomService";
+import { useStudentPoll, useClassroomPoll } from "../hooks";
 
 interface StudentDataLayerProps {
     courseAuthId?: number | null;
@@ -172,26 +172,12 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         setSelectedCourseAuthId(id);
     };
 
-    // Fetch student polling data
+    // Fetch student polling data using custom hook
     const {
         data: studentData,
         isLoading: studentLoading,
         error: studentError,
-    } = useQuery({
-        queryKey: ["student-poll"],
-        queryFn: async () => {
-            const response = await fetch(`/classroom/student/poll`);
-            if (!response.ok) {
-                throw new Error(
-                    `Failed to fetch student data: ${response.status}`,
-                );
-            }
-            return response.json();
-        },
-        placeholderData: keepPreviousData,
-        refetchInterval: 5000, // Poll every 5 seconds
-        staleTime: 4000, // Data is stale after 4 seconds
-    });
+    } = useStudentPoll();
 
     // Classroom poll returns shared classroom data using course_date_id from student poll.
     // This identifies WHICH classroom (not which student).
@@ -201,41 +187,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         data: classroomData,
         isLoading: classroomLoading,
         error: classroomError,
-    } = useQuery({
-        queryKey: ["classroom-poll", courseDateId],
-        queryFn: async () => {
-            const url = courseDateId
-                ? `/classroom/class/data?course_date_id=${courseDateId}`
-                : "/classroom/class/data";
-            const response = await fetch(url);
-            if (!response.ok) {
-                // Return empty classroom data structure on 404 (no classroom today)
-                if (response.status === 404) {
-                    return {
-                        success: true,
-                        data: {
-                            courseDate: null,
-                            courseUnit: null,
-                            instUnit: null,
-                            instructor: null,
-                            lessons: [],
-                            modality: "offline",
-                            activeLesson: null,
-                            zoom: null,
-                        },
-                    };
-                }
-                throw new Error(
-                    `Failed to fetch classroom data: ${response.status}`,
-                );
-            }
-            return response.json();
-        },
-        enabled: true, // Always enabled, handle no courseDateId in backend
-        placeholderData: keepPreviousData,
-        refetchInterval: 5000, // Poll every 5 seconds
-        staleTime: 4000, // Data is stale after 4 seconds
-    });
+    } = useClassroomPoll(courseDateId);
 
     // Auto-select the course if student has an active classroom today
     // Use student poll's active_classroom reference, not classroom poll

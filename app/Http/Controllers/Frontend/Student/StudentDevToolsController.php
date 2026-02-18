@@ -219,6 +219,7 @@ class StudentDevToolsController extends Controller
                 'validations' => 0,
                 'student_units' => 0,
                 'self_study_lessons' => 0,
+                'exam_auths' => 0,
             ];
 
             if ($studentUnitIds->isNotEmpty()) {
@@ -255,6 +256,11 @@ class StudentDevToolsController extends Controller
                 ->where('course_auth_id', $courseAuthId)
                 ->delete();
 
+            // Delete exam_auths
+            $counts['exam_auths'] = DB::table('exam_auths')
+                ->where('course_auth_id', $courseAuthId)
+                ->delete();
+
             // Reset video quota for this student (create if doesn't exist)
             $userId = $courseAuth->user_id;
             $quotaUpdated = DB::table('student_video_quota')
@@ -271,10 +277,14 @@ class StudentDevToolsController extends Controller
 
             DB::commit();
 
-            // Clear cache
+            // Clear all related caches
+            $userId = $courseAuth->user_id;
             Cache::forget("PCLCache:{$courseAuthId}");
             Cache::forget("StudentUnit:{$courseAuthId}");
             Cache::forget("CourseAuth:{$courseAuthId}");
+            Cache::forget("student_poll:{$userId}");
+            Cache::forget("studentExamData:{$userId}");
+            Cache::forget("studentExams:{$courseAuthId}");
 
             return response()->json([
                 'success' => true,

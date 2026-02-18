@@ -42,6 +42,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Exam Reminder Intervals (in days)
+    |--------------------------------------------------------------------------
+    | Defines how many days after exam becomes available to send reminders
+    | Command: php artisan exams:send-reminders
+    */
+    'exam_reminder_days' => [3, 7, 14],
+
+    /*
+    |--------------------------------------------------------------------------
     | Notification Definitions by Category
     |--------------------------------------------------------------------------
     */
@@ -348,43 +357,113 @@ return [
         */
         'exams' => [
             'exam_ready' => [
-                'key' => 'exams.ready',
+                'key' => 'notification_exam.exam_ready',
                 'name' => 'Exam Ready',
+                'description' => 'Notified when exam becomes available',
                 'priority' => 'high',
-                'channels' => ['database', 'mail', 'browser'],
-                'user_controllable' => false,
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
             ],
             'exam_authorized' => [
-                'key' => 'exams.authorized',
+                'key' => 'notification_exam.exam_authorized',
                 'name' => 'Exam Authorized',
-                'priority' => 'critical',
-                'channels' => ['database', 'browser'],
-                'user_controllable' => false,
-            ],
-            'exam_time_warning' => [
-                'key' => 'exams.time_warning',
-                'name' => 'Exam Time Warning',
+                'description' => 'Notified when exam is authorized to start',
                 'priority' => 'high',
-                'channels' => ['database', 'browser'],
-                'user_controllable' => false,
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'exam_started' => [
+                'key' => 'notification_exam.exam_started',
+                'name' => 'Exam Started',
+                'description' => 'Confirmation when exam timer begins',
+                'priority' => 'medium',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'exam_submitted' => [
+                'key' => 'notification_exam.exam_submitted',
+                'name' => 'Exam Submitted',
+                'description' => 'Confirmation when exam is submitted',
+                'priority' => 'medium',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
             ],
             'exam_passed' => [
-                'key' => 'exams.passed',
+                'key' => 'notification_exam.exam_passed',
                 'name' => 'Exam Passed',
-                'priority' => 'critical',
-                'channels' => ['database', 'mail', 'browser'],
-                'user_controllable' => false,
+                'description' => 'Notified when exam is passed successfully',
+                'priority' => 'high',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
             ],
             'exam_failed' => [
-                'key' => 'exams.failed',
+                'key' => 'notification_exam.exam_failed',
                 'name' => 'Exam Failed',
+                'description' => 'Notified when exam is not passed',
                 'priority' => 'high',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'exam_expired' => [
+                'key' => 'notification_exam.exam_expired',
+                'name' => 'Exam Time Expired',
+                'description' => 'CRITICAL: Time limit exceeded (always sent)',
+                'priority' => 'critical',
                 'channels' => ['database', 'mail'],
                 'user_controllable' => false,
             ],
-            'retry_available' => [
-                'key' => 'exams.retry_available',
-                'name' => 'Exam Retry Available',
+            'retake_available' => [
+                'key' => 'notification_exam.retake_available',
+                'name' => 'Retake Available',
+                'description' => 'Notified when cooldown expires and retake is available',
+                'priority' => 'medium',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'final_attempt_warning' => [
+                'key' => 'notification_exam.final_attempt',
+                'name' => 'Final Attempt Warning',
+                'description' => 'CRITICAL: Last attempt remaining (always sent)',
+                'priority' => 'critical',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => false,
+            ],
+            'no_attempts_remaining' => [
+                'key' => 'notification_exam.no_attempts',
+                'name' => 'No Attempts Remaining',
+                'description' => 'CRITICAL: All attempts exhausted (always sent)',
+                'priority' => 'critical',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => false,
+            ],
+            'exam_reminder' => [
+                'key' => 'notification_exam.exam_reminder',
+                'name' => 'Exam Reminder',
+                'description' => 'Reminder for waiting exams (configurable days)',
+                'priority' => 'low',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'exam_review' => [
+                'key' => 'notification_exam.exam_review',
+                'name' => 'Exam Review Available',
+                'description' => 'Notified when exam results are available for review',
+                'priority' => 'low',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'admin_override' => [
+                'key' => 'notification_exam.admin_override',
+                'name' => 'Exam Admin Override',
+                'description' => 'Notified when admin changes exam status',
+                'priority' => 'high',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'exam_not_ready' => [
+                'key' => 'notification_exam.exam_not_ready',
+                'name' => 'Exam Not Ready',
+                'description' => 'Notified when exam requirements are not met',
                 'priority' => 'medium',
                 'channels' => ['database', 'mail'],
                 'user_controllable' => true,

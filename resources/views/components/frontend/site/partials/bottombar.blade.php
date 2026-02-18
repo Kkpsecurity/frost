@@ -64,10 +64,10 @@ $menuItems = [
 
 <div class="header-area">
     <div class="container-sm-fluid">
-        <div class="row">
-            <div class="col-lg-5 col-md-5 col-sm-6 order-1 order-md-1">
+        <div class="row align-items-center">
+            <div class="col-lg-5 col-md-5 col-6 order-1 order-md-1">
                 <div class="logo">
-                    <a class="navbar-brand page-scroll" href="{{ route('pages') }}">
+                    <a class="navbar-brand page-scroll ms-2" href="{{ route('pages') }}">
                         <div class="desktop-view">
                             <img src="{{ asset('assets/img/logo/logo.png') }}" alt="{{ $companyName }}" />
                         </div>
@@ -79,11 +79,12 @@ $menuItems = [
                 </div>
             </div>
 
-            <div class="col-lg-7 col-md-7 col-sm-6 order-2 order-md-2">
-                <nav class="navbar navbar-expand-lg">
+            <div class="col-lg-7 col-md-7 col-6 order-2 order-md-2 d-flex justify-content-end pe-3">
+                <nav class="navbar navbar-expand-lg w-100">
                     {{-- Mobile Toggle Button --}}
-                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-main"
-                        aria-controls="navbar-main" aria-expanded="false" aria-label="Toggle navigation">
+                    <button class="navbar-toggler d-lg-none ms-auto me-2" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbar-main" aria-controls="navbar-main" aria-expanded="false"
+                        aria-label="Toggle navigation">
                         <span class="fa fa-bars"></span>
                     </button>
 

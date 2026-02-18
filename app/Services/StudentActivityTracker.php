@@ -52,7 +52,6 @@ class StudentActivityTracker
             }
 
             return $activity;
-
         } catch (\Exception $e) {
             // Silent failure - don't break app if tracking fails
             Log::error('Failed to track student activity', [
@@ -220,6 +219,51 @@ class StudentActivityTracker
                 'data' => ['button_name' => $buttonName],
             ], $context)
         );
+    }
+
+    /**
+     * Track exam activity
+     */
+    public function trackExamActivity(
+        int $userId,
+        string $activityType,
+        int $examAuthId,
+        int $courseAuthId,
+        array $context = []
+    ): ?StudentActivity {
+        return $this->track(
+            $userId,
+            StudentActivity::CATEGORY_INTERACTION,
+            $activityType,
+            array_merge([
+                'course_auth_id' => $courseAuthId,
+                'description' => $this->getExamActivityDescription($activityType),
+                'data' => array_merge([
+                    'exam_auth_id' => $examAuthId,
+                ], $context['data'] ?? []),
+                'started_at' => $context['started_at'] ?? null,
+                'ended_at' => $context['ended_at'] ?? null,
+            ], $context)
+        );
+    }
+
+    /**
+     * Get human-readable description for exam activity
+     */
+    protected function getExamActivityDescription(string $activityType): string
+    {
+        return match ($activityType) {
+            StudentActivity::TYPE_EXAM_READY => 'Exam became available',
+            StudentActivity::TYPE_EXAM_AUTHORIZED => 'Exam authorized to start',
+            StudentActivity::TYPE_EXAM_STARTED => 'Student started exam',
+            StudentActivity::TYPE_EXAM_SUBMITTED => 'Student submitted exam',
+            StudentActivity::TYPE_EXAM_PASSED => 'Student passed exam',
+            StudentActivity::TYPE_EXAM_FAILED => 'Student failed exam',
+            StudentActivity::TYPE_EXAM_EXPIRED => 'Exam time expired',
+            StudentActivity::TYPE_RETAKE_AVAILABLE => 'Exam retake available',
+            StudentActivity::TYPE_ADMIN_OVERRIDE => 'Admin changed exam status',
+            default => 'Exam activity',
+        };
     }
 
     /**

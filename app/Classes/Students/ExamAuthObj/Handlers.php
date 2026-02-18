@@ -6,6 +6,9 @@ namespace App\Classes\Students\ExamAuthObj;
 
 use KKP\Laravel\PgTk;
 
+// Exam Events
+use App\Events\Exam\ExamCompleted;
+
 
 trait Handlers
 {
@@ -25,6 +28,9 @@ trait Handlers
         ])->update();
 
         $this->ExamAuth->refresh();
+
+        // Dispatch event (listener will handle ExamExpiredNotification)
+        event(new ExamCompleted($this->ExamAuth));
 
         return $this->_handleFailed();
     }
