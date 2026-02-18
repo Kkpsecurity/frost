@@ -88,6 +88,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('classroom.session.mode');
 
     /**
+     * Video Quota Management
+     */
+    Route::get('/classroom/video-quota', [StudentDashboardController::class, 'getVideoQuota'])
+        ->name('classroom.video-quota');
+
+    /**
      * Zoom Portal Routes - Iframe isolated Zoom SDK
      */
     Route::get('/classroom/portal/zoom/screen_share/{courseAuthId}/{courseDateId}', [StudentDashboardController::class, 'zoomScreenShare'])
