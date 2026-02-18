@@ -353,7 +353,15 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
         percentage: number,
     ) => {
         try {
-            if (!resolvedSessionId) return;
+            // In simulation mode without session, just log locally
+            if (!resolvedSessionId) {
+                console.warn("No session ID - progress not saved to server", {
+                    playedSeconds,
+                    percentage,
+                });
+                return;
+            }
+
             const response = await fetch("/classroom/lesson/update-progress", {
                 method: "POST",
                 headers: {
