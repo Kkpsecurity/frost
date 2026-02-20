@@ -580,7 +580,7 @@ class SupportController extends Controller
         }
 
         // Use existing buildStudentValidationsForCourseAuth logic
-        $studentDashboardController = app(\App\Http\Controllers\Student\StudentDashboardController::class);
+        $studentDashboardController = app(\App\Http\Controllers\Frontend\Student\StudentDashboardController::class);
         $reflection = new \ReflectionClass($studentDashboardController);
         $method = $reflection->getMethod('buildStudentValidationsForCourseAuth');
         $method->setAccessible(true);

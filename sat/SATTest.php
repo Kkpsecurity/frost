@@ -21,8 +21,7 @@ use Illuminate\Support\Str;
 
 
 use App\Classes\Admin\Payments\PayPalRESTObj;
-use App\Http\Controllers\Web\EnrollmentController;
-use App\Http\Controllers\Web\Payments\PayFlowProController;
+use App\Http\Controllers\Frontend\Courses\EnrollmentController;
 
 
 use App\RCache;

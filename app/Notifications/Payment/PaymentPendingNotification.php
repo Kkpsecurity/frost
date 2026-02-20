@@ -6,10 +6,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class PaymentPendingNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use UsesUserNotificationPreferences;
 
     protected $order;
     protected $payment;
@@ -28,14 +30,12 @@ class PaymentPendingNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_payment.payment_pending')
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.payment_pending',
+            config('user_notifications.notifications.payment.payment_pending.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.payment_pending.user_controllable', true),
+        );
     }
 
     /**

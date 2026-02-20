@@ -6,12 +6,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class DefaultPaymentUpdatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $paymentMethod;
+    protected array $paymentMethod;
 
     /**
      * Create a new notification instance.
@@ -26,14 +27,12 @@ class DefaultPaymentUpdatedNotification extends Notification implements ShouldQu
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_payment.default_payment_updated')
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.default_payment_updated',
+            config('user_notifications.notifications.payment.default_payment_updated.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.default_payment_updated.user_controllable', true),
+        );
     }
 
     /**
@@ -49,7 +48,7 @@ class DefaultPaymentUpdatedNotification extends Notification implements ShouldQu
             ->line('Your default payment method has been updated.')
             ->line('**New Default:** ' . $methodDetails)
             ->line('This payment method will be used for future purchases unless you specify otherwise.')
-            ->action('View Payment Methods', route('account.payments'))
+            ->action('View Payment Methods', route('account.index', ['section' => 'payments']))
             ->line('Thank you!');
     }
 
@@ -61,11 +60,10 @@ class DefaultPaymentUpdatedNotification extends Notification implements ShouldQu
         return [
             'title' => 'Default Payment Updated',
             'message' => 'Default payment method changed to ' . $this->getMethodDetails(),
-            'payment_method' => $this->paymentMethod,
             'icon' => 'star',
             'color' => 'info',
             'priority' => 'low',
-            'url' => route('account.payments'),
+            'url' => route('account.index', ['section' => 'payments']),
         ];
     }
 

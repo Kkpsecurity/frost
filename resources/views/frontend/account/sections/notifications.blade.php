@@ -1,5 +1,8 @@
 {{-- Notifications Section --}}
 <div class="notifications-section">
+    @php
+        $notificationsData = $notificationsData ?? ($data ?? []);
+    @endphp
     <h3 class="text-white mb-4">
         <i class="fas fa-bell me-2"></i>Notification Preferences
     </h3>
@@ -35,8 +38,9 @@
                             <i class="fas fa-desktop fa-2x text-info mb-3"></i>
                             <h6 class="text-white mb-2">In-App Notifications</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="hidden" name="channels[database]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableInApp"
-                                    name="channels[database]"
+                                    name="channels[database]" value="1"
                                     {{ $notificationsData['channels']['database'] ?? true ? 'checked' : '' }}>
                             </div>
                             <small class="text-white-50 mt-2 d-block">Show notifications in the app</small>
@@ -49,7 +53,9 @@
                             <i class="fas fa-envelope fa-2x text-warning mb-3"></i>
                             <h6 class="text-white mb-2">Email Notifications</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="hidden" name="channels[mail]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableEmail" name="channels[mail]"
+                                    value="1"
                                     {{ $notificationsData['channels']['mail'] ?? true ? 'checked' : '' }}>
                             </div>
                             <small class="text-white-50 mt-2 d-block">Receive email notifications</small>
@@ -62,8 +68,9 @@
                             <i class="fas fa-bell fa-2x text-danger mb-3"></i>
                             <h6 class="text-white mb-2">Browser Push</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
+                                <input type="hidden" name="channels[browser]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableBrowser"
-                                    name="channels[browser]"
+                                    name="channels[browser]" value="1"
                                     {{ $notificationsData['channels']['browser'] ?? true ? 'checked' : '' }}>
                             </div>
                             <small class="text-white-50 mt-2 d-block">Browser push notifications</small>
@@ -151,7 +158,8 @@
                                 name="notifications[{{ $notification['key'] }}]"
                                 {{ $notificationsData['notifications'][$notification['key']] ?? true ? 'checked' : '' }}>
                         </div>
-                        <label class="form-check-label text-white flex-grow-1" for="notif_{{ $notification['key'] }}">
+                        <label class="form-check-label text-white flex-grow-1"
+                            for="notif_{{ $notification['key'] }}">
                             <strong>{{ $notification['name'] }}</strong>
                             <span
                                 class="badge bg-{{ config('user_notifications.priorities.' . $notification['priority'] . '.color') }} ms-2">

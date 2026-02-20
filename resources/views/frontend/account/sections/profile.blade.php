@@ -8,8 +8,14 @@
     <div class="mb-5 pb-4 border-bottom border-secondary">
         <div class="d-flex align-items-center gap-4 flex-wrap">
             @if ($data['avatar']['current_avatar'])
-                <img src="{{ $data['avatar']['current_avatar'] }}" alt="{{ $data['basic_info']['full_name'] }}"
-                    class="rounded-circle"
+                @php
+                    $gravatarHash = md5(strtolower(trim($data['basic_info']['email'] ?? '')));
+                    $gravatarUrl = "https://www.gravatar.com/avatar/{$gravatarHash}?s=220&d=identicon&r=pg";
+                @endphp
+
+                <img id="profileAvatarImg" src="{{ $data['avatar']['current_avatar'] }}"
+                    data-original-src="{{ $data['avatar']['current_avatar'] }}" data-gravatar-src="{{ $gravatarUrl }}"
+                    alt="{{ $data['basic_info']['full_name'] }}" class="rounded-circle"
                     style="width: 100px; height: 100px; object-fit: cover; border: 4px solid rgba(52, 152, 219, 0.3);">
             @else
                 <div class="rounded-circle d-flex align-items-center justify-content-center text-white"
@@ -23,6 +29,15 @@
                     <i class="fas fa-graduation-cap me-2"></i>
                     {{ $data['basic_info']['role'] }}
                 </p>
+                <p class="mb-2">
+                    @if ($data['avatar']['has_custom_avatar'])
+                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Custom Upload</span>
+                    @elseif($data['avatar']['use_gravatar'])
+                        <span class="badge bg-info text-dark"><i class="fas fa-globe me-1"></i>Gravatar</span>
+                    @else
+                        <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>Generated</span>
+                    @endif
+                </p>
                 @if ($data['is_active'])
                     <span class="badge bg-success">
                         <i class="fas fa-check-circle me-1"></i>Active
@@ -34,10 +49,29 @@
                 @endif
             </div>
             <div>
-                <button type="button" class="btn btn-outline-light px-4" data-bs-toggle="modal"
+                <button id="changePhotoBtn" type="button" class="btn btn-outline-light px-4" data-bs-toggle="modal"
                     data-bs-target="#avatarUploadModal">
                     <i class="fas fa-camera me-2"></i>Change Photo
                 </button>
+
+                <div class="mt-3">
+                    <form action="{{ route('account.avatar.update') }}" method="POST" id="gravatarToggleForm">
+                        @csrf
+                        <div class="form-check form-switch">
+                            <input type="hidden" name="use_gravatar" value="0">
+                            <input class="form-check-input" type="checkbox" id="useGravatarToggle" name="use_gravatar"
+                                value="1" {{ $data['avatar']['use_gravatar'] ? 'checked' : '' }}>
+                            <label class="form-check-label text-white" for="useGravatarToggle">
+                                <i class="fas fa-globe ms-2 me-2"></i>Use Gravatar
+                            </label>
+                        </div>
+                        <small class="text-white-50 d-block ms-4 ps-2">
+                            Uses your email at
+                            <a href="https://gravatar.com" target="_blank" class="text-info">gravatar.com</a>.
+                            Turn off to upload a custom photo.
+                        </small>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -184,8 +218,8 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('account.profile.update') }}" method="POST"
-                        enctype="multipart/form-data" id="avatarUploadForm">
+                    <form action="{{ route('account.avatar.update') }}" method="POST" enctype="multipart/form-data"
+                        id="avatarUploadForm">
                         @csrf
                         <div class="mb-4">
                             <label class="form-label text-white-50">
@@ -197,25 +231,23 @@
                             <small class="text-white-50 mt-2 d-block">
                                 Accepted formats: JPG, PNG, GIF (max 2MB)
                             </small>
-                        </div>
 
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="useGravatar" name="use_gravatar"
-                                    {{ $data['avatar']['use_gravatar'] ? 'checked' : '' }}>
-                                <label class="form-check-label text-white" for="useGravatar">
-                                    <i class="fas fa-globe me-2"></i>Use Gravatar instead
-                                </label>
+                            <div class="mt-3 d-none" id="avatarPreviewWrap">
+                                <p class="text-white-50 mb-2">Preview:</p>
+                                <img id="avatarPreview" alt="Avatar preview" class="rounded-circle"
+                                    style="width: 80px; height: 80px; object-fit: cover; border: 3px solid rgba(52, 152, 219, 0.3);">
                             </div>
-                            <small class="text-white-50 ms-4 ps-2">
-                                Gravatar uses your email to display a profile picture from
-                                <a href="https://gravatar.com" target="_blank" class="text-info">gravatar.com</a>
-                            </small>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    @if ($data['avatar']['has_custom_avatar'] || $data['avatar']['use_gravatar'])
+                        <button type="submit" form="avatarUploadForm" class="btn btn-outline-danger"
+                            id="removeAvatarBtn" name="clear_avatar" value="1">
+                            <i class="fas fa-trash me-2"></i>Remove Photo
+                        </button>
+                    @endif
                     <button type="submit" form="avatarUploadForm" class="btn btn-primary">
                         <i class="fas fa-save me-2"></i>Save Photo
                     </button>
@@ -228,6 +260,30 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // In-page Gravatar toggle: show preview immediately and persist to backend.
+            const gravatarToggle = document.getElementById('useGravatarToggle');
+            const gravatarToggleForm = document.getElementById('gravatarToggleForm');
+            const profileAvatarImg = document.getElementById('profileAvatarImg');
+
+            if (gravatarToggle && gravatarToggleForm) {
+                gravatarToggle.addEventListener('change', function() {
+                    const gravatarOn = gravatarToggle.checked;
+
+                    if (profileAvatarImg) {
+                        const gravatarSrc = profileAvatarImg.getAttribute('data-gravatar-src');
+                        const originalSrc = profileAvatarImg.getAttribute('data-original-src');
+
+                        if (gravatarOn && gravatarSrc) {
+                            profileAvatarImg.src = gravatarSrc;
+                        } else if (!gravatarOn && originalSrc) {
+                            profileAvatarImg.src = originalSrc;
+                        }
+                    }
+
+                    gravatarToggleForm.submit();
+                });
+            }
+
             // Fix modal z-index when shown
             const avatarModal = document.getElementById('avatarUploadModal');
             if (avatarModal) {
@@ -251,6 +307,39 @@
                     if (backdrop) {
                         backdrop.style.zIndex = '99999998';
                     }
+                });
+            }
+
+            // Avatar modal UX: file preview + deterministic remove.
+            const avatarInput = document.getElementById('avatarInput');
+            const previewWrap = document.getElementById('avatarPreviewWrap');
+            const previewImg = document.getElementById('avatarPreview');
+
+            const removeBtn = document.getElementById('removeAvatarBtn');
+            if (removeBtn && avatarInput) {
+                removeBtn.addEventListener('click', function() {
+                    avatarInput.value = '';
+                    if (previewWrap) previewWrap.classList.add('d-none');
+                    if (previewImg) previewImg.removeAttribute('src');
+                });
+            }
+
+            if (avatarInput) {
+                avatarInput.addEventListener('change', function() {
+                    if (!previewWrap || !previewImg) return;
+                    const file = avatarInput.files && avatarInput.files[0];
+                    if (!file) {
+                        previewWrap.classList.add('d-none');
+                        previewImg.removeAttribute('src');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.src = e.target && e.target.result ? e.target.result : '';
+                        previewWrap.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
                 });
             }
         });

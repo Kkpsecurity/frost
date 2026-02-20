@@ -25,7 +25,7 @@ $request->setUserResolver(function () use ($user) {
 });
 
 // Call the controller
-$controller = new \App\Http\Controllers\Student\StudentDashboardController();
+$controller = new \App\Http\Controllers\Frontend\Student\StudentDashboardController();
 $response = $controller->getStudentPollData($request);
 
 // Get the response data

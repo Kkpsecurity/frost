@@ -121,11 +121,11 @@ try {
 echo "\nTest 5: ChallengeController\n";
 echo "  ├─ Checking if ChallengeController exists... ";
 try {
-    $controllerExists = class_exists(\App\Http\Controllers\Student\ChallengeController::class);
+    $controllerExists = class_exists(\App\Http\Controllers\Frontend\Student\ChallengeController::class);
     echo $controllerExists ? "✅ EXISTS\n" : "❌ NOT FOUND\n";
 
     if ($controllerExists) {
-        $reflection = new ReflectionClass(\App\Http\Controllers\Student\ChallengeController::class);
+        $reflection = new ReflectionClass(\App\Http\Controllers\Frontend\Student\ChallengeController::class);
         echo "  └─ Checking respond() method... ";
         $hasMethod = $reflection->hasMethod('respond');
         echo $hasMethod ? "✅ EXISTS\n" : "❌ NOT FOUND\n";
@@ -138,7 +138,7 @@ try {
 echo "\nTest 6: StudentDashboardController Integration\n";
 echo "  └─ Checking if getClassroomPollData has Challenger import... ";
 try {
-    $reflection = new ReflectionClass(\App\Http\Controllers\Student\StudentDashboardController::class);
+    $reflection = new ReflectionClass(\App\Http\Controllers\Frontend\Student\StudentDashboardController::class);
     $fileContent = file_get_contents($reflection->getFileName());
     $hasImport = strpos($fileContent, 'use App\Classes\Challenger;') !== false;
     echo $hasImport ? "✅ IMPORTED\n" : "❌ NOT IMPORTED\n";

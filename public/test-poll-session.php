@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Quick test to verify polling integration for lesson sessions
  * Tests /classroom/class/data endpoint for active_self_study_session
@@ -59,7 +60,7 @@ try {
 
 // Test polling endpoint
 echo "Step 2: Testing polling endpoint...\n";
-$controller = app(\App\Http\Controllers\Student\StudentDashboardController::class);
+$controller = app(\App\Http\Controllers\Frontend\Student\StudentDashboardController::class);
 
 // Simulate request
 $request = new \Illuminate\Http\Request();

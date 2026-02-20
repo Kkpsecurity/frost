@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
         using: function () {
+            // Load legacy web routes file (not auto-loaded when using a custom routing callback)
+            Route::middleware('web')
+                ->group(base_path('routes/web.php'));
+
             // Auth routes
             Route::middleware('web')
                 ->group(base_path('routes/auth.routes.php'));

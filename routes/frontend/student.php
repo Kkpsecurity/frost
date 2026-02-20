@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Student\StudentDashboardController;
-use App\Http\Controllers\Student\ClassroomChatController;
-use App\Http\Controllers\Student\AskInstructorController;
-use App\Http\Controllers\Student\ChallengeController;
+use App\Http\Controllers\Frontend\Student\StudentDashboardController;
+use App\Http\Controllers\Frontend\Student\ClassroomChatController;
+use App\Http\Controllers\Frontend\Student\AskInstructorController;
+use App\Http\Controllers\Frontend\Student\ChallengeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -218,91 +218,91 @@ Route::middleware(['auth'])->group(function () {
 
     /**
      * Self-Study Lesson Session Management Routes (Phase 5)
-     * Controller: \App\Http\Controllers\Student\StudentLessonSessionController
+     * Controller: \App\Http\Controllers\Frontend\Student\StudentLessonSessionController
      */
-    Route::post('/classroom/lesson/start-session', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'startSession'])
+    Route::post('/classroom/lesson/start-session', [\App\Http\Controllers\Frontend\Student\StudentLessonSessionController::class, 'startSession'])
         ->name('classroom.lesson.start-session');
 
-    Route::post('/classroom/lesson/update-progress', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'updateProgress'])
+    Route::post('/classroom/lesson/update-progress', [\App\Http\Controllers\Frontend\Student\StudentLessonSessionController::class, 'updateProgress'])
         ->name('classroom.lesson.update-progress');
 
-    Route::post('/classroom/lesson/track-pause', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'trackPause'])
+    Route::post('/classroom/lesson/track-pause', [\App\Http\Controllers\Frontend\Student\StudentLessonSessionController::class, 'trackPause'])
         ->name('classroom.lesson.track-pause');
 
-    Route::post('/classroom/lesson/complete-session', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'completeSession'])
+    Route::post('/classroom/lesson/complete-session', [\App\Http\Controllers\Frontend\Student\StudentLessonSessionController::class, 'completeSession'])
         ->name('classroom.lesson.complete-session');
 
-    Route::get('/classroom/lesson/session-status/{sessionId}', [\App\Http\Controllers\Student\StudentLessonSessionController::class, 'getSessionStatus'])
+    Route::get('/classroom/lesson/session-status/{sessionId}', [\App\Http\Controllers\Frontend\Student\StudentLessonSessionController::class, 'getSessionStatus'])
         ->where('sessionId', '[0-9a-f\-]{36}')  // UUID format
         ->name('classroom.lesson.session-status');
 
     /**
      * Dev Tools Routes (only in debug mode)
      */
-    Route::post('/classroom/dev/complete-all-lessons', [\App\Http\Controllers\Student\DevToolsController::class, 'completeAllLessons'])
+    Route::post('/classroom/dev/complete-all-lessons', [\App\Http\Controllers\Frontend\Student\DevToolsController::class, 'completeAllLessons'])
         ->name('classroom.dev.complete-all-lessons');
 
     Route::post('/classroom/dev/reset-all-lessons', [\App\Http\Controllers\Frontend\Student\StudentDevToolsController::class, 'resetAllLessons'])
         ->name('classroom.dev.reset-all-lessons');
 
-    Route::post('/classroom/dev/reset-video-quota', [\App\Http\Controllers\Student\DevToolsController::class, 'resetVideoQuota'])
+    Route::post('/classroom/dev/reset-video-quota', [\App\Http\Controllers\Frontend\Student\DevToolsController::class, 'resetVideoQuota'])
         ->name('classroom.dev.reset-video-quota');
 
     /**
      * Exam API Routes
      */
-    Route::get('/classroom/exam/auth/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'getExamAuth'])
+    Route::get('/classroom/exam/auth/{examAuth}', [\App\Http\Controllers\Frontend\Student\ExamController::class, 'getExamAuth'])
         ->where('examAuth', '[0-9]+')
         ->name('exam.auth');
 
-    Route::post('/classroom/exam/begin', [\App\Http\Controllers\Student\ExamController::class, 'beginExam'])
+    Route::post('/classroom/exam/begin', [\App\Http\Controllers\Frontend\Student\ExamController::class, 'beginExam'])
         ->name('exam.begin');
 
-    Route::post('/classroom/exam/start/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'startExamTimer'])
+    Route::post('/classroom/exam/start/{examAuth}', [\App\Http\Controllers\Frontend\Student\ExamController::class, 'startExamTimer'])
         ->where('examAuth', '[0-9]+')
         ->name('exam.start');
 
-    Route::post('/classroom/exam/submit/{examAuth}', [\App\Http\Controllers\Student\ExamController::class, 'submitExam'])
+    Route::post('/classroom/exam/submit/{examAuth}', [\App\Http\Controllers\Frontend\Student\ExamController::class, 'submitExam'])
         ->where('examAuth', '[0-9]+')
         ->name('exam.submit');
 
     // Get all exam attempts for review
-    Route::get('/classroom/exam/attempts', [\App\Http\Controllers\Student\ExamController::class, 'getExamAttempts'])
+    Route::get('/classroom/exam/attempts', [\App\Http\Controllers\Frontend\Student\ExamController::class, 'getExamAttempts'])
         ->name('exam.attempts');
 
     // Dev-only route to reset exam attempts
-    Route::post('/classroom/exam/reset', [\App\Http\Controllers\Student\ExamController::class, 'resetExam'])
+    Route::post('/classroom/exam/reset', [\App\Http\Controllers\Frontend\Student\ExamController::class, 'resetExam'])
         ->name('exam.reset');
 
     /**
      * Student Activity Tracking Routes
      */
     Route::prefix('api/student/activity')->group(function () {
-        Route::post('/site-entry', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackSiteEntry'])
+        Route::post('/site-entry', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackSiteEntry'])
             ->name('api.student.activity.site-entry');
 
-        Route::post('/site-exit', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackSiteExit'])
+        Route::post('/site-exit', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackSiteExit'])
             ->name('api.student.activity.site-exit');
 
-        Route::post('/classroom-entry', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackClassroomEntry'])
+        Route::post('/classroom-entry', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackClassroomEntry'])
             ->name('api.student.activity.classroom-entry');
 
-        Route::post('/agreement-accepted', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackAgreementAccepted'])
+        Route::post('/agreement-accepted', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackAgreementAccepted'])
             ->name('api.student.activity.agreement-accepted');
 
-        Route::post('/rules-accepted', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackRulesAccepted'])
+        Route::post('/rules-accepted', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackRulesAccepted'])
             ->name('api.student.activity.rules-accepted');
 
-        Route::post('/tab-visibility', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackTabVisibility'])
+        Route::post('/tab-visibility', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackTabVisibility'])
             ->name('api.student.activity.tab-visibility');
 
-        Route::post('/button-click', [\App\Http\Controllers\Student\StudentActivityController::class, 'trackButtonClick'])
+        Route::post('/button-click', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackButtonClick'])
             ->name('api.student.activity.button-click');
 
-        Route::get('/timeline', [\App\Http\Controllers\Student\StudentActivityController::class, 'getTimeline'])
+        Route::get('/timeline', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'getTimeline'])
             ->name('api.student.activity.timeline');
 
-        Route::get('/away-time', [\App\Http\Controllers\Student\StudentActivityController::class, 'getAwayTime'])
+        Route::get('/away-time', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'getAwayTime'])
             ->name('api.student.activity.away-time');
     });
 

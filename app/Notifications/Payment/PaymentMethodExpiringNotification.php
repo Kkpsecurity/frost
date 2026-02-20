@@ -6,12 +6,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class PaymentMethodExpiringNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $paymentMethod;
+    protected array $paymentMethod;
 
     /**
      * Create a new notification instance.
@@ -26,14 +27,12 @@ class PaymentMethodExpiringNotification extends Notification implements ShouldQu
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_payment.payment_method_expiring')
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.payment_method_expiring',
+            config('user_notifications.notifications.payment.payment_method_expiring.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.payment_method_expiring.user_controllable', true),
+        );
     }
 
     /**
@@ -53,7 +52,7 @@ class PaymentMethodExpiringNotification extends Notification implements ShouldQu
             ->line('**Card:** ' . $brand . ' ending in ' . $last4)
             ->line('**Expires:** ' . $expMonth . '/' . $expYear)
             ->line('To avoid any interruption in service, please update your payment information.')
-            ->action('Update Payment Method', route('account.payments'))
+            ->action('Update Payment Method', route('account.index', ['section' => 'payments']))
             ->line('Thank you for keeping your account information current!');
     }
 
@@ -74,7 +73,7 @@ class PaymentMethodExpiringNotification extends Notification implements ShouldQu
             'icon' => 'calendar-xmark',
             'color' => 'warning',
             'priority' => 'high',
-            'url' => route('account.payments'),
+            'url' => route('account.index', ['section' => 'payments']),
         ];
     }
 }

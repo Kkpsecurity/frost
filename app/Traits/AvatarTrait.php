@@ -254,10 +254,14 @@ trait AvatarTrait
      */
     public function updateAvatar(?string $avatarPath = null, bool $useGravatar = false): void
     {
-        // Delete old avatar file if exists and we're updating to a new one
-        if ($avatarPath && $this->hasCustomAvatar()) {
+        // Delete old avatar file if exists and we're changing/clearing the custom avatar
+        // (e.g. switching to Gravatar, uploading a new custom avatar, or clearing the avatar field).
+        if ($this->hasCustomAvatar()) {
             $oldPath = $this->getAvatarPath();
-            if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+            $isChangingPath = $avatarPath !== null && $oldPath !== $avatarPath;
+            $isClearingAvatar = $avatarPath === null && !empty($oldPath);
+
+            if (($isChangingPath || $isClearingAvatar) && $oldPath && Storage::disk('public')->exists($oldPath)) {
                 Storage::disk('public')->delete($oldPath);
             }
         }

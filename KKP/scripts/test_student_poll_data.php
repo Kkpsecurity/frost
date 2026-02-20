@@ -108,7 +108,7 @@ try {
     echo "   User: {$student->user->fname} {$student->user->lname}\n\n";
 
     // Simulate the controller method
-    $controller = new \App\Http\Controllers\Student\StudentDashboardController();
+    $controller = new \App\Http\Controllers\Frontend\Student\StudentDashboardController();
 
     // Get the student's unit
     $studentUnit = \App\Models\StudentUnit::where('course_auth_id', $student->id)

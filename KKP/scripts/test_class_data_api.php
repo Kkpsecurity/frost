@@ -1,8 +1,8 @@
 <?php
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__ . '/vendor/autoload.php';
 
-$app = require_once __DIR__.'/bootstrap/app.php';
+$app = require_once __DIR__ . '/bootstrap/app.php';
 $kernel = $app->make('Illuminate\Contracts\Console\Kernel');
 $kernel->bootstrap();
 
@@ -12,7 +12,7 @@ Auth::loginUsingId(1); // Richard Clark
 $request = new Illuminate\Http\Request();
 $request->merge(['course_auth_id' => 2]);
 
-$controller = new App\Http\Controllers\Student\StudentDashboardController();
+$controller = new App\Http\Controllers\Frontend\Student\StudentDashboardController();
 $response = $controller->getClassData($request);
 
 $data = json_decode($response->getContent(), true);

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Student;
+namespace App\Http\Controllers\Frontend\Student;
 
 use App\Http\Controllers\Controller;
 use App\Classes\Students\ExamAuthObj;

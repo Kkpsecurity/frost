@@ -331,8 +331,11 @@ class ProfileController extends Controller
             foreach ($categoryNotifications as $notification) {
                 if ($notification['user_controllable'] ?? false) {
                     $key = $notification['key'];
+                    $prefName = str_starts_with($key, 'notification_')
+                        ? $key
+                        : 'notification_' . $key;
                     // Default to enabled if not set
-                    $notifications[$key] = isset($userPrefs['notification_' . $key]) ? (bool)$userPrefs['notification_' . $key] : true;
+                    $notifications[$key] = isset($userPrefs[$prefName]) ? (bool) $userPrefs[$prefName] : true;
                 }
             }
         }
@@ -513,8 +516,10 @@ class ProfileController extends Controller
             'student_info.suffix' => 'nullable|string|max:10',
             'student_info.dob' => 'nullable|date|before:today',
             'student_info.phone' => 'nullable|string|max:20',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'use_gravatar' => 'nullable|boolean',
+            // Avatar/gravatar changes are handled by updateAvatar().
+            'avatar' => 'prohibited',
+            'use_gravatar' => 'prohibited',
+            'clear_avatar' => 'prohibited',
         ]);
 
         $user = Auth::user();
@@ -534,40 +539,72 @@ class ProfileController extends Controller
         }
         $user->student_info = $studentInfo;
 
-        // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $avatarPath;
-            $user->use_gravatar = false;
+        // Track what was updated for notification (based on actual changes).
+        $updatedFields = [];
+        if ($user->isDirty('fname') || $user->isDirty('lname')) {
+            $updatedFields[] = 'name';
         }
-
-        // Handle gravatar preference
-        if ($request->has('use_gravatar')) {
-            $user->use_gravatar = $request->boolean('use_gravatar');
-            if ($user->use_gravatar) {
-                $user->avatar = null; // Clear uploaded avatar if using gravatar
-            }
+        if ($user->isDirty('email')) {
+            $updatedFields[] = 'email';
+        }
+        if ($user->isDirty('student_info')) {
+            $updatedFields[] = 'student_info';
         }
 
         $user->save();
 
-        // Track what was updated for notification
-        $updatedFields = [];
-        if ($request->filled('fname') || $request->filled('lname')) {
-            $updatedFields[] = 'name';
+        if (!empty($updatedFields)) {
+            $user->notify(new ProfileUpdatedNotification($updatedFields));
         }
-        if ($request->filled('student_info')) {
-            $updatedFields[] = 'student_info';
-        }
-        if ($request->hasFile('avatar') || $request->has('use_gravatar')) {
-            $updatedFields[] = 'avatar';
-        }
-
-        // Send notification
-        $user->notify(new ProfileUpdatedNotification($updatedFields));
 
         return redirect()->route('account.index', ['section' => 'profile'])
             ->with('success', 'Profile updated successfully!');
+    }
+
+    /**
+     * Update only the user's avatar/gravatar preference.
+     *
+     * This exists because the Profile form requires name/email, but the Avatar modal should be able
+     * to update just the photo/toggle without failing validation.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'use_gravatar' => 'nullable|boolean',
+            'clear_avatar' => 'nullable|boolean',
+        ]);
+
+        $user = Auth::user();
+
+        // Explicitly clear avatar (revert to generated).
+        if ($request->boolean('clear_avatar')) {
+            $user->updateAvatar(null, false);
+
+            return redirect()->route('account.index', ['section' => 'profile'])
+                ->with('success', 'Profile photo removed successfully!');
+        }
+
+        $requestedUseGravatar = $request->boolean('use_gravatar');
+
+        // If gravatar is requested, it should win over any uploaded file.
+        if ($requestedUseGravatar) {
+            $user->updateAvatar(null, true);
+        } elseif ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->updateAvatar($avatarPath, false);
+        } else {
+            // No file and gravatar not requested.
+            // Only turn gravatar OFF if it was previously enabled; never delete/clear a custom avatar here.
+            if ($user->use_gravatar) {
+                $user->use_gravatar = false;
+                $user->save();
+                $user->clearAvatarCache();
+            }
+        }
+
+        return redirect()->route('account.index', ['section' => 'profile'])
+            ->with('success', 'Profile photo updated successfully!');
     }
 
     /**
@@ -670,10 +707,13 @@ class ProfileController extends Controller
             foreach ($request->notifications as $key => $enabled) {
                 // Verify this notification is user_controllable
                 if (isset($allNotifications[$key])) {
+                    $prefName = str_starts_with($key, 'notification_')
+                        ? $key
+                        : 'notification_' . $key;
                     \App\Models\UserPref::updateOrCreate(
                         [
                             'user_id' => $user->id,
-                            'pref_name' => 'notification_' . $key,
+                            'pref_name' => $prefName,
                         ],
                         [
                             'pref_value' => $enabled ? '1' : '0',
@@ -685,10 +725,13 @@ class ProfileController extends Controller
             // Disable any notifications that weren't checked (user unchecked them)
             foreach ($allNotifications as $key => $notification) {
                 if (!isset($request->notifications[$key])) {
+                    $prefName = str_starts_with($key, 'notification_')
+                        ? $key
+                        : 'notification_' . $key;
                     \App\Models\UserPref::updateOrCreate(
                         [
                             'user_id' => $user->id,
-                            'pref_name' => 'notification_' . $key,
+                            'pref_name' => $prefName,
                         ],
                         [
                             'pref_value' => '0',
@@ -699,10 +742,13 @@ class ProfileController extends Controller
         } else {
             // If no notifications are checked, disable all user_controllable notifications
             foreach ($allNotifications as $key => $notification) {
+                $prefName = str_starts_with($key, 'notification_')
+                    ? $key
+                    : 'notification_' . $key;
                 \App\Models\UserPref::updateOrCreate(
                     [
                         'user_id' => $user->id,
-                        'pref_name' => 'notification_' . $key,
+                        'pref_name' => $prefName,
                     ],
                     [
                         'pref_value' => '0',

@@ -13,11 +13,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-/**
- * Include Frontend Routes
- * All frontend routes are organized in the frontend.php file
- */
-require __DIR__ . '/frontend.php';
+// NOTE: Frontend routes are registered in bootstrap/app.php.
+// Do not require routes/frontend.php here to avoid double-registration.
 
 /**
  * Games Routes for Testing
@@ -37,23 +34,24 @@ Route::middleware('auth')->get('/test-lesson-session', function () {
  * Account Profile Routes
  */
 Route::middleware('auth')->group(function () {
-    Route::get('/account', [App\Http\Controllers\Student\ProfileController::class, 'index'])->name('account.index');
-    Route::post('/account/profile', [App\Http\Controllers\Student\ProfileController::class, 'updateProfile'])->name('account.profile.update');
-    Route::post('/account/settings', [App\Http\Controllers\Student\ProfileController::class, 'updateSettings'])->name('account.settings.update');
-    Route::post('/account/notifications', [App\Http\Controllers\Student\ProfileController::class, 'updateNotifications'])->name('account.notifications.update');
-    Route::get('/account/invoice/{order}', [App\Http\Controllers\Student\ProfileController::class, 'downloadInvoice'])->name('student.invoice');
+    Route::get('/account', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'index'])->name('account.index');
+    Route::post('/account/profile', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'updateProfile'])->name('account.profile.update');
+    Route::post('/account/avatar', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'updateAvatar'])->name('account.avatar.update');
+    Route::post('/account/settings', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'updateSettings'])->name('account.settings.update');
+    Route::post('/account/notifications', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'updateNotifications'])->name('account.notifications.update');
+    Route::get('/account/invoice/{order}', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'downloadInvoice'])->name('student.invoice');
 
     // Notification routes
-    Route::post('/notifications/mark-all-read', [App\Http\Controllers\Student\ProfileController::class, 'markAllNotificationsRead'])->name('notifications.mark-all-read');
-    Route::get('/notifications/{notification}/read', [App\Http\Controllers\Student\ProfileController::class, 'markNotificationRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'markAllNotificationsRead'])->name('notifications.mark-all-read');
+    Route::get('/notifications/{notification}/read', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'markNotificationRead'])->name('notifications.mark-read');
 
     // Payment method management routes
     Route::prefix('account/payments')->name('account.payments.')->group(function () {
-        Route::post('/add-stripe-method', [App\Http\Controllers\Student\ProfileController::class, 'addStripePaymentMethod'])->name('add-stripe');
-        Route::get('/connect-paypal', [App\Http\Controllers\Student\ProfileController::class, 'connectPayPal'])->name('connect-paypal');
-        Route::post('/paypal-callback', [App\Http\Controllers\Student\ProfileController::class, 'paypalCallback'])->name('paypal-callback');
-        Route::post('/set-default', [App\Http\Controllers\Student\ProfileController::class, 'setDefaultPaymentMethod'])->name('set-default');
-        Route::delete('/delete-method', [App\Http\Controllers\Student\ProfileController::class, 'deletePaymentMethod'])->name('delete-method');
+        Route::post('/add-stripe-method', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'addStripePaymentMethod'])->name('add-stripe');
+        Route::get('/connect-paypal', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'connectPayPal'])->name('connect-paypal');
+        Route::post('/paypal-callback', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'paypalCallback'])->name('paypal-callback');
+        Route::post('/set-default', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'setDefaultPaymentMethod'])->name('set-default');
+        Route::delete('/delete-method', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'deletePaymentMethod'])->name('delete-method');
     });
 });
 
@@ -61,74 +59,52 @@ Route::middleware('auth')->group(function () {
  * Student Classroom Onboarding Routes
  */
 Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(function () {
-    // TODO: Create ClassroomOnboardingController or remove these routes
-    // Attendance detection and auto-creation
-    // Route::get('/check-attendance', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'checkAttendanceRequired'])
-    //     ->name('check-attendance');
-
-    // Attendance marking page
-    // Route::get('/attendance/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'showAttendance'])
-    //     ->name('attendance');
-    // Route::post('/attendance/{studentUnit}/mark', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'markAttendance'])
-    //     ->name('attendance.mark');
-
-    // Onboarding process
-    // Route::get('/onboarding/{studentUnit}', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'show'])
-    //     ->name('onboarding');
+    // TODO: Restore any legacy classroom onboarding routes if needed.
 
     // Terms and conditions acceptance
-    Route::post('/student/onboarding/accept-terms', [App\Http\Controllers\Student\StudentDashboardController::class, 'acceptTerms'])
+    Route::post('/student/onboarding/accept-terms', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'acceptTerms'])
         ->name('student.onboarding.accept-terms');
-    Route::get('/student/onboarding/check-agreement/{courseAuthId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'checkAgreementStatus'])
+    Route::get('/student/onboarding/check-agreement/{courseAuthId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'checkAgreementStatus'])
         ->name('student.onboarding.check-agreement');
 
     // Classroom rules acceptance (tracked daily)
-    Route::post('/student/onboarding/accept-rules', [App\Http\Controllers\Student\StudentDashboardController::class, 'acceptRules'])
+    Route::post('/student/onboarding/accept-rules', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'acceptRules'])
         ->name('student.onboarding.accept-rules');
-    Route::get('/student/onboarding/check-rules/{courseAuthId}/{courseDateId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'checkRulesStatus'])
+    Route::get('/student/onboarding/check-rules/{courseAuthId}/{courseDateId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'checkRulesStatus'])
         ->name('student.onboarding.check-rules');
 
     // ID Verification Routes (permanent ID card + daily headshot)
-    Route::post('/id-verification/start', [App\Http\Controllers\Student\StudentDashboardController::class, 'startIdVerification'])
+    Route::post('/id-verification/start', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'startIdVerification'])
         ->name('id-verification.start');
-    Route::get('/id-verification/status/{studentId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getIdVerificationStatus'])
+    Route::get('/id-verification/status/{studentId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'getIdVerificationStatus'])
         ->name('id-verification.status');
-    Route::get('/id-verification/summary/{verificationId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getIdVerificationSummary'])
+    Route::get('/id-verification/summary/{verificationId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'getIdVerificationSummary'])
         ->name('id-verification.summary');
-    Route::post('/id-verification/upload-headshot', [App\Http\Controllers\Student\StudentDashboardController::class, 'uploadHeadshot'])
+    Route::post('/id-verification/upload-headshot', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'uploadHeadshot'])
         ->name('id-verification.upload-headshot');
-    Route::get('/student/onboarding/check-headshot', [App\Http\Controllers\Student\StudentDashboardController::class, 'checkHeadshotStatus'])
+    Route::get('/student/onboarding/check-headshot', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'checkHeadshotStatus'])
         ->name('student.onboarding.check-headshot');
-    Route::get('/student/onboarding/check-id-card/{courseAuthId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'checkIdCardStatus'])
+    Route::get('/student/onboarding/check-id-card/{courseAuthId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'checkIdCardStatus'])
         ->name('student.onboarding.check-id-card');
-    Route::get('/student/onboarding/course-dates-headshots/{courseAuthId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getCourseDatesWithHeadshots'])
+    Route::get('/student/onboarding/course-dates-headshots/{courseAuthId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'getCourseDatesWithHeadshots'])
         ->name('student.onboarding.course-dates-headshots');
 
     // Complete onboarding
-    Route::post('/student/onboarding/complete', [App\Http\Controllers\Student\StudentDashboardController::class, 'completeOnboarding'])
+    Route::post('/student/onboarding/complete', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'completeOnboarding'])
         ->name('student.onboarding.complete');
 
     // Offline onboarding for FSTB (Fast Study Training Base)
-    Route::post('/student/offline-onboarding', [App\Http\Controllers\Student\StudentDashboardController::class, 'completeOfflineOnboarding'])
+    Route::post('/student/offline-onboarding', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'completeOfflineOnboarding'])
         ->name('student.offline-onboarding');
 
-    // Route::post('/onboarding/{studentUnit}/agreement', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acceptAgreement'])
-    //     ->name('onboarding.agreement');
-    // Route::post('/onboarding/{studentUnit}/rules', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'acknowledgeRules'])
-    //     ->name('onboarding.rules');
-    // Route::post('/onboarding/{studentUnit}/identity', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'verifyIdentity'])
-    //     ->name('onboarding.identity');
-    // Route::post('/onboarding/{studentUnit}/enter', [App\Http\Controllers\Student\ClassroomOnboardingController::class, 'enterClassroom'])
-    //     ->name('onboarding.enter');
-
     // SESSION MANAGEMENT ROUTES
-    Route::post('/session/heartbeat', [App\Http\Controllers\Student\ClassroomController::class, 'heartbeat'])
+    Route::post('/session/heartbeat', [App\Http\Controllers\Frontend\Student\ClassroomController::class, 'heartbeat'])
         ->name('session.heartbeat');
-    Route::get('/session/status/{studentUnitId}', [App\Http\Controllers\Student\ClassroomController::class, 'sessionStatus'])
+    Route::get('/session/status/{studentUnitId}', [App\Http\Controllers\Frontend\Student\ClassroomController::class, 'sessionStatus'])
         ->name('session.status');
-    Route::post('/session/leave', [App\Http\Controllers\Student\ClassroomController::class, 'leaveClassroom'])
+    Route::post('/session/leave', [App\Http\Controllers\Frontend\Student\ClassroomController::class, 'leaveClassroom'])
         ->name('session.leave');
-    Route::post('/session/check-or-create', [App\Http\Controllers\Student\ClassroomController::class, 'checkOrCreateSession'])
+    Route::post('/session/check-or-create', [App\Http\Controllers\Frontend\Student\ClassroomController::class, 'checkOrCreateSession'])
         ->name('session.check-or-create');
 });
 
@@ -137,7 +113,7 @@ Route::middleware('auth')->prefix('classroom')->name('classroom.')->group(functi
  */
 Route::middleware('auth')->prefix('student/course')->name('student.course.')->group(function () {
     // Start class - sets start_date and expire_date (1 year from start)
-    Route::post('/start', [App\Http\Controllers\Student\StudentDashboardController::class, 'startClass'])
+    Route::post('/start', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'startClass'])
         ->name('start');
 });
 
@@ -147,41 +123,41 @@ Route::middleware('auth')->prefix('student/course')->name('student.course.')->gr
 Route::middleware('auth')->prefix('student/id-verification')->name('student.id-verification.')->group(function () {
     // NOTE: IdVerificationController does not exist in this repo.
     // These routes are kept as aliases to the existing StudentDashboardController endpoints.
-    Route::post('/start', [App\Http\Controllers\Student\StudentDashboardController::class, 'startIdVerification'])
+    Route::post('/start', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'startIdVerification'])
         ->name('start');
-    Route::get('/status/{studentId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getIdVerificationStatus'])
+    Route::get('/status/{studentId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'getIdVerificationStatus'])
         ->name('status');
-    Route::get('/summary/{verificationId}', [App\Http\Controllers\Student\StudentDashboardController::class, 'getIdVerificationSummary'])
+    Route::get('/summary/{verificationId}', [App\Http\Controllers\Frontend\Student\StudentDashboardController::class, 'getIdVerificationSummary'])
         ->name('summary');
 });
 
 /**
  * Student Offline Session Tracking Routes
  */
-if (class_exists('App\\Http\\Controllers\\Student\\OfflineSessionController')) {
+if (class_exists('App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController')) {
     Route::middleware('auth')->prefix('student/offline')->name('student.offline.')->group(function () {
         // Session Management
-        Route::post('session/start/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@startSession')
+        Route::post('session/start/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@startSession')
             ->name('session.start');
-        Route::post('session/end/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@endSession')
+        Route::post('session/end/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@endSession')
             ->name('session.end');
-        Route::get('session/status/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@getSessionStatus')
+        Route::get('session/status/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@getSessionStatus')
             ->name('session.status');
 
         // Activity Tracking
-        Route::post('track/lesson/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@trackLessonActivity')
+        Route::post('track/lesson/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@trackLessonActivity')
             ->name('track.lesson');
-        Route::post('track/step/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@trackSessionStep')
+        Route::post('track/step/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@trackSessionStep')
             ->name('track.step');
 
         // Analytics & Reporting
-        Route::get('summary/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@getSessionSummary')
+        Route::get('summary/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@getSessionSummary')
             ->name('summary');
-        Route::get('activities/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@getRecentActivities')
+        Route::get('activities/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@getRecentActivities')
             ->name('activities');
 
         // Admin/Cleanup
-        Route::post('session/force-end/{courseAuthId}', 'App\\Http\\Controllers\\Student\\OfflineSessionController@forceEndSessions')
+        Route::post('session/force-end/{courseAuthId}', 'App\\Http\\Controllers\\Frontend\\Student\\OfflineSessionController@forceEndSessions')
             ->name('session.force-end');
     });
 }

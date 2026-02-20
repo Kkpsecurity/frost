@@ -190,23 +190,20 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         if (!confirm("Reset video quota back to default (10 hours)?")) return;
 
         try {
-            const response = await fetch(
-                "/classroom/dev/reset-video-quota",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document
-                                .querySelector('meta[name="csrf-token"]')
-                                ?.getAttribute("content") || "",
-                        Accept: "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                    credentials: "same-origin",
-                    body: JSON.stringify({}),
+            const response = await fetch("/classroom/dev/reset-video-quota", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
                 },
-            );
+                credentials: "same-origin",
+                body: JSON.stringify({}),
+            });
 
             const data = await response.json();
 

@@ -6,12 +6,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class PaymentMethodRemovedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $paymentMethod;
+    protected array $paymentMethod;
 
     /**
      * Create a new notification instance.
@@ -26,14 +27,12 @@ class PaymentMethodRemovedNotification extends Notification implements ShouldQue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_payment.payment_method_removed')
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.payment_method_removed',
+            config('user_notifications.notifications.payment.payment_method_removed.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.payment_method_removed.user_controllable', true),
+        );
     }
 
     /**
@@ -51,7 +50,7 @@ class PaymentMethodRemovedNotification extends Notification implements ShouldQue
             ->line('**Details:** ' . $methodDetails)
             ->line('**Removed:** ' . now()->format('M j, Y g:i A'))
             ->line('If you did not make this change, please contact support immediately and secure your account.')
-            ->action('Manage Payment Methods', route('account.payments'))
+            ->action('Manage Payment Methods', route('account.index', ['section' => 'payments']))
             ->line('You can add a new payment method at any time from your account settings.');
     }
 
@@ -63,11 +62,10 @@ class PaymentMethodRemovedNotification extends Notification implements ShouldQue
         return [
             'title' => 'Payment Method Removed',
             'message' => ucfirst($this->paymentMethod['type']) . ' payment method removed: ' . $this->getMethodDetails(),
-            'payment_method' => $this->paymentMethod,
             'icon' => 'trash',
             'color' => 'warning',
             'priority' => 'medium',
-            'url' => route('account.payments'),
+            'url' => route('account.index', ['section' => 'payments']),
         ];
     }
 

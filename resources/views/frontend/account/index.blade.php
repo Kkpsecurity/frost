@@ -7,7 +7,8 @@
 
     <x-frontend.site.partials.header />
 
-    <div class="frost-secondary-bg" style="min-height: calc(100vh - 200px); padding-top: 2rem; padding-bottom: 4rem;">
+    <div class="frost-secondary-bg account-page"
+        style="min-height: calc(100vh - 200px); padding-top: 2rem; padding-bottom: 4rem;">
         <div class="container">
             {{-- Flash Messages --}}
             @if (session('success'))
@@ -28,12 +29,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
-            @if ($errors->any())
+            @if (isset($errors) && is_object($errors) && method_exists($errors, 'any') && $errors->any())
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Please correct the following errors:</strong>
                     <ul class="mb-0 mt-2">
-                        @foreach ($errors->all() as $error)
+                        @foreach (is_object($errors) && method_exists($errors, 'all') ? $errors->all() : [] as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
@@ -44,8 +45,7 @@
             <div class="row">
                 {{-- Sidebar Navigation --}}
                 <div class="col-lg-3 mb-4">
-                    <div class="card shadow-sm border-0"
-                        style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                    <div class="card shadow-sm border-0 account-panel account-panel--sidebar">
                         <div class="card-body">
                             <h5 class="text-white mb-3">
                                 <i class="fas fa-user-circle me-2"></i>My Account
@@ -78,8 +78,7 @@
 
                 {{-- Main Content Area --}}
                 <div class="col-lg-9">
-                    <div class="card shadow-sm border-0"
-                        style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                    <div class="card shadow-sm border-0 account-panel account-panel--content">
                         <div class="card-body p-4">
                             @if ($activeSection === 'profile')
                                 @include('frontend.account.sections.profile', [
@@ -119,22 +118,41 @@
     <x-frontend.site.partials.footer />
 
     <style>
+        /*
+            Account page theme fix (Laravel 11 upgrade):
+            - Page background uses the secondary color.
+            - Sidebar + content panels use the primary color.
+            - Add clear borders/contrast so panels don't blend into the page.
+        */
+        .account-page {
+            background-color: var(--frost-secondary-color) !important;
+        }
+
+        .account-panel {
+            background-color: var(--frost-primary-color) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        }
+
         .account-nav .nav-link {
             color: rgba(255, 255, 255, 0.7);
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             margin-bottom: 0.25rem;
             transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
 
         .account-nav .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.12);
+            border-color: rgba(255, 255, 255, 0.12);
             color: #fff;
         }
 
         .account-nav .nav-link.active {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
+            background: rgba(0, 0, 0, 0.22);
+            border-color: rgba(255, 255, 255, 0.18);
+            color: #fff;
             font-weight: 500;
         }
     </style>

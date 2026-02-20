@@ -6,12 +6,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class PaymentMethodAddedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $paymentMethod;
+    protected array $paymentMethod;
 
     /**
      * Create a new notification instance.
@@ -26,14 +27,12 @@ class PaymentMethodAddedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_payment.payment_method_added')
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.payment_method_added',
+            config('user_notifications.notifications.payment.payment_method_added.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.payment_method_added.user_controllable', true),
+        );
     }
 
     /**
@@ -51,7 +50,7 @@ class PaymentMethodAddedNotification extends Notification implements ShouldQueue
             ->line('**Details:** ' . $methodDetails)
             ->line('**Added:** ' . now()->format('M j, Y g:i A'))
             ->line('If you did not make this change, please contact support immediately.')
-            ->action('Manage Payment Methods', route('account.payments'))
+            ->action('Manage Payment Methods', route('account.index', ['section' => 'payments']))
             ->line('Thank you for keeping your payment information up to date!');
     }
 
@@ -63,11 +62,10 @@ class PaymentMethodAddedNotification extends Notification implements ShouldQueue
         return [
             'title' => 'Payment Method Added',
             'message' => 'New ' . ucfirst($this->paymentMethod['type']) . ' payment method added: ' . $this->getMethodDetails(),
-            'payment_method' => $this->paymentMethod,
             'icon' => 'credit-card',
             'color' => 'success',
             'priority' => 'low',
-            'url' => route('account.payments'),
+            'url' => route('account.index', ['section' => 'payments']),
         ];
     }
 

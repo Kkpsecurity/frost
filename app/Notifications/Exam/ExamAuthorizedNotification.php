@@ -7,12 +7,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class ExamAuthorizedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $examAuth;
+    protected ExamAuth $examAuth;
 
     /**
      * Create a new notification instance.
@@ -27,19 +28,12 @@ class ExamAuthorizedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_exam.exam_authorized')
-            ->where('value', true)
-            ->exists();
-
-        if ($emailEnabled) {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'notification_exam.exam_authorized',
+            config('user_notifications.notifications.exams.exam_authorized.channels', ['database']),
+            (bool) config('user_notifications.notifications.exams.exam_authorized.user_controllable', true),
+        );
     }
 
     /**
@@ -74,21 +68,6 @@ class ExamAuthorizedNotification extends Notification implements ShouldQueue
             'color' => 'primary',
             'priority' => 'high',
             'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
-        ];
-    }
-}
-
-    }
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [
-            //
         ];
     }
 }

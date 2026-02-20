@@ -19,7 +19,7 @@ $request = new Illuminate\Http\Request();
 $request->merge(['course_auth_id' => 2]);
 
 // Call the actual controller method
-$controller = new App\Http\Controllers\Student\StudentDashboardController();
+$controller = new App\Http\Controllers\Frontend\Student\StudentDashboardController();
 $response = $controller->getClassData($request);
 
 $responseData = json_decode($response->getContent(), true);
@@ -29,10 +29,10 @@ echo "RESPONSE STATUS: " . $response->status() . "\n\n";
 if (isset($responseData['data']['studentUnit'])) {
     echo "studentUnit object:\n";
     echo json_encode($responseData['data']['studentUnit'], JSON_PRETTY_PRINT) . "\n\n";
-    
+
     $onboardingComplete = $responseData['data']['studentUnit']['onboarding_completed'] ?? 'KEY_MISSING';
     echo "onboarding_completed value: " . json_encode($onboardingComplete) . "\n\n";
-    
+
     if ($onboardingComplete === true) {
         echo "✅ API is returning onboarding_completed = TRUE\n";
         echo "Frontend SHOULD show classroom\n";

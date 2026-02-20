@@ -374,8 +374,8 @@
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="{{ url('account') . '?section=settings' }}">
-                            <i class="fas fa-cog me-2"></i>Settings
+                        <a class="dropdown-item" href="{{ url('account') . '?section=notifications' }}">
+                            <i class="fas fa-bell me-2"></i>Notifications
                         </a>
                     </li>
                     <li>

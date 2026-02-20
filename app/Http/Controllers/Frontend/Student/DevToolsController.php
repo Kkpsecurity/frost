@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Student;
+namespace App\Http\Controllers\Frontend\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\CourseAuth;
 use App\Models\SelfStudyLesson;
 use App\Models\StudentLesson;
 use App\Models\StudentUnit;
-use App\Models\CourseAuth;
-use App\Models\Lesson;
 use App\Models\StudentVideoQuota;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

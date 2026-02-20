@@ -6,10 +6,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class InvoiceGeneratedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use UsesUserNotificationPreferences;
 
     protected $order;
     protected $invoiceNumber;
@@ -28,14 +30,12 @@ class InvoiceGeneratedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_payment.invoice_generated')
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.invoice_generated',
+            config('user_notifications.notifications.payment.invoice_generated.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.invoice_generated.user_controllable', true),
+        );
     }
 
     /**
