@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Frost\Students;
 
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -66,125 +65,100 @@ class BackendStudentService
         }
 
         try {
-            $today = Carbon::today()->format('Y-m-d');
+            // ------------------------------------------------------------------
+            // Resolve course_date_id if not supplied directly.
+            // Fall back to the instructor's active InstUnit.
+            // ------------------------------------------------------------------
+            if ($courseDateId === null) {
+                $instUnit = \App\Models\InstUnit::whereNull('completed_at')
+                    ->where(function ($q) use ($admin) {
+                        $q->where('created_by', $admin->id)
+                            ->orWhere('assistant_id', $admin->id);
+                    })
+                    ->orderByDesc('created_at')
+                    ->first();
 
-            // Find the instructor's active InstUnit for this course date (or for today as a fallback)
-            $instUnitQuery = DB::table('inst_unit as iu')
-                ->whereNull('iu.completed_at')
-                ->where(function ($q) use ($admin) {
-                    $q->where('iu.created_by', $admin->id)
-                        ->orWhere('iu.assistant_id', $admin->id);
-                });
-
-            if ($courseDateId !== null) {
-                $instUnitQuery->where('iu.course_date_id', $courseDateId);
+                $courseDateId = $instUnit?->course_date_id ? (int) $instUnit->course_date_id : null;
             }
 
-            $instUnit = $instUnitQuery->orderByDesc('iu.created_at')->first();
-
-            // Attendance list is made up of StudentUnit records for the course date ("you are here" sessions)
-            $studentUnitsQuery = DB::table('student_unit as su')
-                ->join('course_auths as ca', 'su.course_auth_id', '=', 'ca.id')
-                ->join('users as u', 'ca.user_id', '=', 'u.id');
-
-            if ($courseDateId !== null) {
-                $studentUnitsQuery->where('su.course_date_id', $courseDateId);
-            } elseif ($instUnit && isset($instUnit->course_date_id)) {
-                $studentUnitsQuery->where('su.course_date_id', (int) $instUnit->course_date_id);
-            } else {
-                // Last-resort fallback; keeps endpoint from exploding if called without params
-                $studentUnitsQuery->whereDate('su.created_at', $today);
+            if ($courseDateId === null) {
+                return [
+                    'students' => [],
+                    'summary'  => ['total' => 0, 'course_date_id' => null],
+                ];
             }
 
-            // If we found an InstUnit, prefer matching its id, but allow NULL for legacy/incomplete records
-            if ($instUnit && isset($instUnit->id)) {
-                $studentUnitsQuery->where(function ($q) use ($instUnit) {
-                    $q->where('su.inst_unit_id', (int) $instUnit->id)
-                        ->orWhere('su.inst_unit_id', 0)
-                        ->orWhereNull('su.inst_unit_id');
-                });
-            }
-
-            $studentUnits = $studentUnitsQuery
-                ->select([
-                    'u.id as student_id',
-                    'u.fname as student_fname',
-                    'u.lname as student_lname',
-                    'u.email as student_email',
-                    'u.avatar as avatar',
-                    'su.id as student_unit_id',
-                    'su.created_at as joined_at',
-                    'su.last_heartbeat_at as last_heartbeat_at',
-                    'su.session_expires_at as session_expires_at',
-                    'su.left_at as left_at',
-                    'su.completed_at as completed_at',
-                    'su.ejected_at as ejected_at',
-                    'su.verified as verified_json'
-                ])
-                ->orderBy('u.lname')
-                ->orderBy('u.fname')
+            // ------------------------------------------------------------------
+            // Fetch StudentUnit records for this class session.
+            // This mirrors the proven approach in getStudentsForCourseDate() and
+            // CourseDatesService — StudentUnit is the session-level record that
+            // exists for every student who has joined (or been pre-enrolled into)
+            // this specific course_date_id.
+            // ------------------------------------------------------------------
+            $studentUnits = \App\Models\StudentUnit::where('course_date_id', $courseDateId)
+                ->with(['CourseAuth.User'])
+                ->orderBy('created_at', 'asc')
                 ->get();
 
             $now = Carbon::now();
-            $students = $studentUnits->map(function ($row) use ($now) {
-                $fullName = trim((string) ($row->student_fname ?? '') . ' ' . (string) ($row->student_lname ?? ''));
-                $displayName = $fullName !== '' ? $fullName : (string) ($row->student_email ?? 'Student');
 
-                // Determine "online/away/offline" from heartbeat + leave/eject markers
-                $status = 'offline';
-                $leftAt = $row->left_at ? Carbon::parse($row->left_at) : null;
-                $ejectedAt = $row->ejected_at ? Carbon::parse($row->ejected_at) : null;
-                $completedAt = $row->completed_at ? Carbon::parse($row->completed_at) : null;
-                $heartbeatAt = $row->last_heartbeat_at ? Carbon::parse($row->last_heartbeat_at) : null;
-
-                $isDisconnected = $leftAt !== null || $ejectedAt !== null || $completedAt !== null;
-                if (!$isDisconnected && $heartbeatAt) {
-                    $seconds = $heartbeatAt->diffInSeconds($now);
-                    if ($seconds <= 90) {
-                        $status = 'online';
-                    } elseif ($seconds <= 600) {
-                        $status = 'away';
-                    }
+            $students = $studentUnits->map(function ($su) use ($now) {
+                $user = $su->CourseAuth?->User ?? null;
+                if (!$user) {
+                    return null;
                 }
 
-                // Verification: interpret JSON flags if present
-                $verified = false;
-                $verifiedData = $row->verified_json;
+                // Status from last activity (updated_at) — same logic as getStudentsForCourseDate()
+                $lastActivity = $su->updated_at
+                    ? (($su->updated_at instanceof Carbon) ? $su->updated_at : Carbon::parse($su->updated_at))
+                    : $now;
+
+                $minutesSince = $lastActivity->diffInMinutes($now);
+                $status = match (true) {
+                    $minutesSince <= 5  => 'online',
+                    $minutesSince <= 15 => 'away',
+                    default             => 'offline',
+                };
+
+                // Verification flags stored as JSON in `verified` column
+                $verified     = false;
+                $verifiedData = $su->verified;
                 if (is_string($verifiedData)) {
-                    $decoded = json_decode($verifiedData, true);
-                    $verifiedData = $decoded ?? null;
+                    $verifiedData = json_decode($verifiedData, true) ?? null;
                 }
                 if (is_array($verifiedData)) {
                     $verified = (bool) (($verifiedData['id_card_uploaded'] ?? false) && ($verifiedData['headshot_uploaded'] ?? false));
                 }
 
+                $fullName = trim(($user->fname ?? '') . ' ' . ($user->lname ?? ''));
+
                 return [
-                    'id' => (int) $row->student_unit_id,
-                    'student_id' => (int) $row->student_id,
-                    'student_name' => $displayName,
-                    'student_email' => (string) ($row->student_email ?? ''),
-                    'avatar' => (string) ($row->avatar ?? ''),
-                    'status' => $status,
-                    'joined_at' => $row->joined_at ? Carbon::parse($row->joined_at)->toAtomString() : null,
-                    'verified' => $verified,
+                    'id'               => (int) $su->id,
+                    'student_id'       => (int) $user->id,
+                    'student_name'     => $fullName !== '' ? $fullName : ($user->email ?? 'Student'),
+                    'student_email'    => (string) ($user->email ?? ''),
+                    'avatar'           => (string) ($user->avatar ?? ''),
+                    'course_auth_id'   => (int) ($su->course_auth_id ?? 0),
+                    'student_unit_id'  => (int) $su->id,
+                    'status'           => $status,
+                    'joined_at'        => $su->created_at ? Carbon::parse($su->created_at)->toAtomString() : null,
+                    'verified'         => $verified,
                     'progress_percent' => 0,
                 ];
-            });
+            })->filter()->values();
 
             return [
                 'students' => $students->toArray(),
-                'summary' => [
-                    'total' => $students->count(),
+                'summary'  => [
+                    'total'          => $students->count(),
                     'course_date_id' => $courseDateId,
-                    'lesson_date' => $courseDateId === null ? $today : null,
+                    'lesson_date'    => null,
                 ],
                 'metadata' => [
-                    'view_type' => 'instructor_course_students',
-                    'query_date' => $today,
+                    'view_type'   => 'instructor_course_students',
                     'last_updated' => now()->format('c'),
                 ]
             ];
-
         } catch (\Exception $e) {
             Log::error('Failed to get online students for instructor', [
                 'error' => $e->getMessage(),
@@ -192,12 +166,11 @@ class BackendStudentService
             ]);
 
             return [
-                'error' => 'Failed to retrieve online students',
+                'error'    => 'Failed to retrieve online students',
                 'students' => [],
-                'summary' => [
-                    'total' => 0,
+                'summary'  => [
+                    'total'          => 0,
                     'course_date_id' => $courseDateId,
-                    'lesson_date' => $today
                 ]
             ];
         }
@@ -378,8 +351,13 @@ class BackendStudentService
     public function searchStudents(array $filters = []): array
     {
         $allowedFilters = [
-            'name', 'email', 'course_id', 'status',
-            'enrollment_date', 'completion_status', 'attendance_rate'
+            'name',
+            'email',
+            'course_id',
+            'status',
+            'enrollment_date',
+            'completion_status',
+            'attendance_rate'
         ];
 
         $validFilters = array_intersect_key($filters, array_flip($allowedFilters));

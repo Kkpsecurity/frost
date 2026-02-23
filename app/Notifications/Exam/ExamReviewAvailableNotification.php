@@ -7,12 +7,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class ExamReviewAvailableNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $examAuth;
+    protected ExamAuth $examAuth;
 
     public function __construct(ExamAuth $examAuth)
     {
@@ -21,18 +22,12 @@ class ExamReviewAvailableNotification extends Notification implements ShouldQueu
 
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_exam.exam_review')
-            ->where('value', true)
-            ->exists();
-
-        if ($emailEnabled) {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'notification_exam.exam_review',
+            config('user_notifications.notifications.exams.exam_review.channels', ['database']),
+            (bool) config('user_notifications.notifications.exams.exam_review.user_controllable', true),
+        );
     }
 
     public function toMail(object $notifiable): MailMessage

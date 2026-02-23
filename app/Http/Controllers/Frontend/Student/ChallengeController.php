@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 use App\Http\Controllers\Controller;
+use App\Classes\Students\Challenger;
 use App\Models\Challenge;
 use App\Models\StudentLesson;
 
@@ -162,8 +163,11 @@ class ChallengeController extends Controller
             }
 
             // Mark challenge as completed
+            // NOTE: Must use Challenger::MarkCompleted() (not the model method) so that:
+            //   - EOL challenges properly mark StudentLesson->completed_at
+            //   - Lessons closed by instructor while challenge was pending are handled
             if ($completed) {
-                $challenge->MarkCompleted();
+                Challenger::MarkCompleted($challenge);
 
                 Log::info('Challenge completed by student', [
                     'challenge_id' => $challengeId,

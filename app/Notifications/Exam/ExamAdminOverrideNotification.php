@@ -7,13 +7,14 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class ExamAdminOverrideNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $examAuth;
-    protected $action;
+    protected ExamAuth $examAuth;
+    protected string $action;
 
     public function __construct(ExamAuth $examAuth, string $action = 'reset')
     {
@@ -23,18 +24,12 @@ class ExamAdminOverrideNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_exam.admin_override')
-            ->where('value', true)
-            ->exists();
-
-        if ($emailEnabled) {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'notification_exam.admin_override',
+            config('user_notifications.notifications.exams.admin_override.channels', ['database']),
+            (bool) config('user_notifications.notifications.exams.admin_override.user_controllable', true),
+        );
     }
 
     public function toMail(object $notifiable): MailMessage

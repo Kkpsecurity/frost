@@ -27,6 +27,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ---------------------------------------------------------------
+        // SAFETY: Block destructive DB commands outside of testing env.
+        // ---------------------------------------------------------------
+        if ($this->app->runningInConsole() && !$this->app->environment('testing')) {
+            $this->guardDestructiveDatabaseCommands();
+        }
+
         // Use Bootstrap 4 for pagination views
         Paginator::defaultView('pagination::bootstrap-4');
         Paginator::defaultSimpleView('pagination::simple-bootstrap-4');
@@ -52,6 +59,46 @@ class AppServiceProvider extends ServiceProvider
 
         // Load app config overrides from database
         $this->loadAppConfigOverrides();
+    }
+
+    /**
+     * Prevent accidental execution of destructive database artisan commands
+     * on any environment that is NOT 'testing'.
+     */
+    private function guardDestructiveDatabaseCommands(): void
+    {
+        $dangerous = [
+            'migrate:fresh',
+            'migrate:reset',
+            'migrate:rollback',
+            'db:wipe',
+        ];
+
+        $argv    = $_SERVER['argv'] ?? [];
+        $command = $argv[1] ?? '';
+
+        if (in_array($command, $dangerous, true)) {
+            $env = $this->app->environment();
+            $db  = config('database.default');
+
+            // Allow only if explicitly targeting a safe (non-production) DB
+            // and the user has set ALLOW_DESTRUCTIVE_COMMANDS=true in .env
+            if (config('app.allow_destructive_commands') !== true) {
+                fwrite(STDERR, "\n");
+                fwrite(STDERR, "╔══════════════════════════════════════════════════════╗\n");
+                fwrite(STDERR, "║  SAFETY ABORT: Destructive command blocked!          ║\n");
+                fwrite(STDERR, "║                                                      ║\n");
+                fwrite(STDERR, "║  Command : {$command}\n");
+                fwrite(STDERR, "║  Env     : {$env}\n");
+                fwrite(STDERR, "║  DB      : {$db}\n");
+                fwrite(STDERR, "║                                                      ║\n");
+                fwrite(STDERR, "║  To allow, set ALLOW_DESTRUCTIVE_COMMANDS=true       ║\n");
+                fwrite(STDERR, "║  in your .env file, then re-run the command.         ║\n");
+                fwrite(STDERR, "╚══════════════════════════════════════════════════════╝\n");
+                fwrite(STDERR, "\n");
+                exit(1);
+            }
+        }
     }
 
     /**

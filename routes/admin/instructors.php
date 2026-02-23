@@ -57,6 +57,9 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::post('/assist/{courseDateId?}', [InstructorDashboardController::class, 'assistClass'])
             ->name('assist');
 
+        Route::post('/leave-assist/{instUnitId}', [InstructorDashboardController::class, 'leaveAssist'])
+            ->name('leave-assist');
+
         // Chat functionality for live classes
         Route::get('/chat-messages', [InstructorDashboardController::class, 'getChatMessages'])
             ->name('chat.messages');

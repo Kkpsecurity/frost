@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class EmailVerifiedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
     /**
      * Create a new notification instance.
@@ -24,17 +25,12 @@ class EmailVerifiedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences
-        $userPrefs = $notifiable->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
-
-        // Add mail channel if enabled (for email verified confirmation)
-        if (($userPrefs['notification_channel_mail'] ?? '1') === '1') {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'account.email_verified',
+            config('user_notifications.notifications.account.email_verified.channels', ['database', 'mail']),
+            (bool) config('user_notifications.notifications.account.email_verified.user_controllable', false),
+        );
     }
 
     /**

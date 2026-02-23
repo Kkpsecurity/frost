@@ -7,10 +7,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class WelcomeNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
     /**
      * Create a new notification instance.
@@ -27,17 +28,12 @@ class WelcomeNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences
-        $userPrefs = $notifiable->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
-
-        // Add mail channel if enabled
-        if (($userPrefs['notification_channel_mail'] ?? '1') === '1') {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'account.welcome',
+            config('user_notifications.notifications.account.welcome.channels', ['database', 'mail']),
+            (bool) config('user_notifications.notifications.account.welcome.user_controllable', false),
+        );
     }
 
     /**

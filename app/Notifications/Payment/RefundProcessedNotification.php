@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class RefundProcessedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
     protected $order;
     protected $refundAmount;
@@ -28,8 +29,12 @@ class RefundProcessedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        // Refunds always sent via database and email (critical financial transaction)
-        return ['database', 'mail'];
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.refund_processed',
+            config('user_notifications.notifications.payment.refund_processed.channels', ['database', 'mail']),
+            (bool) config('user_notifications.notifications.payment.refund_processed.user_controllable', false),
+        );
     }
 
     /**

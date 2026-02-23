@@ -44,6 +44,12 @@ return [
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
+     * Safety guard: set ALLOW_DESTRUCTIVE_COMMANDS=true in .env only when you
+     * intentionally need to run migrate:fresh, migrate:reset, or db:wipe.
+     */
+    'allow_destructive_commands' => (bool) env('ALLOW_DESTRUCTIVE_COMMANDS', false),
+
+    /*
     |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------

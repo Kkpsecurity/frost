@@ -1063,6 +1063,134 @@ class StudentDashboardController extends Controller
                 // Non-fatal
             }
 
+            // -----------------------------------------------------------------
+            // CHALLENGE SYSTEM
+            //
+            // CHECK 1 — Challenger::Ready()
+            //   Fires when instructor is actively teaching a non-paused lesson.
+            //   Either returns an existing pending challenge or creates a new
+            //   one based on the randomized timing windows.
+            //
+            // CHECK 2 — Challenger::EOLReady()
+            //   Fires when the instructor has marked a lesson complete but the
+            //   student hasn't received credit yet (StudentLesson->completed_at
+            //   is null). The EOL challenge is the gate that grants lesson
+            //   credit. EOLReady() internally guards itself — it returns null
+            //   if the InstLesson is not yet complete.
+            //
+            // Both checks are non-fatal and will never break the poll.
+            // -----------------------------------------------------------------
+            $challengeData = null;
+
+            try {
+                $challengeCourseAuthId = (int) ($user->CourseAuths()
+                    ->where('course_id', $courseId)
+                    ->value('id') ?? 0);
+
+                if ($challengeCourseAuthId > 0) {
+                    $challengeStudentUnit = \App\Models\StudentUnit::where('course_auth_id', $challengeCourseAuthId)
+                        ->where('course_date_id', $courseDate->id)
+                        ->first();
+
+                    if ($challengeStudentUnit) {
+                        // Resolve completed lesson IDs once — used by both checks.
+                        $completedLessonIds = \App\Models\StudentLesson::where('student_unit_id', $challengeStudentUnit->id)
+                            ->whereNotNull('completed_at')
+                            ->pluck('lesson_id')
+                            ->toArray();
+
+                        // --- CHECK 1: Ready() for the currently active lesson ---
+                        // Skip if no active lesson or lesson is paused (break time).
+                        if ($activeLessonId && !($activeInstLesson?->is_paused)) {
+                            $activeStudentLesson = \App\Models\StudentLesson::where('student_unit_id', $challengeStudentUnit->id)
+                                ->where('lesson_id', $activeLessonId)
+                                ->whereNull('completed_at')
+                                ->first();
+
+                            if ($activeStudentLesson) {
+                                $challengerResponse = Challenger::Ready($activeStudentLesson, $completedLessonIds);
+
+                                if ($challengerResponse && $challengerResponse->challenge_id) {
+                                    $activeChallenge = \App\Models\Challenge::find($challengerResponse->challenge_id);
+
+                                    if ($activeChallenge && !$activeChallenge->completed_at && !$activeChallenge->failed_at) {
+                                        $expiresAt     = \Carbon\Carbon::parse($activeChallenge->expires_at);
+                                        $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
+
+                                        $challengeData = [
+                                            'challenge_id'      => $activeChallenge->id,
+                                            'student_lesson_id' => $activeChallenge->student_lesson_id,
+                                            'is_final'          => (bool) $challengerResponse->is_final,
+                                            'is_eol'            => (bool) $challengerResponse->is_eol,
+                                            'expires_at'        => $activeChallenge->expires_at->toISOString(),
+                                            'time_remaining'    => (int) $timeRemaining,
+                                            'created_at'        => $activeChallenge->created_at->toISOString(),
+                                        ];
+
+                                        Log::info('Challenge (Ready) active for student', [
+                                            'student_id'     => $user->id,
+                                            'challenge_id'   => $activeChallenge->id,
+                                            'is_final'       => $challengerResponse->is_final,
+                                            'time_remaining' => $timeRemaining,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+
+                        // --- CHECK 2: EOLReady() for instructor-completed lessons ---
+                        // Find any student lesson that is pending credit (instructor done,
+                        // student not yet marked complete). EOLReady() self-guards: it
+                        // returns null unless InstLesson->completed_at is set.
+                        if ($challengeData === null) {
+                            $pendingStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $challengeStudentUnit->id)
+                                ->whereNull('completed_at')
+                                ->whereNull('dnc_at')
+                                ->get();
+
+                            foreach ($pendingStudentLessons as $pendingLesson) {
+                                $eolResponse = Challenger::EOLReady($pendingLesson, $completedLessonIds);
+
+                                if ($eolResponse && $eolResponse->challenge_id) {
+                                    $eolChallenge = \App\Models\Challenge::find($eolResponse->challenge_id);
+
+                                    if ($eolChallenge && !$eolChallenge->completed_at && !$eolChallenge->failed_at) {
+                                        $expiresAt     = \Carbon\Carbon::parse($eolChallenge->expires_at);
+                                        $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
+
+                                        $challengeData = [
+                                            'challenge_id'      => $eolChallenge->id,
+                                            'student_lesson_id' => $eolChallenge->student_lesson_id,
+                                            'is_final'          => (bool) $eolResponse->is_final,
+                                            'is_eol'            => (bool) $eolResponse->is_eol,
+                                            'expires_at'        => $eolChallenge->expires_at->toISOString(),
+                                            'time_remaining'    => (int) $timeRemaining,
+                                            'created_at'        => $eolChallenge->created_at->toISOString(),
+                                        ];
+
+                                        Log::info('Challenge (EOLReady) active for student', [
+                                            'student_id'        => $user->id,
+                                            'challenge_id'      => $eolChallenge->id,
+                                            'student_lesson_id' => $eolChallenge->student_lesson_id,
+                                            'time_remaining'    => $timeRemaining,
+                                        ]);
+
+                                        break; // Only one EOL challenge at a time
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal: log but never break the classroom poll
+                Log::error('Challenge check failed in getClassData', [
+                    'error'           => $e->getMessage(),
+                    'course_date_id'  => $courseDate->id,
+                    'active_lesson_id' => $activeLessonId ?? null,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -1107,6 +1235,8 @@ class StudentDashboardController extends Controller
                         $instUnit,
                         $user->CourseAuths()->where('course_id', $courseId)->value('id') ?? 0
                     ),
+                    // Active participation challenge for this student (null = no challenge right now)
+                    'challenge' => $challengeData,
                 ],
             ]);
         } catch (Exception $e) {

@@ -7,13 +7,14 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class ExamReminderNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
-    protected $examAuth;
-    protected $daysWaiting;
+    protected ExamAuth $examAuth;
+    protected int $daysWaiting;
 
     /**
      * Create a new notification instance.
@@ -29,19 +30,12 @@ class ExamReminderNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-
-        // Check user preferences for email
-        $emailEnabled = $notifiable->UserPrefs()
-            ->where('key', 'notification_exam.exam_reminder')
-            ->where('value', true)
-            ->exists();
-
-        if ($emailEnabled) {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'notification_exam.exam_reminder',
+            config('user_notifications.notifications.exams.exam_reminder.channels', ['database']),
+            (bool) config('user_notifications.notifications.exams.exam_reminder.user_controllable', true),
+        );
     }
 
     /**

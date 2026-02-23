@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class PaymentFailedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
     protected $order;
     protected $payment;
@@ -30,8 +31,12 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        // Payment failures always sent via database and email (critical)
-        return ['database', 'mail'];
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.payment_failed',
+            config('user_notifications.notifications.payment.payment_failed.channels', ['database', 'mail']),
+            (bool) config('user_notifications.notifications.payment.payment_failed.user_controllable', false),
+        );
     }
 
     /**

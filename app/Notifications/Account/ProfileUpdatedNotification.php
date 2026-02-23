@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class ProfileUpdatedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
     protected array $updatedFields;
 
@@ -26,18 +27,12 @@ class ProfileUpdatedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        $channels = [];
-
-        // Check user preferences
-        $userPrefs = $notifiable->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
-
-        // Check if user has enabled this notification type
-        if (($userPrefs['notification_account.profile_updated'] ?? '1') === '1') {
-            // Always send to database
-            $channels[] = 'database';
-        }
-
-        return $channels;
+        return $this->preferredChannels(
+            $notifiable,
+            'account.profile_updated',
+            config('user_notifications.notifications.account.profile_updated.channels', ['database']),
+            (bool) config('user_notifications.notifications.account.profile_updated.user_controllable', true),
+        );
     }
 
     /**

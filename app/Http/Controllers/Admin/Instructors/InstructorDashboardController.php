@@ -1406,6 +1406,62 @@ class InstructorDashboardController extends Controller
     }
 
     /**
+     * Leave a class as assistant — clears assistant_id from the InstUnit.
+     * Called by ClassroomInterface.tsx when an assistant clicks "Leave Class".
+     */
+    public function leaveAssist(Request $request, int $instUnitId)
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+        }
+
+        try {
+            $instUnit = \App\Models\InstUnit::find($instUnitId);
+
+            if (!$instUnit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Class session not found.',
+                ], 404);
+            }
+
+            // Only the current assistant may leave.
+            if ((int) $instUnit->assistant_id !== (int) $admin->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not the assistant for this class.',
+                ], 403);
+            }
+
+            $instUnit->assistant_id = null;
+            $instUnit->save();
+
+            Log::info('InstructorDashboardController: Assistant left class', [
+                'admin_id'     => $admin->id,
+                'inst_unit_id' => $instUnitId,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'You have left the class.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('InstructorDashboardController: Error leaving class as assistant', [
+                'admin_id'     => $admin->id,
+                'inst_unit_id' => $instUnitId,
+                'error'        => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error leaving class: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get lessons for a specific course date
      */
     public function getCourseLessons($courseDateId)

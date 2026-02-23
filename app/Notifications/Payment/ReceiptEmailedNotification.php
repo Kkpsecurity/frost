@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Notifications\Concerns\UsesUserNotificationPreferences;
 
 class ReceiptEmailedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, UsesUserNotificationPreferences;
 
     protected $order;
     protected $payment;
@@ -28,8 +29,12 @@ class ReceiptEmailedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        // Receipts primarily database notification, email is the actual receipt
-        return ['database'];
+        return $this->preferredChannels(
+            $notifiable,
+            'payment.receipt_emailed',
+            config('user_notifications.notifications.payment.receipt_emailed.channels', ['database']),
+            (bool) config('user_notifications.notifications.payment.receipt_emailed.user_controllable', true),
+        );
     }
 
     /**
