@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend\Student;
 use App\Http\Controllers\Controller;
 use App\Notifications\Account\ProfileUpdatedNotification;
 use App\Events\Payment\PaymentMethodAdded;
+use App\Events\Profile\EmailChanged;
 use App\Events\Payment\PaymentMethodRemoved;
 use App\Notifications\Payment\DefaultPaymentUpdatedNotification;
 use Illuminate\Http\Request;
@@ -546,6 +547,7 @@ class ProfileController extends Controller
         }
         if ($user->isDirty('email')) {
             $updatedFields[] = 'email';
+            $oldEmail = $user->getOriginal('email');
         }
         if ($user->isDirty('student_info')) {
             $updatedFields[] = 'student_info';
@@ -555,6 +557,11 @@ class ProfileController extends Controller
 
         if (!empty($updatedFields)) {
             $user->notify(new ProfileUpdatedNotification($updatedFields));
+        }
+
+        // Fire dedicated email-changed event so a targeted security notification is sent.
+        if (in_array('email', $updatedFields) && isset($oldEmail)) {
+            event(new EmailChanged($user, $oldEmail, $user->email));
         }
 
         return redirect()->route('account.index', ['section' => 'profile'])

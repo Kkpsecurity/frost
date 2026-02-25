@@ -326,7 +326,7 @@
                     @if ($notifications->count() > 0)
                         <li>
                             <div class="notification-footer">
-                                <a href="{{ route('account.index', ['section' => 'notifications']) }}"
+                                <a href="{{ route('account.index', ['section' => 'inbox']) }}"
                                     class="btn btn-sm btn-primary flex-grow-1">
                                     View All Notifications
                                 </a>
@@ -374,7 +374,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="{{ url('account') . '?section=notifications' }}">
+                        <a class="dropdown-item" href="{{ url('account') . '?section=inbox' }}">
                             <i class="fas fa-bell me-2"></i>Notifications
                         </a>
                     </li>

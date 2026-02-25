@@ -59,9 +59,17 @@
                                     href="{{ route('account.index', ['section' => 'settings']) }}">
                                     <i class="fas fa-cog me-2"></i>Settings
                                 </a>
+                                <a class="nav-link {{ $activeSection === 'inbox' ? 'active' : '' }}"
+                                    href="{{ route('account.index', ['section' => 'inbox']) }}">
+                                    <i class="fas fa-bell me-2"></i>Notifications
+                                    @if (auth()->user()->unreadNotifications->count())
+                                        <span
+                                            class="badge bg-danger ms-1">{{ auth()->user()->unreadNotifications->count() }}</span>
+                                    @endif
+                                </a>
                                 <a class="nav-link {{ $activeSection === 'notifications' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'notifications']) }}">
-                                    <i class="fas fa-bell me-2"></i>Notifications
+                                    <i class="fas fa-sliders-h me-2"></i>Notification Settings
                                 </a>
                                 <a class="nav-link {{ $activeSection === 'orders' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'orders']) }}">
@@ -88,6 +96,10 @@
                             @elseif($activeSection === 'settings')
                                 @include('frontend.account.sections.settings', [
                                     'data' => $settingsData,
+                                    'user' => $user,
+                                ])
+                            @elseif($activeSection === 'inbox')
+                                @include('frontend.account.sections.notification_inbox', [
                                     'user' => $user,
                                 ])
                             @elseif($activeSection === 'notifications')

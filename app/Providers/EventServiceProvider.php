@@ -124,6 +124,31 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\Progress\CourseExpiringSoon::class => [
             \App\Listeners\Progress\SendCourseExpiringSoonNotification::class,
         ],
+
+        // Profile & Account Management Events (Phase 12)
+        \Illuminate\Auth\Events\Login::class => [
+            \App\Listeners\Profile\DetectSuspiciousLogin::class,
+        ],
+        \App\Events\Profile\PasswordChanged::class => [
+            \App\Listeners\Profile\SendPasswordChangedNotification::class,
+        ],
+        \App\Events\Profile\EmailChanged::class => [
+            \App\Listeners\Profile\SendEmailChangedNotification::class,
+        ],
+        \App\Events\Profile\SuspiciousLoginDetected::class => [
+            \App\Listeners\Profile\SendSuspiciousLoginNotification::class,
+        ],
+
+        // System & Administrative Events (Phase 13)
+        \App\Events\System\MaintenanceScheduled::class => [
+            \App\Listeners\System\SendMaintenanceScheduledNotification::class,
+        ],
+        \App\Events\System\PolicyUpdated::class => [
+            \App\Listeners\System\SendPolicyUpdatedNotification::class,
+        ],
+        \App\Events\System\SupportResponseSent::class => [
+            \App\Listeners\System\SendSupportResponseNotification::class,
+        ],
     ];
 
     /**

@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use App\Events\Profile\PasswordChanged;
 
 class PasswordController extends Controller
 {
@@ -20,9 +21,13 @@ class PasswordController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
+        $user = $request->user();
+
+        $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        event(new PasswordChanged($user, $request->ip() ?? '', $request->userAgent() ?? ''));
 
         return back();
     }
