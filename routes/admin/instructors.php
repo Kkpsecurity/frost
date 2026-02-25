@@ -30,12 +30,12 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
     Route::prefix('classroom')->name('classroom.')->group(function () {
         // Offline Mode Dashboard (Bulletin Board)
         Route::get('/offline', function () {
-            return view('dashboards.instructor.offline');
+            return view('admin.instructors.offline');
         })->name('offline');
 
         // Online Class Mode Dashboard (Live Class Interface)
         Route::get('/online', function () {
-            return view('dashboards.instructor.online');
+            return view('admin.instructors.online');
         })->name('online');
 
         // Classroom management actions
