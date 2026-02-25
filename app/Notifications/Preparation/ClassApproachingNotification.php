@@ -53,7 +53,7 @@ class ClassApproachingNotification extends Notification implements ShouldQueue
             ?? $this->courseAuth->Course?->title_long
             ?? 'your course';
         $classDate  = $this->courseDate->starts_at?->format('l, F j, Y');
-        $classTime  = $this->courseDate->starts_at?->format('g:i A');
+        $classTime  = $this->courseDate->starts_at?->format('g:i A T');
         $dayLabel   = $this->daysUntilClass === 1 ? '1 day' : $this->daysUntilClass . ' days';
 
         return (new MailMessage)

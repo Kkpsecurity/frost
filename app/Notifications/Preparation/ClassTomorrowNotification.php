@@ -51,7 +51,7 @@ class ClassTomorrowNotification extends Notification implements ShouldQueue
         $courseName = $this->courseAuth->Course?->title
             ?? $this->courseAuth->Course?->title_long
             ?? 'your course';
-        $classTime  = $this->courseDate->starts_at?->format('g:i A');
+        $classTime  = $this->courseDate->starts_at?->format('g:i A T');
 
         return (new MailMessage)
             ->subject('Your Class is Tomorrow: ' . $courseName)
@@ -77,7 +77,7 @@ class ClassTomorrowNotification extends Notification implements ShouldQueue
         return [
             'type'           => 'preparation.class_tomorrow',
             'title'          => 'Class Starts Tomorrow',
-            'message'        => $courseName . ' starts tomorrow at ' . $this->courseDate->starts_at?->format('g:i A') . '. Make sure you\'re ready.',
+            'message'        => $courseName . ' starts tomorrow at ' . $this->courseDate->starts_at?->format('g:i A T') . '. Make sure you\'re ready.',
             'course_auth_id' => $this->courseAuth->id,
             'course_id'      => $this->courseAuth->course_id,
             'course_date_id' => $this->courseDate->id,
@@ -105,7 +105,7 @@ class ClassTomorrowNotification extends Notification implements ShouldQueue
         $courseName = $this->courseAuth->Course?->title
             ?? $this->courseAuth->Course?->title_long
             ?? 'your course';
-        $classTime  = $this->courseDate->starts_at?->format('g:i A');
+        $classTime  = $this->courseDate->starts_at?->format('g:i A T');
 
         return [
             'title' => 'Class Tomorrow: ' . $courseName,

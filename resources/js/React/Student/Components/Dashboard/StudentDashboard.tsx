@@ -1,5 +1,6 @@
 import React from "react";
 import StudentCoursesTable from "../Tables/StudentCoursesTable";
+import { formatEasternDate } from "../../utils/timeUtils";
 
 interface StudentDashboardProps {
     student: any;
@@ -44,15 +45,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
         in_progress: courses.filter((c) => c.status === "in_progress").length,
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return "N/A";
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
-    };
+    const formatDate = (dateString: string) => formatEasternDate(dateString);
 
     return (
         <div

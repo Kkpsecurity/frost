@@ -46,8 +46,8 @@ class DiscountCode extends Model
 
         'code'              => 'string',  // 32
 
-        'created_at'        => 'timestamp',
-        'expires_at'        => 'timestamp',
+        'created_at'        => 'datetime',
+        'expires_at'        => 'datetime',
 
         'course_id'         => 'integer',
         'set_price'         => 'decimal:2',

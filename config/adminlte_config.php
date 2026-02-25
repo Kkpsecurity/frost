@@ -414,6 +414,22 @@ return [
                     ],
                 ],
                 [
+                    'text' => 'Client Discounts',
+                    'icon' => 'fas fa-tags',
+                    'submenu' => [
+                        [
+                            'text' => 'All Discount Codes',
+                            'route' => 'admin.discount-codes.index',
+                            'icon' => 'fas fa-list',
+                        ],
+                        [
+                            'text' => 'Create Code',
+                            'route' => 'admin.discount-codes.create',
+                            'icon' => 'fas fa-plus-circle',
+                        ],
+                    ],
+                ],
+                [
                     'text' => 'System Configuration',
                     'icon' => 'fas fa-cogs',
                     'submenu' => [
@@ -490,6 +506,11 @@ return [
             'text' => 'Students',
             'url' => 'admin/students',
             'icon' => 'fas fa-fw fa-user-graduate',
+        ],
+        [
+            'text' => 'Student Courses',
+            'url' => 'admin/course-auths',
+            'icon' => 'fas fa-fw fa-book-open',
         ],
 
         ['header' => 'COURSE MANAGEMENT'],

@@ -2,6 +2,7 @@
 import { LessonsData, LessonProgressData } from "../types/LaravelProps";
 import { useLessonSession } from "../hooks/useLessonSession";
 import type { StudentAttendanceSummary } from "../types/props/classroom.props";
+import { formatEasternTimeOnly } from "../utils/timeUtils";
 
 type StudentSidebarProps = {
     instructor: { fname: string; lname: string } | null;
@@ -280,7 +281,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
         }
 
         try {
-            return new Date(lastUpdated).toLocaleTimeString();
+            return formatEasternTimeOnly(lastUpdated);
         } catch (error) {
             console.warn("Unable to format lastUpdated timestamp", {
                 lastUpdated,
@@ -347,9 +348,9 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                         {studentUnit && studentUnit.classroom_created_at && (
                             <span className="text-muted small">
                                 Arrived:{" "}
-                                {new Date(
+                                {formatEasternTimeOnly(
                                     studentUnit.classroom_created_at
-                                ).toLocaleTimeString()}
+                                )}
                             </span>
                         )}
                     </div>

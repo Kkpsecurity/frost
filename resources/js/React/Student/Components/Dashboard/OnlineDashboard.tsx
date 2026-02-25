@@ -1,6 +1,7 @@
 import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import { useClassroom } from "../../hooks/useClassroom";
+import { formatEasternDateTime } from "../../utils/timeUtils";
 
 interface OnlineDashboardProps {
     courseAuthId?: number | null;
@@ -48,26 +49,42 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                 <Col md={6}>
                     <Card className="bg-light">
                         <Card.Header>
-                            <Card.Title className="mb-0">📅 Session Details</Card.Title>
+                            <Card.Title className="mb-0">
+                                📅 Session Details
+                            </Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {courseDate ? (
                                 <>
                                     <p>
-                                        <strong>Start:</strong> {courseDate.starts_at}
+                                        <strong>Start:</strong>{" "}
+                                        {formatEasternDateTime(
+                                            courseDate.starts_at,
+                                        )}
                                     </p>
                                     <p>
-                                        <strong>End:</strong> {courseDate.ends_at}
+                                        <strong>End:</strong>{" "}
+                                        {formatEasternDateTime(
+                                            courseDate.ends_at,
+                                        )}
                                     </p>
                                     <p>
-                                        <strong>Mode:</strong> <span className="badge bg-info">{courseDate.mode}</span>
+                                        <strong>Mode:</strong>{" "}
+                                        <span className="badge bg-info">
+                                            {courseDate.mode}
+                                        </span>
                                     </p>
                                     <p>
-                                        <strong>Status:</strong> <span className="badge bg-success">Active</span>
+                                        <strong>Status:</strong>{" "}
+                                        <span className="badge bg-success">
+                                            Active
+                                        </span>
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-muted">No session data available</p>
+                                <p className="text-muted">
+                                    No session data available
+                                </p>
                             )}
                         </Card.Body>
                     </Card>
@@ -77,7 +94,9 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                 <Col md={6}>
                     <Card className="bg-light">
                         <Card.Header>
-                            <Card.Title className="mb-0">👨‍🏫 Instructor</Card.Title>
+                            <Card.Title className="mb-0">
+                                👨‍🏫 Instructor
+                            </Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {instructor ? (
@@ -86,17 +105,23 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                                         <strong>Name:</strong> {instructor.name}
                                     </p>
                                     <p>
-                                        <strong>Email:</strong> {instructor.email}
+                                        <strong>Email:</strong>{" "}
+                                        {instructor.email}
                                     </p>
                                     <p>
                                         <strong>Status:</strong>{" "}
-                                        <span className={`badge ${instructor.online_status === 'online' ? 'bg-success' : 'bg-secondary'}`}>
-                                            {instructor.online_status || 'offline'}
+                                        <span
+                                            className={`badge ${instructor.online_status === "online" ? "bg-success" : "bg-secondary"}`}
+                                        >
+                                            {instructor.online_status ||
+                                                "offline"}
                                         </span>
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-muted">No instructor data available</p>
+                                <p className="text-muted">
+                                    No instructor data available
+                                </p>
                             )}
                         </Card.Body>
                     </Card>
@@ -108,23 +133,37 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                 <Col>
                     <Card>
                         <Card.Header>
-                            <Card.Title className="mb-0">📖 Lessons ({lessons.length})</Card.Title>
+                            <Card.Title className="mb-0">
+                                📖 Lessons ({lessons.length})
+                            </Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {lessons.length > 0 ? (
                                 <ul className="list-group">
                                     {lessons.map((lesson, idx) => (
-                                        <li key={idx} className="list-group-item">
-                                            <strong>{lesson.lesson_data?.title || `Lesson ${idx + 1}`}</strong>
+                                        <li
+                                            key={idx}
+                                            className="list-group-item"
+                                        >
+                                            <strong>
+                                                {lesson.lesson_data?.title ||
+                                                    `Lesson ${idx + 1}`}
+                                            </strong>
                                             <br />
                                             <small className="text-muted">
-                                                Duration: {lesson.lesson_data?.duration_minutes || 0} minutes
+                                                Duration:{" "}
+                                                {lesson.lesson_data
+                                                    ?.duration_minutes ||
+                                                    0}{" "}
+                                                minutes
                                             </small>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-muted">No lessons available</p>
+                                <p className="text-muted">
+                                    No lessons available
+                                </p>
                             )}
                         </Card.Body>
                     </Card>

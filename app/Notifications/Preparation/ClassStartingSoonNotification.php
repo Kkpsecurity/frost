@@ -51,7 +51,7 @@ class ClassStartingSoonNotification extends Notification implements ShouldQueue
         $courseName = $this->courseAuth->Course?->title
             ?? $this->courseAuth->Course?->title_long
             ?? 'your course';
-        $classTime  = $this->courseDate->starts_at?->format('g:i A');
+        $classTime  = $this->courseDate->starts_at?->format('g:i A T');
 
         return (new MailMessage)
             ->subject('⏰ Class Starting in ~1 Hour: ' . $courseName)
@@ -74,7 +74,7 @@ class ClassStartingSoonNotification extends Notification implements ShouldQueue
         return [
             'type'           => 'preparation.class_starting_soon',
             'title'          => '⏰ Class Starting in ~1 Hour',
-            'message'        => $courseName . ' starts at ' . $this->courseDate->starts_at?->format('g:i A') . '. Log in now!',
+            'message'        => $courseName . ' starts at ' . $this->courseDate->starts_at?->format('g:i A T') . '. Log in now!',
             'course_auth_id' => $this->courseAuth->id,
             'course_id'      => $this->courseAuth->course_id,
             'course_date_id' => $this->courseDate->id,

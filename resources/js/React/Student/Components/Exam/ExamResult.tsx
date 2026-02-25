@@ -17,14 +17,32 @@ const ExamResult: React.FC<ExamResultProps> = ({
     const formatNextAttemptTime = (dateString: string) => {
         if (!dateString) return null;
         const date = new Date(dateString);
-        return date.toLocaleString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-        });
+        const label = (() => {
+            try {
+                const parts = new Intl.DateTimeFormat("en-US", {
+                    timeZone: "America/New_York",
+                    timeZoneName: "short",
+                }).formatToParts(date);
+                return (
+                    parts.find((p) => p.type === "timeZoneName")?.value ?? "ET"
+                );
+            } catch {
+                return "ET";
+            }
+        })();
+        return (
+            date.toLocaleString("en-US", {
+                timeZone: "America/New_York",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+            }) +
+            " " +
+            label
+        );
     };
 
     const getMissedQuestionsByLesson = () => {

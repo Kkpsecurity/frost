@@ -1099,6 +1099,21 @@ class StudentDashboardController extends Controller
                             ->pluck('lesson_id')
                             ->toArray();
 
+                        // Lazily ensure a StudentLesson record exists for the active lesson.
+                        // Students who arrived after the instructor fired startLesson won't have one;
+                        // creating it here unblocks the challenge timing window for them.
+                        if ($activeLessonId && $activeInstLesson && !$activeInstLesson->is_paused) {
+                            \App\Models\StudentLesson::firstOrCreate(
+                                [
+                                    'student_unit_id' => $challengeStudentUnit->id,
+                                    'lesson_id'       => $activeLessonId,
+                                ],
+                                [
+                                    'inst_lesson_id' => $activeInstLesson->id,
+                                ]
+                            );
+                        }
+
                         // --- CHECK 1: Ready() for the currently active lesson ---
                         // Skip if no active lesson or lesson is paused (break time).
                         if ($activeLessonId && !($activeInstLesson?->is_paused)) {
@@ -1700,10 +1715,27 @@ class StudentDashboardController extends Controller
 
             if ($studentUnit && $activeLessonId) {
                 try {
-                    // Find the active StudentLesson for current lesson
-                    $activeStudentLesson = StudentLesson::where('student_unit_id', $studentUnit->id)
-                        ->where('lesson_id', $activeLessonId)
-                        ->first();
+                    // Resolve StudentLesson for the active lesson.
+                    // Use the already-fetched $todaysStudentLessons collection first — it is scoped to
+                    // today's inst_lesson_id so we never accidentally pick up a stale record from a
+                    // prior class session.  If the record isn't there yet (student arrived after the
+                    // instructor fired startLesson, or batch-creation missed them), lazily create it
+                    // so the challenge timing window starts immediately.
+                    $activeStudentLesson = $todaysStudentLessons->get($activeLessonId);
+                    if (!$activeStudentLesson) {
+                        $activeInstLessonRef = $todaysInstLessons->get($activeLessonId);
+                        if ($activeInstLessonRef && !$activeInstLessonRef->is_paused) {
+                            $activeStudentLesson = \App\Models\StudentLesson::firstOrCreate(
+                                [
+                                    'student_unit_id' => $studentUnit->id,
+                                    'lesson_id'       => $activeLessonId,
+                                ],
+                                [
+                                    'inst_lesson_id' => $activeInstLessonRef->id,
+                                ]
+                            );
+                        }
+                    }
 
                     if ($activeStudentLesson) {
                         // Get completed lesson IDs for this student

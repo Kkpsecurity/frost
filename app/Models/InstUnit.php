@@ -71,6 +71,11 @@ class InstUnit extends Model
         return $this->hasMany(StudentUnit::class, 'inst_unit_id');
     }
 
+    public function User()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function CreatedBy()
     {
         return $this->belongsTo(User::class, 'user_id');
