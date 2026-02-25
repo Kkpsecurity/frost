@@ -19,10 +19,12 @@ use Illuminate\Support\Collection;
 
 use RCache;
 use App\Models\Challenge;
+use App\Models\StudentActivity;
 use App\Models\StudentLesson;
 // use App\Classes\Challenger\TraitLoader; // Trait not found - commented out
 use App\Classes\Frost\ChallengerResponse;
 use App\Traits\AssertConfigTrait; // Fixed namespace
+use Illuminate\Support\Facades\Log;
 
 
 class Challenger
@@ -121,43 +123,58 @@ class Challenger
         //
 
 
+        // Active (pending) challenge — neither completed_at nor failed_at is set
         $LatestChallenge = self::$_StudentLesson->LatestChallenge;
 
 
         //
-        // beginning of Lesson
+        // There is an active (pending) challenge — return it
         //
 
-        if (! $LatestChallenge) {
+        if ($LatestChallenge) {
+
+            if (self::_SendCurrent($LatestChallenge)) // bool
+            {
+                kkpdebug('Challenger_Msg', "{$debug_tag} sending Current (CH:{$LatestChallenge->id})");
+                return self::$_ChallengerResponse;
+            }
+
+            return null;
+        }
+
+
+        //
+        // No active challenge — look at the last RESOLVED one (completed or failed)
+        //
+
+        $LastChallenge = Challenge::where('student_lesson_id', self::$_StudentLesson->id)
+            ->latest()
+            ->first();
+
+
+        //
+        // No challenges at all — beginning of Lesson
+        //
+
+        if (! $LastChallenge) {
             return self::_SendFirst(); // ?ChallengerResponse
         }
 
 
         //
-        // send Final challenge ?
+        // Last challenge was failed (non-final) — send Final challenge
         //
 
-        if ($LatestChallenge->failed_at) {
-            return self::_SendFinal($LatestChallenge); // ?ChallengerResponse
+        if ($LastChallenge->failed_at && ! $LastChallenge->is_final) {
+            return self::_SendFinal($LastChallenge); // ?ChallengerResponse
         }
 
 
         //
-        // send Current Challenge ?
+        // Last challenge was completed (or final already sent) — send next random
         //
 
-        if (self::_SendCurrent($LatestChallenge)) // bool
-        {
-            kkpdebug('Challenger_Msg', "{$debug_tag} sending Current (CH:{$LatestChallenge->id})");
-            return self::$_ChallengerResponse;
-        }
-
-
-        //
-        // send random challenge ?
-        //
-
-        return self::_SendRandom($LatestChallenge); // ?ChallengerResponse
+        return self::_SendRandom($LastChallenge); // ?ChallengerResponse
 
     }
 
@@ -217,6 +234,7 @@ class Challenger
 
         kkpdebug('Challenger_Msg', $debug_tag);
         $Challenge->MarkCompleted();
+        self::_LogChallengeActivity($Challenge, StudentActivity::TYPE_CHALLENGE_COMPLETED, 'Challenge completed');
 
 
         //
@@ -272,6 +290,7 @@ class Challenger
 
         kkpdebug('Challenger_Msg', $debug_tag);
         $Challenge->MarkFailed();
+        self::_LogChallengeActivity($Challenge, StudentActivity::TYPE_CHALLENGE_FAILED, 'Challenge failed' . ($Challenge->is_final ? ' (final)' : ($Challenge->is_eol ? ' (EOL)' : '')));
 
 
         if ($Challenge->is_final) {
@@ -371,6 +390,45 @@ class Challenger
         return true;
     }
 
+
+
+    private static function _LogChallengeActivity(Challenge $Challenge, string $activityType, string $description): void
+    {
+        try {
+            $studentLesson = $Challenge->StudentLesson;
+            $studentUnit   = $studentLesson?->StudentUnit;
+            $courseAuth    = $studentUnit?->CourseAuth;
+            $userId        = (int) ($courseAuth?->user_id ?? 0);
+
+            if ($userId <= 0) {
+                return;
+            }
+
+            StudentActivity::create([
+                'user_id'         => $userId,
+                'course_auth_id'  => (int) ($studentUnit?->course_auth_id ?? 0),
+                'course_date_id'  => (int) ($studentUnit?->course_date_id ?? 0),
+                'student_unit_id' => (int) ($studentUnit?->id ?? 0),
+                'inst_unit_id'    => (int) ($studentUnit?->inst_unit_id ?? 0),
+                'category'        => StudentActivity::CATEGORY_INTERACTION,
+                'activity_type'   => $activityType,
+                'description'     => $description,
+                'data' => [
+                    'challenge_id'      => (int) $Challenge->id,
+                    'student_lesson_id' => (int) $Challenge->student_lesson_id,
+                    'lesson_id'         => (int) ($studentLesson?->lesson_id ?? 0),
+                    'is_final'          => (bool) $Challenge->is_final,
+                    'is_eol'            => (bool) $Challenge->is_eol,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Challenger (Frost): Failed to log activity', [
+                'error'         => $e->getMessage(),
+                'activity_type' => $activityType,
+                'challenge_id'  => $Challenge->id ?? null,
+            ]);
+        }
+    }
 
 
     ###################

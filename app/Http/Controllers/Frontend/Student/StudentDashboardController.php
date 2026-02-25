@@ -2042,6 +2042,15 @@ class StudentDashboardController extends Controller
             ]
         ]);
 
+        // Fire TermsAccepted event → triggers RulesRequired notification (next onboarding step).
+        $courseAuthId = (int) $studentUnit->course_auth_id;
+        if ($courseAuthId > 0) {
+            $courseAuth = \App\Models\CourseAuth::find($courseAuthId);
+            if ($courseAuth) {
+                event(new \App\Events\Preparation\TermsAccepted($courseAuth, $studentUnit));
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Terms accepted',

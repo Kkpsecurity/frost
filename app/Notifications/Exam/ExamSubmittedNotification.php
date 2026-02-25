@@ -40,7 +40,7 @@ class ExamSubmittedNotification extends Notification implements ShouldQueue
             ->line('Your exam has been submitted for grading.')
             ->line('**Course:** ' . $courseName)
             ->line('Results will be available shortly.')
-            ->action('View Dashboard', route('classroom'))
+            ->action('View Dashboard', route('classroom.dashboard'))
             ->line('Thank you for completing your exam!');
     }
 
@@ -55,7 +55,7 @@ class ExamSubmittedNotification extends Notification implements ShouldQueue
             'icon' => 'check-circle',
             'color' => 'info',
             'priority' => 'medium',
-            'url' => route('classroom'),
+            'url' => route('classroom.dashboard'),
         ];
     }
 }

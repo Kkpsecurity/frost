@@ -2,7 +2,7 @@
 
 namespace App\Notifications\Exam;
 
-use App\Models\ExamAuth;
+use App\Models\CourseAuth;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -13,15 +13,18 @@ class ExamReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable, UsesUserNotificationPreferences;
 
-    protected ExamAuth $examAuth;
+    protected CourseAuth $courseAuth;
     protected int $daysWaiting;
 
     /**
      * Create a new notification instance.
+     *
+     * Accepts a CourseAuth (not ExamAuth) because reminders are sent BEFORE
+     * the student has started the exam — no ExamAuth record exists yet.
      */
-    public function __construct(ExamAuth $examAuth, int $daysWaiting = 3)
+    public function __construct(CourseAuth $courseAuth, int $daysWaiting = 3)
     {
-        $this->examAuth = $examAuth;
+        $this->courseAuth = $courseAuth;
         $this->daysWaiting = $daysWaiting;
     }
 
@@ -43,34 +46,37 @@ class ExamReminderNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $courseName = $this->examAuth->CourseAuth->Course->title ?? 'your course';
+        $courseName  = $this->courseAuth->Course->title ?? 'your course';
+        $maxAttempts = $this->courseAuth->GetCourse()->GetExam()->policy_attempts ?? 2;
 
         return (new MailMessage)
             ->subject('⏰ Exam Reminder - ' . $courseName)
             ->greeting('Don\'t Forget Your Exam!')
             ->line('Your exam has been ready for ' . $this->daysWaiting . ' days but you haven\'t started it yet.')
             ->line('**Course:** ' . $courseName)
-            ->line('**Attempts Available:** ' . $this->examAuth->AttemptsRemaining())
-            ->action('Start Exam Now', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->line('**Attempts Available:** ' . $maxAttempts)
+            ->action('Start Exam Now', route('classroom.course', $this->courseAuth->id))
             ->line('Complete your certification by taking the exam today!');
     }
 
     /**
      * Get the array representation of the notification.
+     *
+     * NOTE: course_auth_id and days_waiting are used by SendExamReminders
+     * for deduplication — do not rename these keys.
      */
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => 'Exam Reminder',
-            'message' => 'Your exam has been ready for ' . $this->daysWaiting . ' days. Don\'t forget to complete it!',
-            'exam_auth_id' => $this->examAuth->id,
-            'course_auth_id' => $this->examAuth->course_auth_id,
-            'course_name' => $this->examAuth->CourseAuth->Course->title ?? null,
-            'days_waiting' => $this->daysWaiting,
-            'icon' => 'clock',
-            'color' => 'warning',
-            'priority' => 'medium',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'title'          => 'Exam Reminder',
+            'message'        => 'Your exam has been ready for ' . $this->daysWaiting . ' days. Don\'t forget to complete it!',
+            'course_auth_id' => $this->courseAuth->id,
+            'course_name'    => $this->courseAuth->Course->title ?? null,
+            'days_waiting'   => $this->daysWaiting,
+            'icon'           => 'clock',
+            'color'          => 'warning',
+            'priority'       => 'medium',
+            'url'            => route('classroom.course', $this->courseAuth->id),
         ];
     }
 }

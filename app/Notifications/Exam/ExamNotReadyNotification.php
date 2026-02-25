@@ -42,7 +42,7 @@ class ExamNotReadyNotification extends Notification implements ShouldQueue
             ->line('Your exam cannot be accessed at this time.')
             ->line('**Course:** ' . $courseName)
             ->line('**Reason:** ' . $this->reason)
-            ->action('View Course', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('View Course', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('Complete all requirements to unlock your exam.');
     }
 
@@ -58,7 +58,7 @@ class ExamNotReadyNotification extends Notification implements ShouldQueue
             'icon' => 'lock',
             'color' => 'secondary',
             'priority' => 'medium',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

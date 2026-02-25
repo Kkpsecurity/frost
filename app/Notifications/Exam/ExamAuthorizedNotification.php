@@ -49,7 +49,7 @@ class ExamAuthorizedNotification extends Notification implements ShouldQueue
             ->line('Your exam has been authorized and you can now begin.')
             ->line('**Course:** ' . $courseName)
             ->line('**Attempts Remaining:** ' . $this->examAuth->AttemptsRemaining())
-            ->action('Start Exam', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('Start Exam', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('The timer will begin as soon as you start the exam.');
     }
 
@@ -67,7 +67,7 @@ class ExamAuthorizedNotification extends Notification implements ShouldQueue
             'icon' => 'play-circle',
             'color' => 'primary',
             'priority' => 'high',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

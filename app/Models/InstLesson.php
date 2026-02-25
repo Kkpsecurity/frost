@@ -44,9 +44,9 @@ class InstLesson extends Model
         'inst_unit_id'      => 'integer',
         'lesson_id'         => 'integer',
 
-        'created_at'        => 'timestamp',
+        'created_at'        => 'datetime',
         'created_by'        => 'integer',
-        'completed_at'      => 'timestamp',
+        'completed_at'      => 'datetime',
         'completed_by'      => 'integer',
 
         'is_paused'         => 'boolean',

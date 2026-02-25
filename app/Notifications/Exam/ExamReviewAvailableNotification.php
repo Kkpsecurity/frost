@@ -39,7 +39,7 @@ class ExamReviewAvailableNotification extends Notification implements ShouldQueu
             ->greeting('Review Your Exam')
             ->line('Your exam answers and results are now available for review.')
             ->line('**Course:** ' . $courseName)
-            ->action('Review Exam', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('Review Exam', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('See which questions you answered correctly and which need more study.');
     }
 
@@ -54,7 +54,7 @@ class ExamReviewAvailableNotification extends Notification implements ShouldQueu
             'icon' => 'search',
             'color' => 'info',
             'priority' => 'low',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

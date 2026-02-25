@@ -35,7 +35,7 @@ class FinalAttemptWarningNotification extends Notification implements ShouldQueu
             ->line('This is your FINAL attempt for this exam.')
             ->line('**Course:** ' . $courseName)
             ->line('**Attempts Remaining:** 1')
-            ->action('View Exam', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('View Exam', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('Please review all course material thoroughly before attempting.')
             ->line('If you do not pass, you will need to contact support for additional attempts.');
     }
@@ -52,7 +52,7 @@ class FinalAttemptWarningNotification extends Notification implements ShouldQueu
             'icon' => 'exclamation-circle',
             'color' => 'danger',
             'priority' => 'critical',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

@@ -98,6 +98,17 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/exam-reminders.log'));
+
+        // Send pre-classroom preparation reminders every 15 minutes.
+        // Covers: class_approaching (3 days), class_tomorrow (1 day), class_starting_soon (~1 hr).
+        // Runs frequently so the 1-hour window fires reliably regardless of class start time.
+        // Deduplication in each notification prevents duplicate sends.
+        $schedule->command('preparation:send-reminders')
+            ->everyFifteenMinutes()
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/preparation-reminders.log'));
     }
 
     /**

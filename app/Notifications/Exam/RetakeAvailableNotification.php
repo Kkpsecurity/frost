@@ -41,7 +41,7 @@ class RetakeAvailableNotification extends Notification implements ShouldQueue
             ->line('The cooldown period has ended and you can now retake your exam.')
             ->line('**Course:** ' . $courseName)
             ->line('**Attempts Remaining:** ' . $attemptsRemaining)
-            ->action('Start Retake', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('Start Retake', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('Review the material before attempting again. Good luck!');
     }
 
@@ -57,7 +57,7 @@ class RetakeAvailableNotification extends Notification implements ShouldQueue
             'icon' => 'redo',
             'color' => 'info',
             'priority' => 'medium',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

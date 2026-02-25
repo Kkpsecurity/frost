@@ -38,7 +38,7 @@ class ExamExpiredNotification extends Notification implements ShouldQueue
             ->line('**Attempts Remaining:** ' . $attemptsRemaining);
 
         if ($attemptsRemaining > 0) {
-            $message->action('View Retake Options', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            $message->action('View Retake Options', route('classroom.course', $this->examAuth->course_auth_id))
                 ->line('You can retry the exam after the cooldown period.');
         } else {
             $message->line('You have no attempts remaining. Please contact support for assistance.');
@@ -59,7 +59,7 @@ class ExamExpiredNotification extends Notification implements ShouldQueue
             'icon' => 'exclamation-triangle',
             'color' => 'danger',
             'priority' => 'critical',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

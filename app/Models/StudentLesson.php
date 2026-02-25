@@ -18,6 +18,7 @@ use App\Models\Challenge;
 use App\Models\CourseUnitLesson;
 use App\Models\InstLesson;
 use App\Models\Lesson;
+use App\Models\StudentActivity;
 use App\Models\StudentUnit;
 use App\Models\User;
 use App\Traits\NoString;
@@ -145,6 +146,33 @@ class StudentLesson extends Model
                 'completed_at' => null,
             ]);
             $this->refresh();
+
+            // Log DNC activity — non-fatal
+            try {
+                $studentUnit = $this->StudentUnit;
+                $courseAuth  = $studentUnit?->CourseAuth;
+                $userId      = (int) ($courseAuth?->user_id ?? 0);
+
+                if ($userId > 0) {
+                    StudentActivity::create([
+                        'user_id'         => $userId,
+                        'course_auth_id'  => (int) ($studentUnit?->course_auth_id ?? 0),
+                        'course_date_id'  => (int) ($studentUnit?->course_date_id ?? 0),
+                        'student_unit_id' => (int) ($studentUnit?->id ?? 0),
+                        'inst_unit_id'    => (int) ($studentUnit?->inst_unit_id ?? 0),
+                        'category'        => StudentActivity::CATEGORY_INTERACTION,
+                        'activity_type'   => StudentActivity::TYPE_STUDENT_DNC,
+                        'description'     => 'Student marked Do Not Complete',
+                        'data' => [
+                            'student_lesson_id' => (int) $this->id,
+                            'lesson_id'         => (int) $this->lesson_id,
+                            'dnc_at'            => $this->dnc_at?->toISOString(),
+                        ],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal — never break DNC marking
+            }
         }
     }
 

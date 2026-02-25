@@ -49,7 +49,7 @@ class ExamReadyNotification extends Notification implements ShouldQueue
             ->line('You have completed all lessons and your exam is now available.')
             ->line('**Course:** ' . $courseName)
             ->line('**Attempts Allowed:** ' . $this->examAuth->MaxAttempts)
-            ->action('Start Exam', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('Start Exam', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('Good luck on your exam! Take your time and read each question carefully.');
     }
 
@@ -67,7 +67,7 @@ class ExamReadyNotification extends Notification implements ShouldQueue
             'icon' => 'clipboard-check',
             'color' => 'success',
             'priority' => 'high',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

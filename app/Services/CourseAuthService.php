@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 use App\Models\CourseAuth;
+use App\Events\Enrollment\CourseEnrolled;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\Course;
@@ -29,7 +30,7 @@ class CourseAuthService
             DB::beginTransaction();
 
             $orderItem = OrderItem::with(['order.user', 'course'])->findOrFail($orderItemId);
-            
+
             // Check if CourseAuth already exists for this order item
             $existingAuth = CourseAuth::where('source_type', 'order')
                 ->where('source_id', $orderItemId)
@@ -93,6 +94,8 @@ class CourseAuthService
 
             DB::commit();
 
+            event(new CourseEnrolled($courseAuth));
+
             Log::info('CourseAuth granted from order', [
                 'course_auth_id' => $courseAuth->id,
                 'user_id' => $courseAuth->user_id,
@@ -105,7 +108,6 @@ class CourseAuthService
                 'course_auth' => $courseAuth,
                 'message' => 'CourseAuth granted successfully',
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to grant CourseAuth from order', [
@@ -165,7 +167,6 @@ class CourseAuthService
                 'revoked_count' => $revokedCount,
                 'message' => "Revoked {$revokedCount} CourseAuth(s)",
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to revoke CourseAuth from order', [
@@ -238,7 +239,6 @@ class CourseAuthService
                 'course_auth' => $courseAuth,
                 'message' => 'Manual CourseAuth granted successfully',
             ];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to grant manual CourseAuth', [

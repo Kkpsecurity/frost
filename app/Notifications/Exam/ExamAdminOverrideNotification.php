@@ -42,7 +42,7 @@ class ExamAdminOverrideNotification extends Notification implements ShouldQueue
             ->line('An administrator has updated your exam status.')
             ->line('**Course:** ' . $courseName)
             ->line('**Action:** ' . ucfirst($this->action))
-            ->action('View Exam Status', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('View Exam Status', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('Contact support if you have questions about this change.');
     }
 
@@ -58,7 +58,7 @@ class ExamAdminOverrideNotification extends Notification implements ShouldQueue
             'icon' => 'user-shield',
             'color' => 'warning',
             'priority' => 'high',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

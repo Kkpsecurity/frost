@@ -47,7 +47,7 @@ class ExamFailedNotification extends Notification implements ShouldQueue
             ->line('**Attempts Remaining:** ' . $attemptsRemaining);
 
         if ($attemptsRemaining > 0) {
-            $message->action('Review & Retry', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            $message->action('Review & Retry', route('classroom.course', $this->examAuth->course_auth_id))
                 ->line('Review the course material and try again when ready.');
         } else {
             $message->line('No attempts remaining. Contact support for assistance.');
@@ -70,7 +70,7 @@ class ExamFailedNotification extends Notification implements ShouldQueue
             'icon' => 'times-circle',
             'color' => 'warning',
             'priority' => 'high',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

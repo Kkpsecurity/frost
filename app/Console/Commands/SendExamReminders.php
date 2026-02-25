@@ -2,14 +2,30 @@
 
 namespace App\Console\Commands;
 
-use App\Events\Exam\ExamAuthorized;
 use App\Models\CourseAuth;
 use App\Models\ExamAuth;
+use App\Models\User;
 use App\Notifications\Exam\ExamReminderNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Sends exam reminder notifications to students whose exam is ready but not yet started.
+ *
+ * Deduplication: uses the existing `notifications` table — checks whether a reminder
+ * with the matching course_auth_id + days_waiting was previously stored.  No extra
+ * columns or tables required.
+ *
+ * Run daily at 09:00 ET via Kernel.php:
+ *   $schedule->command('exams:send-reminders')->dailyAt('09:00')
+ *
+ * Manual usage:
+ *   php artisan exams:send-reminders
+ *   php artisan exams:send-reminders --dry-run
+ *   php artisan exams:send-reminders --days=3 --days=7
+ */
 class SendExamReminders extends Command
 {
     /**
@@ -18,7 +34,7 @@ class SendExamReminders extends Command
      * @var string
      */
     protected $signature = 'exams:send-reminders
-                            {--days=* : Specific reminder intervals to check (e.g., 3 7 14)}
+                            {--days=* : Specific reminder intervals to check (e.g., --days=3 --days=7 --days=14)}
                             {--dry-run : Display what would be done without sending notifications}';
 
     /**
@@ -26,30 +42,31 @@ class SendExamReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Send reminder notifications for exams that are ready but not started';
+    protected $description = 'Send reminder notifications for exams that are ready but not yet started';
 
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
-        $isDryRun = $this->option('dry-run');
+        $isDryRun     = $this->option('dry-run');
         $reminderDays = $this->option('days') ?: config('user_notifications.exam_reminder_days', [3, 7, 14]);
 
         $this->info('Checking for exam reminders...');
+
         if ($isDryRun) {
-            $this->warn('DRY RUN MODE - No notifications will be sent');
+            $this->warn('DRY RUN MODE — No notifications will be sent');
         }
 
         $totalReminders = 0;
 
         foreach ($reminderDays as $days) {
-            $days = (int) $days;
+            $days  = (int) $days;
             $count = $this->sendRemindersForInterval($days, $isDryRun);
             $totalReminders += $count;
 
             if ($count > 0) {
-                $this->info("✓ Sent {$count} reminder(s) for exams waiting {$days} days");
+                $this->info("✓ Sent {$count} reminder(s) for exams waiting {$days}+ days");
             }
         }
 
@@ -61,23 +78,36 @@ class SendExamReminders extends Command
 
         Log::info('SendExamReminders completed', [
             'total_reminders' => $totalReminders,
-            'dry_run' => $isDryRun,
+            'dry_run'         => $isDryRun,
         ]);
 
         return Command::SUCCESS;
     }
 
     /**
-     * Send reminders for a specific day interval
+     * Find and notify eligible students for a given reminder interval.
+     *
+     * Eligibility rules:
+     *  1. CourseAuth is active, not passed, not disabled
+     *  2. All lessons are completed — exam is ready to take (ExamReady() === true)
+     *  3. No exam is currently in-progress (active timer not expired)
+     *  4. At least $days calendar days have passed since the exam became ready
+     *  5. A reminder for this exact $days interval has NOT been sent before
+     *     (checked via the notifications table)
      */
     protected function sendRemindersForInterval(int $days, bool $isDryRun): int
     {
-        $targetDate = Carbon::now()->subDays($days)->startOfDay();
         $count = 0;
 
-        // Find course_auths where all lessons are completed
-        // and exam is ready but not started
-        $courseAuths = CourseAuth::with(['User', 'Course.Exam', 'ExamAuths'])
+        // Load only the columns/relations we need; StudentUnits is needed by
+        // AllLessonsCompleted() / CompletedLessons() via LessonsTrait.
+        $courseAuths = CourseAuth::with([
+            'User',
+            'Course',
+            'ExamAuths',
+            'StudentUnits.StudentLessons',
+            'SelfStudyLessons',
+        ])
             ->whereNotNull('start_date')
             ->whereNull('completed_at')
             ->whereNull('disabled_at')
@@ -85,94 +115,70 @@ class SendExamReminders extends Command
             ->get();
 
         foreach ($courseAuths as $courseAuth) {
-            // Skip if course not active
-            if (!$courseAuth->IsActive()) {
+
+            // ExamReady() covers: IsActive, AllLessonsCompleted, not in cooldown, not passed.
+            if (! $courseAuth->ExamReady()) {
                 continue;
             }
 
-            // Check if all lessons completed
-            if (!$courseAuth->AllLessonsCompleted()) {
+            // Skip if an exam is currently in-progress (timer running, not yet submitted).
+            $hasActiveExam = $courseAuth->ExamAuths->contains(function (ExamAuth $ea) {
+                return $ea->expires_at && ! $ea->completed_at && ! $ea->IsExpired();
+            });
+
+            if ($hasActiveExam) {
                 continue;
             }
 
-            // Check exam readiness
-            $examReadinessReason = $courseAuth->ExamReadinessFailureReason();
-            if ($examReadinessReason !== null) {
-                continue; // Not ready
-            }
+            // Determine when exam became ready (latest lesson/self-study completion date).
+            $lastCompletedAt = collect($courseAuth->CompletedLessons())->max(); // Carbon|null
 
-            // Get latest exam auth
-            $latestExam = $courseAuth->LatestExamAuth();
-
-            // If exam already started or completed, skip
-            if ($latestExam && ($latestExam->expires_at || $latestExam->completed_at)) {
+            if (! $lastCompletedAt) {
                 continue;
             }
 
-            // Calculate when exam became ready (when all lessons completed)
-            // Use the most recent StudentLesson completion as proxy
-            $lastLessonCompleted = \App\Models\StudentLesson::whereIn(
-                'student_unit_id',
-                $courseAuth->StudentUnits->pluck('id')
-            )
-                ->whereNotNull('completed_at')
-                ->orderBy('completed_at', 'desc')
-                ->first();
+            // Only send once the exam has been sitting ready for AT LEAST $days calendar days.
+            // Using diffInDays (truncated) so a cron outage doesn't permanently miss students.
+            $daysSinceReady = (int) Carbon::now()->diffInDays(Carbon::parse($lastCompletedAt));
 
-            if (!$lastLessonCompleted || !$lastLessonCompleted->completed_at) {
+            if ($daysSinceReady < $days) {
                 continue;
             }
 
-            $examReadyDate = Carbon::parse($lastLessonCompleted->completed_at)->startOfDay();
-
-            // Check if this is exactly N days ago
-            if ($examReadyDate->ne($targetDate)) {
-                continue;
-            }
-
-            // Check if reminder already sent for this interval
-            // Use exam_auths meta or check notifications table
-            if ($latestExam) {
-                $reminderKey = "reminder_sent_{$days}d";
-                $meta = $latestExam->meta ?? [];
-
-                if (isset($meta[$reminderKey]) && $meta[$reminderKey] === true) {
-                    continue; // Already sent
-                }
-            }
-
-            // Send reminder
             $user = $courseAuth->User;
-            if (!$user) {
+
+            if (! $user) {
+                continue;
+            }
+
+            // Deduplicate via the notifications table — check for a previously sent reminder
+            // with the same course_auth_id + days_waiting payload.
+            // Uses PostgreSQL ->> JSON operator (safe; this project is exclusively PostgreSQL).
+            $alreadySent = DatabaseNotification::where('notifiable_type', User::class)
+                ->where('notifiable_id', $user->id)
+                ->where('type', ExamReminderNotification::class)
+                ->whereRaw("data->>'course_auth_id' = ?", [(string) $courseAuth->id])
+                ->whereRaw("data->>'days_waiting' = ?", [(string) $days])
+                ->exists();
+
+            if ($alreadySent) {
                 continue;
             }
 
             if ($isDryRun) {
-                $this->line("Would send {$days}-day reminder to {$user->email} for course: {$courseAuth->Course->title}");
+                $this->line(
+                    "Would send {$days}-day reminder to {$user->email} "
+                        . "(course_auth_id={$courseAuth->id}, ready {$daysSinceReady} days ago) "
+                        . "for: " . ($courseAuth->Course->title ?? '?')
+                );
             } else {
-                // Create or get exam auth for reminder tracking
-                if (!$latestExam) {
-                    $latestExam = ExamAuth::create([
-                        'course_auth_id' => $courseAuth->id,
-                    ]);
-                    $latestExam->refresh();
+                $user->notify(new ExamReminderNotification($courseAuth, $days));
 
-                    // Dispatch ExamAuthorized event for initial notification
-                    event(new ExamAuthorized($latestExam));
-                }
-
-                // Send reminder
-                $user->notify(new ExamReminderNotification($latestExam, $days));
-
-                // Mark as sent
-                $meta = $latestExam->meta ?? [];
-                $meta["reminder_sent_{$days}d"] = true;
-                $latestExam->forceFill(['meta' => $meta])->save();
-
-                Log::info("Sent {$days}-day exam reminder", [
-                    'user_id' => $user->id,
+                Log::info('Sent exam reminder', [
+                    'user_id'        => $user->id,
                     'course_auth_id' => $courseAuth->id,
-                    'exam_auth_id' => $latestExam->id,
+                    'days_interval'  => $days,
+                    'days_since_ready' => $daysSinceReady,
                 ]);
             }
 

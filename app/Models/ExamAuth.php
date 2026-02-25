@@ -296,4 +296,21 @@ class ExamAuth extends Model
 
         return ($this->GetCourse()->needs_range && ! $this->CourseAuth->range_date_id);
     }
+
+
+    /**
+     * How many exam attempts the student still has for this course.
+     * Uses the exam's policy_attempts max minus completed (non-hidden) attempts taken so far.
+     */
+    public function AttemptsRemaining(): int
+    {
+        $maxAttempts = $this->GetExam()->policy_attempts ?? 2;
+
+        $usedAttempts = self::where('course_auth_id', $this->course_auth_id)
+            ->whereNotNull('completed_at')
+            ->whereNull('hidden_at')
+            ->count();
+
+        return max(0, $maxAttempts - $usedAttempts);
+    }
 }

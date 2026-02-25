@@ -60,6 +60,7 @@ export interface StudentContextType {
     // Student-owned exam readiness/attempt for all enrollments
     studentExamsByCourseAuth?: Record<number, StudentExam> | null;
     lessonsByCourseAuth?: Record<number, CourseAuthLessonPayload> | null;
+    challenges?: any[];
     notifications: any[];
     assignments: any[];
     selectedCourseAuthId: number | null;

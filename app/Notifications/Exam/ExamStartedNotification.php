@@ -50,7 +50,7 @@ class ExamStartedNotification extends Notification implements ShouldQueue
             ->line('Your exam timer has begun.')
             ->line('**Course:** ' . $courseName)
             ->line('**Time Limit:** ' . $timeLimit . ' minutes')
-            ->action('Continue Exam', route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]))
+            ->action('Continue Exam', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('Answer all questions before time expires. Good luck!');
     }
 
@@ -69,7 +69,7 @@ class ExamStartedNotification extends Notification implements ShouldQueue
             'icon' => 'stopwatch',
             'color' => 'info',
             'priority' => 'medium',
-            'url' => route('classroom', ['course_auth_id' => $this->examAuth->course_auth_id]),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

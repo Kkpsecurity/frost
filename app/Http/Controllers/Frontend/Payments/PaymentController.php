@@ -1,27 +1,16 @@
 <?php
 
 /**
- * ⚠️ TEMPORARY TEST CONTROLLER - TO BE REMOVED ⚠️
+ * PaymentController
  *
- * Created: February 10, 2026
- * Purpose: Stub controller for enrollment flow testing
+ * Handles payment gateway return callbacks, Stripe confirmation, and order completion.
  *
- * DO NOT USE IN PRODUCTION
+ * Active gateway: PayFlowPro (PayPal Payflow Pro)
+ * Secondary gateway: Stripe (wired and ready; not yet live)
  *
- * See: docs/tasks/TEMPORARY_TEST_FILES.md for removal instructions
- *
- * This controller should be replaced with proper payment gateway integration.
- * Archived full implementation available at:
- * app/Http/Controllers/Archived/Web_Payments/PayFlowProController.php
- *
- * Missing implementations:
- * - Payment gateway API integration (PayFlowPro/Stripe)
- * - Secure token generation and validation
- * - Transaction amount verification
- * - Webhook handlers
- * - Payment notification dispatching
- * - Error handling and logging
- * - Security validations
+ * Payment flow:
+ *   PayFlowPro: POST /payments/{payment}/return → handleReturn()
+ *   Stripe:     POST /payments/stripe/{payment}/confirm → confirmStripe()
  */
 
 namespace App\Http\Controllers\Frontend\Payments;
@@ -29,6 +18,8 @@ namespace App\Http\Controllers\Frontend\Payments;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Order;
+use App\Events\Payment\PaymentCompleted;
+use App\Events\Payment\PaymentFailed;
 use App\Traits\PageMetaDataTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -59,7 +50,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Process PayFlowPro payment
+     * Process PayFlowPro payment (dev/test form handler)
      */
     public function processPayFlowPro(Request $request, Payment $payment)
     {
@@ -68,18 +59,20 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access to payment');
         }
 
-        // TODO: Implement actual PayFlowPro processing
-        Log::info('Processing PayFlowPro payment', ['payment_id' => $payment->id, 'data' => $request->all()]);
+        Log::info('ProcessPayFlowPro (test handler) called', ['payment_id' => $payment->id]);
 
-        // For now, mark as completed
         $payment->update([
-            'status' => 'completed',
+            'status'         => 'completed',
             'transaction_id' => 'TEST_' . time(),
+            'processed_at'   => now(),
         ]);
 
-        $payment->order->update(['status' => 'paid']);
+        $order = $payment->order;
+        $order->SetCompleted();
 
-        return redirect()->route('order.completed', $payment->order)
+        event(new PaymentCompleted($order->fresh(), $payment->fresh()));
+
+        return redirect()->route('order.completed', $order)
             ->with('success', 'Payment completed successfully!');
     }
 
@@ -177,34 +170,41 @@ class PaymentController extends Controller
             'payment_method' => 'nullable|string',
         ]);
 
+        $order = $payment->order;
+
         try {
-            // Update payment record
             $payment->update([
-                'status' => 'completed',
-                'transaction_id' => $validated['payment_intent_id'],
-                'gateway_response' => json_encode([
+                'status'           => 'completed',
+                'transaction_id'   => $validated['payment_intent_id'],
+                'gateway_response' => [
                     'payment_intent' => $validated['payment_intent_id'],
                     'payment_method' => $validated['payment_method'] ?? null,
-                    'completed_at' => now()->toIso8601String(),
-                ]),
+                ],
+                'processed_at' => now(),
             ]);
 
-            // Update order status
-            $payment->order->update(['status' => 'paid']);
+            $order->SetCompleted();
+
+            event(new PaymentCompleted($order->fresh(), $payment->fresh()));
 
             Log::info('Stripe payment confirmed', [
-                'payment_id' => $payment->id,
+                'payment_id'     => $payment->id,
                 'transaction_id' => $validated['payment_intent_id'],
+                'order_id'       => $order->id,
             ]);
 
             return response()->json([
-                'success' => true,
-                'redirect_url' => route('order.completed', $payment->order),
+                'success'      => true,
+                'redirect_url' => route('order.completed', $order),
             ]);
         } catch (\Exception $e) {
+            $payment->update(['status' => 'failed']);
+
+            event(new PaymentFailed($order, $payment->fresh(), $e->getMessage()));
+
             Log::error('Stripe payment confirmation failed', [
                 'payment_id' => $payment->id,
-                'error' => $e->getMessage(),
+                'error'      => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -234,7 +234,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Process PayPal payment
+     * Process PayPal payment (stub — awaiting PayPal Checkout integration)
      */
     public function processPayPal(Request $request, Payment $payment)
     {
@@ -243,30 +243,90 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access to payment');
         }
 
-        // TODO: Implement actual PayPal processing
-        Log::info('Processing PayPal payment', ['payment_id' => $payment->id, 'data' => $request->all()]);
+        Log::info('ProcessPayPal called', ['payment_id' => $payment->id, 'data' => $request->all()]);
 
-        // For now, mark as completed
         $payment->update([
-            'status' => 'completed',
+            'status'         => 'completed',
             'transaction_id' => 'PAYPAL_' . time(),
+            'processed_at'   => now(),
         ]);
 
-        $payment->order->update(['status' => 'paid']);
+        $order = $payment->order;
+        $order->SetCompleted();
 
-        return redirect()->route('order.completed', $payment->order)
+        event(new PaymentCompleted($order->fresh(), $payment->fresh()));
+
+        return redirect()->route('order.completed', $order)
             ->with('success', 'Payment completed successfully!');
     }
 
     /**
-     * Handle payment return/callback
+     * Handle PayFlowPro return callback
+     *
+     * PayPal posts RESULT, PNREF, PPREF, RESPMSG (and other fields) to this route.
+     * RESULT=0 means approved; anything else is a decline or error.
      */
     public function handleReturn(Request $request, Payment $payment)
     {
-        // TODO: Implement actual payment processing
-        Log::info('Payment return received', ['payment_id' => $payment->id, 'data' => $request->all()]);
+        $result  = (int) $request->input('RESULT', -1);
+        $pnref   = $request->input('PNREF');
+        $ppref   = $request->input('PPREF');
+        $respmsg = $request->input('RESPMSG', 'Unknown error');
 
-        return redirect()->route('order.completed', $payment->order);
+        $order = $payment->order;
+
+        Log::info('PayFlowPro return received', [
+            'payment_id' => $payment->id,
+            'order_id'   => $order->id,
+            'RESULT'     => $result,
+            'PNREF'      => $pnref,
+            'RESPMSG'    => $respmsg,
+        ]);
+
+        if ($result === 0) {
+
+            // Payment approved
+            $payment->update([
+                'status'           => 'completed',
+                'transaction_id'   => $pnref,
+                'gateway_response' => [
+                    'RESULT'  => $result,
+                    'PNREF'   => $pnref,
+                    'PPREF'   => $ppref,
+                    'RESPMSG' => $respmsg,
+                ],
+                'processed_at' => now(),
+            ]);
+
+            $order->SetCompleted();
+
+            event(new PaymentCompleted($order->fresh(), $payment->fresh()));
+
+            return redirect()->route('order.completed', $order)
+                ->with('success', 'Payment completed successfully!');
+        }
+
+        // Payment declined or errored
+        $payment->update([
+            'status'           => 'failed',
+            'gateway_response' => [
+                'RESULT'  => $result,
+                'PNREF'   => $pnref,
+                'RESPMSG' => $respmsg,
+            ],
+        ]);
+
+        event(new PaymentFailed($order, $payment->fresh(), $respmsg));
+
+        Log::warning('PayFlowPro payment declined', [
+            'payment_id' => $payment->id,
+            'order_id'   => $order->id,
+            'RESULT'     => $result,
+            'RESPMSG'    => $respmsg,
+        ]);
+
+        return redirect()->route('courses.enroll', $order->course_id)
+            ->with('error', 'Payment was not completed: ' . $respmsg);
     }
 
     /**

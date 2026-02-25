@@ -33,7 +33,7 @@ class ExamPassedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $courseName = $this->examAuth->CourseAuth->Course->title ?? 'your course';
-        $score = number_format($this->examAuth->score, 1);
+        $score = $this->examAuth->ScorePercent() ?? 0;
 
         return (new MailMessage)
             ->subject('🎉 Congratulations - You Passed!')
@@ -42,7 +42,7 @@ class ExamPassedNotification extends Notification implements ShouldQueue
             ->line('**Course:** ' . $courseName)
             ->line('**Score:** ' . $score . '%')
             ->line('**Required:** ' . $this->examAuth->PassScore . '%')
-            ->action('View Results', route('exam.review', $this->examAuth->id))
+            ->action('View Results', route('classroom.course', $this->examAuth->course_auth_id))
             ->line('You can now review your exam answers and continue with your certification.');
     }
 
@@ -50,7 +50,7 @@ class ExamPassedNotification extends Notification implements ShouldQueue
     {
         return [
             'title' => 'Exam Passed!',
-            'message' => 'Congratulations! You passed with a score of ' . number_format($this->examAuth->score, 1) . '%',
+            'message' => 'Congratulations! You passed with a score of ' . ($this->examAuth->ScorePercent() ?? 0) . '%',
             'exam_auth_id' => $this->examAuth->id,
             'course_auth_id' => $this->examAuth->course_auth_id,
             'score' => $this->examAuth->score,
@@ -58,7 +58,7 @@ class ExamPassedNotification extends Notification implements ShouldQueue
             'icon' => 'trophy',
             'color' => 'success',
             'priority' => 'high',
-            'url' => route('exam.review', $this->examAuth->id),
+            'url' => route('classroom.course', $this->examAuth->course_auth_id),
         ];
     }
 }

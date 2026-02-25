@@ -43,6 +43,31 @@ class EventServiceProvider extends ServiceProvider
             \App\Listeners\Payment\SendRefundProcessedNotification::class,
         ],
 
+        // Enrollment Events
+        \App\Events\Enrollment\CourseEnrolled::class => [
+            \App\Listeners\Enrollment\SendCourseEnrolledNotification::class,
+            \App\Listeners\Preparation\SendTermsRequiredOnEnrollment::class,
+        ],
+
+        // Preparation Events (Phase 9a — event-driven)
+        \App\Events\Preparation\TermsAccepted::class => [
+            \App\Listeners\Preparation\SendRulesRequiredNotification::class,
+        ],
+        \App\Events\Preparation\RangeDateRequired::class => [
+            \App\Listeners\Preparation\SendRangeDateRequiredNotification::class,
+        ],
+
+        // Identity Verification Events
+        \App\Events\Verification\ValidationApproved::class => [
+            \App\Listeners\Verification\SendValidationApprovedNotifications::class,
+        ],
+        \App\Events\Verification\ValidationRejected::class => [
+            \App\Listeners\Verification\SendValidationRejectedNotification::class,
+        ],
+        \App\Events\Verification\PhotoRequired::class => [
+            \App\Listeners\Verification\SendPhotoRequiredNotification::class,
+        ],
+
         // Exam Events
         \App\Events\Exam\ExamAuthorized::class => [
             \App\Listeners\Exam\SendExamAuthorizedNotification::class,

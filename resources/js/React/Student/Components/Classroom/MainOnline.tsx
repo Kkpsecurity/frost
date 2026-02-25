@@ -567,7 +567,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
 
                                 {/* Challenge History */}
                                 <ChallengeHistory
-                                    challenges={student?.challenges}
+                                    challenges={studentContext?.challenges}
                                 />
                             </div>
                         </div>

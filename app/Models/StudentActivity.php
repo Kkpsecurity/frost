@@ -72,6 +72,12 @@ class StudentActivity extends Model
     public const TYPE_LESSON_PAUSED = 'lesson_paused';
     public const TYPE_LESSON_UNPAUSED = 'lesson_unpaused';
 
+    // Challenge participation
+    public const TYPE_CHALLENGE_PRESENTED = 'challenge_presented';
+    public const TYPE_CHALLENGE_COMPLETED = 'challenge_completed';
+    public const TYPE_CHALLENGE_FAILED    = 'challenge_failed';
+    public const TYPE_STUDENT_DNC         = 'student_dnc';
+
     // Exam progress
     public const TYPE_EXAM_READY = 'exam_ready';
     public const TYPE_EXAM_AUTHORIZED = 'exam_authorized';

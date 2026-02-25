@@ -9,6 +9,9 @@ use App\Models\CourseDate;
 use App\Models\StudentUnit;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use App\Events\Verification\ValidationApproved;
+use App\Events\Verification\ValidationRejected;
+use App\Events\Verification\PhotoRequired;
 
 /**
  * Identity Verification Service
@@ -66,24 +69,24 @@ class IdentityVerificationService
             } else if ($validation->student_unit_id) {
                 // This is headshot - check for ID card approval
                 $studentUnit = StudentUnit::find($validation->student_unit_id);
-                
+
                 Log::info('Headshot approval - checking for ID card', [
                     'student_unit_id' => $validation->student_unit_id,
                     'student_unit_found' => $studentUnit ? 'yes' : 'no',
                     'course_auth_id' => $studentUnit ? $studentUnit->course_auth_id : null,
                 ]);
-                
+
                 if ($studentUnit) {
                     $idCardValidation = Validation::where('course_auth_id', $studentUnit->course_auth_id)->first();
-                    
+
                     Log::info('ID card validation lookup', [
                         'id_card_validation_id' => $idCardValidation ? $idCardValidation->id : null,
                         'id_card_status' => $idCardValidation ? $idCardValidation->status : null,
                     ]);
-                    
+
                     if ($idCardValidation && $idCardValidation->status == 1) {
                         $fullyVerified = true;
-                        
+
                         Log::info('Both validations approved - setting fully verified');
                     } else {
                         Log::info('ID card not approved yet', [
@@ -110,6 +113,8 @@ class IdentityVerificationService
                 'notes' => $notes,
             ]);
 
+            event(new ValidationApproved($validation, $validationType, $fullyVerified, $studentUnit));
+
             return [
                 'success' => true,
                 'validation_type' => $validationType,
@@ -118,7 +123,6 @@ class IdentityVerificationService
                     ? 'Validation approved - Student identity fully verified'
                     : ucfirst($validationType) . ' approved - Awaiting other validation',
             ];
-
         } catch (Exception $e) {
             Log::error('Failed to approve single validation', [
                 'approver_id' => $approver->id,
@@ -180,12 +184,13 @@ class IdentityVerificationService
                 'notes' => $notes,
             ]);
 
+            event(new ValidationRejected($validation, $validationType, $fullReason));
+
             return [
                 'success' => true,
                 'validation_type' => $validationType,
                 'message' => ucfirst($validationType) . ' rejected',
             ];
-
         } catch (Exception $e) {
             Log::error('Failed to reject single validation', [
                 'rejector_id' => $rejector->id,
@@ -277,6 +282,18 @@ class IdentityVerificationService
                 'notes' => $notes,
             ]);
 
+            // Fire notification using the ID card (or headshot) as the representative validation
+            $repValidation = $idCardValidation ?? $headshotValidation;
+            if ($repValidation && $approvedCount > 0) {
+                $repType = $idCardValidation ? 'id_card' : 'headshot';
+                event(new ValidationApproved(
+                    $repValidation,
+                    $repType,
+                    $approvedCount === 2,
+                    $approvedCount === 2 ? $studentUnit : null,
+                ));
+            }
+
             return [
                 'success' => $approvedCount > 0,
                 'approved_count' => $approvedCount,
@@ -287,7 +304,6 @@ class IdentityVerificationService
                     ? 'Student identity fully verified'
                     : 'Partial verification completed',
             ];
-
         } catch (Exception $e) {
             Log::error('Failed to approve identity', [
                 'approver_id' => $approver->id,
@@ -369,13 +385,19 @@ class IdentityVerificationService
                 'notes' => $notes,
             ]);
 
+            // Fire rejection notification using the primary (ID card) validation as representative
+            $repValidation = $idCardValidation ?? $headshotValidation;
+            if ($repValidation) {
+                $repType = $idCardValidation ? 'id_card' : 'headshot';
+                event(new ValidationRejected($repValidation, $repType, $fullReason));
+            }
+
             return [
                 'success' => true,
                 'rejected_count' => $rejectedCount,
                 'total_validations' => 2,
                 'message' => 'Identity verification rejected',
             ];
-
         } catch (Exception $e) {
             Log::error('Failed to reject identity', [
                 'rejector_id' => $rejector->id,
@@ -443,7 +465,8 @@ class IdentityVerificationService
                 }
             }
 
-            // TODO: Send notification to student
+            // Notify the student that a new photo is required
+            event(new PhotoRequired($courseAuth, $photoType, $notes));
 
             Log::info('New verification photo requested', [
                 'requester_id' => $requester->id,
@@ -463,7 +486,6 @@ class IdentityVerificationService
                     ? 'New photo request sent to student'
                     : 'No validations found to request',
             ];
-
         } catch (Exception $e) {
             Log::error('Failed to request new photo', [
                 'requester_id' => $requester->id,

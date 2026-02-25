@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Traits\Order;
 
 use App\Models\CourseAuth;
+use App\Events\Enrollment\CourseEnrolled;
 
 
 trait SetCompleted
@@ -29,6 +30,8 @@ trait SetCompleted
             ]);
 
             $this->course_auth_id = $CourseAuth->id;
+
+            event(new CourseEnrolled($CourseAuth));
         }
 
         $this->completed_at = $this->freshTimestamp();
