@@ -87,6 +87,29 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\Exam\ExamOverridden::class => [
             \App\Listeners\Exam\SendExamOverriddenNotification::class,
         ],
+
+        // Classroom Experience Events
+        \App\Events\Classroom\ClassSessionStarted::class => [
+            \App\Listeners\Classroom\SendClassSessionStartedNotification::class,
+        ],
+        \App\Events\Classroom\LessonStarted::class => [
+            \App\Listeners\Classroom\SendLessonStartedNotification::class,
+        ],
+        \App\Events\Classroom\LessonCompleted::class => [
+            \App\Listeners\Classroom\SendLessonCompletedNotification::class,
+        ],
+        \App\Events\Classroom\LessonPaused::class => [
+            \App\Listeners\Classroom\SendLessonPausedNotification::class,
+        ],
+        \App\Events\Classroom\LessonResumed::class => [
+            \App\Listeners\Classroom\SendLessonResumedNotification::class,
+        ],
+        \App\Events\Classroom\InstructorMessageSent::class => [
+            \App\Listeners\Classroom\SendInstructorMessageNotification::class,
+        ],
+        \App\Events\Classroom\StudentEjectedFromClassroom::class => [
+            \App\Listeners\Classroom\SendStudentKickedNotification::class,
+        ],
     ];
 
     /**

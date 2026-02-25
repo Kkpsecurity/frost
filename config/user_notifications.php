@@ -213,6 +213,27 @@ return [
                 'channels' => ['database', 'browser'],
                 'user_controllable' => false,
             ],
+            'lesson_started' => [
+                'key' => 'classroom.lesson_started',
+                'name' => 'Lesson Started',
+                'priority' => 'high',
+                'channels' => ['database', 'browser'],
+                'user_controllable' => false,
+            ],
+            'lesson_paused' => [
+                'key' => 'classroom.lesson_paused',
+                'name' => 'Lesson On Break',
+                'priority' => 'medium',
+                'channels' => ['database', 'browser'],
+                'user_controllable' => false,
+            ],
+            'lesson_resumed' => [
+                'key' => 'classroom.lesson_resumed',
+                'name' => 'Lesson Resumed',
+                'priority' => 'medium',
+                'channels' => ['database', 'browser'],
+                'user_controllable' => false,
+            ],
             'lesson_completed' => [
                 'key' => 'classroom.lesson_completed',
                 'name' => 'Lesson Completed',

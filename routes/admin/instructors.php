@@ -71,6 +71,10 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         Route::post('/send-message', [InstructorDashboardController::class, 'sendMessage'])
             ->name('chat.send');
 
+        // Eject (kick) a student from the classroom session
+        Route::post('/eject-student', [InstructorDashboardController::class, 'ejectStudent'])
+            ->name('eject-student');
+
         // AI Assistant toggle
         Route::post('/ai-monitoring-toggle', [InstructorDashboardController::class, 'toggleAiAssistant'])
             ->name('ai.toggle');

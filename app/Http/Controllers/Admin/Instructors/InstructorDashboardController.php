@@ -442,6 +442,9 @@ class InstructorDashboardController extends Controller
         $chat->body = $message;
         $chat->save();
 
+        // Fire instructor message event → individual browser/DB notifications to each student
+        event(new \App\Events\Classroom\InstructorMessageSent($chat, $courseDateId));
+
         return response()->json([
             'success' => true,
             'chat_id' => (int) $chat->id,
@@ -1080,6 +1083,9 @@ class InstructorDashboardController extends Controller
                 'note' => 'Zoom remains disabled - instructor must manually enable when ready'
             ]);
 
+            // Fire classroom session started event → notifies all enrolled students
+            event(new \App\Events\Classroom\ClassSessionStarted($instUnit, (int) $courseDateId));
+
             // Return success with classroom session data
             return response()->json([
                 'success' => true,
@@ -1284,6 +1290,87 @@ class InstructorDashboardController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error ending class: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Eject (kick) a student from the active classroom session.
+     * POST /admin/instructors/classroom/eject-student
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function ejectStudent(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $admin = auth('admin')->user();
+
+        if (!$admin) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+        }
+
+        $request->validate([
+            'student_unit_id' => 'required|integer|exists:student_unit,id',
+            'reason'          => 'required|string|max:500',
+        ]);
+
+        try {
+            $studentUnit = \App\Models\StudentUnit::with('CourseAuth.User')->findOrFail($request->student_unit_id);
+
+            // Verify instructor has access to this course date
+            $courseDate = \App\Models\CourseDate::find($studentUnit->course_date_id);
+            if (!$courseDate || !$this->hasInstructorAccess($courseDate)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied',
+                ], 403);
+            }
+
+            // Prevent re-ejecting an already ejected student
+            if ($studentUnit->ejected_at) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Student has already been removed from this session',
+                ], 409);
+            }
+
+            $reason = trim($request->reason);
+
+            $studentUnit->update([
+                'ejected_at'  => now(),
+                'ejected_for' => $reason,
+            ]);
+
+            Log::info('Instructor ejected student from classroom', [
+                'instructor_id'   => $admin->id,
+                'student_unit_id' => $studentUnit->id,
+                'course_date_id'  => $studentUnit->course_date_id,
+                'reason'          => $reason,
+            ]);
+
+            // Fire event → sends kicked notification to the student (database + browser + email)
+            event(new \App\Events\Classroom\StudentEjectedFromClassroom($studentUnit, $reason));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Student has been removed from the classroom',
+                'data'    => [
+                    'student_unit_id' => $studentUnit->id,
+                    'ejected_at'      => $studentUnit->ejected_at?->toIso8601String(),
+                    'reason'          => $reason,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to eject student from classroom', [
+                'instructor_id' => $admin->id,
+                'request_data'  => $request->all(),
+                'error'         => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to remove student',
+                'error'   => app()->environment('local') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -2208,6 +2295,9 @@ class InstructorDashboardController extends Controller
                 'student_lessons_created' => $studentUnits->count(),
             ]);
 
+            // Fire lesson started event → notifies all students in the session
+            event(new \App\Events\Classroom\LessonStarted($instLesson, $instUnit));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Lesson started successfully',
@@ -2328,6 +2418,9 @@ class InstructorDashboardController extends Controller
                 'inst_lesson_id' => $instLesson->id,
                 'duration_minutes' => $durationMinutes,
             ]);
+
+            // Fire lesson completed event → notifies all students in the session
+            event(new \App\Events\Classroom\LessonCompleted($instLesson, $instUnit));
 
             return response()->json([
                 'success' => true,
@@ -2489,6 +2582,10 @@ class InstructorDashboardController extends Controller
                 'breaks_allowed' => $breaksAllowed,
             ]);
 
+            // Fire lesson paused event → notifies all students in the session
+            $instLesson->refresh();
+            event(new \App\Events\Classroom\LessonPaused($instLesson, $instUnit));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Lesson paused for break',
@@ -2623,6 +2720,10 @@ class InstructorDashboardController extends Controller
                 'lesson_id' => $request->lesson_id,
                 'inst_lesson_id' => $instLesson->id,
             ]);
+
+            // Fire lesson resumed event → notifies all students in the session
+            $instLesson->refresh();
+            event(new \App\Events\Classroom\LessonResumed($instLesson, $instUnit));
 
             return response()->json([
                 'success' => true,
