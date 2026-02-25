@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\AdminCenter\AdminCenterController;
  * payment gateway configuration, and system monitoring
  */
 
-Route::prefix('admin-center')->name('admin-center.')->middleware(['admin'])->group(function () {
+Route::prefix('admin-center')->name('admin-center.')->middleware(['admin', 'admin.sysadmin'])->group(function () {
 
     // User Management
     Route::get('/admin-users', [AdminCenterController::class, 'adminUsers'])->name('admin-users');
@@ -52,5 +52,6 @@ Route::prefix('admin-center')->name('admin-center.')->middleware(['admin'])->gro
     Route::get('/database-tools', [AdminCenterController::class, 'databaseTools'])->name('database-tools');
     Route::get('/cache-management', [AdminCenterController::class, 'cacheManagement'])->name('cache-management');
     Route::post('/cache-management/clear', [AdminCenterController::class, 'clearCache'])->name('cache-management.clear');
+    Route::post('/cache-management/reload', [AdminCenterController::class, 'reloadRCache'])->name('cache-management.reload');
     Route::get('/system-health', [AdminCenterController::class, 'systemHealth'])->name('system-health');
 });

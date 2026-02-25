@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\ReportsController;
  * Provides financial, student, course, instructor, and operational analytics
  */
 
-Route::prefix('reports')->name('reports.')->middleware(['admin'])->group(function () {
+Route::prefix('reports')->name('reports.')->middleware(['admin', 'admin.only'])->group(function () {
 
     // Main Reports Dashboard
     Route::get('/', [ReportsController::class, 'index'])->name('index');

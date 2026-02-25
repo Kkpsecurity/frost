@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\FrostSupportController;
 use App\Http\Controllers\Admin\SupportController;
 
 // All support routes require admin authentication
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['admin', 'admin.support'])->group(function () {
     // Support SPA Dashboard
     Route::get('/frost-support', [FrostSupportController::class, 'index'])->name('admin.frost-support');
 

@@ -8,7 +8,7 @@ use App\Http\Controllers\Admin\Courses\CourseManagementController;
  * Loaded with 'admin' prefix and middleware from admin.php
  */
 
-Route::middleware(['admin'])->prefix('courses')->name('courses.')->group(function () {
+Route::middleware(['admin', 'admin.only'])->prefix('courses')->name('courses.')->group(function () {
 
     // Main course management routes
     Route::get('/', [CourseManagementController::class, 'index'])->name('management.index');
@@ -21,5 +21,4 @@ Route::middleware(['admin'])->prefix('courses')->name('courses.')->group(functio
 
     // Course status management
     Route::patch('/{course}/toggle-active', [CourseManagementController::class, 'toggleActive'])->name('toggle-active');
-
 });

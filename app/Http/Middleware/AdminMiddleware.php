@@ -31,8 +31,9 @@ class AdminMiddleware
             return redirect()->route('admin.login');
         }
 
-        // Check if the authenticated user has admin role
-        if (!$user || !$user->isAdmin()) {
+        // Check if the authenticated user has any admin role (SysAdmin, Admin, Support, or Instructor)
+        // Fine-grained per-route role checks are handled by admin.only, admin.support, and admin.sysadmin middleware.
+        if (!$user || !$user->IsInstructor()) {
             return redirect()->route('admin.login')->withErrors([
                 'email' => 'You do not have admin privileges.'
             ]);

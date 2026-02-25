@@ -8,7 +8,7 @@ use App\Http\Controllers\Admin\Orders\OrderController;
  * Loaded with 'admin' prefix and middleware from admin.php
  */
 
-Route::middleware(['admin'])->prefix('orders')->name('orders.')->group(function () {
+Route::middleware(['admin', 'admin.support'])->prefix('orders')->name('orders.')->group(function () {
 
     // Main order management routes
     Route::get('/', [OrderController::class, 'index'])->name('index');

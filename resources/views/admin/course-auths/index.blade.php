@@ -59,7 +59,7 @@
                     <label class="mr-1">Course</label>
                     <select name="course_id" class="form-control form-control-sm">
                         <option value="">All Courses</option>
-                        @foreach($content['courses'] as $course)
+                        @foreach ($content['courses'] as $course)
                             <option value="{{ $course->id }}"
                                 {{ $content['filters']['course_id'] == $course->id ? 'selected' : '' }}>
                                 {{ $course->title }}
@@ -71,12 +71,12 @@
                 <div class="form-group mr-3 mb-2">
                     <label class="mr-1">Completed From</label>
                     <input type="date" name="date_from" class="form-control form-control-sm"
-                           value="{{ $content['filters']['date_from'] ?? '' }}">
+                        value="{{ $content['filters']['date_from'] ?? '' }}">
                 </div>
                 <div class="form-group mr-3 mb-2">
                     <label class="mr-1">To</label>
                     <input type="date" name="date_to" class="form-control form-control-sm"
-                           value="{{ $content['filters']['date_to'] ?? '' }}">
+                        value="{{ $content['filters']['date_to'] ?? '' }}">
                 </div>
 
                 <div class="form-group mb-2">
@@ -96,23 +96,21 @@
         <div class="card-header p-0 pt-1">
             <ul class="nav nav-tabs" id="courseAuthTabs" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link {{ $content['filters']['tab'] !== 'dol' ? 'active' : '' }}"
-                       id="active-tab"
-                       href="{{ route('admin.course-auths.index', array_merge(request()->except('tab', 'active_page'), ['tab' => 'active'])) }}"
-                       data-toggle="tab" data-target="#tab-active" role="tab">
+                    <a class="nav-link {{ $content['filters']['tab'] !== 'dol' ? 'active' : '' }}" id="active-tab"
+                        href="{{ route('admin.course-auths.index', array_merge(request()->except('tab', 'active_page'), ['tab' => 'active'])) }}"
+                        data-toggle="tab" data-target="#tab-active" role="tab">
                         <i class="fas fa-play-circle mr-1"></i>
                         Active Enrollments
                         <span class="badge badge-success ml-1">{{ $content['active_course_auths']->total() }}</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ $content['filters']['tab'] === 'dol' ? 'active' : '' }}"
-                       id="dol-tab"
-                       href="{{ route('admin.course-auths.index', array_merge(request()->except('tab', 'dol_page'), ['tab' => 'dol'])) }}"
-                       data-toggle="tab" data-target="#tab-dol" role="tab">
+                    <a class="nav-link {{ $content['filters']['tab'] === 'dol' ? 'active' : '' }}" id="dol-tab"
+                        href="{{ route('admin.course-auths.index', array_merge(request()->except('tab', 'dol_page'), ['tab' => 'dol'])) }}"
+                        data-toggle="tab" data-target="#tab-dol" role="tab">
                         <i class="fas fa-exclamation-triangle mr-1 text-danger"></i>
                         Missing DOL Records
-                        @if($content['stats']['missing_dol'] > 0)
+                        @if ($content['stats']['missing_dol'] > 0)
                             <span class="badge badge-danger ml-1">{{ $content['missing_dol']->total() }}</span>
                         @endif
                     </a>
@@ -123,8 +121,8 @@
             <div class="tab-content">
 
                 {{-- ═══════════ TAB 1: ACTIVE ENROLLMENTS ═══════════ --}}
-                <div class="tab-pane {{ $content['filters']['tab'] !== 'dol' ? 'active' : '' }}"
-                     id="tab-active" role="tabpanel">
+                <div class="tab-pane {{ $content['filters']['tab'] !== 'dol' ? 'active' : '' }}" id="tab-active"
+                    role="tabpanel">
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
                             <thead class="thead-light">
@@ -142,13 +140,15 @@
                                     @php
                                         $completedLessons = 0;
                                         foreach ($ca->StudentUnits as $su) {
-                                            $completedLessons += $su->StudentLessons->whereNotNull('completed_at')->count();
+                                            $completedLessons += $su->StudentLessons
+                                                ->whereNotNull('completed_at')
+                                                ->count();
                                         }
                                         $totalLessons = $content['total_lessons_map'][$ca->course_id] ?? 0;
                                     @endphp
                                     <tr>
                                         <td>
-                                            @if($ca->User)
+                                            @if ($ca->User)
                                                 <a href="{{ route('admin.students.show', $ca->User->id) }}">
                                                     {{ $ca->User->fname }} {{ $ca->User->lname }}
                                                 </a>
@@ -157,7 +157,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($ca->Course)
+                                            @if ($ca->Course)
                                                 <small>{{ $ca->Course->title }}</small>
                                             @else
                                                 <span class="text-muted">&mdash;</span>
@@ -167,17 +167,17 @@
                                             <small>{{ $ca->created_at->tz('America/New_York')->format('Y-m-d H:i') }}</small>
                                         </td>
                                         <td>
-                                            @if($ca->start_date)
+                                            @if ($ca->start_date)
                                                 <small>{{ \Carbon\Carbon::parse($ca->start_date)->format('M d, Y') }}</small>
                                             @else
                                                 <span class="text-muted">&mdash;</span>
                                             @endif
                                         </td>
                                         <td class="text-center">
-                                            @if($totalLessons > 0)
+                                            @if ($totalLessons > 0)
                                                 @php $pct = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0; @endphp
                                                 <span title="{{ $pct }}%"
-                                                      class="{{ $completedLessons >= $totalLessons ? 'text-success font-weight-bold' : '' }}">
+                                                    class="{{ $completedLessons >= $totalLessons ? 'text-success font-weight-bold' : '' }}">
                                                     {{ $completedLessons }} / {{ $totalLessons }}
                                                 </span>
                                             @else
@@ -185,7 +185,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($ca->expire_date)
+                                            @if ($ca->expire_date)
                                                 @php $expiring = \Carbon\Carbon::parse($ca->expire_date)->isPast(); @endphp
                                                 <small class="{{ $expiring ? 'text-danger' : 'text-muted' }}">
                                                     {{ \Carbon\Carbon::parse($ca->expire_date)->format('M d, Y') }}
@@ -205,7 +205,7 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($content['active_course_auths']->hasPages())
+                    @if ($content['active_course_auths']->hasPages())
                         <div class="p-3">
                             {{ $content['active_course_auths']->links() }}
                         </div>
@@ -213,8 +213,8 @@
                 </div>
 
                 {{-- ═══════════ TAB 2: MISSING DOL ═══════════ --}}
-                <div class="tab-pane {{ $content['filters']['tab'] === 'dol' ? 'active' : '' }}"
-                     id="tab-dol" role="tabpanel">
+                <div class="tab-pane {{ $content['filters']['tab'] === 'dol' ? 'active' : '' }}" id="tab-dol"
+                    role="tabpanel">
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
                             <thead class="thead-light">
@@ -232,7 +232,7 @@
                                             <small>{{ $ca->completed_at->tz('America/New_York')->format('Y-m-d H:i') }}</small>
                                         </td>
                                         <td>
-                                            @if($ca->User)
+                                            @if ($ca->User)
                                                 <a href="{{ route('admin.students.show', $ca->User->id) }}">
                                                     {{ $ca->User->fname }} {{ $ca->User->lname }}
                                                 </a>
@@ -241,14 +241,14 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if($ca->Course)
+                                            @if ($ca->Course)
                                                 <small>{{ $ca->Course->title }}</small>
                                             @else
                                                 <span class="text-muted">&mdash;</span>
                                             @endif
                                         </td>
                                         <td>
-                                            @if($ca->submitted_at)
+                                            @if ($ca->submitted_at)
                                                 <span class="badge badge-warning">
                                                     Submitted — awaiting tracking #
                                                 </span>
@@ -270,7 +270,7 @@
                             </tbody>
                         </table>
                     </div>
-                    @if($content['missing_dol']->hasPages())
+                    @if ($content['missing_dol']->hasPages())
                         <div class="p-3">
                             {{ $content['missing_dol']->links() }}
                         </div>
@@ -284,23 +284,23 @@
 @stop
 
 @section('js')
-<script>
-    // Keep the correct tab active when navigating via tab links
-    document.addEventListener('DOMContentLoaded', function () {
-        var tab = '{{ $content['filters']['tab'] }}';
-        if (tab === 'dol') {
-            var dolTab = document.getElementById('dol-tab');
-            if (dolTab) {
-                $('#courseAuthTabs a[data-target="#tab-dol"]').tab('show');
+    <script>
+        // Keep the correct tab active when navigating via tab links
+        document.addEventListener('DOMContentLoaded', function() {
+            var tab = '{{ $content['filters']['tab'] }}';
+            if (tab === 'dol') {
+                var dolTab = document.getElementById('dol-tab');
+                if (dolTab) {
+                    $('#courseAuthTabs a[data-target="#tab-dol"]').tab('show');
+                }
             }
-        }
 
-        // Update hidden tab input when switching tabs via Bootstrap
-        $('#courseAuthTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).data('target');
-            var tabName = target === '#tab-dol' ? 'dol' : 'active';
-            $('input[name="tab"]').val(tabName);
+            // Update hidden tab input when switching tabs via Bootstrap
+            $('#courseAuthTabs a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+                var target = $(e.target).data('target');
+                var tabName = target === '#tab-dol' ? 'dol' : 'active';
+                $('input[name="tab"]').val(tabName);
+            });
         });
-    });
-</script>
+    </script>
 @stop

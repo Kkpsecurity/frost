@@ -24,5 +24,4 @@ Route::middleware(['admin'])->prefix('course-dates')->name('course-dates.')->gro
 
     // Get course units for AJAX
     Route::get('/api/courses/{course}/units', [CourseDateController::class, 'getCourseUnits'])->name('api.course-units');
-
 });

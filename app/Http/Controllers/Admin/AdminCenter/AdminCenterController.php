@@ -11,6 +11,16 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Course;
+use App\Models\CourseUnit;
+use App\Models\CourseUnitLesson;
+use App\Models\DiscountCode;
+use App\Models\Exam;
+use App\Models\ExamQuestionSpec;
+use App\Models\Lesson;
+use App\Models\PaymentType;
+use App\Models\SiteConfig;
+use App\Services\RCache;
 
 class AdminCenterController extends Controller
 {
@@ -241,7 +251,7 @@ class AdminCenterController extends Controller
     public function instructorManagement()
     {
         $instructors = User::where('role_id', 4) // Instructor role
-            ->with(['instUnits' => function($query) {
+            ->with(['instUnits' => function ($query) {
                 $query->latest()->limit(5);
             }])
             ->orderBy('created_at', 'desc')
@@ -329,7 +339,6 @@ class AdminCenterController extends Controller
             Log::info('Instructor updated successfully', ['instructor_id' => $id, 'updated_by' => auth()->id()]);
 
             return back()->with('success', 'Instructor updated successfully!');
-
         } catch (\Exception $e) {
             Log::error('Failed to update instructor', ['instructor_id' => $id, 'error' => $e->getMessage()]);
             return back()->with('error', 'Failed to update instructor: ' . $e->getMessage());
@@ -350,7 +359,6 @@ class AdminCenterController extends Controller
             Log::info("Instructor {$status}", ['instructor_id' => $id, 'updated_by' => auth()->id()]);
 
             return back()->with('success', "Instructor has been {$status} successfully!");
-
         } catch (\Exception $e) {
             Log::error('Failed to toggle instructor status', ['instructor_id' => $id, 'error' => $e->getMessage()]);
             return back()->with('error', 'Failed to update instructor status: ' . $e->getMessage());
@@ -435,12 +443,31 @@ class AdminCenterController extends Controller
 
     /**
      * General Settings
+     *
+     * Settings are stored with dot-notation keys (e.g. "app.name", "auth.timeout").
+     * The 'group' column may not exist; filter by key prefix instead.
      */
     public function generalSettings()
     {
-        $appSettings = DB::table('settings')->where('group', 'app')->get();
-        $authSettings = DB::table('settings')->where('group', 'auth')->get();
-        $systemSettings = DB::table('settings')->whereIn('group', ['system', 'mail', 'cache'])->get();
+        $allSettings = DB::table('settings')->get();
+
+        // Detect whether a 'group' column exists on this DB
+        $hasGroupCol = $allSettings->isNotEmpty() && property_exists($allSettings->first(), 'group');
+
+        if ($hasGroupCol) {
+            $appSettings    = $allSettings->where('group', 'app')->values();
+            $authSettings   = $allSettings->where('group', 'auth')->values();
+            $systemSettings = $allSettings->whereIn('group', ['system', 'mail', 'cache'])->values();
+        } else {
+            // Keys stored as dot-notation: "app.name", "auth.timeout", etc.
+            $appSettings    = $allSettings->filter(fn($s) => str_starts_with($s->key, 'app.'))->values();
+            $authSettings   = $allSettings->filter(fn($s) => str_starts_with($s->key, 'auth.'))->values();
+            $systemSettings = $allSettings->filter(fn($s) =>
+                str_starts_with($s->key, 'system.') ||
+                str_starts_with($s->key, 'mail.')   ||
+                str_starts_with($s->key, 'cache.')
+            )->values();
+        }
 
         return view('admin.admin-center.general-settings', compact('appSettings', 'authSettings', 'systemSettings'));
     }
@@ -471,18 +498,43 @@ class AdminCenterController extends Controller
     }
 
     /**
-     * Activity Logs
+     * Activity Logs — recent sessions joined with user info
      */
     public function activityLogs()
     {
-        // Get recent user activities
-        $activities = DB::table('users')
-            ->select('id', 'fname', 'lname', 'last_login', 'updated_at')
-            ->orderBy('last_login', 'desc')
-            ->limit(100)
-            ->get();
+        // Join sessions with users to show recent active sessions
+        $activities = DB::table('sessions')
+            ->leftJoin('users', 'users.id', '=', 'sessions.user_id')
+            ->select(
+                'sessions.id as session_id',
+                'sessions.user_id',
+                'sessions.ip_address',
+                'sessions.user_agent',
+                'sessions.last_activity',
+                'users.fname',
+                'users.lname',
+                'users.email',
+                'users.role_id',
+                'users.is_active'
+            )
+            ->orderBy('sessions.last_activity', 'desc')
+            ->limit(150)
+            ->get()
+            ->map(function ($row) {
+                $row->last_activity_at = \Carbon\Carbon::createFromTimestamp($row->last_activity);
+                return $row;
+            });
 
-        return view('admin.admin-center.activity-logs', compact('activities'));
+        // Active session count (last 30 min)
+        $activeSince   = now()->subMinutes(30)->timestamp;
+        $activeCount   = $activities->where('last_activity', '>=', $activeSince)->count();
+        $guestCount    = $activities->whereNull('user_id')->count();
+        $authCount     = $activities->whereNotNull('user_id')->count();
+
+        return view(
+            'admin.admin-center.activity-logs',
+            compact('activities', 'activeCount', 'guestCount', 'authCount')
+        );
     }
 
     /**
@@ -506,15 +558,47 @@ class AdminCenterController extends Controller
      */
     public function databaseTools()
     {
+        $connName = config('database.default');
         $dbInfo = [
-            'connection' => config('database.default'),
-            'database' => config('database.connections.' . config('database.default') . '.database'),
-            'tables' => [],
+            'connection' => $connName,
+            'driver'     => config("database.connections.{$connName}.driver", $connName),
+            'host'       => config("database.connections.{$connName}.host", 'localhost'),
+            'port'       => config("database.connections.{$connName}.port", ''),
+            'database'   => config("database.connections.{$connName}.database"),
+            'tables'     => [],
+            'error'      => null,
         ];
 
         try {
-            $tables = DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
-            $dbInfo['tables'] = collect($tables)->pluck('table_name')->toArray();
+            // Table list with row estimates and sizes (PostgreSQL)
+            $tables = DB::select("
+                SELECT
+                    t.table_name,
+                    COALESCE(s.n_live_tup, 0)                         AS row_estimate,
+                    pg_total_relation_size(c.oid)                      AS total_bytes,
+                    pg_size_pretty(pg_total_relation_size(c.oid))      AS total_size,
+                    pg_size_pretty(pg_relation_size(c.oid))            AS table_size,
+                    pg_size_pretty(pg_indexes_size(c.oid))             AS index_size
+                FROM information_schema.tables t
+                LEFT JOIN pg_stat_user_tables s ON s.relname = t.table_name
+                LEFT JOIN pg_class c            ON c.relname = t.table_name
+                WHERE t.table_schema = 'public'
+                  AND t.table_type  = 'BASE TABLE'
+                ORDER BY t.table_name
+            ");
+            $dbInfo['tables'] = collect($tables)->map(fn($r) => (array) $r)->toArray();
+
+            // DB-level summary
+            $dbStats = DB::selectOne("
+                SELECT
+                    pg_size_pretty(pg_database_size(current_database())) AS db_size,
+                    (SELECT count(*) FROM information_schema.tables
+                      WHERE table_schema = 'public' AND table_type = 'BASE TABLE') AS table_count,
+                    version() AS pg_version
+            ");
+            $dbInfo['db_size']    = $dbStats->db_size    ?? '—';
+            $dbInfo['table_count'] = $dbStats->table_count ?? 0;
+            $dbInfo['pg_version'] = $dbStats->pg_version  ?? '—';
         } catch (\Exception $e) {
             $dbInfo['error'] = $e->getMessage();
         }
@@ -527,11 +611,85 @@ class AdminCenterController extends Controller
      */
     public function cacheManagement()
     {
-        $cacheInfo = [
-            'driver' => config('cache.default'),
-        ];
+        $cacheDriver = config('cache.default');
 
-        return view('admin.admin-center.cache-management', compact('cacheInfo'));
+        $modelClasses = self::_rcacheModelMap();
+
+        $redis = RCache::Redis();
+        $rcacheModels = [];
+        $staticModels = [ExamQuestionSpec::class, PaymentType::class, Role::class];
+
+        foreach ($modelClasses as $name => $class) {
+            $inRedis = $redis ? (bool) $redis->exists($class) : false;
+            $count   = ($inRedis && $redis) ? $redis->hLen($class) : 0;
+            $rcacheModels[] = [
+                'name'    => $name,
+                'class'   => $class,
+                'inRedis' => $inRedis,
+                'count'   => $count,
+                'static'  => in_array($class, $staticModels),
+            ];
+        }
+
+        $redisMemory = null;
+        try {
+            if ($redis) {
+                $redisMemory = RCache::RedisMemory();
+            }
+        } catch (\Exception $e) {
+            // silently skip if redis is unavailable
+        }
+
+        return view(
+            'admin.admin-center.cache-management',
+            compact('cacheDriver', 'rcacheModels', 'redisMemory')
+        );
+    }
+
+    /**
+     * Reload RCache — force DB reload of one or all models into Redis
+     */
+    public function reloadRCache(Request $request)
+    {
+        $model        = $request->input('model', 'all');
+        $modelClasses = self::_rcacheModelMap();
+
+        try {
+            if ($model === 'all') {
+                foreach ($modelClasses as $class) {
+                    RCache::LoadModelCache($class, true);
+                }
+                $msg = 'All RCache models reloaded from database.';
+            } elseif (isset($modelClasses[$model])) {
+                RCache::LoadModelCache($modelClasses[$model], true);
+                $msg = "{$model} cache reloaded from database.";
+            } else {
+                return redirect()->back()->with('error', "Unknown model: {$model}");
+            }
+
+            return redirect()->back()->with('success', $msg);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'RCache reload failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Model class map shared by cache management actions
+     */
+    private static function _rcacheModelMap(): array
+    {
+        return [
+            'Courses'           => Course::class,
+            'CourseUnits'       => CourseUnit::class,
+            'CourseUnitLessons' => CourseUnitLesson::class,
+            'DiscountCodes'     => DiscountCode::class,
+            'Exams'             => Exam::class,
+            'ExamQuestionSpecs' => ExamQuestionSpec::class,
+            'Lessons'           => Lesson::class,
+            'PaymentTypes'      => PaymentType::class,
+            'Roles'             => Role::class,
+            'SiteConfigs'       => SiteConfig::class,
+        ];
     }
 
     /**

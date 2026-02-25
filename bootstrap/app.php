@@ -73,8 +73,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Middleware Aliases
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'admin.guest' => \App\Http\Middleware\AdminGuestMiddleware::class,
+            'admin'          => \App\Http\Middleware\AdminMiddleware::class,
+            'admin.guest'    => \App\Http\Middleware\AdminGuestMiddleware::class,
+            // Role-layer guards — applied ON TOP of 'admin' for finer-grained access control
+            'admin.sysadmin' => \App\Http\Middleware\Guards\IsSysAdmin::class,       // role_id = 1 only
+            'admin.only'     => \App\Http\Middleware\Guards\IsAdministrator::class,  // role_id <= 2 (Admin + SysAdmin)
+            'admin.support'  => \App\Http\Middleware\Guards\IsSupport::class,        // role_id <= 3 (Support + Admin + SysAdmin)
         ]);
 
         // Middleware Priority (ensure correct execution order)
