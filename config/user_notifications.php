@@ -617,6 +617,17 @@ return [
         | 10. SYSTEM & ADMINISTRATIVE
         |--------------------------------------------------------------------------
         */
+        // Instructor-facing notifications (not student-preference controlled)
+        'instructor' => [
+            'student_dnc' => [
+                'key'              => 'instructor.student_dnc',
+                'name'             => 'Student DNC Alert',
+                'priority'         => 'high',
+                'channels'         => ['database', 'mail'],
+                'user_controllable' => false,
+            ],
+        ],
+
         'system' => [
             'maintenance_scheduled' => [
                 'key' => 'system.maintenance_scheduled',

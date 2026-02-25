@@ -149,6 +149,11 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\System\SupportResponseSent::class => [
             \App\Listeners\System\SendSupportResponseNotification::class,
         ],
+
+        // Challenge Events (Phase — Job 4 Phase 5)
+        \App\Events\Challenge\StudentDnc::class => [
+            \App\Listeners\Challenge\SendStudentDncNotification::class,
+        ],
     ];
 
     /**

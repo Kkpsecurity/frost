@@ -26,6 +26,7 @@ use App\Traits\Observable;
 use App\Traits\PgTimestamps;
 use App\Helpers\PgTk;
 use App\Presenters\PresentsTimeStamps;
+use App\Events\Challenge\StudentDnc;
 use App\Models\Traits\StudentLesson\ClearDNC;
 use App\Models\Traits\StudentLesson\SetUnitCompleted;
 
@@ -172,6 +173,13 @@ class StudentLesson extends Model
                 }
             } catch (\Throwable $e) {
                 // Non-fatal — never break DNC marking
+            }
+
+            // Notify the class instructor — non-fatal
+            try {
+                event(new StudentDnc($this));
+            } catch (\Throwable $e) {
+                // Never break DNC marking over a notification failure
             }
         }
     }
