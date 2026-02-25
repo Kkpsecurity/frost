@@ -32,9 +32,11 @@ return new class extends Migration
             // $table->foreign('lesson_id')->references('id')->on('lessons');
         });
 
-        // Set default values for timestamps to now()
-        DB::statement('ALTER TABLE self_study_lessons ALTER COLUMN created_at SET DEFAULT now()');
-        DB::statement('ALTER TABLE self_study_lessons ALTER COLUMN updated_at SET DEFAULT now()');
+        // Set default values for timestamps to now() (PostgreSQL only — skipped for SQLite tests)
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE self_study_lessons ALTER COLUMN created_at SET DEFAULT now()');
+            DB::statement('ALTER TABLE self_study_lessons ALTER COLUMN updated_at SET DEFAULT now()');
+        }
     }
 
     /**

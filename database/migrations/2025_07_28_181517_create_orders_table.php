@@ -49,8 +49,11 @@ return new class extends Migration
         });
 
         // Set default values for timestamps to now()
-        DB::statement('ALTER TABLE orders ALTER COLUMN created_at SET DEFAULT now()');
-        DB::statement('ALTER TABLE orders ALTER COLUMN updated_at SET DEFAULT now()');
+        // PostgreSQL only — skipped for SQLite tests
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE orders ALTER COLUMN created_at SET DEFAULT now()');
+            DB::statement('ALTER TABLE orders ALTER COLUMN updated_at SET DEFAULT now()');
+        }
     }
 
     /**

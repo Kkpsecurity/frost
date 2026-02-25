@@ -15,7 +15,10 @@ return new class extends Migration
         Schema::create('exam_auths', function (Blueprint $table) {
             $table->id(); // bigint auto-increment primary key
             $table->unsignedBigInteger('course_auth_id')->nullable(false);
-            $table->uuid('uuid')->default(DB::raw('uuid_generate_v4()'))->nullable(false);
+            $uuidCol = $table->uuid('uuid')->nullable(false);
+            if (DB::getDriverName() !== 'sqlite') {
+                $uuidCol->default(DB::raw('uuid_generate_v4()'));
+            }
             $table->timestampTz('created_at')->useCurrent()->nullable(false);
             $table->timestampTz('expires_at')->nullable();
             $table->timestampTz('next_attempt_at')->nullable(false);

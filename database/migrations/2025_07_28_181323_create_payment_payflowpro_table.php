@@ -15,7 +15,10 @@ return new class extends Migration
         Schema::create('payment_payflowpro', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('order_id')->nullable(false);
-            $table->uuid('uuid')->default(DB::raw('uuid_generate_v4()'))->nullable(false);
+            $uuidCol = $table->uuid('uuid')->nullable(false);
+            if (DB::getDriverName() !== 'sqlite') {
+                $uuidCol->default(DB::raw('uuid_generate_v4()'));
+            }
             $table->decimal('total_price', 5, 2)->nullable(false);
             $table->timestampsTz(); // created_at and updated_at with timezone
             $table->timestampTz('completed_at')->nullable();
@@ -58,8 +61,11 @@ return new class extends Migration
         });
 
         // Set default values for timestamps to now()
-        DB::statement('ALTER TABLE payment_payflowpro ALTER COLUMN created_at SET DEFAULT now()');
-        DB::statement('ALTER TABLE payment_payflowpro ALTER COLUMN updated_at SET DEFAULT now()');
+        // PostgreSQL only — skipped for SQLite tests
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE payment_payflowpro ALTER COLUMN created_at SET DEFAULT now()');
+            DB::statement('ALTER TABLE payment_payflowpro ALTER COLUMN updated_at SET DEFAULT now()');
+        }
     }
 
     /**

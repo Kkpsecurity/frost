@@ -27,5 +27,10 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="SCOUT_DRIVER" value="null"/>
+        <!-- Web Push test keys (not real — only used to populate config vars) -->
+        <env name="VAPID_SUBJECT" value="mailto:test@example.com"/>
+        <env name="VAPID_PUBLIC_KEY" value="BIfGJVe6U23facXDyAesjY1fkZR2p23mYIn4CwucUtJtdjOljajDm5BofdjkXcDFETWkZHkhwccUQlIQBGmb3bg"/>
+        <env name="VAPID_PRIVATE_KEY" value="CgoQeaPuAS1DifQtNguxFy-21aI7PudcjmO56yzJa5k"/>
     </php>
 </phpunit>
