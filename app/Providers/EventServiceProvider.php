@@ -110,6 +110,20 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\Classroom\StudentEjectedFromClassroom::class => [
             \App\Listeners\Classroom\SendStudentKickedNotification::class,
         ],
+
+        // Course Progress & Completion Events (Phase 11)
+        \App\Events\Progress\LessonMilestoneReached::class => [
+            \App\Listeners\Progress\SendLessonMilestoneNotification::class,
+        ],
+        \App\Events\Progress\AllLessonsCompleted::class => [
+            \App\Listeners\Progress\SendAllLessonsCompletedNotification::class,
+        ],
+        \App\Events\Progress\CourseCompleted::class => [
+            \App\Listeners\Progress\SendCourseCompletedNotifications::class,
+        ],
+        \App\Events\Progress\CourseExpiringSoon::class => [
+            \App\Listeners\Progress\SendCourseExpiringSoonNotification::class,
+        ],
     ];
 
     /**

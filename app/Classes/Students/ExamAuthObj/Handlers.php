@@ -9,6 +9,9 @@ use KKP\Laravel\PgTk;
 // Exam Events
 use App\Events\Exam\ExamCompleted;
 
+// Progress Events
+use App\Events\Progress\CourseCompleted;
+
 
 trait Handlers
 {
@@ -43,9 +46,8 @@ trait Handlers
 
         $this->CourseAuth->MarkCompleted(true);
 
-        //
-        // TODO: dispatch notifications
-        //
+        // Notify student: course passed + certificate ready
+        event(new CourseCompleted($this->CourseAuth, true));
 
         return $this;
     }
@@ -68,10 +70,8 @@ trait Handlers
 
         $this->CourseAuth->MarkCompleted(false);
 
-
-        //
-        // TODO: dispatch notifications
-        //
+        // Notify student: course failed
+        event(new CourseCompleted($this->CourseAuth, false));
 
         return $this;
     }

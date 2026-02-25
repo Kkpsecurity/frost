@@ -109,6 +109,16 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/preparation-reminders.log'));
+
+        // Send course expiry reminders daily at 08:00 AM ET.
+        // Fires CourseExpiringSoon events for enrollments expiring in exactly 30 or 7 days.
+        // Deduplication handled inside each notification's shouldSend() method.
+        $schedule->command('progress:send-expiry-reminders')
+            ->dailyAt('08:00')
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/course-expiry-reminders.log'));
     }
 
     /**
