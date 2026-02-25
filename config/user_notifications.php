@@ -181,7 +181,7 @@ return [
                 'key' => 'preparation.class_tomorrow',
                 'name' => 'Class Starts Tomorrow',
                 'priority' => 'high',
-                'channels' => ['database', 'mail', 'browser'],
+                'channels' => ['database', 'mail', 'browser', 'webpush'],
                 'user_controllable' => false,
             ],
             'class_starting_soon' => [
@@ -390,7 +390,7 @@ return [
                 'name' => 'Exam Authorized',
                 'description' => 'Notified when exam is authorized to start',
                 'priority' => 'high',
-                'channels' => ['database', 'mail'],
+                'channels' => ['database', 'mail', 'webpush'],
                 'user_controllable' => true,
             ],
             'exam_started' => [

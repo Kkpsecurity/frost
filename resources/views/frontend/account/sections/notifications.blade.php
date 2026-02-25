@@ -32,7 +32,7 @@
             <p class="text-white-50 mb-3">Control how you receive notifications across all channels</p>
 
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-desktop fa-2x text-info mb-3"></i>
@@ -47,7 +47,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-envelope fa-2x text-warning mb-3"></i>
@@ -62,18 +62,40 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-bell fa-2x text-danger mb-3"></i>
-                            <h6 class="text-white mb-2">Browser Push</h6>
+                            <h6 class="text-white mb-2">Live Alerts</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
                                 <input type="hidden" name="channels[browser]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableBrowser"
                                     name="channels[browser]" value="1"
                                     {{ $notificationsData['channels']['browser'] ?? true ? 'checked' : '' }}>
                             </div>
-                            <small class="text-white-50 mt-2 d-block">Browser push notifications</small>
+                            <small class="text-white-50 mt-2 d-block">Real-time toasts while online</small>
+                        </div>
+                    </div>
+                </div>
+                {{-- Web Push (VAPID) — device-level push notifications --}}
+                <div class="col-md-3">
+                    <div class="card bg-dark border-secondary h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-mobile-alt fa-2x text-success mb-3"></i>
+                            <h6 class="text-white mb-2">Device Push</h6>
+                            <div class="form-check form-switch d-flex justify-content-center mb-2">
+                                <input type="hidden" name="channels[webpush]" value="0">
+                                <input class="form-check-input" type="checkbox" id="enableWebPush"
+                                    name="channels[webpush]" value="1"
+                                    {{ $notificationsData['channels']['webpush'] ?? true ? 'checked' : '' }}>
+                            </div>
+                            @if ('serviceWorker' !== 'unsupported')
+                                <button type="button" id="frostPushToggleBtn" class="btn btn-sm btn-success mt-1 w-100"
+                                    data-subscribed="0">
+                                    <i class="fas fa-bell me-1"></i>Enable Push
+                                </button>
+                            @endif
+                            <small class="text-white-50 mt-2 d-block">Phone/desktop lock screen alerts</small>
                         </div>
                     </div>
                 </div>
@@ -127,7 +149,8 @@
                                 name="notifications[{{ $notification['key'] }}]"
                                 {{ $notificationsData['notifications'][$notification['key']] ?? true ? 'checked' : '' }}>
                         </div>
-                        <label class="form-check-label text-white flex-grow-1" for="notif_{{ $notification['key'] }}">
+                        <label class="form-check-label text-white flex-grow-1"
+                            for="notif_{{ $notification['key'] }}">
                             <strong>{{ $notification['name'] }}</strong>
                             <span
                                 class="badge bg-{{ config('user_notifications.priorities.' . $notification['priority'] . '.color') }} ms-2">
@@ -315,3 +338,17 @@
         </div>
     </form>
 </div>
+
+{{-- Web Push JS (loaded only on the notifications settings section) --}}
+@push('scripts')
+    <script>
+        window.FrostWebPush = {
+            publicKey: '{{ config('webpush.vapid.public_key') }}',
+            csrfToken: '{{ csrf_token() }}',
+            subscribeUrl: '{{ route('push.subscribe') }}',
+            unsubscribeUrl: '{{ route('push.unsubscribe') }}',
+            statusUrl: '{{ route('push.status') }}',
+        };
+    </script>
+    <script src="{{ asset('js/push-subscribe.js') }}" defer></script>
+@endpush

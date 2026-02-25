@@ -38,7 +38,7 @@ class ClassTomorrowNotification extends Notification implements ShouldQueue
         return $this->preferredChannels(
             $notifiable,
             'preparation.class_tomorrow',
-            config('user_notifications.notifications.preparation.class_tomorrow.channels', ['database', 'mail', 'browser']),
+            config('user_notifications.notifications.preparation.class_tomorrow.channels', ['database', 'mail', 'browser', 'webpush']),
             (bool) config('user_notifications.notifications.preparation.class_tomorrow.user_controllable', false),
         );
     }
@@ -94,5 +94,25 @@ class ClassTomorrowNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return $this->toDatabase($notifiable);
+    }
+
+    /**
+     * Get the Web Push payload for this notification.
+     * Delivered via the WebPushChannel to subscribed devices.
+     */
+    public function toWebPush(object $notifiable): array
+    {
+        $courseName = $this->courseAuth->Course?->title
+            ?? $this->courseAuth->Course?->title_long
+            ?? 'your course';
+        $classTime  = $this->courseDate->starts_at?->format('g:i A');
+
+        return [
+            'title' => 'Class Tomorrow: ' . $courseName,
+            'body'  => 'Your class starts tomorrow at ' . $classTime . '. Make sure you\'re ready!',
+            'url'   => route('classroom.dashboard'),
+            'icon'  => '/images/frost-icon-192.png',
+            'tag'   => 'class_tomorrow_' . $this->courseDate->id,
+        ];
     }
 }

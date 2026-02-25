@@ -38,6 +38,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'markAllNotificationsRead'])->name('notifications.mark-all-read');
     Route::get('/notifications/{notification}/read', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'markNotificationRead'])->name('notifications.mark-read');
 
+    // Web Push subscription routes
+    Route::prefix('push')->name('push.')->group(function () {
+        Route::post('/subscribe',    [App\Http\Controllers\Frontend\Student\PushSubscriptionController::class, 'store'])->name('subscribe');
+        Route::delete('/subscribe',  [App\Http\Controllers\Frontend\Student\PushSubscriptionController::class, 'destroy'])->name('unsubscribe');
+        Route::get('/subscription',  [App\Http\Controllers\Frontend\Student\PushSubscriptionController::class, 'status'])->name('status');
+    });
+
     // Payment method management routes
     Route::prefix('account/payments')->name('account.payments.')->group(function () {
         Route::post('/add-stripe-method', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'addStripePaymentMethod'])->name('add-stripe');

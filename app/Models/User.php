@@ -21,6 +21,7 @@ use App\Models\InstLicense;
 use App\Models\InstUnit;
 use App\Models\UserBrowser;
 use App\Models\StudentIdVerification;
+use App\Models\PushSubscription;
 
 use App\Models\Traits\User\ExamsTrait;
 use App\Models\Traits\User\RolesTrait;
@@ -209,6 +210,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function StudentIdVerifications()
     {
         return $this->hasMany(StudentIdVerification::class, 'student_id');
+    }
+
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class, 'user_id');
     }
 
     public function studentVideoQuota()

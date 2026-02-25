@@ -31,7 +31,7 @@ class ExamAuthorizedNotification extends Notification implements ShouldQueue
         return $this->preferredChannels(
             $notifiable,
             'notification_exam.exam_authorized',
-            config('user_notifications.notifications.exams.exam_authorized.channels', ['database']),
+            config('user_notifications.notifications.exams.exam_authorized.channels', ['database', 'mail', 'webpush']),
             (bool) config('user_notifications.notifications.exams.exam_authorized.user_controllable', true),
         );
     }
@@ -68,6 +68,23 @@ class ExamAuthorizedNotification extends Notification implements ShouldQueue
             'color' => 'primary',
             'priority' => 'high',
             'url' => route('classroom.course', $this->examAuth->course_auth_id),
+        ];
+    }
+
+    /**
+     * Get the Web Push payload for this notification.
+     * Delivered via the WebPushChannel to subscribed devices.
+     */
+    public function toWebPush(object $notifiable): array
+    {
+        $courseName = $this->examAuth->CourseAuth->Course->title ?? 'your course';
+
+        return [
+            'title' => '✅ Exam Ready: ' . $courseName,
+            'body'  => 'Your exam has been authorized and you can now begin. Good luck!',
+            'url'   => route('classroom.course', $this->examAuth->course_auth_id),
+            'icon'  => '/images/frost-icon-192.png',
+            'tag'   => 'exam_authorized_' . $this->examAuth->id,
         ];
     }
 }
