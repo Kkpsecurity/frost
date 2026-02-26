@@ -6,6 +6,7 @@ import LessonsList from "./LessonsList";
 import AttendanceHistory from "./AttendanceHistory";
 import PhotoValidation from "./PhotoValidation";
 import StudentDetails from "./StudentDetails";
+import ExamResults from "./ExamResults";
 
 interface User {
     id: number;
@@ -52,7 +53,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
     const handleRefetchData = () => {
         // Force refetch by incrementing key (will trigger new poll)
-        setRefetchKey(prev => prev + 1);
+        setRefetchKey((prev) => prev + 1);
     };
 
     const handleTabClick = (tab: string) => {
@@ -93,7 +94,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         </div>
                         <div className="card-body">
                             {selectedCourse && pollData?.weeklyAttendance && (
-                                <WeeklyAttendance attendance={pollData.weeklyAttendance} />
+                                <WeeklyAttendance
+                                    attendance={pollData.weeklyAttendance}
+                                />
                             )}
                             {!selectedCourse && (
                                 <div className="alert alert-warning">
@@ -254,7 +257,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                     )}
                                     {activeTab === "class-history" && (
                                         <AttendanceHistory
-                                            history={pollData?.classHistory || []}
+                                            history={
+                                                pollData?.classHistory || []
+                                            }
                                         />
                                     )}
                                     {activeTab === "photos" && (
@@ -263,14 +268,19 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                         />
                                     )}
                                     {activeTab === "exam" && (
-                                        <div>
-                                            Exam Results content for{" "}
-                                            {student.name}
-                                        </div>
+                                        <ExamResults
+                                            examResults={
+                                                pollData?.examResults ?? null
+                                            }
+                                            studentName={student.name}
+                                            onRefresh={handleRefetchData}
+                                        />
                                     )}
                                     {activeTab === "details" && (
                                         <StudentDetails
-                                            details={pollData?.studentDetails || null}
+                                            details={
+                                                pollData?.studentDetails || null
+                                            }
                                             onUpdate={handleRefetchData}
                                         />
                                     )}

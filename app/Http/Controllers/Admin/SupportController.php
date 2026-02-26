@@ -15,7 +15,6 @@ class SupportController extends Controller
     {
         try {
             $query = $request->input('query');
-            $searchAll = $request->input('searchAll', false);
 
             if (strlen($query) < 2) {
                 return response()->json([
@@ -24,30 +23,17 @@ class SupportController extends Controller
                 ]);
             }
 
-            // Get current user
-            $user = auth('admin')->user();
-
-            // Determine if user can search all users
-            $canSearchAll = $searchAll && $user && ($user->hasRole('admin') || $user->hasRole('sys-admin'));
-
-            // Build query
-            $usersQuery = User::query()
+            // Search all users regardless of role — admins/instructors are valid test accounts
+            $users = User::query()
                 ->where(function ($q) use ($query) {
                     $q->where('fname', 'ilike', "%{$query}%")
                         ->orWhere('lname', 'ilike', "%{$query}%")
                         ->orWhere('email', 'ilike', "%{$query}%")
                         ->orWhereRaw("CONCAT(fname, ' ', lname) ILIKE ?", ["%{$query}%"])
                         ->orWhereRaw("CONCAT(lname, ' ', fname) ILIKE ?", ["%{$query}%"]);
-                });
-
-            // If not admin/sys-admin, filter out admin roles
-            if (!$canSearchAll) {
-                $usersQuery->whereDoesntHave('roles', function ($q) {
-                    $q->whereIn('name', ['admin', 'sys-admin', 'support']);
-                });
-            }
-
-            $users = $usersQuery->limit(20)->get();
+                })
+                ->limit(20)
+                ->get();
 
             $results = $users->map(function ($user) {
                 return [
@@ -628,12 +614,218 @@ class SupportController extends Controller
     }
 
     /**
-     * Get exam results
+     * Get exam results and status for the support exam tab
      */
     private function getExamResults($studentId, $courseId)
     {
-        // TODO: Query exam scores
-        return [];
+        $user = User::find($studentId);
+        if (!$user) {
+            return null;
+        }
+
+        $courseAuth = $user->courseAuths()
+            ->where('id', $courseId)
+            ->first();
+
+        if (!$courseAuth) {
+            return null;
+        }
+
+        // Determine exam readiness via the model trait
+        $readinessFailure = $courseAuth->ExamReadinessFailureReason();
+        $examReady        = $readinessFailure === null;
+
+        // Grab all non-hidden attempts, newest first
+        $examAuths = \App\Models\ExamAuth::where('course_auth_id', $courseAuth->id)
+            ->whereNull('hidden_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Determine max attempts from the exam policy (default 2 if no exam linked)
+        $maxAttempts = 2;
+        try {
+            $course = $courseAuth->course;
+            if ($course && $course->exam_id) {
+                $exam = \App\Models\Exam::find($course->exam_id);
+                if ($exam) {
+                    $maxAttempts = $exam->policy_attempts ?? 2;
+                }
+            }
+        } catch (\Exception $e) {
+            // fallback to 2
+        }
+
+        $attemptsUsed = $examAuths->whereNotNull('completed_at')->count();
+        $attemptsRemaining = max(0, $maxAttempts - $attemptsUsed);
+
+        $attempts = $examAuths->map(function ($ea) {
+            $isExpired   = $ea->expires_at && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($ea->expires_at));
+            $isCompleted = !is_null($ea->completed_at);
+
+            $scorePercent = null;
+            if ($ea->score && str_contains($ea->score, ' / ')) {
+                [$correct, $total] = explode(' / ', $ea->score);
+                $scorePercent = $total > 0 ? (int) floor((int)$correct / (int)$total * 100) : null;
+            }
+
+            return [
+                'id'               => $ea->id,
+                'created_at'       => \Carbon\Carbon::parse($ea->created_at)->format('Y-m-d H:i:s'),
+                'completed_at'     => $ea->completed_at
+                    ? \Carbon\Carbon::parse($ea->completed_at)->format('Y-m-d H:i:s')
+                    : null,
+                'expires_at'       => $ea->expires_at
+                    ? \Carbon\Carbon::parse($ea->expires_at)->format('Y-m-d H:i:s')
+                    : null,
+                'next_attempt_at'  => $ea->next_attempt_at
+                    ? \Carbon\Carbon::parse($ea->next_attempt_at)->format('Y-m-d H:i:s')
+                    : null,
+                'score'            => $ea->score,
+                'score_percent'    => $scorePercent,
+                'is_passed'        => (bool) $ea->is_passed,
+                'is_expired'       => $isExpired,
+                'is_completed'     => $isCompleted,
+                'is_in_progress'   => !$isCompleted && !$isExpired,
+                'can_review'       => $isCompleted,
+                'has_answers'      => !is_null($ea->answers) && count((array)$ea->answers) > 0,
+            ];
+        })->values()->toArray();
+
+        // Overall status string
+        $examPassed = $examAuths->where('is_passed', true)->isNotEmpty();
+        if ($examPassed) {
+            $status = 'passed';
+        } elseif ($attemptsRemaining === 0) {
+            $status = 'no_attempts';
+        } elseif ($examReady) {
+            $status = 'ready';
+        } elseif ($readinessFailure && ($readinessFailure['reason'] ?? '') === 'cooldown') {
+            $status = 'cooldown';
+        } elseif ($readinessFailure && ($readinessFailure['reason'] ?? '') === 'lessons') {
+            $status = 'lessons_incomplete';
+        } else {
+            $status = 'not_ready';
+        }
+
+        return [
+            'status'             => $status,
+            'exam_ready'         => $examReady,
+            'readiness_reason'   => $readinessFailure,
+            'exam_passed'        => $examPassed,
+            'exam_admin_override' => !is_null($courseAuth->exam_admin_id),
+            'max_attempts'       => $maxAttempts,
+            'attempts_used'      => $attemptsUsed,
+            'attempts_remaining' => $attemptsRemaining,
+            'next_attempt_at'    => $readinessFailure['next_attempt_at'] ?? null,
+            'attempts'           => $attempts,
+        ];
+    }
+
+    /**
+     * Reset (hide) an exam attempt so the student can re-take it.
+     * POST /support/reset-exam/{examAuthId}
+     */
+    public function resetExam(Request $request, $examAuthId)
+    {
+        try {
+            $examAuth = \App\Models\ExamAuth::findOrFail($examAuthId);
+
+            \Log::info('Support: resetting exam attempt', [
+                'exam_auth_id'   => $examAuthId,
+                'support_admin'  => auth('admin')->id(),
+                'course_auth_id' => $examAuth->course_auth_id,
+            ]);
+
+            $examAuth->forceFill([
+                'hidden_at' => \Carbon\Carbon::now(),
+                'hidden_by' => auth('admin')->id(),
+            ])->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Exam attempt reset. The student may now take the exam again.',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Exam attempt not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: resetExam failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Return a completed exam's questions + student answers for review.
+     * GET /support/exam-review/{examAuthId}
+     */
+    public function getExamReview(Request $request, $examAuthId)
+    {
+        try {
+            $examAuth = \App\Models\ExamAuth::findOrFail($examAuthId);
+
+            if (!$examAuth->completed_at) {
+                return response()->json(['success' => false, 'message' => 'Exam not yet completed.'], 422);
+            }
+
+            $questionIds = (array) ($examAuth->question_ids ?? []);
+            $answers     = (array) ($examAuth->answers     ?? []);  // [ exam_question_id => answer_number ]
+            $incorrect   = (array) ($examAuth->incorrect   ?? []);  // [ lesson_id => count ]
+
+            // Load questions in the order they were presented
+            $questions = \App\Models\ExamQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
+
+            $reviewQuestions = array_map(function ($qId) use ($questions, $answers) {
+                $q = $questions->get($qId);
+                if (!$q) {
+                    return null;
+                }
+                $studentAnswer = isset($answers[$qId]) ? (int) $answers[$qId] : null;
+                $correctAnswer = (int) $q->correct;
+                $answerOptions = array_filter([
+                    1 => $q->answer_1,
+                    2 => $q->answer_2,
+                    3 => $q->answer_3,
+                    4 => $q->answer_4,
+                    5 => $q->answer_5,
+                ]);
+
+                return [
+                    'id'             => $q->id,
+                    'question'       => $q->question,
+                    'answer_options' => $answerOptions,
+                    'correct_answer' => $correctAnswer,
+                    'student_answer' => $studentAnswer,
+                    'is_correct'     => $studentAnswer !== null && $studentAnswer === $correctAnswer,
+                ];
+            }, $questionIds);
+
+            // Remove nulls (questions that no longer exist)
+            $reviewQuestions = array_values(array_filter($reviewQuestions));
+
+            $scorePercent = null;
+            if ($examAuth->score && str_contains($examAuth->score, ' / ')) {
+                [$correct, $total] = explode(' / ', $examAuth->score);
+                $scorePercent = $total > 0 ? (int) floor((int)$correct / (int)$total * 100) : null;
+            }
+
+            return response()->json([
+                'success'        => true,
+                'data'           => [
+                    'exam_auth_id'   => $examAuth->id,
+                    'score'          => $examAuth->score,
+                    'score_percent'  => $scorePercent,
+                    'is_passed'      => (bool) $examAuth->is_passed,
+                    'completed_at'   => \Carbon\Carbon::parse($examAuth->completed_at)->format('Y-m-d H:i:s'),
+                    'total_questions' => count($reviewQuestions),
+                    'questions'      => $reviewQuestions,
+                    'incorrect_by_lesson' => $incorrect,
+                ],
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Exam attempt not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: getExamReview failed', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     /**

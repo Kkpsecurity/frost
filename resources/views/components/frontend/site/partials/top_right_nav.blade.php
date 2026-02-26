@@ -71,8 +71,45 @@
         min-width: 200px;
         margin-top: 8px;
         border: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         border-radius: 8px;
+        background: #1a1a2e;
+        color: white;
+    }
+
+    .top_right_nav .user-dropdown .dropdown-header {
+        background: #0f3460;
+        color: white;
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .top_right_nav .user-dropdown .dropdown-header small {
+        color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    .top_right_nav .user-dropdown .dropdown-item {
+        color: rgba(255, 255, 255, 0.85);
+        transition: background 0.2s;
+    }
+
+    .top_right_nav .user-dropdown .dropdown-item:hover,
+    .top_right_nav .user-dropdown .dropdown-item:focus {
+        background: rgba(255, 255, 255, 0.08);
+        color: white;
+    }
+
+    .top_right_nav .user-dropdown .dropdown-item.text-danger {
+        color: #ff6b6b !important;
+    }
+
+    .top_right_nav .user-dropdown .dropdown-item.text-danger:hover {
+        background: rgba(220, 53, 69, 0.15);
+        color: #ff6b6b !important;
+    }
+
+    .top_right_nav .user-dropdown .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
     .top_right_nav .notification-icon {
@@ -289,7 +326,7 @@
                         </div>
                     </li>
                     @php
-                        $notifications = Auth::user()->notifications()->take(6)->get();
+                        $notifications = Auth::user()->unreadNotifications()->take(6)->get();
                     @endphp
                     @forelse($notifications as $notification)
                         <li>

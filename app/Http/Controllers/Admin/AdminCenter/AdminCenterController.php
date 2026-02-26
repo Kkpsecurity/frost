@@ -462,10 +462,11 @@ class AdminCenterController extends Controller
             // Keys stored as dot-notation: "app.name", "auth.timeout", etc.
             $appSettings    = $allSettings->filter(fn($s) => str_starts_with($s->key, 'app.'))->values();
             $authSettings   = $allSettings->filter(fn($s) => str_starts_with($s->key, 'auth.'))->values();
-            $systemSettings = $allSettings->filter(fn($s) =>
+            $systemSettings = $allSettings->filter(
+                fn($s) =>
                 str_starts_with($s->key, 'system.') ||
-                str_starts_with($s->key, 'mail.')   ||
-                str_starts_with($s->key, 'cache.')
+                    str_starts_with($s->key, 'mail.')   ||
+                    str_starts_with($s->key, 'cache.')
             )->values();
         }
 

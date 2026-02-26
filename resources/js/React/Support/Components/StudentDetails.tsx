@@ -28,7 +28,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState<StudentDetailsData | null>(
-        details
+        details,
     );
     const [studentInfoFields, setStudentInfoFields] = useState<
         Array<{ key: string; value: string }>
@@ -41,7 +41,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                 ([key, value]) => ({
                     key,
                     value: String(value),
-                })
+                }),
             );
             setStudentInfoFields(fields);
         }
@@ -86,7 +86,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
             });
 
             const response = await axios.post(
-                `/admin/api/support/update-student/${details.id}`,
+                `/admin/support/update-student/${details.id}`,
                 {
                     fname: formData.fname,
                     lname: formData.lname,
@@ -94,7 +94,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                     student_num: formData.student_num,
                     email_opt_in: formData.email_opt_in,
                     student_info: studentInfoObject,
-                }
+                },
             );
 
             if (response.data.success) {
@@ -124,7 +124,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                 ([key, value]) => ({
                     key,
                     value: String(value),
-                })
+                }),
             );
             setStudentInfoFields(fields);
         }
@@ -190,7 +190,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                     className="form-control"
                                     value={formData?.fname || ""}
                                     onChange={(e) =>
-                                        handleInputChange("fname", e.target.value)
+                                        handleInputChange(
+                                            "fname",
+                                            e.target.value,
+                                        )
                                     }
                                 />
                             ) : (
@@ -209,7 +212,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                     className="form-control"
                                     value={formData?.lname || ""}
                                     onChange={(e) =>
-                                        handleInputChange("lname", e.target.value)
+                                        handleInputChange(
+                                            "lname",
+                                            e.target.value,
+                                        )
                                     }
                                 />
                             ) : (
@@ -226,7 +232,10 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                     className="form-control"
                                     value={formData?.email || ""}
                                     onChange={(e) =>
-                                        handleInputChange("email", e.target.value)
+                                        handleInputChange(
+                                            "email",
+                                            e.target.value,
+                                        )
                                     }
                                 />
                             ) : (
@@ -247,7 +256,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                     onChange={(e) =>
                                         handleInputChange(
                                             "student_num",
-                                            e.target.value
+                                            e.target.value,
                                         )
                                     }
                                 />
@@ -278,11 +287,13 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                     <input
                                         type="checkbox"
                                         className="form-check-input"
-                                        checked={formData?.email_opt_in || false}
+                                        checked={
+                                            formData?.email_opt_in || false
+                                        }
                                         onChange={(e) =>
                                             handleInputChange(
                                                 "email_opt_in",
-                                                e.target.checked
+                                                e.target.checked,
                                             )
                                         }
                                     />
@@ -309,7 +320,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                             <div className="form-control-plaintext text-white">
                                 {details.created_at
                                     ? new Date(
-                                          details.created_at
+                                          details.created_at,
                                       ).toLocaleString()
                                     : "N/A"}
                             </div>
@@ -321,7 +332,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                             <div className="form-control-plaintext text-white">
                                 {details.updated_at
                                     ? new Date(
-                                          details.updated_at
+                                          details.updated_at,
                                       ).toLocaleString()
                                     : "N/A"}
                             </div>
@@ -346,32 +357,39 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                     <table className="table table-bordered">
                                         <thead className="thead-light">
                                             <tr>
-                                                <th style={{ width: '40%' }}>Field</th>
+                                                <th style={{ width: "40%" }}>
+                                                    Field
+                                                </th>
                                                 <th>Value</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {studentInfoFields.map((field, index) => (
-                                                <tr key={index}>
-                                                    <td className="font-weight-bold align-middle">
-                                                        {field.key}
-                                                    </td>
-                                                    <td>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            placeholder="Value"
-                                                            value={field.value}
-                                                            onChange={(e) =>
-                                                                handleStudentInfoChange(
-                                                                    index,
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {studentInfoFields.map(
+                                                (field, index) => (
+                                                    <tr key={index}>
+                                                        <td className="font-weight-bold align-middle">
+                                                            {field.key}
+                                                        </td>
+                                                        <td>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control"
+                                                                placeholder="Value"
+                                                                value={
+                                                                    field.value
+                                                                }
+                                                                onChange={(e) =>
+                                                                    handleStudentInfoChange(
+                                                                        index,
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -395,7 +413,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
                                         </thead>
                                         <tbody>
                                             {Object.entries(
-                                                details.student_info
+                                                details.student_info,
                                             ).map(([key, value]) => (
                                                 <tr key={key}>
                                                     <td className="font-weight-bold">

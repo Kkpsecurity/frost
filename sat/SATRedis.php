@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Redis;
@@ -12,19 +13,16 @@ class SATRedis
 {
 
 
-    public function ShowKeys( int $cache_id = null )
+    public function ShowKeys(?int &$cache_id = null)
     {
 
 
         $cache_keys = $this->CacheKeys();
 
-        if ( $cache_id )
-        {
-            abort_unless( isset( $cache_keys[ $cache_id ] ), 404 );
-        }
-        else
-        {
-            $cache_id = array_keys( $cache_keys )[0];
+        if ($cache_id) {
+            abort_unless(isset($cache_keys[$cache_id]), 404);
+        } else {
+            $cache_id = array_keys($cache_keys)[0];
         }
 
 
@@ -34,50 +32,41 @@ class SATRedis
         #
 
 
-        $html = $this->_Header( $cache_id );
+        $html = $this->_Header($cache_id);
 
 
 
-        $Redis = $this->_Redis( $cache_id );
+        $Redis = $this->_Redis($cache_id);
 
         $csrf_token   = csrf_token();
-        $delkey_route = route( 'sattest.redis.delkey' );
+        $delkey_route = route('sattest.redis.delkey');
 
 
 
-        $keys = $Redis->keys( '*' );
-        natsort( $keys );
+        $keys = $Redis->keys('*');
+        natsort($keys);
 
-        foreach ( $keys as $key )
-        {
+        foreach ($keys as $key) {
 
-            $key_name = htmlspecialchars( $key );
+            $key_name = htmlspecialchars($key);
 
-            if ( 'hash' == $Redis->type( $key ) )
-            {
+            if ('hash' == $Redis->type($key)) {
 
                 $value = 'hash';
+            } else {
 
-            }
-            else
-            {
+                $value = $Redis->get($key);
 
-                $value = $Redis->get( $key );
-
-                if ( preg_match( '/^a\:\d*\:\{.*\}$/', $value ) )
-                {
-                    $data = unserialize( $value );
-                    $value = "<pre>\n" . print_r( $data, true ) . "</pre>";
+                if (preg_match('/^a\:\d*\:\{.*\}$/', $value)) {
+                    $data = unserialize($value);
+                    $value = "<pre>\n" . print_r($data, true) . "</pre>";
+                } else {
+                    $value = htmlspecialchars($Redis->get($key));
                 }
-                else
-                {
-                    $value = htmlspecialchars( $Redis->get( $key ) );
-                }
-
             }
 
 
-            $html .=<<<ROW
+            $html .= <<<ROW
 <tr>
   <td valign="top">
     <form method="post" action="{$delkey_route}">
@@ -94,45 +83,42 @@ ROW;
         }
 
         return $html . $this->_Footer();
-
     }
 
 
     public function DelKey()
     {
 
-        $cache_id  = request()->input( 'cache_id' );
-        $redis_key = request()->input( 'redis_key' );
+        $cache_id  = request()->input('cache_id');
+        $redis_key = request()->input('redis_key');
 
-        $this->_Redis( (int) $cache_id )->del( $redis_key );
+        $this->_Redis((int) $cache_id)->del($redis_key);
 
-        return redirect()->route( 'sattest.redis', $cache_id );
-
+        return redirect()->route('sattest.redis', $cache_id);
     }
 
 
-    public function CacheKeys() : array
+    public function CacheKeys(): array
     {
 
-        $laravel_db = Cache::store( 'redis' )->connection()->client()->getConnection()->getParameters()->database;
+        $laravel_db = Cache::store('redis')->connection()->client()->getConnection()->getParameters()->database;
         $rcache_db  = RCache::Redis()->getConnection()->getParameters()->database;
 
         return [
 
             $laravel_db => [
-                'route' => route( 'sattest.redis', $laravel_db ),
+                'route' => route('sattest.redis', $laravel_db),
                 'title' => "Laravel ({$laravel_db})",
                 'conn'  => 'cache',
             ],
 
             $rcache_db => [
-                'route' => route( 'sattest.redis', $rcache_db ),
+                'route' => route('sattest.redis', $rcache_db),
                 'title' => "RCache ({$rcache_db})",
                 'conn'  => 'rcache',
             ],
 
         ];
-
     }
 
 
@@ -141,9 +127,9 @@ ROW;
     //
 
 
-    private function _Redis( int $cache_id )
+    private function _Redis(int $cache_id)
     {
-        return Redis::Connection( $this->CacheKeys()[ $cache_id ][ 'conn' ] );
+        return Redis::Connection($this->CacheKeys()[$cache_id]['conn']);
     }
 
 
@@ -152,29 +138,24 @@ ROW;
     //
 
 
-    private function _Header( int $cache_id = null ) : string
+    private function _Header(int $cache_id = null): string
     {
 
         $cache_opts = '';
 
-        foreach ( $this->CacheKeys() as $id => $data )
-        {
+        foreach ($this->CacheKeys() as $id => $data) {
             $cache_opts .= "<option value=\"{$data['route']}\""
-                . ( $id == $cache_id ? ' selected' : '' )
+                . ($id == $cache_id ? ' selected' : '')
                 . ">{$data['title']}</option>\n";
         }
 
-        return str_replace( '|CACHEOPTS|', $cache_opts, file_get_contents( base_path( '/sat/redis_header.html' ) ) );
-
+        return str_replace('|CACHEOPTS|', $cache_opts, file_get_contents(base_path('/sat/redis_header.html')));
     }
 
 
-    private function _Footer() : string
+    private function _Footer(): string
     {
 
-        return file_get_contents( base_path( '/sat/redis_footer.html' ) );
-
+        return file_get_contents(base_path('/sat/redis_footer.html'));
     }
-
-
 }

@@ -8,7 +8,7 @@ interface SupportPollData {
     lessons: any[];
     classHistory: any[];
     photos: any[];
-    examResults: any[];
+    examResults: any;   // object from getExamResults(), not an array
     studentDetails: any;
 }
 
@@ -47,7 +47,7 @@ export const useSupportPoll = ({
                 params.course_id = courseId;
             }
 
-            const response = await axios.get('/admin/api/support/poll-data', {
+            const response = await axios.get('/admin/support/poll-data', {
                 params,
                 signal: abortControllerRef.current.signal
             });

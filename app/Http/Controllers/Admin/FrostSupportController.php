@@ -19,8 +19,8 @@ class FrostSupportController extends Controller
         $isSysAdmin = $user->hasRole('sys-admin');
 
         return view('admin.frost-support.index', [
-            'isAdmin' => $isAdmin,
-            'isSysAdmin' => $isSysAdmin
+            'isAdmin'    => $isAdmin,
+            'isSysAdmin' => $isSysAdmin,
         ]);
     }
 }

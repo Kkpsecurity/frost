@@ -216,8 +216,11 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                 </div>
 
                 {/* ID Card */}
-                <div className="col-12 col-lg-6">
-                    <div className="card" style={cardStyle}>
+                <div className="col-12 col-lg-6 vh-100">
+                    <div
+                        className="card"
+                        style={{ ...cardStyle, overflow: "hidden" }}
+                    >
                         <div className="card-body">
                             <h6 style={{ color: "white", fontWeight: 600 }}>
                                 <i
@@ -251,19 +254,22 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                                             border: 0,
                                             background: "transparent",
                                             cursor: "pointer",
+                                            overflow: "hidden",
                                         }}
                                     >
                                         <img
                                             src={idCardUrl}
                                             alt="ID Card"
                                             style={{
+                                                display: "block",
                                                 width: "100%",
-                                                height: "160px",
+                                                maxWidth: "100%",
+                                                height: "auto",
+                                                maxHeight: "180px",
                                                 objectFit: "contain",
                                                 borderRadius: "0.5rem",
                                                 backgroundColor:
                                                     "rgba(0,0,0,0.25)",
-                                                display: "block",
                                             }}
                                         />
                                         <div

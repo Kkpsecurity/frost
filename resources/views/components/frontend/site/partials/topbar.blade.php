@@ -8,6 +8,10 @@
                             <i class="fas fa-calendar me-1"></i>
                             <span class="date-greeter">{{ dateGreeter() }}</span>
                         </li>
+                        <li class="d-flex justify-content-start align-items-center text-light ms-3">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="est-clock" title="Eastern Time (Class Timezone)"></span>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -17,3 +21,24 @@
         </div>
     </div>
 </div>
+<script>
+    (function() {
+        var fmt = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+
+        function tick() {
+            var el = document.getElementById('est-clock');
+            if (el) {
+                el.textContent = 'EST: ' + fmt.format(new Date());
+            }
+        }
+
+        tick();
+        setInterval(tick, 1000);
+    })();
+</script>

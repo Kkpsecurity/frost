@@ -7,10 +7,14 @@ use App\Http\Controllers\Admin\SupportController;
 // All support routes require admin authentication
 Route::middleware(['admin', 'admin.support'])->group(function () {
     // Support SPA Dashboard
-    Route::get('/frost-support', [FrostSupportController::class, 'index'])->name('admin.frost-support');
+    Route::get('/frost-support', [FrostSupportController::class, 'index'])->name('frost-support');
 
-    // Support API endpoints
-    Route::get('/api/support/search-users', [SupportController::class, 'searchUsers'])->name('admin.support.search-users');
-    Route::get('/api/support/poll-data', [SupportController::class, 'pollData'])->name('admin.support.poll-data');
-    Route::post('/api/support/update-student/{studentId}', [SupportController::class, 'updateStudentDetails'])->name('admin.support.update-student');
+    // Support endpoints
+    Route::get('/support/search-users', [SupportController::class, 'searchUsers'])->name('support.search-users');
+    Route::get('/support/poll-data', [SupportController::class, 'pollData'])->name('support.poll-data');
+    Route::post('/support/update-student/{studentId}', [SupportController::class, 'updateStudentDetails'])->name('support.update-student');
+
+    // Exam management
+    Route::post('/support/reset-exam/{examAuthId}', [SupportController::class, 'resetExam'])->name('support.reset-exam');
+    Route::get('/support/exam-review/{examAuthId}', [SupportController::class, 'getExamReview'])->name('support.exam-review');
 });

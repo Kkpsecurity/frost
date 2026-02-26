@@ -9,15 +9,15 @@ use Illuminate\Http\Request;
 class IsSupport
 {
 
-    public function handle( Request $request, Closure $next )
+    public function handle(Request $request, Closure $next)
     {
 
-        kkpdebug( 'Guard', __CLASS__ );
+        kkpdebug('Guard', __CLASS__);
 
-        abort_unless( auth()->authenticate()->IsSupport(), 403 );
+        // Must use the 'admin' guard — admin users are NOT on the default web guard
+        $user = auth('admin')->user();
+        abort_unless($user && $user->IsSupport(), 403);
 
-        return $next( $request );
-
+        return $next($request);
     }
-
 }

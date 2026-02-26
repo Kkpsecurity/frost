@@ -7,14 +7,14 @@
 @stop
 
 @section('content')
-    @if(session('success'))
+    @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             <i class="fas fa-check-circle"></i> {{ session('success') }}
         </div>
     @endif
 
-    @if(session('error'))
+    @if (session('error'))
         <div class="alert alert-danger alert-dismissible fade show">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
@@ -38,7 +38,8 @@
         <div class="col-lg-3 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3>{{ number_format(\App\Models\Order::whereNull('completed_at')->whereNull('refunded_at')->count()) }}</h3>
+                    <h3>{{ number_format(\App\Models\Order::whereNull('completed_at')->whereNull('refunded_at')->count()) }}
+                    </h3>
                     <p>Pending Orders</p>
                 </div>
                 <div class="icon">
@@ -81,7 +82,7 @@
                         <i class="fab fa-stripe"></i> Stripe Configuration
                     </h3>
                     <div class="card-tools">
-                        @if($settings['stripe_enabled'])
+                        @if ($settings['stripe_enabled'])
                             <span class="badge badge-success">Enabled</span>
                         @else
                             <span class="badge badge-secondary">Disabled</span>
@@ -96,7 +97,7 @@
                         <div class="form-group">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" class="custom-control-input" id="stripe_enabled"
-                                       name="stripe_enabled" value="1" {{ $settings['stripe_enabled'] ? 'checked' : '' }}>
+                                    name="stripe_enabled" value="1" {{ $settings['stripe_enabled'] ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="stripe_enabled">
                                     Enable Stripe Payments
                                 </label>
@@ -105,27 +106,25 @@
 
                         <div class="form-group">
                             <label for="stripe_key">Publishable Key</label>
-                            <input type="text" class="form-control" id="stripe_key"
-                                   name="stripe_key" value="{{ $settings['stripe_key'] ?? '' }}"
-                                   placeholder="pk_test_...">
+                            <input type="text" class="form-control" id="stripe_key" name="stripe_key"
+                                value="{{ $settings['stripe_key'] ?? '' }}" placeholder="pk_test_...">
                             <small class="form-text text-muted">Your Stripe publishable API key</small>
                         </div>
 
                         <div class="form-group">
                             <label for="stripe_secret">Secret Key</label>
-                            <input type="password" class="form-control" id="stripe_secret"
-                                   name="stripe_secret" placeholder="sk_test_...">
+                            <input type="password" class="form-control" id="stripe_secret" name="stripe_secret"
+                                placeholder="sk_test_...">
                             <small class="form-text text-muted">Your Stripe secret API key (stored securely)</small>
                         </div>
 
                         <div class="form-group">
                             <label for="stripe_webhook">Webhook URL</label>
                             <div class="input-group">
-                                <input type="text" class="form-control"
-                                       value="{{ url('/webhooks/stripe') }}" readonly>
+                                <input type="text" class="form-control" value="{{ url('/webhooks/stripe') }}" readonly>
                                 <div class="input-group-append">
                                     <button class="btn btn-outline-secondary" type="button"
-                                            onclick="navigator.clipboard.writeText('{{ url('/webhooks/stripe') }}')">
+                                        onclick="navigator.clipboard.writeText('{{ url('/webhooks/stripe') }}')">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
@@ -160,7 +159,7 @@
                         <i class="fab fa-paypal"></i> PayPal Configuration
                     </h3>
                     <div class="card-tools">
-                        @if($settings['paypal_enabled'])
+                        @if ($settings['paypal_enabled'])
                             <span class="badge badge-success">Enabled</span>
                         @else
                             <span class="badge badge-secondary">Disabled</span>
@@ -175,7 +174,8 @@
                         <div class="form-group">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" class="custom-control-input" id="paypal_enabled"
-                                       name="paypal_enabled" value="1" {{ $settings['paypal_enabled'] ? 'checked' : '' }}>
+                                    name="paypal_enabled" value="1"
+                                    {{ $settings['paypal_enabled'] ? 'checked' : '' }}>
                                 <label class="custom-control-label" for="paypal_enabled">
                                     Enable PayPal Payments
                                 </label>
@@ -184,16 +184,16 @@
 
                         <div class="form-group">
                             <label for="paypal_client_id">Client ID</label>
-                            <input type="text" class="form-control" id="paypal_client_id"
-                                   name="paypal_client_id" value="{{ $settings['paypal_client_id'] ?? '' }}"
-                                   placeholder="AYSq3RDGsmBLJE-otTkBtM-jBRd1TCQwFf9RGfwddNXWz0uFU9ztymylOhRS">
+                            <input type="text" class="form-control text-dark" id="paypal_client_id"
+                                name="paypal_client_id" value="{{ $settings['paypal_client_id'] ?? '' }}"
+                                placeholder="AYSq3RDGsmBLJE-otTkBtM-jBRd1TCQwFf9RGfwddNXWz0uFU9ztymylOhRS">
                             <small class="form-text text-muted">Your PayPal REST API Client ID</small>
                         </div>
 
                         <div class="form-group">
                             <label for="paypal_secret">Secret Key</label>
-                            <input type="password" class="form-control" id="paypal_secret"
-                                   name="paypal_secret" placeholder="Enter PayPal secret key">
+                            <input type="password" class="form-control text-dark" id="paypal_secret"
+                                name="paypal_secret" placeholder="Enter PayPal secret key">
                             <small class="form-text text-muted">Your PayPal REST API secret key (stored securely)</small>
                         </div>
 
@@ -209,7 +209,8 @@
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
                             <strong>Sandbox Mode:</strong> Use sandbox credentials for testing.
-                            Create a sandbox account at <a href="https://developer.paypal.com/developer/accounts" target="_blank">PayPal Developer</a>.
+                            Create a sandbox account at <a href="https://developer.paypal.com/developer/accounts"
+                                target="_blank">PayPal Developer</a>.
                         </div>
                     </div>
 
@@ -217,7 +218,8 @@
                         <button type="submit" class="btn btn-info">
                             <i class="fas fa-save"></i> Save PayPal Settings
                         </button>
-                        <a href="https://developer.paypal.com/developer/applications" target="_blank" class="btn btn-outline-info">
+                        <a href="https://developer.paypal.com/developer/applications" target="_blank"
+                            class="btn btn-outline-info">
                             <i class="fas fa-external-link-alt"></i> Get API Credentials
                         </a>
                     </div>
@@ -250,12 +252,14 @@
                             <div class="col-md-3 col-sm-6">
                                 <div class="info-box">
                                     <span class="info-box-icon bg-success">
-                                        <i class="fas fa-{{ $type->id == 1 ? 'money-bill-wave' : ($type->id == 2 ? 'credit-card' : ($type->id == 3 ? 'university' : 'wallet')) }}"></i>
+                                        <i
+                                            class="fas fa-{{ $type->id == 1 ? 'money-bill-wave' : ($type->id == 2 ? 'credit-card' : ($type->id == 3 ? 'university' : 'wallet')) }}"></i>
                                     </span>
                                     <div class="info-box-content">
                                         <span class="info-box-text">{{ $type->name }}</span>
                                         <span class="info-box-number">
-                                            {{ \App\Models\Order::where('payment_type_id', $type->id)->whereNotNull('completed_at')->count() }} orders
+                                            {{ \App\Models\Order::where('payment_type_id', $type->id)->whereNotNull('completed_at')->count() }}
+                                            orders
                                         </span>
                                     </div>
                                 </div>
@@ -309,47 +313,47 @@
                             </thead>
                             <tbody>
                                 @forelse($recentOrders as $order)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('admin.orders.show', $order->id) }}">
-                                            #{{ $order->id }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        @if($order->User)
-                                            {{ $order->User->fullname() }}
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($order->Course)
-                                            {{ $order->Course->name ?? 'N/A' }}
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td>${{ number_format($order->total_price, 2) }}</td>
-                                    <td>
-                                        @if($order->PaymentType)
-                                            <span class="badge badge-info">{{ $order->PaymentType->name }}</span>
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $order->completed_at->format('M d, Y') }}</td>
-                                    <td>
-                                        @if($order->refunded_at)
-                                            <span class="badge badge-danger">Refunded</span>
-                                        @else
-                                            <span class="badge badge-success">Completed</span>
-                                        @endif
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td>
+                                            <a href="{{ route('admin.orders.show', $order->id) }}">
+                                                #{{ $order->id }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            @if ($order->User)
+                                                {{ $order->User->fullname() }}
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if ($order->Course)
+                                                {{ $order->Course->name ?? 'N/A' }}
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>${{ number_format($order->total_price, 2) }}</td>
+                                        <td>
+                                            @if ($order->PaymentType)
+                                                <span class="badge badge-info">{{ $order->PaymentType->name }}</span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>{{ $order->completed_at->format('M d, Y') }}</td>
+                                        <td>
+                                            @if ($order->refunded_at)
+                                                <span class="badge badge-danger">Refunded</span>
+                                            @else
+                                                <span class="badge badge-success">Completed</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted">No recent transactions</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">No recent transactions</td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -361,10 +365,10 @@
 @stop
 
 @section('js')
-<script>
-    // Auto-hide success messages after 5 seconds
-    setTimeout(function() {
-        $('.alert-success').fadeOut();
-    }, 5000);
-</script>
+    <script>
+        // Auto-hide success messages after 5 seconds
+        setTimeout(function() {
+            $('.alert-success').fadeOut();
+        }, 5000);
+    </script>
 @stop

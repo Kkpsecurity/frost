@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import axios from "axios";
 
 interface User {
@@ -36,15 +36,12 @@ const StudentSearch: React.FC<StudentSearchProps> = ({
 
         try {
             const searchAll = isAdmin || isSysAdmin;
-            const response = await axios.get(
-                "/admin/api/support/search-users",
-                {
-                    params: {
-                        query,
-                        searchAll,
-                    },
-                }
-            );
+            const response = await axios.get("/admin/support/search-users", {
+                params: {
+                    query,
+                    searchAll,
+                },
+            });
 
             if (response.data.success) {
                 setResults(response.data.data);
@@ -127,25 +124,41 @@ const StudentSearch: React.FC<StudentSearchProps> = ({
                             {results.map((user) => (
                                 <div key={user.id} className="col-md-3 mb-3">
                                     <div
-                                        className="card h-100 cursor-pointer hover-shadow"
+                                        className="card h-100"
                                         onClick={() => handleSelectUser(user)}
                                         style={{ cursor: "pointer" }}
                                     >
-                                        <div className="card-body text-center">
+                                        <div
+                                            className="card-body"
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                textAlign: "center",
+                                                padding: "1.25rem",
+                                            }}
+                                        >
                                             <img
                                                 src={user.avatar}
                                                 alt={user.name}
-                                                className="rounded-circle mb-3"
+                                                className="rounded-circle"
                                                 style={{
                                                     width: "80px",
                                                     height: "80px",
                                                     objectFit: "cover",
+                                                    marginBottom: "0.75rem",
                                                 }}
                                             />
-                                            <h6 className="card-title mb-1">
+                                            <h6
+                                                className="card-title mb-1"
+                                                style={{ width: "100%" }}
+                                            >
                                                 {user.name}
                                             </h6>
-                                            <p className="card-text text-muted small mb-2">
+                                            <p
+                                                className="card-text text-muted small mb-2"
+                                                style={{ width: "100%" }}
+                                            >
                                                 {user.email}
                                             </p>
                                             <span
