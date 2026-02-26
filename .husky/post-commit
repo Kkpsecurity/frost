@@ -1,1 +1,1 @@
-﻿powershell -NoProfile -ExecutionPolicy Bypass -File ".husky/sync-to-dev.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".husky/sync-to-dev.ps1"
