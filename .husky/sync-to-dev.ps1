@@ -1,11 +1,11 @@
 # ==============================================================================
 # FROST - Dev Server Sync Script
 # Triggered by Husky post-commit hook
-# Destination: \\develc\webroot\frost-devel
+# Destination: \\atlas\webroot\frost-staging
 # ==============================================================================
 
 $Source = "C:\laragon\www\frost"
-$Dest = "\\develc\webroot\frost-devel"
+$Dest = "\\atlas\webroot\frost-staging"
 
 Write-Host ""
 Write-Host ">> Syncing to dev server: $Dest" -ForegroundColor Cyan
@@ -19,14 +19,15 @@ if (-not (Test-Path $Dest)) {
 
 # Run robocopy mirror sync
 # /MIR  - mirror source to dest (adds + removes files)
-# /XD   - exclude directories (preserve frost-devel-backup and other server-only dirs)
+# /XJD  - exclude junction points/symlinks (skips public/storage symlink)
+# /XD   - exclude directories (storage = runtime data, uploads, cache)
 # /XF   - exclude files
 # /NFL  - no file list       /NDL - no dir list
 # /NJH  - no job header      /NJS - no job summary
 # /NC   - no class labels    /NP  - no progress %
 # /R:2  - retry 2 times on failure
 # /W:3  - wait 3 seconds between retries
-robocopy $Source $Dest /MIR `
+robocopy $Source $Dest /MIR /XJD `
     /XD ".git" "node_modules" "frost-devel-backup" "$Source\storage" `
     /XF ".env" ".env.*" "*.log" `
     /NFL /NDL /NJH /NJS /NC /NP `
