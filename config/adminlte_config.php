@@ -300,8 +300,11 @@ return [
     'menu' => [
         // Navbar items:
         [
-            'type' => 'navbar-search',
-            'text' => 'search',
+            'type'        => 'navbar-search',
+            'text'        => 'Search students, courses, codes...',
+            'url'         => 'admin/search',
+            'method'      => 'get',
+            'input_name'  => 'adminlteSearch',
             'topnav_right' => true,
         ],
 
@@ -358,10 +361,6 @@ return [
         ],
 
         // Sidebar items:
-        [
-            'type' => 'sidebar-menu-search',
-            'text' => 'search',
-        ],
         [
             'text' => 'Dashboard',
             'route' => 'admin.dashboard',

@@ -11,6 +11,7 @@ namespace App\Models;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
 use App\Services\RCache;
 
@@ -44,7 +45,9 @@ class CourseAuth extends Model
     use ClassroomButton, ClassroomCourseDate, ExamsTrait, LastInstructor, LessonsTrait, SetStartDateTrait;
     use CourseAuthPresenter;
     use ExpirationTrait, PgTimestamps, PresentsTimeStamps;
-    use NoString;
+    use NoString, Searchable;
+
+    const SEARCHABLE_FIELDS = ['id', 'user_id', 'dol_tracking'];
 
 
     protected $table        = 'course_auths';
@@ -96,6 +99,15 @@ class CourseAuth extends Model
         'id_override'   => false,
 
     ];
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id'           => (string) $this->id,
+            'user_id'      => (string) $this->user_id,
+            'dol_tracking' => $this->dol_tracking ?? '',
+        ];
+    }
 
 
     //

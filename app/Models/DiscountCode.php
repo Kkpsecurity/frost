@@ -12,6 +12,7 @@ namespace App\Models;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
 use App\Services\RCache;
 
@@ -33,7 +34,9 @@ class DiscountCode extends Model
 
     #use DiscountCodePresenter;
     use ExpirationTrait, PgTimestamps, PresentsTimeStamps;
-    use NoString, Observable, RCacheModelTrait;
+    use NoString, Observable, RCacheModelTrait, Searchable;
+
+    const SEARCHABLE_FIELDS = ['code', 'client', 'uuid'];
 
 
     protected $table        = 'discount_codes';
@@ -60,6 +63,17 @@ class DiscountCode extends Model
     ];
 
     protected $guarded      = ['id'];
+
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id'     => $this->id,
+            'code'   => $this->code,
+            'client' => $this->client,
+            'uuid'   => $this->uuid,
+        ];
+    }
 
 
     //

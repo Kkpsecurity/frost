@@ -12,6 +12,7 @@ namespace App\Models;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
 use App\Services\RCache;
 
@@ -31,8 +32,10 @@ use App\Traits\RCacheModelTrait;
 class Course extends Model
 {
 
-    use ExpirationTrait;
+    use ExpirationTrait, Searchable;
     use Observable, RCacheModelTrait;
+
+    const SEARCHABLE_FIELDS = ['title', 'title_long'];
 
 
     protected $table        = 'courses';
@@ -72,6 +75,15 @@ class Course extends Model
         'is_active'         => true,
         'needs_range'       => false,
     ];
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id'         => $this->id,
+            'title'      => $this->title,
+            'title_long' => $this->title_long,
+        ];
+    }
 
     public function __toString()
     {
