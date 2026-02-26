@@ -476,6 +476,13 @@ function GetPageConfigurations($page = null)
             'content' => 'We are here to help.',
             'panels' => ['support.support']
         ],
+        'cert-search' => [
+            'title' => 'Training Certificate Search',
+            'meta_description' => 'Search for Florida security training certificates through the FDACS Online Training Registry.',
+            'header' => 'Training Certificate Search',
+            'content' => 'Verify security training certificates via the Florida Department of Agriculture and Consumer Services.',
+            'panels' => ['cert-search.cert-search']
+        ],
         // Add more pages as needed
     ];
 

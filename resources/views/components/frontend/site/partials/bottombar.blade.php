@@ -44,8 +44,8 @@ $menuItems = [
             ],
             [
                 'label' => __('frontend.nav.certificate_search'),
-                'url' => 'https://licensing.fdacs.gov/OTR/',
-                'isActive' => '',
+                'url' => route('pages', 'cert-search'),
+                'isActive' => $segment1 === 'pages' && $segment2 === 'cert-search',
             ],
         ],
     ],

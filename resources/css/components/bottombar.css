@@ -138,8 +138,8 @@
 
 /* Dropdown Styling */
 .header-area .dropdown-menu {
-    background: #ffffff;
-    border: none;
+    background: var(--secondary-theme);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
     margin-top: 8px;
@@ -148,7 +148,7 @@
 }
 
 .header-area .dropdown-item {
-    color: var(--neutral-700);
+    color: rgba(255, 255, 255, 0.85);
     padding: 10px 16px;
     border-radius: var(--radius-md);
     font-size: var(--font-size-sm);
@@ -158,14 +158,14 @@
 }
 
 .header-area .dropdown-item:hover {
-    background: var(--neutral-50);
-    color: var(--primary-700);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
     transform: translateX(4px);
 }
 
 .header-area .dropdown-item.active {
-    background: var(--primary-50);
-    color: var(--primary-700);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
     font-weight: var(--font-weight-medium);
 }
 
@@ -229,9 +229,9 @@
     }
 
     .header-area .dropdown-menu {
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--secondary-theme);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 }
 
