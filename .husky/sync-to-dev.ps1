@@ -29,10 +29,11 @@ if (-not (Test-Path $Dest)) {
 # /W:3  - wait 3 seconds between retries
 robocopy $Source $Dest /MIR /XJD `
     /XD ".git" "node_modules" "frost-devel-backup" `
-        "$Source\storage\logs" `
-        "$Source\storage\framework\cache" `
-        "$Source\storage\framework\sessions" `
-        "$Source\storage\framework\views" `
+    "$Source\storage\logs" `
+    "$Source\storage\framework\cache" `
+    "$Source\storage\framework\sessions" `
+    "$Source\storage\framework\views" `
+    "$Source\storage\app\tntsearch" `
     /XF ".env" ".env.*" "*.log" `
     /NFL /NDL /NJH /NJS /NC /NP `
     /R:2 /W:3
