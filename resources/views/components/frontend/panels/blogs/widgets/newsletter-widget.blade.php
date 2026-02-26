@@ -5,9 +5,10 @@
             <div class="newsletter-icon">
                 <i class="fas fa-envelope"></i>
             </div>
-            <h5>Stay Updated</h5>
-            <p>Get the latest security training insights and regulatory updates delivered to your inbox.</p>
-            <a href="{{ route('pages', 'contact') }}" class="btn btn-primary btn-sm">Subscribe Now</a>
+            <h5>{{ __('frontend.blog.stay_updated') }}</h5>
+            <p>{{ __('frontend.blog.newsletter_hint') }}</p>
+            <a href="{{ route('pages', 'contact') }}"
+                class="btn btn-primary btn-sm">{{ __('frontend.blog.subscribe_now') }}</a>
         </div>
     </div>
 </div>

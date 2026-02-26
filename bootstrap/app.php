@@ -64,6 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Web Middleware Group - Add custom middleware
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\SetLocale::class,
         ]);
 
         // API Middleware Group - Add Sanctum

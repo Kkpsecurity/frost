@@ -274,14 +274,33 @@
 </style>
 
 <div class="top_right_nav">
+
+    {{-- Locale Switcher (always visible) --}}
+    @php
+        $currentLocale = app()->getLocale();
+        $nextLocale = $currentLocale === 'en' ? 'es' : 'en';
+    @endphp
+    <div class="me-2">
+        <form action="{{ route('user.locale') }}" method="POST" style="display:inline;margin:0;">
+            @csrf
+            <input type="hidden" name="locale" value="{{ $nextLocale }}">
+            <button type="submit"
+                class="btn btn-sm {{ $currentLocale === 'en' ? 'btn-outline-light' : 'btn-outline-warning' }}"
+                style="font-size: 11px; padding: 2px 8px; letter-spacing: .5px;"
+                title="{{ $currentLocale === 'en' ? __('frontend.nav.switch_to_spanish') : __('frontend.nav.switch_to_english') }}">
+                {{ strtoupper($nextLocale) }}
+            </button>
+        </form>
+    </div>
+
     @guest()
-        <a href="{{ url('login') }}" class="btn btn-sm btn-primary m-1 login-button" data-toggle="tooltip" data-placement="top"
-            title="Login">
-            <i class="fas fa-sign-in"></i> <span class="button-text">Login</span>
+        <a href="{{ url('login') }}" class="btn btn-sm btn-primary m-1 login-button" data-toggle="tooltip"
+            data-placement="top" title="{{ __('frontend.nav.login') }}">
+            <i class="fas fa-sign-in"></i> <span class="button-text">{{ __('frontend.nav.login') }}</span>
         </a>
         <a href="{{ url('register') }}" class="btn btn-sm btn-secondary m-1 register-button" data-toggle="tooltip"
-            data-placement="top" title="Register">
-            <i class="fas fa-lock"></i> <span class="button-text">Register</span>
+            data-placement="top" title="{{ __('frontend.nav.register') }}">
+            <i class="fas fa-lock"></i> <span class="button-text">{{ __('frontend.nav.register') }}</span>
         </a>
     @endguest
 
@@ -290,8 +309,10 @@
         {{-- Impersonation Notice --}}
         @impersonating($guard = null)
             <a href="{{ route('impersonate.account.leave') }}" class="me-3">
-                <button class="btn btn-sm btn-danger" data-toggle="tooltip" data-placement="top" title="Leave Impersonation">
-                    <i class="fas fa-user-secret"></i> <span class="button-text">Leave Impersonation</span>
+                <button class="btn btn-sm btn-danger" data-toggle="tooltip" data-placement="top"
+                    title="{{ __('frontend.nav.leave_impersonation') }}">
+                    <i class="fas fa-user-secret"></i> <span
+                        class="button-text">{{ __('frontend.nav.leave_impersonation') }}</span>
                 </button>
             </a>
         @endImpersonating
@@ -301,7 +322,7 @@
             {{-- Notification Dropdown --}}
             <div class="notification-dropdown dropdown">
                 <button class="notification-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                    title="Notifications">
+                    title="{{ __('frontend.nav.notifications') }}">
                     <i class="fas fa-bell"></i>
                     @php
                         $unreadCount = Auth::user()->unreadNotifications->count();
@@ -313,13 +334,13 @@
                 <ul class="dropdown-menu">
                     <li>
                         <div class="dropdown-header">
-                            <span>Notifications</span>
+                            <span>{{ __('frontend.nav.notifications') }}</span>
                             @if ($unreadCount > 0)
                                 <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-link btn-sm text-white p-0"
                                         style="text-decoration: none; font-size: 12px;">
-                                        Mark all read
+                                        {{ __('frontend.nav.mark_all_read') }}
                                     </button>
                                 </form>
                             @endif
@@ -340,7 +361,7 @@
                                     </div>
                                     <div class="notification-content">
                                         <div class="notification-title">
-                                            {{ $notification->data['title'] ?? 'Notification' }}
+                                            {{ $notification->data['title'] ?? __('frontend.nav.notifications') }}
                                         </div>
                                         <div class="notification-message">
                                             {{ Str::limit($notification->data['message'] ?? '', 60) }}
@@ -356,7 +377,7 @@
                         <li>
                             <div class="empty-notifications">
                                 <i class="fas fa-bell-slash"></i>
-                                <div>No notifications</div>
+                                <div>{{ __('frontend.nav.no_notifications') }}</div>
                             </div>
                         </li>
                     @endforelse
@@ -365,7 +386,7 @@
                             <div class="notification-footer">
                                 <a href="{{ route('account.index', ['section' => 'inbox']) }}"
                                     class="btn btn-sm btn-primary flex-grow-1">
-                                    View All Notifications
+                                    {{ __('frontend.nav.view_all_notifications') }}
                                 </a>
                             </div>
                         </li>
@@ -407,17 +428,17 @@
                     </li>
                     <li>
                         <a class="dropdown-item" href="{{ url('account') }}">
-                            <i class="fas fa-user me-2"></i>Profile
+                            <i class="fas fa-user me-2"></i>{{ __('frontend.nav.profile') }}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="{{ url('account') . '?section=inbox' }}">
-                            <i class="fas fa-bell me-2"></i>Notifications
+                            <i class="fas fa-bell me-2"></i>{{ __('frontend.nav.notifications') }}
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="{{ url('account') . '?section=orders' }}">
-                            <i class="fas fa-shopping-bag me-2"></i>Orders
+                            <i class="fas fa-shopping-bag me-2"></i>{{ __('frontend.nav.orders') }}
                         </a>
                     </li>
                     <li>
@@ -427,7 +448,7 @@
                         <form action="{{ url('logout') }}" method="POST" class="d-inline">
                             @csrf
                             <button type="submit" class="dropdown-item text-danger">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                <i class="fas fa-sign-out-alt me-2"></i>{{ __('frontend.nav.logout') }}
                             </button>
                         </form>
                     </li>

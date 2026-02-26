@@ -9,7 +9,7 @@
 
     <x-frontend.site.partials.header />
 
-    <main class="main-page-content">
+    <main class="main-page-content frost-secondary-bg">
         <x-frontend.site.render-panels :page="$content" />
     </main>
 

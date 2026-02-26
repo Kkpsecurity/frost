@@ -70,16 +70,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         if (typeof headshot === "string") return headshot;
         if (Array.isArray(headshot)) return headshot.find(Boolean) || null;
 
-        // Backend sends { monday: url|null, ... } (object)
+        // Backend sends { thursday: url|null, ... } — check TODAY's key only.
+        // Do NOT fall back to other days: an old headshot must not satisfy
+        // today's onboarding requirement.
         if (typeof headshot === "object") {
             const todayKey = getTodayKey();
             const todayUrl = headshot?.[todayKey];
             if (typeof todayUrl === "string" && todayUrl.length > 0)
                 return todayUrl;
-            const firstUrl = Object.values(headshot).find(
-                (v: any) => typeof v === "string" && v.length > 0,
-            );
-            return (firstUrl as string) || null;
+            return null; // no fallback to previous days
         }
 
         return null;

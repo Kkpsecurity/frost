@@ -412,7 +412,7 @@ if (!function_exists('featureEnabled')) {
 
 function GetPageConfigurations($page = null)
 {
-   $pages = [
+    $pages = [
         'home' => [
             'title' => 'Welcome Florida Online Security Training',
             'meta_description' => 'Discover our services and offerings.',
@@ -447,6 +447,34 @@ function GetPageConfigurations($page = null)
             'header' => 'FAQ',
             'content' => 'Get answers to frequently asked questions.',
             'panels' => ['faqs.faqs-hero', 'faqs.faqs']
+        ],
+        'privacy' => [
+            'title' => 'Privacy Policy',
+            'meta_description' => 'Read our privacy policy to understand how we collect, use, and protect your personal information.',
+            'header' => 'Privacy Policy',
+            'content' => 'Our commitment to protecting your privacy.',
+            'panels' => ['privacy.privacy']
+        ],
+        'terms' => [
+            'title' => 'Terms & Conditions',
+            'meta_description' => 'Review the terms and conditions governing your use of our security training services.',
+            'header' => 'Terms & Conditions',
+            'content' => 'Terms governing the use of our services.',
+            'panels' => ['privacy.terms']
+        ],
+        'student_agreement' => [
+            'title' => 'Student Agreement',
+            'meta_description' => 'Read the student agreement outlining responsibilities and expectations for enrolled students.',
+            'header' => 'Student Agreement',
+            'content' => 'Agreement between students and our institution.',
+            'panels' => ['privacy.student-agreement']
+        ],
+        'support' => [
+            'title' => 'Support Center',
+            'meta_description' => 'Get help with your security training courses, licensing questions, or account issues. Contact our support team.',
+            'header' => 'Support Center',
+            'content' => 'We are here to help.',
+            'panels' => ['support.support']
         ],
         // Add more pages as needed
     ];

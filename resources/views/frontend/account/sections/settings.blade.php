@@ -1,7 +1,7 @@
 {{-- Settings Section --}}
 <div class="settings-section">
     <h3 class="text-white mb-4">
-        <i class="fas fa-cog me-2"></i>Account Settings
+        <i class="fas fa-cog me-2"></i>{{ __('frontend.account.account_settings') }}
     </h3>
 
     <form action="{{ route('account.settings.update') }}" method="POST" class="settings-form">
@@ -10,15 +10,14 @@
         {{-- Email Preferences --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-envelope me-2"></i>Email Preferences
+                <i class="fas fa-envelope me-2"></i>{{ __('frontend.account.email_preferences') }}
             </h5>
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="emailOptIn" name="email_opt_in"
                     {{ $data['email_preferences']['email_opt_in'] ? 'checked' : '' }}>
                 <label class="form-check-label text-white" for="emailOptIn">
-                    <strong>Receive promotional emails and updates</strong>
-                    <small class="d-block text-white-50 mt-1">Get news about courses, special offers, and platform
-                        updates</small>
+                    <strong>{{ __('frontend.account.email_opt_in_label') }}</strong>
+                    <small class="d-block text-white-50 mt-1">{{ __('frontend.account.email_opt_in_hint') }}</small>
                 </label>
             </div>
         </div>
@@ -26,39 +25,39 @@
         {{-- Privacy Settings --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-shield-alt me-2"></i>Privacy Settings
+                <i class="fas fa-shield-alt me-2"></i>{{ __('frontend.account.privacy_settings') }}
             </h5>
             <div class="mb-3">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-eye me-2"></i>Profile Visibility
+                    <i class="fas fa-eye me-2"></i>{{ __('frontend.account.profile_visibility') }}
                 </label>
                 <select name="profile_visibility" class="form-select bg-dark text-white border-secondary p-2">
                     <option value="private"
                         {{ $data['privacy_settings']['profile_visibility'] === 'private' ? 'selected' : '' }}>
-                        🔒 Private - Only you can see your profile
+                        {{ __('frontend.account.visibility_private') }}
                     </option>
                     <option value="instructors"
                         {{ $data['privacy_settings']['profile_visibility'] === 'instructors' ? 'selected' : '' }}>
-                        👨‍🏫 Instructors Only - Visible to your instructors
+                        {{ __('frontend.account.visibility_instructors') }}
                     </option>
                     <option value="public"
                         {{ $data['privacy_settings']['profile_visibility'] === 'public' ? 'selected' : '' }}>
-                        🌐 Public - Visible to all users
+                        {{ __('frontend.account.visibility_public') }}
                     </option>
                 </select>
-                <small class="text-white-50 mt-2 d-block">Control who can view your profile information</small>
+                <small class="text-white-50 mt-2 d-block">{{ __('frontend.account.visibility_hint') }}</small>
             </div>
         </div>
 
         {{-- Display Preferences --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-palette me-2"></i>Display Preferences
+                <i class="fas fa-palette me-2"></i>{{ __('frontend.account.display_preferences') }}
             </h5>
 
             <div class="mb-3">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-clock me-2"></i>Timezone
+                    <i class="fas fa-clock me-2"></i>{{ __('frontend.account.timezone') }}
                 </label>
                 <select name="preferences[timezone]" class="form-select bg-dark text-white border-secondary p-2">
                     <option value="America/New_York"
@@ -86,13 +85,12 @@
                         Hawaii Time (HT)
                     </option>
                 </select>
-                <small class="text-white-50 mt-2 d-block">All dates and times will be displayed in your selected
-                    timezone</small>
+                <small class="text-white-50 mt-2 d-block">{{ __('frontend.account.timezone_hint') }}</small>
             </div>
 
             <div class="mb-3">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-language me-2"></i>Language
+                    <i class="fas fa-language me-2"></i>{{ __('frontend.account.language') }}
                 </label>
                 <select name="preferences[language]" class="form-select bg-dark text-white border-secondary p-2">
                     <option value="en" {{ ($data['preferences']['language'] ?? 'en') === 'en' ? 'selected' : '' }}>
@@ -102,12 +100,12 @@
                         Español (Spanish)
                     </option>
                 </select>
-                <small class="text-white-50 mt-2 d-block">Choose your preferred language for the interface</small>
+                <small class="text-white-50 mt-2 d-block">{{ __('frontend.account.language_hint') }}</small>
             </div>
 
             <div class="mb-3">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-calendar-alt me-2"></i>Date Format
+                    <i class="fas fa-calendar-alt me-2"></i>{{ __('frontend.account.date_format') }}
                 </label>
                 <select name="preferences[date_format]" class="form-select bg-dark text-white border-secondary p-2">
                     <option value="m/d/Y"
@@ -123,22 +121,22 @@
                         YYYY-MM-DD (2026-12-31)
                     </option>
                 </select>
-                <small class="text-white-50 mt-2 d-block">How dates should be displayed throughout the platform</small>
+                <small class="text-white-50 mt-2 d-block">{{ __('frontend.account.date_format_hint') }}</small>
             </div>
         </div>
 
         {{-- Learning Preferences --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-graduation-cap me-2"></i>Learning Preferences
+                <i class="fas fa-graduation-cap me-2"></i>{{ __('frontend.account.learning_preferences') }}
             </h5>
 
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="autoplayVideos" name="preferences[autoplay_videos]"
                     {{ $data['preferences']['autoplay_videos'] ?? false ? 'checked' : '' }}>
                 <label class="form-check-label text-white" for="autoplayVideos">
-                    <strong>Autoplay videos</strong>
-                    <small class="d-block text-white-50 mt-1">Automatically play lesson videos when opened</small>
+                    <strong>{{ __('frontend.account.autoplay_videos') }}</strong>
+                    <small class="d-block text-white-50 mt-1">{{ __('frontend.account.autoplay_videos_hint') }}</small>
                 </label>
             </div>
 
@@ -146,20 +144,21 @@
                 <input class="form-check-input" type="checkbox" id="showSubtitles" name="preferences[show_subtitles]"
                     {{ $data['preferences']['show_subtitles'] ?? true ? 'checked' : '' }}>
                 <label class="form-check-label text-white" for="showSubtitles">
-                    <strong>Show subtitles by default</strong>
-                    <small class="d-block text-white-50 mt-1">Enable subtitles/captions automatically on videos</small>
+                    <strong>{{ __('frontend.account.show_subtitles') }}</strong>
+                    <small class="d-block text-white-50 mt-1">{{ __('frontend.account.show_subtitles_hint') }}</small>
                 </label>
             </div>
 
             <div class="mb-3">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-volume-up me-2"></i>Default Video Volume
+                    <i class="fas fa-volume-up me-2"></i>{{ __('frontend.account.default_volume') }}
                 </label>
                 <input type="range" class="form-range" id="videoVolume" name="preferences[video_volume]"
                     min="0" max="100" value="{{ $data['preferences']['video_volume'] ?? 75 }}"
                     oninput="document.getElementById('volumeValue').textContent = this.value + '%'">
                 <small class="text-white-50 d-block mt-2">
-                    Volume: <span id="volumeValue">{{ $data['preferences']['video_volume'] ?? 75 }}%</span>
+                    {{ __('frontend.account.volume_label') }} <span
+                        id="volumeValue">{{ $data['preferences']['video_volume'] ?? 75 }}%</span>
                 </small>
             </div>
         </div>
@@ -167,23 +166,22 @@
         {{-- Security Settings --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-lock me-2"></i>Security Settings
+                <i class="fas fa-lock me-2"></i>{{ __('frontend.account.security_settings') }}
             </h5>
 
             <div class="mb-3">
                 <a href="{{ route('password.request') }}" class="btn btn-outline-light">
-                    <i class="fas fa-key me-2"></i>Change Password
+                    <i class="fas fa-key me-2"></i>{{ __('frontend.account.change_password') }}
                 </a>
-                <small class="d-block text-white-50 mt-2">Update your account password</small>
+                <small class="d-block text-white-50 mt-2">{{ __('frontend.account.change_password_hint') }}</small>
             </div>
 
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="sessionTimeout" name="preferences[auto_logout]"
                     {{ $data['preferences']['auto_logout'] ?? true ? 'checked' : '' }}>
                 <label class="form-check-label text-white" for="sessionTimeout">
-                    <strong>Auto-logout after inactivity</strong>
-                    <small class="d-block text-white-50 mt-1">Automatically log out after 30 minutes of
-                        inactivity</small>
+                    <strong>{{ __('frontend.account.auto_logout') }}</strong>
+                    <small class="d-block text-white-50 mt-1">{{ __('frontend.account.auto_logout_hint') }}</small>
                 </label>
             </div>
         </div>
@@ -204,7 +202,7 @@
                         ]))) > 0)
             <div class="mb-4 pb-4 border-bottom border-secondary">
                 <h5 class="text-white mb-3">
-                    <i class="fas fa-sliders-h me-2"></i>Additional Preferences
+                    <i class="fas fa-sliders-h me-2"></i>{{ __('frontend.account.additional_preferences') }}
                 </h5>
                 @foreach ($data['preferences'] as $key => $value)
                     @if (
@@ -230,10 +228,10 @@
 
         <div class="d-flex gap-3 flex-wrap">
             <button type="submit" class="btn btn-primary px-4">
-                <i class="fas fa-save me-2"></i>Save Settings
+                <i class="fas fa-save me-2"></i>{{ __('frontend.account.save_settings') }}
             </button>
             <button type="reset" class="btn btn-outline-secondary text-white px-4">
-                <i class="fas fa-undo me-2"></i>Reset Changes
+                <i class="fas fa-undo me-2"></i>{{ __('frontend.account.reset_changes') }}
             </button>
         </div>
     </form>

@@ -191,6 +191,20 @@ return [
                 'channels' => ['database', 'mail', 'browser'],
                 'user_controllable' => false,
             ],
+            'class_now' => [
+                'key' => 'preparation.class_now',
+                'name' => 'Class Is Starting Now',
+                'priority' => 'critical',
+                'channels' => ['database', 'mail', 'browser'],
+                'user_controllable' => false,
+            ],
+            'class_late' => [
+                'key' => 'preparation.class_late',
+                'name' => 'You Are Late to Class',
+                'priority' => 'critical',
+                'channels' => ['database', 'mail', 'browser'],
+                'user_controllable' => false,
+            ],
             'range_date_required' => [
                 'key' => 'preparation.range_date_required',
                 'name' => 'Range Date Required',

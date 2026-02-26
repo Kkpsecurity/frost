@@ -24,7 +24,7 @@
         font-size: 2.5rem;
         font-weight: 600;
         margin-bottom: 1.5rem;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
     .breadcrumb-wrapper {
@@ -64,7 +64,7 @@
         text-decoration: none;
     }
 
-    .breadcrumb-item + .breadcrumb-item::before {
+    .breadcrumb-item+.breadcrumb-item::before {
         content: var(--bs-breadcrumb-divider, "›");
         color: rgba(255, 255, 255, 0.5);
         padding: 0 0.75rem;
@@ -92,7 +92,7 @@
             font-size: 0.9rem;
         }
 
-        .breadcrumb-item + .breadcrumb-item::before {
+        .breadcrumb-item+.breadcrumb-item::before {
             padding: 0 0.5rem;
         }
     }
@@ -124,51 +124,51 @@
                             $segments = request()->segments();
                             $lastSegment = end($segments);
                             $pageTitle = $lastSegment ? ucfirst(str_replace('-', ' ', $lastSegment)) : 'Home';
-                            
+
                             // Custom titles for specific pages
                             $customTitles = [
-                                'blog' => 'Knowledge Base',
-                                'courses' => 'Courses & Schedules',
-                                'contact' => 'Contact Us',
-                                'about' => 'About Us',
-                                'faqs' => 'FAQs',
-                                'student' => 'Student Portal'
+                                'blog' => __('frontend.nav.knowledge_base'),
+                                'courses' => __('frontend.nav.courses_schedules'),
+                                'contact' => __('frontend.nav.contact_us'),
+                                'about' => __('frontend.nav.about_us'),
+                                'faqs' => __('frontend.nav.faqs'),
+                                'student' => __('frontend.nav.student_portal'),
                             ];
-                            
+
                             if (isset($customTitles[$lastSegment])) {
                                 $pageTitle = $customTitles[$lastSegment];
                             }
                         @endphp
                         <h3>{{ $pageTitle }}</h3>
                     </div>
-                    
+
                     <div class="breadcrumb-wrapper">
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb">
                                 <li class="breadcrumb-item">
                                     <a href="{{ route('pages') }}">
-                                        <i class="fas fa-home me-1"></i>Home
+                                        <i class="fas fa-home me-1"></i>{{ __('frontend.nav.home') }}
                                     </a>
                                 </li>
                                 @php
                                     $url = '';
                                     $segments = request()->segments();
                                 @endphp
-                                
-                                @foreach($segments as $key => $segment)
+
+                                @foreach ($segments as $key => $segment)
                                     @php
                                         $url .= '/' . $segment;
                                         $segmentTitle = ucfirst(str_replace('-', ' ', $segment));
-                                        
+
                                         // Apply custom titles for segments
                                         if (isset($customTitles[$segment])) {
                                             $segmentTitle = $customTitles[$segment];
                                         }
-                                        
-                                        $isLast = ($key === count($segments) - 1);
+
+                                        $isLast = $key === count($segments) - 1;
                                     @endphp
-                                    
-                                    @if($isLast)
+
+                                    @if ($isLast)
                                         <li class="breadcrumb-item active" aria-current="page">
                                             {{ $segmentTitle }}
                                         </li>

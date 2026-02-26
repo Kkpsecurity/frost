@@ -4,7 +4,7 @@
         $notificationsData = $notificationsData ?? ($data ?? []);
     @endphp
     <h3 class="text-white mb-4">
-        <i class="fas fa-bell me-2"></i>Notification Preferences
+        <i class="fas fa-bell me-2"></i>{{ __('frontend.account.notification_preferences') }}
     </h3>
 
     @if (session('success'))
@@ -27,23 +27,24 @@
         {{-- Global Notification Settings --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-toggle-on me-2"></i>Global Settings
+                <i class="fas fa-toggle-on me-2"></i>{{ __('frontend.account.global_settings') }}
             </h5>
-            <p class="text-white-50 mb-3">Control how you receive notifications across all channels</p>
+            <p class="text-white-50 mb-3">{{ __('frontend.account.global_settings_hint') }}</p>
 
             <div class="row g-3">
                 <div class="col-md-3">
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-desktop fa-2x text-info mb-3"></i>
-                            <h6 class="text-white mb-2">In-App Notifications</h6>
+                            <h6 class="text-white mb-2">{{ __('frontend.account.inapp_notifications') }}</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
                                 <input type="hidden" name="channels[database]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableInApp"
                                     name="channels[database]" value="1"
                                     {{ $notificationsData['channels']['database'] ?? true ? 'checked' : '' }}>
                             </div>
-                            <small class="text-white-50 mt-2 d-block">Show notifications in the app</small>
+                            <small
+                                class="text-white-50 mt-2 d-block">{{ __('frontend.account.inapp_notifications_hint') }}</small>
                         </div>
                     </div>
                 </div>
@@ -51,14 +52,15 @@
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-envelope fa-2x text-warning mb-3"></i>
-                            <h6 class="text-white mb-2">Email Notifications</h6>
+                            <h6 class="text-white mb-2">{{ __('frontend.account.email_notifications_label') }}</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
                                 <input type="hidden" name="channels[mail]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableEmail" name="channels[mail]"
                                     value="1"
                                     {{ $notificationsData['channels']['mail'] ?? true ? 'checked' : '' }}>
                             </div>
-                            <small class="text-white-50 mt-2 d-block">Receive email notifications</small>
+                            <small
+                                class="text-white-50 mt-2 d-block">{{ __('frontend.account.email_notifications_hint') }}</small>
                         </div>
                     </div>
                 </div>
@@ -66,14 +68,15 @@
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-bell fa-2x text-danger mb-3"></i>
-                            <h6 class="text-white mb-2">Live Alerts</h6>
+                            <h6 class="text-white mb-2">{{ __('frontend.account.live_alerts') }}</h6>
                             <div class="form-check form-switch d-flex justify-content-center">
                                 <input type="hidden" name="channels[browser]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableBrowser"
                                     name="channels[browser]" value="1"
                                     {{ $notificationsData['channels']['browser'] ?? true ? 'checked' : '' }}>
                             </div>
-                            <small class="text-white-50 mt-2 d-block">Real-time toasts while online</small>
+                            <small
+                                class="text-white-50 mt-2 d-block">{{ __('frontend.account.live_alerts_hint') }}</small>
                         </div>
                     </div>
                 </div>
@@ -82,7 +85,7 @@
                     <div class="card bg-dark border-secondary h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-mobile-alt fa-2x text-success mb-3"></i>
-                            <h6 class="text-white mb-2">Device Push</h6>
+                            <h6 class="text-white mb-2">{{ __('frontend.account.device_push') }}</h6>
                             <div class="form-check form-switch d-flex justify-content-center mb-2">
                                 <input type="hidden" name="channels[webpush]" value="0">
                                 <input class="form-check-input" type="checkbox" id="enableWebPush"
@@ -92,10 +95,11 @@
                             @if ('serviceWorker' !== 'unsupported')
                                 <button type="button" id="frostPushToggleBtn" class="btn btn-sm btn-success mt-1 w-100"
                                     data-subscribed="0">
-                                    <i class="fas fa-bell me-1"></i>Enable Push
+                                    <i class="fas fa-bell me-1"></i>{{ __('frontend.account.enable_push') }}
                                 </button>
                             @endif
-                            <small class="text-white-50 mt-2 d-block">Phone/desktop lock screen alerts</small>
+                            <small
+                                class="text-white-50 mt-2 d-block">{{ __('frontend.account.device_push_hint') }}</small>
                         </div>
                     </div>
                 </div>
@@ -105,7 +109,7 @@
         {{-- Account & Registration Notifications --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-user-circle me-2 text-primary"></i>Account & Registration
+                <i class="fas fa-user-circle me-2 text-primary"></i>{{ __('frontend.account.account_registration') }}
             </h5>
             @php
                 $accountNotifications = config('user_notifications.notifications.account', []);
@@ -136,7 +140,8 @@
         {{-- Course Enrollment & Purchase Notifications --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-graduation-cap me-2 text-success"></i>Course Enrollment & Purchase
+                <i
+                    class="fas fa-graduation-cap me-2 text-success"></i>{{ __('frontend.account.course_enrollment_purchase') }}
             </h5>
             @php
                 $enrollmentNotifications = config('user_notifications.notifications.enrollment', []);
@@ -168,7 +173,8 @@
         {{-- Classroom Notifications --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-chalkboard-teacher me-2 text-info"></i>Classroom Experience
+                <i
+                    class="fas fa-chalkboard-teacher me-2 text-info"></i>{{ __('frontend.account.classroom_experience') }}
             </h5>
             @php
                 $classroomNotifications = config('user_notifications.notifications.classroom', []);
@@ -200,7 +206,8 @@
         {{-- Progress & Completion Notifications --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-chart-line me-2 text-warning"></i>Course Progress & Completion
+                <i
+                    class="fas fa-chart-line me-2 text-warning"></i>{{ __('frontend.account.course_progress_completion') }}
             </h5>
             @php
                 $progressNotifications = config('user_notifications.notifications.progress', []);
@@ -232,7 +239,7 @@
         {{-- Payment & Billing Notifications --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-credit-card me-2 text-success"></i>Payment & Billing
+                <i class="fas fa-credit-card me-2 text-success"></i>{{ __('frontend.account.payments_billing') }}
             </h5>
             @php
                 $paymentNotifications = config('user_notifications.notifications.payment', []);
@@ -261,15 +268,15 @@
             @endforeach
             <div class="alert alert-info mt-3">
                 <i class="fas fa-info-circle me-2"></i>
-                <small><strong>Note:</strong> Critical payment notifications (payment failures, refunds, balance due)
-                    are always sent for your security and cannot be disabled.</small>
+                <small><strong>{{ __('frontend.account.note_label') ?? 'Note:' }}</strong>
+                    {{ __('frontend.account.payment_notifications_note') }}</small>
             </div>
         </div>
 
         {{-- Exam Notifications --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-3">
-                <i class="fas fa-clipboard-check me-2 text-danger"></i>Exams & Assessments
+                <i class="fas fa-clipboard-check me-2 text-danger"></i>{{ __('frontend.account.exams_assessments') }}
             </h5>
             @php
                 $examNotifications = config('user_notifications.notifications.exams', []);
@@ -301,7 +308,7 @@
         {{-- System Notifications --}}
         <div class="mb-4">
             <h5 class="text-white mb-3">
-                <i class="fas fa-cog me-2 text-secondary"></i>System & Administrative
+                <i class="fas fa-cog me-2 text-secondary"></i>{{ __('frontend.account.system_administrative') }}
             </h5>
             @php
                 $systemNotifications = config('user_notifications.notifications.system', []);
@@ -333,7 +340,7 @@
         {{-- Submit Button --}}
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
             <button type="submit" class="btn btn-primary btn-lg">
-                <i class="fas fa-save me-2"></i>Save Notification Preferences
+                <i class="fas fa-save me-2"></i>{{ __('frontend.account.save_notification_preferences') }}
             </button>
         </div>
     </form>

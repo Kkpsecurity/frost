@@ -6,6 +6,8 @@ use App\Models\CourseAuth;
 use App\Models\CourseDate;
 use App\Models\User;
 use App\Notifications\Preparation\ClassApproachingNotification;
+use App\Notifications\Preparation\ClassLateNotification;
+use App\Notifications\Preparation\ClassNowNotification;
 use App\Notifications\Preparation\ClassStartingSoonNotification;
 use App\Notifications\Preparation\ClassTomorrowNotification;
 use Illuminate\Console\Command;
@@ -18,6 +20,8 @@ use Illuminate\Support\Facades\Log;
  *   - 3 days before class:  "Class Approaching"    (user-controllable, high priority)
  *   - 1 day before class:   "Class Tomorrow"       (always sent, high priority)
  *   - ~1 hour before class: "Class Starting Soon"  (always sent, critical)
+ *   - at class start:       "Class Starting Now"   (0–10 min window, critical)
+ *   - ~15 min after start:  "You Are Late"         (12–27 min window, critical)
  *
  * Deduplication: checks the `notifications` table for an existing record per
  * notifiable (user) + notification type + course_date_id. Safe to run frequently.
@@ -44,7 +48,7 @@ class SendPreparationReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Send pre-classroom preparation reminders (3-day, 1-day, 1-hour)';
+    protected $description = 'Send pre-classroom preparation reminders (3-day, 1-day, 1-hour, now, late)';
 
     /**
      * Execute the console command.
@@ -63,6 +67,8 @@ class SendPreparationReminders extends Command
         $total += $this->sendApproachingReminders($isDryRun);
         $total += $this->sendTomorrowReminders($isDryRun);
         $total += $this->sendStartingSoonReminders($isDryRun);
+        $total += $this->sendClassNowReminders($isDryRun);
+        $total += $this->sendClassLateReminders($isDryRun);
 
         if ($total === 0) {
             $this->info('No preparation reminders needed at this time.');
@@ -160,6 +166,68 @@ class SendPreparationReminders extends Command
                 fn(CourseAuth $ca) => new ClassStartingSoonNotification($ca, $courseDate),
                 $isDryRun,
                 'class_starting_soon (~1 hr)',
+            );
+        }
+
+        return $count;
+    }
+
+    /**
+     * "Class Now" — starts_at was within the last 0–10 minutes (class just started).
+     *
+     * Window: starts_at between (now - 10 min) and now.
+     * The 15-minute cron cadence ensures this fires in the first run after start time.
+     */
+    protected function sendClassNowReminders(bool $isDryRun): int
+    {
+        $windowStart = now()->subMinutes(10);
+        $windowEnd   = now();
+
+        $courseDates = CourseDate::with(['CourseUnit'])
+            ->whereBetween('starts_at', [$windowStart, $windowEnd])
+            ->whereHas('CourseUnit')
+            ->get();
+
+        $count = 0;
+
+        foreach ($courseDates as $courseDate) {
+            $count += $this->notifyStudentsForCourseDate(
+                $courseDate,
+                ClassNowNotification::class,
+                fn(CourseAuth $ca) => new ClassNowNotification($ca, $courseDate),
+                $isDryRun,
+                'class_now (just started)',
+            );
+        }
+
+        return $count;
+    }
+
+    /**
+     * "Class Late" — starts_at was 12–27 minutes ago (student is late).
+     *
+     * Window: starts_at between (now - 27 min) and (now - 12 min).
+     * Gives students ~12 minutes of grace after start before the late notice fires.
+     */
+    protected function sendClassLateReminders(bool $isDryRun): int
+    {
+        $windowStart = now()->subMinutes(27);
+        $windowEnd   = now()->subMinutes(12);
+
+        $courseDates = CourseDate::with(['CourseUnit'])
+            ->whereBetween('starts_at', [$windowStart, $windowEnd])
+            ->whereHas('CourseUnit')
+            ->get();
+
+        $count = 0;
+
+        foreach ($courseDates as $courseDate) {
+            $count += $this->notifyStudentsForCourseDate(
+                $courseDate,
+                ClassLateNotification::class,
+                fn(CourseAuth $ca) => new ClassLateNotification($ca, $courseDate),
+                $isDryRun,
+                'class_late (~15 min overdue)',
             );
         }
 

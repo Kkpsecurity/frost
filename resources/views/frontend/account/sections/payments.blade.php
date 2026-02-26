@@ -1,29 +1,29 @@
 {{-- Payments Section --}}
 <div class="payments-section">
     <h3 class="text-white mb-4">
-        <i class="fas fa-credit-card me-2"></i>Payments & Billing
+        <i class="fas fa-credit-card me-2"></i>{{ __('frontend.account.payments_billing') }}
     </h3>
 
     {{-- Payment Services Status --}}
     <div class="alert alert-info mb-4">
-        <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Payment Services</h6>
+        <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>{{ __('frontend.account.payment_services') }}</h6>
         <div class="d-flex gap-4">
             <div>
                 <i class="fab fa-stripe fa-lg me-2"></i>
                 <strong>Stripe:</strong>
                 @if ($stripeEnabled ?? false)
-                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-success">{{ __('frontend.account.active') }}</span>
                 @else
-                    <span class="badge bg-secondary">Not Configured</span>
+                    <span class="badge bg-secondary">{{ __('frontend.account.not_configured') }}</span>
                 @endif
             </div>
             <div>
                 <i class="fab fa-paypal fa-lg me-2"></i>
                 <strong>PayPal:</strong>
                 @if ($paypalEnabled ?? false)
-                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-success">{{ __('frontend.account.active') }}</span>
                 @else
-                    <span class="badge bg-secondary">Not Configured</span>
+                    <span class="badge bg-secondary">{{ __('frontend.account.not_configured') }}</span>
                 @endif
             </div>
         </div>
@@ -35,7 +35,7 @@
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
-                        <i class="fas fa-dollar-sign me-2"></i>Total Spent
+                        <i class="fas fa-dollar-sign me-2"></i>{{ __('frontend.account.total_spent') }}
                     </h6>
                     <h4 class="text-success mb-0">{{ $data['order_stats']['total_spent'] ?? '$0.00' }}</h4>
                 </div>
@@ -45,7 +45,7 @@
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
-                        <i class="fas fa-shopping-cart me-2"></i>Total Orders
+                        <i class="fas fa-shopping-cart me-2"></i>{{ __('frontend.account.total_orders') }}
                     </h6>
                     <h4 class="text-info mb-0">{{ $data['order_stats']['total_orders'] ?? 0 }}</h4>
                 </div>
@@ -55,7 +55,7 @@
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
-                        <i class="fas fa-wallet me-2"></i>Payment Methods
+                        <i class="fas fa-wallet me-2"></i>{{ __('frontend.account.payment_methods') }}
                     </h6>
                     <h4 class="text-warning mb-0">{{ count($data['saved_methods'] ?? []) }}</h4>
                 </div>
@@ -65,7 +65,7 @@
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
-                        <i class="fas fa-undo me-2"></i>Refunded
+                        <i class="fas fa-undo me-2"></i>{{ __('frontend.account.refunded') }}
                     </h6>
                     <h4 class="text-danger mb-0">{{ $data['order_stats']['total_refunded'] ?? '$0.00' }}</h4>
                 </div>
@@ -75,18 +75,18 @@
 
     {{-- Payment History --}}
     <div class="mb-4 pb-4 border-bottom border-secondary">
-        <h5 class="text-white mb-3">Payment History</h5>
+        <h5 class="text-white mb-3">{{ __('frontend.account.payment_history') }}</h5>
         @if (!empty($data['payment_history']))
             <div class="table-responsive">
                 <table class="table table-dark table-hover">
                     <thead>
                         <tr>
-                            <th>Order ID</th>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>{{ __('frontend.account.order_id') }}</th>
+                            <th>{{ __('frontend.account.date') }}</th>
+                            <th>{{ __('frontend.account.description') }}</th>
+                            <th>{{ __('frontend.account.amount') }}</th>
+                            <th>{{ __('frontend.account.status') }}</th>
+                            <th>{{ __('frontend.account.actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,7 +108,7 @@
                                 <td>
                                     <a href="{{ $payment['download_url'] }}" class="btn btn-sm btn-outline-primary"
                                         target="_blank">
-                                        <i class="fas fa-download me-1"></i>Invoice
+                                        <i class="fas fa-download me-1"></i>{{ __('frontend.account.invoice') }}
                                     </a>
                                 </td>
                             </tr>
@@ -119,7 +119,7 @@
         @else
             <div class="alert alert-secondary">
                 <i class="fas fa-info-circle me-2"></i>
-                No payment history available.
+                {{ __('frontend.account.no_payment_history') }}
             </div>
         @endif
     </div>
@@ -128,11 +128,11 @@
     <div class="mb-4 pb-4 border-bottom border-secondary">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="text-white mb-0">
-                <i class="fas fa-wallet me-2"></i>Saved Payment Methods
+                <i class="fas fa-wallet me-2"></i>{{ __('frontend.account.saved_payment_methods') }}
             </h5>
             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                 data-bs-target="#addPaymentMethodModal">
-                <i class="fas fa-plus me-1"></i>Add Payment Method
+                <i class="fas fa-plus me-1"></i>{{ __('frontend.account.add_payment_method') }}
             </button>
         </div>
 
@@ -148,14 +148,15 @@
                                             <i
                                                 class="fab fa-cc-{{ strtolower($method['brand']) }} fa-2x text-primary mb-2"></i>
                                             <p class="text-white mb-1">•••• •••• •••• {{ $method['last4'] }}</p>
-                                            <small class="text-white-50">Expires
+                                            <small class="text-white-50">{{ __('frontend.account.expires') }}
                                                 {{ $method['exp_month'] }}/{{ $method['exp_year'] }}</small>
                                         @elseif($method['type'] === 'paypal')
                                             <i class="fab fa-paypal fa-2x text-primary mb-2"></i>
                                             <p class="text-white mb-1">{{ $method['email'] }}</p>
                                         @endif
                                         @if ($method['is_default'])
-                                            <span class="badge bg-success mt-2">Default</span>
+                                            <span
+                                                class="badge bg-success mt-2">{{ __('frontend.account.default_badge') }}</span>
                                         @endif
                                     </div>
                                     <button class="btn btn-sm btn-outline-danger"
@@ -171,11 +172,12 @@
         @else
             <div class="alert alert-secondary">
                 <i class="fas fa-info-circle me-2"></i>
-                No saved payment methods.
+                {{ __('frontend.account.no_saved_methods') }}
                 @if (!($stripeEnabled ?? false) && !($paypalEnabled ?? false))
-                    <strong>Note:</strong> Payment services (Stripe and PayPal) are not currently configured.
+                    <strong>{{ __('frontend.account.note_label') }}</strong>
+                    {{ __('frontend.account.payment_services_not_configured') }}
                 @else
-                    Add a payment method to make future purchases easier.
+                    {{ __('frontend.account.add_payment_hint') }}
                 @endif
             </div>
         @endif
@@ -184,12 +186,12 @@
         <div class="d-flex gap-2">
             @if ($stripeEnabled)
                 <button class="btn btn-outline-primary">
-                    <i class="fas fa-credit-card me-2"></i>Add Credit Card
+                    <i class="fas fa-credit-card me-2"></i>{{ __('frontend.account.add_credit_card') }}
                 </button>
             @endif
             @if ($paypalEnabled)
                 <button class="btn btn-outline-info">
-                    <i class="fab fa-paypal me-2"></i>Connect PayPal
+                    <i class="fab fa-paypal me-2"></i>{{ __('frontend.account.connect_paypal') }}
                 </button>
             @endif
         </div>
@@ -198,7 +200,7 @@
     {{-- Billing Address --}}
     @if (!empty($data['billing_address']))
         <div class="mb-4">
-            <h5 class="text-white mb-3">Billing Address</h5>
+            <h5 class="text-white mb-3">{{ __('frontend.account.billing_address') }}</h5>
             <div class="card bg-dark border-secondary">
                 <div class="card-body">
                     <p class="text-white mb-1">{{ $data['billing_address']['line1'] }}</p>

@@ -2,13 +2,13 @@
 <div class="notification-inbox-section">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="text-white mb-0">
-            <i class="fas fa-bell me-2"></i>My Notifications
+            <i class="fas fa-bell me-2"></i>{{ __('frontend.account.my_notifications') }}
         </h3>
         @if ($user->unreadNotifications->count())
             <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-outline-light">
-                    <i class="fas fa-check-double me-1"></i>Mark All Read
+                    <i class="fas fa-check-double me-1"></i>{{ __('frontend.account.mark_all_read') }}
                 </button>
             </form>
         @endif
@@ -28,7 +28,7 @@
     @if ($allNotifications->isEmpty())
         <div class="text-center py-5">
             <i class="fas fa-bell-slash fa-3x text-secondary mb-3"></i>
-            <p class="text-white-50">You have no notifications yet.</p>
+            <p class="text-white-50">{{ __('frontend.account.no_notifications') }}</p>
         </div>
     @else
         <div class="list-group list-group-flush">
@@ -58,7 +58,7 @@
                                     {{ $title }}
                                     @if ($isUnread)
                                         <span class="badge bg-{{ $color }} ms-1"
-                                            style="font-size:0.65rem;">NEW</span>
+                                            style="font-size:0.65rem;">{{ __('frontend.account.badge_new') }}</span>
                                     @endif
                                 </h6>
                                 @if ($message)
@@ -86,7 +86,7 @@
 
     <div class="mt-4 pt-3 border-top border-secondary">
         <a href="{{ route('account.index', ['section' => 'notifications']) }}" class="text-white-50 small">
-            <i class="fas fa-cog me-1"></i>Notification Preferences
+            <i class="fas fa-cog me-1"></i>{{ __('frontend.account.notification_preferences') }}
         </a>
     </div>
 </div>

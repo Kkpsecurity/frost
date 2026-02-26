@@ -1,0 +1,40 @@
+{
+  "classroom": {
+    "entering": "Entering classroom…",
+    "classInProgress": "Class In Progress",
+    "classNotStarted": "Class has not started yet.",
+    "joinClass": "Join Class",
+    "onboardingTitle": "Before You Enter",
+    "uploadHeadshot": "Upload Your Headshot",
+    "acceptRules": "Accept Class Rules",
+    "acceptAgreement": "Accept Student Agreement",
+    "continue": "Continue",
+    "skip": "Skip",
+    "photoRequired": "A headshot photo is required to enter class.",
+    "rulesRequired": "You must accept the class rules to continue.",
+    "agreementRequired": "You must accept the student agreement to continue."
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "myCourses": "My Courses",
+    "upcomingClasses": "Upcoming Classes",
+    "noCourses": "No courses enrolled.",
+    "loading": "Loading…"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "noNotifications": "No notifications",
+    "markAllRead": "Mark all read",
+    "viewAll": "View All Notifications"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "submit": "Submit",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

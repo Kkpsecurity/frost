@@ -12,13 +12,15 @@
             <div class="row justify-content-center">
                 <div class="col-lg-5 col-md-7 col-sm-10">
                     {{-- Password Reset Form Card --}}
-                    <div class="card border-0 shadow-lg" style="background: rgba(255, 255, 255, 0.95); border-radius: 15px;">
-                        <div class="card-header text-center py-4" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border-radius: 15px 15px 0 0;">
+                    <div class="card border-0 shadow-lg"
+                        style="background: rgba(255, 255, 255, 0.95); border-radius: 15px;">
+                        <div class="card-header text-center py-4"
+                            style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border-radius: 15px 15px 0 0;">
                             <h3 class="text-white mb-2">
                                 <i class="fas fa-lock me-2"></i>
-                                Reset Password
+                                {{ __('frontend.auth.reset_password') }}
                             </h3>
-                            <p class="text-white-50 mb-0">Create your new password</p>
+                            <p class="text-white-50 mb-0">{{ __('frontend.auth.create_new_password') }}</p>
                         </div>
 
                         <div class="card-body p-5">
@@ -30,11 +32,14 @@
                                 {{-- Email Address --}}
                                 <div class="mb-4">
                                     <label for="email" class="form-label text-dark">
-                                        <i class="fas fa-envelope me-2 text-info"></i>Email Address
+                                        <i
+                                            class="fas fa-envelope me-2 text-info"></i>{{ __('frontend.auth.email_address') }}
                                     </label>
-                                    <input id="email" type="email" class="form-control form-control-lg @error('email') is-invalid @enderror"
-                                           name="email" value="{{ $email ?? old('email') }}" required autocomplete="email" autofocus
-                                           placeholder="Your email address">
+                                    <input id="email" type="email"
+                                        class="form-control form-control-lg @error('email') is-invalid @enderror"
+                                        name="email" value="{{ $email ?? old('email') }}" required
+                                        autocomplete="email" autofocus
+                                        placeholder="{{ __('frontend.auth.email_placeholder') }}">
                                     @error('email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -43,12 +48,13 @@
                                 {{-- New Password --}}
                                 <div class="mb-4">
                                     <label for="password" class="form-label text-dark">
-                                        <i class="fas fa-lock me-2 text-info"></i>New Password
+                                        <i class="fas fa-lock me-2 text-info"></i>{{ __('frontend.auth.new_password') }}
                                     </label>
                                     <div class="input-group">
-                                        <input id="password" type="password" class="form-control form-control-lg @error('password') is-invalid @enderror"
-                                               name="password" required autocomplete="new-password"
-                                               placeholder="Enter your new password">
+                                        <input id="password" type="password"
+                                            class="form-control form-control-lg @error('password') is-invalid @enderror"
+                                            name="password" required autocomplete="new-password"
+                                            placeholder="{{ __('frontend.auth.new_password_placeholder_reset') }}">
                                         <button type="button" class="btn btn-outline-secondary" id="togglePassword">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -61,29 +67,32 @@
                                 {{-- Confirm New Password --}}
                                 <div class="mb-4">
                                     <label for="password_confirmation" class="form-label text-dark">
-                                        <i class="fas fa-lock me-2 text-info"></i>Confirm New Password
+                                        <i
+                                            class="fas fa-lock me-2 text-info"></i>{{ __('frontend.auth.confirm_new_password') }}
                                     </label>
-                                    <input id="password_confirmation" type="password" class="form-control form-control-lg"
-                                           name="password_confirmation" required autocomplete="new-password"
-                                           placeholder="Confirm your new password">
+                                    <input id="password_confirmation" type="password"
+                                        class="form-control form-control-lg" name="password_confirmation" required
+                                        autocomplete="new-password"
+                                        placeholder="{{ __('frontend.auth.confirm_new_password_placeholder') }}">
                                 </div>
 
                                 {{-- Submit Button --}}
                                 <div class="d-grid mb-4">
                                     <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-check me-2"></i>Update Password
+                                        <i class="fas fa-check me-2"></i>{{ __('frontend.auth.update_password') }}
                                     </button>
                                 </div>
                             </form>
 
                             {{-- Password Requirements --}}
                             <div class="alert alert-info">
-                                <strong><i class="fas fa-info-circle me-2"></i>Password Requirements:</strong>
+                                <strong><i
+                                        class="fas fa-info-circle me-2"></i>{{ __('frontend.auth.password_req_title') }}</strong>
                                 <ul class="mb-0 mt-2">
-                                    <li>At least 8 characters long</li>
-                                    <li>Contains both uppercase and lowercase letters</li>
-                                    <li>Includes at least one number</li>
-                                    <li>Contains at least one special character</li>
+                                    <li>{{ __('frontend.auth.password_req_length') }}</li>
+                                    <li>{{ __('frontend.auth.password_req_case') }}</li>
+                                    <li>{{ __('frontend.auth.password_req_number') }}</li>
+                                    <li>{{ __('frontend.auth.password_req_special') }}</li>
                                 </ul>
                             </div>
                         </div>
@@ -94,10 +103,10 @@
                         <div class="bg-dark text-white rounded p-3" style="background: rgba(0, 0, 0, 0.7) !important;">
                             <i class="fas fa-shield-alt fa-lg text-success mb-2"></i>
                             <div>
-                                <strong>Secure Password Reset</strong>
+                                <strong>{{ __('frontend.auth.secure_password_reset') }}</strong>
                             </div>
                             <small class="text-white-50">
-                                Your new password will be encrypted and securely stored
+                                {{ __('frontend.auth.password_stored_securely') }}
                             </small>
                         </div>
                     </div>

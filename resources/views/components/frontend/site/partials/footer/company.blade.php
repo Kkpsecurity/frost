@@ -1,8 +1,7 @@
 {{-- Footer Company Links Component --}}
-{{-- Paste your company links content here --}}
 <div class="footer-content p-3">
-    <h4 style="color: #f8f9fa;">Company</h4>
+    <h4 class="text-white">{{ __('frontend.footer.company') }}</h4>
     <ul class="list-unstyled">
-        <li><a href="{{ route('pages', 'about') }}" style="color: #f8f9fa;">About us</a></li>
+        <li><a href="{{ route('pages', 'about') }}" class="text-white-50">{{ __('frontend.footer.about_us') }}</a></li>
     </ul>
 </div>

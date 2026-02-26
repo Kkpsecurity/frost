@@ -1,38 +1,40 @@
 {{-- Alerts Section --}}
 <div class="alerts-section">
     <h3 class="text-white mb-4">
-        <i class="fas fa-bell me-2"></i>Alerts & Notifications
-        @if($data['unread_count'] > 0)
+        <i class="fas fa-bell me-2"></i>{{ __('frontend.account.alerts_notifications') }}
+        @if ($data['unread_count'] > 0)
             <span class="badge bg-danger ms-2">{{ $data['unread_count'] }}</span>
         @endif
     </h3>
 
     {{-- Alert Preferences --}}
     <div class="mb-4 pb-4 border-bottom border-secondary">
-        <h5 class="text-white mb-3">Alert Preferences</h5>
+        <h5 class="text-white mb-3">{{ __('frontend.account.alert_preferences') }}</h5>
         <div class="form-check form-switch mb-2">
-            <input class="form-check-input" type="checkbox" id="emailAlerts" {{ $data['alert_preferences']['email_alerts'] ? 'checked' : '' }}>
+            <input class="form-check-input" type="checkbox" id="emailAlerts"
+                {{ $data['alert_preferences']['email_alerts'] ? 'checked' : '' }}>
             <label class="form-check-label text-white-50" for="emailAlerts">
-                Receive email alerts
+                {{ __('frontend.account.receive_email_alerts') }}
             </label>
         </div>
         <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="browserNotifications" {{ $data['alert_preferences']['browser_notifications'] ? 'checked' : '' }}>
+            <input class="form-check-input" type="checkbox" id="browserNotifications"
+                {{ $data['alert_preferences']['browser_notifications'] ? 'checked' : '' }}>
             <label class="form-check-label text-white-50" for="browserNotifications">
-                Enable browser notifications
+                {{ __('frontend.account.enable_browser_notifications') }}
             </label>
         </div>
     </div>
 
     {{-- Recent Alerts --}}
-    <h5 class="text-white mb-3">Recent Alerts</h5>
-    @if($data['recent_alerts']->isNotEmpty())
+    <h5 class="text-white mb-3">{{ __('frontend.account.recent_alerts') }}</h5>
+    @if ($data['recent_alerts']->isNotEmpty())
         <div class="list-group list-group-flush">
-            @foreach($data['recent_alerts'] as $alert)
+            @foreach ($data['recent_alerts'] as $alert)
                 <div class="list-group-item bg-dark border-secondary {{ $alert['read'] ? 'opacity-75' : '' }}">
                     <div class="d-flex align-items-start gap-3">
                         <div class="flex-shrink-0">
-                            @if($alert['type'] === 'info')
+                            @if ($alert['type'] === 'info')
                                 <i class="fas fa-info-circle fa-2x text-info"></i>
                             @elseif($alert['type'] === 'warning')
                                 <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
@@ -49,9 +51,9 @@
                                 <i class="far fa-clock me-1"></i>{{ $alert['created_at']->diffForHumans() }}
                             </small>
                         </div>
-                        @if(!$alert['read'])
+                        @if (!$alert['read'])
                             <div class="flex-shrink-0">
-                                <span class="badge bg-primary">New</span>
+                                <span class="badge bg-primary">{{ __('frontend.account.badge_new') }}</span>
                             </div>
                         @endif
                     </div>
@@ -61,7 +63,7 @@
     @else
         <div class="alert alert-secondary">
             <i class="fas fa-inbox me-2"></i>
-            No alerts at this time.
+            {{ __('frontend.account.no_alerts') }}
         </div>
     @endif
 </div>

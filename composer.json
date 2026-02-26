@@ -18,6 +18,7 @@
         "jenssegers/optimus": "^1.1",
         "jeroennoten/laravel-adminlte": "^3.15",
         "lab404/laravel-impersonate": "^1.7",
+        "laravel-lang/common": "^6.7",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/scout": "^10.0",

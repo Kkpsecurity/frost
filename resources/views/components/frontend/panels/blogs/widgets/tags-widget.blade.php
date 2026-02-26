@@ -14,13 +14,14 @@
 {{-- Popular Tags Widget --}}
 <div class="sidebar-widget tags-widget mb-4">
     <div class="widget-header">
-        <h5 class="widget-title">Popular Tags</h5>
+        <h5 class="widget-title">{{ __('frontend.blog.popular_tags') }}</h5>
     </div>
     <div class="widget-content">
         <div class="tag-cloud">
-            @if($popularTags->count() > 0)
-                @foreach($popularTags as $tag)
-                    <a href="{{ route('blog.index', ['tag' => Str::slug($tag)]) }}" class="tag-item">{{ $tag }}</a>
+            @if ($popularTags->count() > 0)
+                @foreach ($popularTags as $tag)
+                    <a href="{{ route('blog.index', ['tag' => Str::slug($tag)]) }}"
+                        class="tag-item">{{ $tag }}</a>
                 @endforeach
             @else
                 {{-- Fallback static tags --}}

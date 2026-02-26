@@ -6,9 +6,11 @@
         <div class="container shadow">
             <div class="row">
                 <div class="col-md-12 mt-3 bg-light">
-                    <h3 class="text-left">Exam: <?php echo $ExamAuthObj->Course->ShortTitle(); ?></h3>
-                    <p class="text-left">Total Questions: <?php echo $ExamAuthObj->ExamQuestions->count(); ?></p>
-                    <p>Must Submit Exam Before: <b><?= $ExamAuthObj->ExamAuth->ExpiresAt('ddd MM/DD HH:mm') ?></b></p>
+                    <h3 class="text-left">{{ __('frontend.exam.exam_label') }} {{ $ExamAuthObj->Course->ShortTitle() }}</h3>
+                    <p class="text-left">{{ __('frontend.exam.total_questions') }} {{ $ExamAuthObj->ExamQuestions->count() }}
+                    </p>
+                    <p>{{ __('frontend.exam.must_submit_before') }}
+                        <b>{{ $ExamAuthObj->ExamAuth->ExpiresAt('ddd MM/DD HH:mm') }}</b></p>
                 </div>
             </div>
 
@@ -24,7 +26,7 @@
                     @endforeach
 
                     <div class="form-group">
-                        {{ Form::submit('Submit', ['class' => 'btn btn-primary float-end mb-5']) }}
+                        {{ Form::submit(__('frontend.exam.submit'), ['class' => 'btn btn-primary float-end mb-5']) }}
                         {{ Form::close() }}
                     </div>
                 </div>

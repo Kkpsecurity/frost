@@ -119,9 +119,19 @@ class StudentDashboardController extends Controller
             }
         }
 
-        // Headshot: prefer today's StudentUnit for this courseAuth (onboarding is day-specific).
-        // Fallback to the most recent unit that actually has a headshot.
-        $todayKey = strtolower(now()->format('l'));
+        // -----------------------------------------------------------------------
+        // Headshot resolution — two separate concerns:
+        //
+        //   $todayUnit   — strictly today's StudentUnit (course_date for today).
+        //                  Used for all onboarding gate checks and today's headshot slot.
+        //                  NULL means the student has not started today's class yet.
+        //
+        //   $headshotUnit — display fallback; may be a previous-day unit.
+        //                  Used only to surface an older headshot in the profile tab.
+        //                  NEVER used for onboarding/rules/identity-verified checks.
+        // -----------------------------------------------------------------------
+        $todayKey    = strtolower(now()->format('l'));
+        $todayUnit   = null;
         $headshotUnit = null;
 
         try {
@@ -135,9 +145,11 @@ class StudentDashboardController extends Controller
                 ->first();
 
             if ($todayCourseDate) {
-                $headshotUnit = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+                $todayUnit = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
                     ->where('course_date_id', (int) $todayCourseDate->id)
                     ->first();
+
+                $headshotUnit = $todayUnit; // start with today; may be overridden below
 
                 // Use the class date for weekday key when available.
                 try {
@@ -150,6 +162,9 @@ class StudentDashboardController extends Controller
             // Non-fatal; fallback below.
         }
 
+        // Display fallback: find most-recent unit with a headshot for the profile tab.
+        // This does NOT affect the onboarding gate — only used for the $headshotByDay
+        // profile-display slot and the headshot_status field.
         if (!$headshotUnit) {
             $recentUnits = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
                 ->orderByDesc('course_date_id')
@@ -168,9 +183,40 @@ class StudentDashboardController extends Controller
             });
         }
 
+        // -----------------------------------------------------------------------
+        // Resolve the headshot URL for today strictly from $todayUnit.
+        // The display-fallback URL ($headshotUrl) is kept separately for
+        // backwards-compatible fields (headshot_status, profile display) only.
+        // -----------------------------------------------------------------------
+        $todayHeadshotUrl = null;
         $headshotValidation = null;
-        if ($headshotUnit) {
-            $headshotValidation = Validation::where('student_unit_id', (int) $headshotUnit->id)->first();
+
+        // Today's headshot — must come from today's unit only.
+        if ($todayUnit) {
+            $todayValidation = Validation::where('student_unit_id', (int) $todayUnit->id)->first();
+            if ($todayValidation) {
+                $todayHeadshotUrl = $todayValidation->URL(false);
+                $headshotValidation = $todayValidation; // used for headshot_status below
+            }
+
+            if (!$todayHeadshotUrl) {
+                $verified = $this->decodeVerifiedData($todayUnit->getRawOriginal('verified'));
+                if (!empty($verified['headshot_path'])) {
+                    $relativePath = ltrim((string) $verified['headshot_path'], '/');
+                    if (\Storage::disk('public')->exists($relativePath)) {
+                        $todayHeadshotUrl = url('storage/' . $relativePath);
+                    }
+                }
+            }
+        }
+
+        // Display / fallback headshot URL (may be from a previous day).
+        // Only populated when today's unit has no headshot, so the profile tab
+        // still shows something. NOT used for onboarding gating.
+        if (!$todayHeadshotUrl && $headshotUnit && $headshotUnit->id !== ($todayUnit?->id)) {
+            if (!$headshotValidation) {
+                $headshotValidation = Validation::where('student_unit_id', (int) $headshotUnit->id)->first();
+            }
             if ($headshotValidation) {
                 $headshotUrl = $headshotValidation->URL(false);
             }
@@ -178,7 +224,6 @@ class StudentDashboardController extends Controller
             if (!$headshotUrl) {
                 $verified = $this->decodeVerifiedData($headshotUnit->getRawOriginal('verified'));
                 if (!empty($verified['headshot_path'])) {
-                    // Check if the file actually exists before returning URL
                     $relativePath = ltrim((string) $verified['headshot_path'], '/');
                     if (\Storage::disk('public')->exists($relativePath)) {
                         $headshotUrl = url('storage/' . $relativePath);
@@ -187,19 +232,22 @@ class StudentDashboardController extends Controller
             }
         }
 
-        // Keyed by weekday (frontend expects validations.headshot[today]).
-        $headshotByDay[$todayKey] = $headshotUrl;
+        // Today's slot in the headshot-by-day map uses ONLY today's upload.
+        // A null entry correctly signals "not uploaded yet" to the onboarding UI.
+        $headshotByDay[$todayKey] = $todayHeadshotUrl;
 
-        // Calculate onboarding requirements
-        $termsAccepted = (bool) ($courseAuth->agreed_at !== null);
-        $rulesAccepted = false;
-        $identityVerified = (bool) ($idCardUrl && $headshotUrl);
+        // Calculate onboarding requirements.
+        // identity_verified requires today's headshot — a previous-day photo does not count.
+        $termsAccepted     = (bool) ($courseAuth->agreed_at !== null);
+        $rulesAccepted     = false;
+        $identityVerified  = (bool) ($idCardUrl && $todayHeadshotUrl);
         $onboardingCompleted = false;
 
-        // Check if student has a StudentUnit for today to verify rules and onboarding completion
-        if ($headshotUnit) {
-            $rulesAccepted = $this->hasAcceptedRules($courseAuth->user_id, $headshotUnit->id);
-            $onboardingCompleted = $this->hasCompletedOnboarding($courseAuth->user_id, $headshotUnit->id);
+        // Onboarding and rules checks are scoped to today's unit ONLY.
+        // Using a fallback (previous-day) unit here would bypass the daily gate.
+        if ($todayUnit) {
+            $rulesAccepted       = $this->hasAcceptedRules($courseAuth->user_id, $todayUnit->id);
+            $onboardingCompleted = $this->hasCompletedOnboarding($courseAuth->user_id, $todayUnit->id);
         }
 
         return [
@@ -212,7 +260,7 @@ class StudentDashboardController extends Controller
             'idcard_status' => $idCardUrl
                 ? ($idCardValidation && $idCardValidation->status > 0 ? 'approved' : ($idCardValidation && $idCardValidation->status < 0 ? 'rejected' : 'uploaded'))
                 : 'missing',
-            'headshot_status' => $headshotUrl
+            'headshot_status' => ($todayHeadshotUrl ?? $headshotUrl)
                 ? ($headshotValidation && $headshotValidation->status > 0 ? 'approved' : ($headshotValidation && $headshotValidation->status < 0 ? 'rejected' : 'uploaded'))
                 : 'missing',
             'message' => null,

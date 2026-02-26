@@ -4,6 +4,7 @@ use App\Http\Controllers\Frontend\Student\StudentDashboardController;
 use App\Http\Controllers\Frontend\Student\ClassroomChatController;
 use App\Http\Controllers\Frontend\Student\AskInstructorController;
 use App\Http\Controllers\Frontend\Student\ChallengeController;
+use App\Http\Controllers\Frontend\Student\LocaleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 /**
  * Student Dashboard Routes (Web only - no API routes needed for Inertia/React)
  */
+// Locale switcher — available to authenticated users (saves to DB) and guests (session only)
+Route::post('/user/locale', [LocaleController::class, 'setLocale'])->name('user.locale');
+
 Route::middleware(['auth'])->group(function () {
 
     /**

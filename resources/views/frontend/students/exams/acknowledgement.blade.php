@@ -15,21 +15,22 @@
         <div class="container">
 
             <div class="bg-light p-5 rounded shadow" style="height: 620px; margin-top: 40px;">
-                <h2 class="title fw-bold">Beginning the Exam</h2>
-                <h4 class="sub-title lead fw-bold">When you click Begin Exam below, you will begin your exam.</h4>
+                <h2 class="title fw-bold">{{ __('frontend.exam.beginning_exam') }}</h2>
+                <h4 class="sub-title lead fw-bold">{{ __('frontend.exam.begin_exam_instructions') }}</h4>
 
                 <div class="alert alert-secondary">
-                    You will have {{ $Exam->ExamTime() }} to complete your exam.
-                    If you do not submit your answers in that time, you will automatically fail the exam.
+                    {{ __('frontend.exam.time_limit_notice', ['time' => $Exam->ExamTime()]) }}
                 </div>
 
                 <div class="list-group">
-                    <li class="list-group-item">Total Questions: <b>{{ $Exam->num_questions }}</b></li>
-                    <li class="list-group-item">Required to Pass: <b>{{ $Exam->num_to_pass }}</b></li>
+                    <li class="list-group-item">{{ __('frontend.exam.total_questions') }} <b>{{ $Exam->num_questions }}</b>
+                    </li>
+                    <li class="list-group-item">{{ __('frontend.exam.required_to_pass') }} <b>{{ $Exam->num_to_pass }}</b>
+                    </li>
                 </div>
                 <center>
                     <a href="{{ route('classroom.exam.authorize', [$CourseAuth, true]) }}"
-                        class="btn btn-success begin-exam-btn btn-xl mt-3">Begin Exam</a>
+                        class="btn btn-success begin-exam-btn btn-xl mt-3">{{ __('frontend.exam.begin_exam') }}</a>
                 </center>
             </div>
 

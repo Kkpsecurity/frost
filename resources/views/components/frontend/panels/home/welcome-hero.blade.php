@@ -4,13 +4,13 @@
     $courseD = $courses->firstWhere('id', 1);
     $courseG = $courses->firstWhere('id', 3);
 
-    $welcomeTitle = 'Welcome to The Security Training Group';
-    $welcomeSubtitle = 'Florida Security License and Armed Statewide Firearms Class G License';
+    $welcomeTitle = __('frontend.home.welcome_title');
+    $welcomeSubtitle = __('frontend.home.welcome_subtitle');
     $courseDTitle = $courseD ? $courseD->full_title : 'Florida Class D Security License Course';
-    $courseDInfo = 'Comprehensive online training program. Flexible schedule.';
+    $courseDInfo = __('frontend.home.class_d_info');
     $courseDPrice = $courseD ? '$' . number_format($courseD->price, 2) . ' USD' : '$125.00  USD';
     $courseGTitle = $courseG ? $courseG->full_title : 'Armed Statewide Firearms Class G License Course';
-    $courseGInfo = 'Combination of online learning and in-person range training.';
+    $courseGInfo = __('frontend.home.class_g_info');
     $courseGPrice = $courseG ? '$' . number_format($courseG->price, 2) . ' USD' : '$250.00 USD';
     $content1 =
         'The Security Training Groups Online Security Training Program offers comprehensive courses for individuals seeking the Florida Class D Security License and the Armed Statewide Firearms Class G License. With the flexibility and convenience of online learning, students can now access high-quality training from anywhere in Florida.';
@@ -39,24 +39,36 @@
     {{-- Custom Title Styling --}}
     <style>
         .slider-content h2 {
-            color: #f1c40f !important; /* Yellowish color */
-            font-weight: 700 !important; /* Bold */
-            font-size: 2.5rem !important; /* Larger size */
-            margin-bottom: 0.5rem !important; /* Reduced spacing below title */
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Subtle shadow for readability */
-            line-height: 1.2 !important; /* Better line height */
+            color: #f1c40f !important;
+            /* Yellowish color */
+            font-weight: 700 !important;
+            /* Bold */
+            font-size: 2.5rem !important;
+            /* Larger size */
+            margin-bottom: 0.5rem !important;
+            /* Reduced spacing below title */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            /* Subtle shadow for readability */
+            line-height: 1.2 !important;
+            /* Better line height */
         }
 
         .slider-content p {
-            color: #ecf0f1 !important; /* Light gray for subtitle */
-            font-size: 1.1rem !important; /* Slightly larger subtitle */
-            margin-bottom: 1.25rem !important; /* Reduced spacing below subtitle */
-            font-weight: 400 !important; /* Normal weight */
-            line-height: 1.4 !important; /* Better readability */
+            color: #ecf0f1 !important;
+            /* Light gray for subtitle */
+            font-size: 1.1rem !important;
+            /* Slightly larger subtitle */
+            margin-bottom: 1.25rem !important;
+            /* Reduced spacing below subtitle */
+            font-weight: 400 !important;
+            /* Normal weight */
+            line-height: 1.4 !important;
+            /* Better readability */
         }
 
         .slider-content {
-            padding-top: 2rem; /* Add some top padding */
+            padding-top: 2rem;
+            /* Add some top padding */
         }
 
         /* Responsive adjustments */
@@ -109,8 +121,8 @@
                                             <p>{{ $courseDInfo }}</p>
                                         </div>
                                         <div class="text-center">
-                                            <a href="{{ url('/courses/detail/1') }}" class="btn btn-primary">More
-                                                Detail</a>
+                                            <a href="{{ url('/courses/detail/1') }}"
+                                                class="btn btn-primary">{{ __('frontend.home.more_detail') }}</a>
                                             {!! App\Helpers\Helpers::EnrollButton($courseD) !!}
                                         </div>
                                     </div>
@@ -134,8 +146,8 @@
                                             <p>{{ $courseGInfo }}</p>
                                         </div>
                                         <div class="text-center">
-                                            <a href="{{ url('/courses/detail/2') }}" class="btn btn-primary">More
-                                                Detail</a>
+                                            <a href="{{ url('/courses/detail/2') }}"
+                                                class="btn btn-primary">{{ __('frontend.home.more_detail') }}</a>
                                             {!! App\Helpers\Helpers::EnrollButton($courseG) !!}
                                         </div>
                                     </div>

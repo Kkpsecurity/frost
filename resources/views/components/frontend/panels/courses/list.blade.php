@@ -9,7 +9,7 @@
     <div class="container courses-container">
         <div class="row mb-4">
             <div class="col-12 text-center">
-                <h2 class="text-white">Available Courses</h2>
+                <h2 class="text-white">{{ __('frontend.courses.available_courses') }}</h2>
             </div>
         </div>
 
@@ -23,10 +23,12 @@
                                 <i
                                     class="{{ $course->course_type === 'G' ? 'fas fa-shield-alt' : 'fas fa-user-shield' }}"></i>
                             </div>
-                            <div class="course-class-badge">{{ $course->course_type === 'G' ? 'CLASS G' : 'CLASS D' }}
+                            <div class="course-class-badge">
+                                {{ $course->course_type === 'G' ? __('frontend.courses.class_g_badge') : __('frontend.courses.class_d_badge') }}
                             </div>
                             <div class="course-type">
-                                {{ $course->course_type === 'G' ? 'Armed Security' : 'Unarmed Security' }}</div>
+                                {{ $course->course_type === 'G' ? __('frontend.courses.armed_security') : __('frontend.courses.unarmed_security') }}
+                            </div>
                         </div>
 
                         <div class="course-body">
@@ -44,7 +46,7 @@
                                             <div class="stat-item">
                                                 <i class="fas fa-book text-info"></i>
                                                 <div class="stat-number">{{ $course->total_units }}</div>
-                                                <div class="stat-label">Units</div>
+                                                <div class="stat-label">{{ __('frontend.courses.units') }}</div>
                                             </div>
                                         </div>
                                     @endif
@@ -53,7 +55,7 @@
                                             <div class="stat-item">
                                                 <i class="fas fa-play-circle text-success"></i>
                                                 <div class="stat-number">{{ $course->total_lessons }}</div>
-                                                <div class="stat-label">Lessons</div>
+                                                <div class="stat-label">{{ __('frontend.courses.lessons') }}</div>
                                             </div>
                                         </div>
                                     @endif
@@ -69,7 +71,7 @@
                                                     {{ $course->duration_days * 8 }}
                                                 @endif
                                             </div>
-                                            <div class="stat-label">Hours</div>
+                                            <div class="stat-label">{{ __('frontend.courses.hours') }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -78,7 +80,7 @@
                             {{-- Key Features from Lessons --}}
                             @if (!empty($course->key_features))
                                 <div class="course-features">
-                                    <h6 class="features-title">Key Topics:</h6>
+                                    <h6 class="features-title">{{ __('frontend.courses.key_topics') }}</h6>
                                     <ul class="feature-list">
                                         @foreach (array_slice($course->key_features, 0, 4) as $feature)
                                             <li><i
@@ -93,11 +95,12 @@
                             <div class="course-meta">
                                 @if ($course->duration_days > 0)
                                     <span class="duration">
-                                        <i class="fas fa-calendar me-1"></i>{{ $course->duration_days }} Days
+                                        <i class="fas fa-calendar me-1"></i>{{ $course->duration_days }}
+                                        {{ __('frontend.courses.days') }}
                                     </span>
                                 @endif
                                 <span class="format">
-                                    <i class="fas fa-laptop me-1"></i>Online + Live
+                                    <i class="fas fa-laptop me-1"></i>{{ __('frontend.courses.online_live') }}
                                 </span>
                             </div>
                         </div>
@@ -109,9 +112,9 @@
                             </div>
                             <div class="course-actions">
                                 <a href="{{ route('courses.show', $course->id) }}"
-                                    class="btn btn-outline-primary btn-sm me-2">Learn More</a>
+                                    class="btn btn-outline-primary btn-sm me-2">{{ __('frontend.courses.learn_more') }}</a>
                                 <a href="{{ route('courses.enroll', $course->id) }}"
-                                    class="btn btn-primary btn-sm">Enroll Now</a>
+                                    class="btn btn-primary btn-sm">{{ __('frontend.courses.enroll_now') }}</a>
                             </div>
                         </div>
                     </div>
@@ -120,8 +123,8 @@
                 <div class="col-12">
                     <div class="text-center py-5">
                         <i class="fas fa-graduation-cap fa-3x text-white-50 mb-3"></i>
-                        <h4 class="text-white">No Courses Available</h4>
-                        <p class="text-white-50">Please check back later for available courses.</p>
+                        <h4 class="text-white">{{ __('frontend.courses.no_courses') }}</h4>
+                        <p class="text-white-50">{{ __('frontend.courses.no_courses_hint') }}</p>
                     </div>
                 </div>
             @endforelse

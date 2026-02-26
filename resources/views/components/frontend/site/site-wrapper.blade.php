@@ -1,6 +1,7 @@
 {{-- Site Layout Component for Frontend Pages --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -59,6 +60,12 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    {{-- Locale/App globals for JavaScript --}}
+    <script>
+        window.APP_LOCALE = '{{ app()->getLocale() }}';
+        window.APP_SUPPORTED_LOCALES = ['en', 'es'];
+    </script>
+
     {{-- Page-specific scripts --}}
     {{ $scripts ?? '' }}
 
@@ -109,7 +116,7 @@
 
             // Smooth scrolling for anchor links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
+                anchor.addEventListener('click', function(e) {
                     e.preventDefault();
                     const href = this.getAttribute('href');
                     // Only process valid selectors (not empty or just #)
@@ -141,4 +148,5 @@
         });
     </script>
 </body>
+
 </html>

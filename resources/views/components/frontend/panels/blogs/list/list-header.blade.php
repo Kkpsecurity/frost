@@ -1,12 +1,12 @@
 @props([
     'title' => null,
-    'description' => null
+    'description' => null,
 ])
 
 @php
     // Dynamic title and description based on context
-    $pageTitle = $title ?? 'Security Training & Legal Insights';
-    $pageDescription = $description ?? 'Expert guidance on security training, firearms regulations, and professional development for security professionals';
+    $pageTitle = $title ?? __('frontend.blog.page_title');
+    $pageDescription = $description ?? __('frontend.blog.page_description');
 
     // Check for site configuration override
     if (method_exists('App\Services\RCache', 'SiteConfig')) {

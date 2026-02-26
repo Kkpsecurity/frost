@@ -27,8 +27,8 @@ class BlogController extends Controller
 
         // Dynamic page content
         $pageData = [
-            'title' => config('app.blog_title', 'Security Training & Legal Insights'),
-            'description' => config('app.blog_description', 'Expert guidance on security training, firearms regulations, and professional development for security professionals'),
+            'title' => config('app.blog_title') ?: __('frontend.blog.page_title'),
+            'description' => config('app.blog_description') ?: __('frontend.blog.page_description'),
         ];
 
         return view('frontend.blog.index', compact('posts', 'categories', 'pageData'));

@@ -6,56 +6,56 @@ $companyName = App\Services\RCache::SiteConfig('site_company_name');
 
 $menuItems = [
     [
-        'label' => 'Home',
+        'label' => __('frontend.nav.home'),
         'url' => route('pages'),
         'isActive' => $segment1 === 'pages' && $segment2 === null,
     ],
     [
-        'label' => 'Courses & Schedules',
+        'label' => __('frontend.nav.courses_schedules'),
         'url' => url('courses'),
         'isActive' => $segment1 === 'courses',
         'subMenu' => [
             [
-                'label' => 'Course List',
+                'label' => __('frontend.nav.course_list'),
                 'url' => url('courses/list'),
                 'isActive' => $segment1 === 'courses' && $segment2 === 'list',
             ],
             [
-                'label' => 'Training Schedules',
+                'label' => __('frontend.nav.training_schedules'),
                 'url' => url('courses/schedules'),
                 'isActive' => $segment1 === 'courses' && $segment2 === 'schedules',
             ],
         ],
     ],
     [
-        'label' => 'Knowledge Base',
+        'label' => __('frontend.nav.knowledge_base'),
         'url' => url('blog'),
         'isActive' => $segment1 === 'blog',
     ],
     [
-        'label' => 'Student',
+        'label' => __('frontend.nav.student'),
         'url' => '#',
         'isActive' => $segment1 === 'classroom',
         'subMenu' => [
             [
-                'label' => 'Virtual Classroom',
+                'label' => __('frontend.nav.virtual_classroom'),
                 'url' => url('classroom'),
                 'isActive' => $segment1 === 'classroom',
             ],
             [
-                'label' => 'Training Certificate Search',
+                'label' => __('frontend.nav.certificate_search'),
                 'url' => 'https://licensing.fdacs.gov/OTR/',
                 'isActive' => '',
             ],
         ],
     ],
     [
-        'label' => 'Faqs',
+        'label' => __('frontend.nav.faqs'),
         'url' => route('pages', 'faqs'),
         'isActive' => $segment1 === 'pages' && $segment2 === 'faqs',
     ],
     [
-        'label' => 'Contacts',
+        'label' => __('frontend.nav.contacts'),
         'url' => route('pages', 'contact'),
         'isActive' => $segment1 === 'pages' && $segment2 === 'contact',
     ],
@@ -84,7 +84,7 @@ $menuItems = [
                     {{-- Mobile Toggle Button --}}
                     <button class="navbar-toggler d-lg-none ms-auto me-2" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbar-main" aria-controls="navbar-main" aria-expanded="false"
-                        aria-label="Toggle navigation">
+                        aria-label="{{ __('frontend.nav.toggle_navigation') }}">
                         <span class="fa fa-bars"></span>
                     </button>
 
@@ -93,7 +93,8 @@ $menuItems = [
                             @auth
                                 @isAnyAdmin
                                     <li class="nav-item">
-                                        <a class="nav-link" href="{{ Auth::user()->Dashboard() }}" aria-label="Admin">Admin</a>
+                                        <a class="nav-link" href="{{ Auth::user()->Dashboard() }}"
+                                            aria-label="{{ __('frontend.nav.admin') }}">{{ __('frontend.nav.admin') }}</a>
                                     </li>
                                 @endisAnyAdmin
                             @endauth

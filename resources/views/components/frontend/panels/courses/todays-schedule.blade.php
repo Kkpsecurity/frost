@@ -1,6 +1,6 @@
 @if (isset($course['schedule']))
     <div class="course-schedule-section mb-5">
-        <h3 class="section-title text-white">Upcoming Sessions</h3>
+        <h3 class="section-title text-white">{{ __('frontend.courses.upcoming_sessions') }}</h3>
         <div class="schedule-content">
             @foreach ($course['schedule'] as $session)
                 <div class="schedule-item p-3 rounded mb-3"
@@ -27,7 +27,7 @@
                         <div class="col-md-3">
                             <div class="schedule-availability text-end">
                                 <span class="badge {{ $session['available'] ?? true ? 'bg-success' : 'bg-danger' }}">
-                                    {{ $session['available'] ?? true ? 'Available' : 'Full' }}
+                                    {{ $session['available'] ?? true ? __('frontend.courses.available_badge') : __('frontend.courses.full_badge') }}
                                 </span>
                             </div>
                         </div>
@@ -38,9 +38,9 @@
     </div>
 @else
     <div class="course-schedule-section mb-5">
-        <h3 class="section-title text-white">Upcoming Sessions</h3>
+        <h3 class="section-title text-white">{{ __('frontend.courses.upcoming_sessions') }}</h3>
         <div class="alert alert-info text-white" role="alert">
-            <i class="fas fa-info-circle me-2 text-white"></i>No scheduled sessions available at this time. Please check back later or contact us for more information.
+            <i class="fas fa-info-circle me-2 text-white"></i>{{ __('frontend.courses.no_sessions') }}
         </div>
     </div>
 @endif

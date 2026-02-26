@@ -10,52 +10,53 @@
                     @php
                         $imageUrl = null;
                         $useDefaultImage = true;
-                        
+
                         // Check if post has featured_image and if file exists
                         if ($post->featured_image) {
                             // Handle different path formats
                             $imagePath = $post->featured_image;
-                            
+
                             // If path doesn't start with /, add it
-                            if (!str_starts_with($imagePath, '/')) {
-                                $imagePath = '/' . $imagePath;
-                            }
-                            
-                            // Check if file exists in public directory
-                            if (file_exists(public_path($imagePath))) {
-                                $imageUrl = asset($imagePath);
-                                $useDefaultImage = false;
-                            }
-                        }
-                        
-                        // Default image if none exists or file not found
-                        if ($useDefaultImage) {
-                            $imageUrl = asset('images/Security-Page-1.jpg');
+    if (!str_starts_with($imagePath, '/')) {
+        $imagePath = '/' . $imagePath;
+    }
+
+    // Check if file exists in public directory
+    if (file_exists(public_path($imagePath))) {
+        $imageUrl = asset($imagePath);
+        $useDefaultImage = false;
+    }
+}
+
+// Default image if none exists or file not found
+if ($useDefaultImage) {
+    $imageUrl = asset('images/Security-Page-1.jpg');
                         }
                     @endphp
-                    
+
                     <a href="{{ route('blog.show', $post->slug) }}">
-                        @if($imageUrl)
+                        @if ($imageUrl)
                             <img src="{{ $imageUrl }}" alt="{{ $post->title }}" class="img-fluid">
                         @else
                             {{-- Fallback placeholder --}}
-                            <div class="post-image-placeholder d-flex align-items-center justify-content-center bg-light" style="height: 200px; background: linear-gradient(135deg, #f8f9fa, #e9ecef);">
+                            <div class="post-image-placeholder d-flex align-items-center justify-content-center bg-light"
+                                style="height: 200px; background: linear-gradient(135deg, #f8f9fa, #e9ecef);">
                                 <div class="text-center text-muted">
                                     <i class="fas fa-image fa-2x mb-2" style="opacity: 0.3;"></i>
-                                    <small>No Image</small>
+                                    <small>{{ __('frontend.blog.no_image') }}</small>
                                 </div>
                             </div>
                         @endif
                     </a>
                     {{-- Category Badge --}}
-                    @if($post->category)
+                    @if ($post->category)
                         <div class="post-category">
                             {{ $post->category }}
                         </div>
                     @endif
                 </div>
             </div>
-            
+
             {{-- Post Content --}}
             <div class="col-md-7">
                 <div class="post-content h-100 d-flex flex-column">
@@ -71,7 +72,7 @@
                         </span>
                         <span class="meta-item">
                             <i class="fas fa-clock"></i>
-                            {{ $post->read_time ?? '5' }} min read
+                            {{ $post->read_time ?? '5' }} {{ __('frontend.blog.min_read') }}
                         </span>
                     </div>
 
@@ -94,8 +95,8 @@
                         <div class="d-flex justify-content-between align-items-center">
                             {{-- Tags --}}
                             <div class="post-tags">
-                                @if($post->tags && is_array($post->tags))
-                                    @foreach(array_slice($post->tags, 0, 2) as $tag)
+                                @if ($post->tags && is_array($post->tags))
+                                    @foreach (array_slice($post->tags, 0, 2) as $tag)
                                         <span class="tag">{{ $tag }}</span>
                                     @endforeach
                                 @endif
@@ -103,7 +104,7 @@
 
                             {{-- Read More Button --}}
                             <a href="{{ route('blog.show', $post->slug) }}" class="read-more-btn">
-                                Read More <i class="fas fa-arrow-right"></i>
+                                {{ __('frontend.blog.read_more') }} <i class="fas fa-arrow-right"></i>
                             </a>
                         </div>
                     </div>

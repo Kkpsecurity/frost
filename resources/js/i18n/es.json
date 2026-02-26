@@ -1,0 +1,40 @@
+{
+  "classroom": {
+    "entering": "Entrando al aula…",
+    "classInProgress": "Clase en Progreso",
+    "classNotStarted": "La clase todavía no ha comenzado.",
+    "joinClass": "Unirse a la Clase",
+    "onboardingTitle": "Antes de Entrar",
+    "uploadHeadshot": "Sube tu Foto",
+    "acceptRules": "Aceptar las Reglas de la Clase",
+    "acceptAgreement": "Aceptar el Acuerdo del Estudiante",
+    "continue": "Continuar",
+    "skip": "Omitir",
+    "photoRequired": "Se requiere una foto para entrar a la clase.",
+    "rulesRequired": "Debes aceptar las reglas de la clase para continuar.",
+    "agreementRequired": "Debes aceptar el acuerdo del estudiante para continuar."
+  },
+  "dashboard": {
+    "welcome": "¡Bienvenido de nuevo, {{name}}!",
+    "myCourses": "Mis Cursos",
+    "upcomingClasses": "Próximas Clases",
+    "noCourses": "Sin cursos inscritos.",
+    "loading": "Cargando…"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "noNotifications": "Sin notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "viewAll": "Ver todas las notificaciones"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "error": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "submit": "Enviar",
+    "yes": "Sí",
+    "no": "No"
+  }
+}

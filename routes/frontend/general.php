@@ -28,3 +28,7 @@ Route::post('/contact/send', [SitePageController::class, 'sendContactEmail'])
 // Ranges page with Google Maps
 Route::get('/ranges', [RangesController::class, 'index'])
     ->name('ranges.index');
+
+// Support center - redirect to pages handler
+Route::redirect('/support', '/pages/support', 301)
+    ->name('support.index');

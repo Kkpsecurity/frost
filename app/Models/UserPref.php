@@ -28,7 +28,7 @@ class UserPref extends Model
 
 
     protected $table        = 'user_prefs';
-    protected $primaryKey   = [ 'user_id', 'pref_name' ];
+    protected $primaryKey   = ['user_id', 'pref_name'];
     public    $timestamps   = false;
 
     protected $casts        = [
@@ -39,10 +39,13 @@ class UserPref extends Model
 
     ];
 
-    protected $guarded      = [ ];
+    protected $guarded      = [];
 
 
-    public function __toString() { return $this->pref_value; }
+    public function __toString()
+    {
+        return $this->pref_value;
+    }
 
 
     //
@@ -52,7 +55,7 @@ class UserPref extends Model
 
     public function User()
     {
-        return $this->belongsTo( User::class, 'user_id' );
+        return $this->belongsTo(User::class, 'user_id');
     }
 
 
@@ -61,16 +64,16 @@ class UserPref extends Model
     //
 
 
-    public function setPrefNameAttribute( $value )
+    public function setPrefNameAttribute($value)
     {
-        $sanitizeFlag = ( self::ALLOW_HTML_KEY ? TextTk::SANITIZE_NO_STRIPTAGS : null );
-        $this->attributes[ 'pref_name' ] = TextTk::Sanitize( $value, $sanitizeFlag );
+        $sanitizeFlag = (self::ALLOW_HTML_KEY ? TextTk::SANITIZE_NO_STRIPTAGS : 0);
+        $this->attributes['pref_name'] = TextTk::Sanitize($value, $sanitizeFlag);
     }
 
-    public function setPrefValueAttribute( $value )
+    public function setPrefValueAttribute($value)
     {
-        $sanitizeFlag = ( self::ALLOW_HTML_VALUE ? TextTk::SANITIZE_NO_STRIPTAGS : null );
-        $this->attributes[ 'pref_value' ] = TextTk::Sanitize( $value, $sanitizeFlag );
+        $sanitizeFlag = (self::ALLOW_HTML_VALUE ? TextTk::SANITIZE_NO_STRIPTAGS : 0);
+        $this->attributes['pref_value'] = TextTk::Sanitize($value, $sanitizeFlag);
     }
 
 
@@ -79,10 +82,8 @@ class UserPref extends Model
     //
 
 
-    public function GetUser() : User
+    public function GetUser(): User
     {
-        return RCache::Users( $this->user_id );
+        return RCache::Users($this->user_id);
     }
-
-
 }

@@ -63,32 +63,32 @@
         <section class="dashboard">
             <div class="card shadow-lg">
                 <div class="card-body p-5">
-                    <h3 class="card-title text-dark">Exam Results</h3>
-                    <p class="alert">Thank you for taking the exam! Here are your results:</p>
+                    <h3 class="card-title text-dark">{{ __('frontend.exam.exam_results') }}</h3>
+                    <p class="alert">{{ __('frontend.exam.results_intro') }}</p>
 
                     @if ($ExamAuth->is_passed)
-                        <p class="alert alert-success">Congratulations! You have successfully completed the exam.
-                            Your certificate will be emailed to you.</p>
+                        <p class="alert alert-success">{{ __('frontend.exam.exam_passed') }}</p>
                     @else
-                        <p class="alert alert-danger">Unfortunately, you did not pass the exam. Please contact your
-                            instructor or visit the classroom to obtain more information.</p>
+                        <p class="alert alert-danger">{{ __('frontend.exam.exam_failed') }}</p>
                     @endif
 
                     <ul class="list-group list-group-flush">
 
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>Completed At:</span> <span>{{ $ExamAuth->CompletedAt('ddd MM/DD HH:mm') }}</span>
+                            <span>{{ __('frontend.exam.completed_at') }}</span>
+                            <span>{{ $ExamAuth->CompletedAt('ddd MM/DD HH:mm') }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>Score:</span> <span>{{ $ExamAuth->score }}</span>
+                            <span>{{ __('frontend.exam.score') }}</span> <span>{{ $ExamAuth->score }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span>Is Passed:</span> <span>{{ $ExamAuth->is_passed ? 'Yes' : 'No' }}</span>
+                            <span>{{ __('frontend.exam.is_passed') }}</span>
+                            <span>{{ $ExamAuth->is_passed ? __('common.yes') : __('common.no') }}</span>
                         </li>
 
                         @if (!$ExamAuth->is_passed && $ExamAuth->next_attempt_at)
                             <li class="list-group-item d-flex justify-content-between">
-                                <span>Next Attempt At:</span>
+                                <span>{{ __('frontend.exam.next_attempt_at') }}</span>
                                 <span>{{ $ExamAuth->NextAttemptAt('ddd MM/DD HH:mm') }}</span>
                             </li>
                         @endif
@@ -111,15 +111,15 @@
 
                     @if ($Incorrect = $ExamAuth->IncorrectByLesson())
                         <!-- Title -->
-                        <h5 class="mb-4">Missed Questions By Lesson</h5>
+                        <h5 class="mb-4">{{ __('frontend.exam.missed_questions') }}</h5>
 
                         <!-- List Group with Header -->
                         <ul class="list-group" style="width: 35rem">
                             <!-- Header Item -->
                             <li class="list-group-item bg-light">
                                 <div class="d-flex justify-content-between">
-                                    <strong>Title</strong>
-                                    <strong># Missed</strong>
+                                    <strong>{{ __('frontend.exam.title') }}</strong>
+                                    <strong>{{ __('frontend.exam.missed') }}</strong>
                                 </div>
                             </li>
 

@@ -29,11 +29,11 @@
 
 /* Contact Content Section */
 .contact-content {
-    background: #f8f9fa;
+    background: var(--frost-secondary-bg, #1a2035);
 }
 
 .contact-info {
-    background: var(--frost-white-color);
+    background: rgba(29, 56, 84, 0.95);
     border-radius: var(--frost-radius-lg);
     padding: 2rem;
     box-shadow: var(--frost-shadow-md);
@@ -41,7 +41,7 @@
 
 .contact-item {
     padding: 1rem 0;
-    border-bottom: 1px solid var(--frost-gray-200);
+    border-bottom: 1px solid rgba(255,255,255,.1);
 }
 
 .contact-item:last-child {
@@ -66,24 +66,24 @@
 }
 
 .contact-item h5 {
-    color: var(--frost-primary-color);
+    color: #fff;
     font-weight: 600;
     margin-bottom: 0.25rem;
 }
 
 .contact-item p {
-    color: var(--frost-gray-700);
+    color: rgba(255,255,255,.8);
     margin-bottom: 0;
 }
 
 .contact-item a {
-    color: var(--frost-primary-color);
+    color: rgba(255,255,255,.9);
     text-decoration: none;
     font-weight: 500;
 }
 
 .contact-item a:hover {
-    color: var(--frost-info-color);
+    color: #ffc107;
 }
 
 /* Contact Form Styling */
@@ -93,23 +93,27 @@
 
 .contact-form .form-label {
     font-weight: 600;
-    color: var(--frost-gray-800);
+    color: rgba(255,255,255,.85);
     margin-bottom: 0.5rem;
 }
 
 .contact-form .form-control,
 .contact-form .form-select {
-    border: 2px solid var(--frost-gray-300);
+    border: 2px solid rgba(255,255,255,.2);
     border-radius: var(--frost-radius-md);
     padding: 0.75rem 1rem;
     font-size: 1rem;
     transition: all var(--frost-transition-base);
+    background-color: #252b3b;
+    color: #fff;
 }
 
 .contact-form .form-control:focus,
 .contact-form .form-select:focus {
-    border-color: var(--frost-info-color);
-    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+    border-color: #ffc107;
+    background-color: #2e354a;
+    color: #fff;
+    box-shadow: 0 0 0 0.2rem rgba(255,193,7,.2);
 }
 
 .contact-form .form-control.is-invalid {
@@ -134,7 +138,7 @@
 
 .contact-form .form-check-label {
     font-size: 0.9rem;
-    color: var(--frost-gray-700);
+    color: rgba(255,255,255,.7);
     line-height: 1.4;
 }
 
@@ -154,7 +158,14 @@
     box-shadow: var(--frost-shadow-lg);
 }
 
-/* Alert Styling */
+/* Card dark override */
+.contact-form-wrapper .card {
+    --bs-card-bg: #1a1f2e;
+    background-color: #1a1f2e !important;
+}
+.contact-form-wrapper .card-body {
+    background-color: #1a1f2e !important;
+}
 .alert {
     border-radius: var(--frost-radius-md);
     border: none;

@@ -1,7 +1,7 @@
 {{-- Profile Section --}}
 <div class="profile-section">
     <h3 class="text-white mb-4">
-        <i class="fas fa-user-circle me-2"></i> Profile Information
+        <i class="fas fa-user-circle me-2"></i> {{ __('frontend.account.profile_information') }}
     </h3>
 
     {{-- Profile Avatar --}}
@@ -31,27 +31,30 @@
                 </p>
                 <p class="mb-2">
                     @if ($data['avatar']['has_custom_avatar'])
-                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Custom Upload</span>
+                        <span class="badge bg-success"><i
+                                class="fas fa-check-circle me-1"></i>{{ __('frontend.account.custom_upload') }}</span>
                     @elseif($data['avatar']['use_gravatar'])
-                        <span class="badge bg-info text-dark"><i class="fas fa-globe me-1"></i>Gravatar</span>
+                        <span class="badge bg-info text-dark"><i
+                                class="fas fa-globe me-1"></i>{{ __('frontend.account.gravatar') }}</span>
                     @else
-                        <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>Generated</span>
+                        <span class="badge bg-secondary"><i
+                                class="fas fa-user me-1"></i>{{ __('frontend.account.generated_avatar') }}</span>
                     @endif
                 </p>
                 @if ($data['is_active'])
                     <span class="badge bg-success">
-                        <i class="fas fa-check-circle me-1"></i>Active
+                        <i class="fas fa-check-circle me-1"></i>{{ __('frontend.account.active') }}
                     </span>
                 @else
                     <span class="badge bg-danger">
-                        <i class="fas fa-times-circle me-1"></i>Inactive
+                        <i class="fas fa-times-circle me-1"></i>{{ __('frontend.account.inactive') }}
                     </span>
                 @endif
             </div>
             <div>
                 <button id="changePhotoBtn" type="button" class="btn btn-outline-light px-4" data-bs-toggle="modal"
                     data-bs-target="#avatarUploadModal">
-                    <i class="fas fa-camera me-2"></i>Change Photo
+                    <i class="fas fa-camera me-2"></i>{{ __('frontend.account.change_photo') }}
                 </button>
 
                 <div class="mt-3">
@@ -62,13 +65,11 @@
                             <input class="form-check-input" type="checkbox" id="useGravatarToggle" name="use_gravatar"
                                 value="1" {{ $data['avatar']['use_gravatar'] ? 'checked' : '' }}>
                             <label class="form-check-label text-white" for="useGravatarToggle">
-                                <i class="fas fa-globe ms-2 me-2"></i>Use Gravatar
+                                <i class="fas fa-globe ms-2 me-2"></i>{{ __('frontend.account.use_gravatar') }}
                             </label>
                         </div>
                         <small class="text-white-50 d-block ms-4 ps-2">
-                            Uses your email at
-                            <a href="https://gravatar.com" target="_blank" class="text-info">gravatar.com</a>.
-                            Turn off to upload a custom photo.
+                            {!! __('frontend.account.use_gravatar_hint') !!}
                         </small>
                     </form>
                 </div>
@@ -83,14 +84,14 @@
         <div class="row g-4 mb-4">
             <div class="col-md-6">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-user me-2"></i>First Name
+                    <i class="fas fa-user me-2"></i>{{ __('frontend.account.first_name') }}
                 </label>
                 <input type="text" name="first_name" class="form-control p-2 bg-dark text-white border-secondary"
                     value="{{ $data['basic_info']['first_name'] }}" required>
             </div>
             <div class="col-md-6">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-user me-2"></i>Last Name
+                    <i class="fas fa-user me-2"></i>{{ __('frontend.account.last_name') }}
                 </label>
                 <input type="text" name="last_name" class="form-control p-2 bg-dark text-white border-secondary"
                     value="{{ $data['basic_info']['last_name'] }}" required>
@@ -99,7 +100,7 @@
 
         <div class="mb-4">
             <label class="form-label text-white-50">
-                <i class="fas fa-envelope me-2"></i>Email Address
+                <i class="fas fa-envelope me-2"></i>{{ __('frontend.account.email_address') }}
             </label>
             <input type="email" name="email" class="form-control p-2 bg-dark text-white border-secondary"
                 value="{{ $data['basic_info']['email'] }}" required>
@@ -116,26 +117,26 @@
 
         {{-- Student Info --}}
         <h5 class="text-white mb-3 mt-5">
-            <i class="fas fa-info-circle me-2"></i>Additional Information
+            <i class="fas fa-info-circle me-2"></i>{{ __('frontend.account.additional_information') }}
         </h5>
         <div class="row g-4 mb-4">
             <div class="col-md-2 col-sm-6">
-                <label class="form-label text-white-50">Initials</label>
+                <label class="form-label text-white-50">{{ __('frontend.account.initials') }}</label>
                 <input type="text" name="student_info[initials]"
                     class="form-control p-2 bg-dark text-white border-secondary"
                     value="{{ $data['student_info']['initials'] ?? '' }}" maxlength="5">
-                <small class="text-white-50">Middle initial</small>
+                <small class="text-white-50">{{ __('frontend.account.initials_hint') }}</small>
             </div>
             <div class="col-md-2 col-sm-6">
-                <label class="form-label text-white-50">Suffix</label>
+                <label class="form-label text-white-50">{{ __('frontend.account.suffix') }}</label>
                 <input type="text" name="student_info[suffix]"
                     class="form-control bg-dark p-2 text-white border-secondary"
                     value="{{ $data['student_info']['suffix'] ?? '' }}" maxlength="10">
-                <small class="text-white-50">Jr, Sr, III</small>
+                <small class="text-white-50">{{ __('frontend.account.suffix_hint') }}</small>
             </div>
             <div class="col-md-4 col-sm-6">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-calendar me-2"></i>Date of Birth
+                    <i class="fas fa-calendar me-2"></i>{{ __('frontend.account.date_of_birth') }}
                 </label>
                 <input type="date" name="student_info[dob]"
                     class="form-control p-2 bg-dark text-white border-secondary"
@@ -143,7 +144,7 @@
             </div>
             <div class="col-md-4 col-sm-6">
                 <label class="form-label text-white-50">
-                    <i class="fas fa-phone me-2"></i>Phone Number
+                    <i class="fas fa-phone me-2"></i>{{ __('frontend.account.phone_number') }}
                 </label>
                 <input type="tel" name="student_info[phone]"
                     class="form-control p-2 bg-dark text-white border-secondary"
@@ -154,12 +155,12 @@
         {{-- Account Info --}}
         <div class="mb-4 pb-4 border-bottom border-secondary">
             <h5 class="text-white mb-4 mt-4">
-                <i class="fas fa-id-card me-2"></i>Account Information
+                <i class="fas fa-id-card me-2"></i>{{ __('frontend.account.account_information') }}
             </h5>
             <div class="row g-3">
                 <div class="col-md-6">
                     <div class="info-card">
-                        <div class="info-card-label">Member Since</div>
+                        <div class="info-card-label">{{ __('frontend.account.member_since') }}</div>
                         <div class="info-card-value">
                             <i class="fas fa-clock me-2"></i>{{ $data['basic_info']['member_since'] }}
                         </div>
@@ -167,7 +168,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="info-card">
-                        <div class="info-card-label">Last Login</div>
+                        <div class="info-card-label">{{ __('frontend.account.last_login') }}</div>
                         <div class="info-card-value">
                             <i class="fas fa-sign-in-alt me-2"></i>{{ $data['basic_info']['last_login'] }}
                         </div>
@@ -178,10 +179,10 @@
 
         <div class="d-flex gap-3 flex-wrap mt-4">
             <button type="submit" class="btn btn-primary px-4">
-                <i class="fas fa-save me-2"></i>Save Changes
+                <i class="fas fa-save me-2"></i>{{ __('frontend.account.save_changes') }}
             </button>
             <button type="reset" class="btn btn-outline-secondary text-white px-4">
-                <i class="fas fa-undo me-2"></i>Reset
+                <i class="fas fa-undo me-2"></i>{{ __('frontend.account.reset') }}
             </button>
         </div>
     </form>
@@ -193,7 +194,7 @@
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title" id="avatarUploadModalLabel">
-                        <i class="fas fa-camera me-2"></i>Update Profile Photo
+                        <i class="fas fa-camera me-2"></i>{{ __('frontend.account.update_profile_photo') }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
@@ -202,18 +203,20 @@
                     {{-- Current Avatar Preview --}}
                     @if ($data['avatar']['current_avatar'])
                         <div class="text-center mb-4">
-                            <p class="text-white-50 mb-2">Current Photo:</p>
+                            <p class="text-white-50 mb-2">{{ __('frontend.account.current_photo') }}</p>
                             <img src="{{ $data['avatar']['current_avatar'] }}" alt="Current Avatar"
                                 class="rounded-circle"
                                 style="width: 80px; height: 80px; object-fit: cover; border: 3px solid rgba(52, 152, 219, 0.3);">
                             @if ($data['avatar']['has_custom_avatar'])
-                                <p class="text-success mt-2 mb-0"><i class="fas fa-check-circle me-1"></i>Custom
-                                    Upload</p>
+                                <p class="text-success mt-2 mb-0"><i
+                                        class="fas fa-check-circle me-1"></i>{{ __('frontend.account.custom_upload') }}
+                                </p>
                             @elseif($data['avatar']['use_gravatar'])
-                                <p class="text-info mt-2 mb-0"><i class="fas fa-globe me-1"></i>Gravatar</p>
+                                <p class="text-info mt-2 mb-0"><i
+                                        class="fas fa-globe me-1"></i>{{ __('frontend.account.gravatar') }}</p>
                             @else
-                                <p class="text-white-50 mt-2 mb-0"><i class="fas fa-user me-1"></i>Generated
-                                    Avatar</p>
+                                <p class="text-white-50 mt-2 mb-0"><i
+                                        class="fas fa-user me-1"></i>{{ __('frontend.account.generated_avatar') }}</p>
                             @endif
                         </div>
                     @endif
@@ -223,17 +226,17 @@
                         @csrf
                         <div class="mb-4">
                             <label class="form-label text-white-50">
-                                <i class="fas fa-upload me-2"></i>Upload New Photo
+                                <i class="fas fa-upload me-2"></i>{{ __('frontend.account.upload_new_photo') }}
                             </label>
                             <input type="file" name="avatar" id="avatarInput"
                                 class="form-control bg-dark text-white border-secondary"
                                 accept="image/jpeg,image/png,image/jpg,image/gif">
                             <small class="text-white-50 mt-2 d-block">
-                                Accepted formats: JPG, PNG, GIF (max 2MB)
+                                {{ __('frontend.account.upload_formats_hint') }}
                             </small>
 
                             <div class="mt-3 d-none" id="avatarPreviewWrap">
-                                <p class="text-white-50 mb-2">Preview:</p>
+                                <p class="text-white-50 mb-2">{{ __('frontend.account.preview') }}</p>
                                 <img id="avatarPreview" alt="Avatar preview" class="rounded-circle"
                                     style="width: 80px; height: 80px; object-fit: cover; border: 3px solid rgba(52, 152, 219, 0.3);">
                             </div>
@@ -241,15 +244,16 @@
                     </form>
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">{{ __('frontend.account.cancel') }}</button>
                     @if ($data['avatar']['has_custom_avatar'] || $data['avatar']['use_gravatar'])
                         <button type="submit" form="avatarUploadForm" class="btn btn-outline-danger"
                             id="removeAvatarBtn" name="clear_avatar" value="1">
-                            <i class="fas fa-trash me-2"></i>Remove Photo
+                            <i class="fas fa-trash me-2"></i>{{ __('frontend.account.remove_photo') }}
                         </button>
                     @endif
                     <button type="submit" form="avatarUploadForm" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Save Photo
+                        <i class="fas fa-save me-2"></i>{{ __('frontend.account.save_photo') }}
                     </button>
                 </div>
             </div>

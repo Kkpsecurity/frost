@@ -32,7 +32,7 @@
             @if (isset($errors) && is_object($errors) && method_exists($errors, 'any') && $errors->any())
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Please correct the following errors:</strong>
+                    <strong>{{ __('frontend.account.correct_errors') }}</strong>
                     <ul class="mb-0 mt-2">
                         @foreach (is_object($errors) && method_exists($errors, 'all') ? $errors->all() : [] as $error)
                             <li>{{ $error }}</li>
@@ -48,20 +48,20 @@
                     <div class="card shadow-sm border-0 account-panel account-panel--sidebar">
                         <div class="card-body">
                             <h5 class="text-white mb-3">
-                                <i class="fas fa-user-circle me-2"></i>My Account
+                                <i class="fas fa-user-circle me-2"></i>{{ __('frontend.account.my_account') }}
                             </h5>
                             <nav class="nav flex-column account-nav">
                                 <a class="nav-link {{ $activeSection === 'profile' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'profile']) }}">
-                                    <i class="fas fa-user me-2"></i>Profile
+                                    <i class="fas fa-user me-2"></i>{{ __('frontend.account.profile') }}
                                 </a>
                                 <a class="nav-link {{ $activeSection === 'settings' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'settings']) }}">
-                                    <i class="fas fa-cog me-2"></i>Settings
+                                    <i class="fas fa-cog me-2"></i>{{ __('frontend.account.settings') }}
                                 </a>
                                 <a class="nav-link {{ $activeSection === 'inbox' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'inbox']) }}">
-                                    <i class="fas fa-bell me-2"></i>Notifications
+                                    <i class="fas fa-bell me-2"></i>{{ __('frontend.account.notifications') }}
                                     @if (auth()->user()->unreadNotifications->count())
                                         <span
                                             class="badge bg-danger ms-1">{{ auth()->user()->unreadNotifications->count() }}</span>
@@ -69,15 +69,16 @@
                                 </a>
                                 <a class="nav-link {{ $activeSection === 'notifications' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'notifications']) }}">
-                                    <i class="fas fa-sliders-h me-2"></i>Notification Settings
+                                    <i
+                                        class="fas fa-sliders-h me-2"></i>{{ __('frontend.account.notification_settings') }}
                                 </a>
                                 <a class="nav-link {{ $activeSection === 'orders' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'orders']) }}">
-                                    <i class="fas fa-graduation-cap me-2"></i>My Courses
+                                    <i class="fas fa-graduation-cap me-2"></i>{{ __('frontend.account.my_courses') }}
                                 </a>
                                 <a class="nav-link {{ $activeSection === 'payments' ? 'active' : '' }}"
                                     href="{{ route('account.index', ['section' => 'payments']) }}">
-                                    <i class="fas fa-credit-card me-2"></i>Payments
+                                    <i class="fas fa-credit-card me-2"></i>{{ __('frontend.account.payments') }}
                                 </a>
                             </nav>
                         </div>
