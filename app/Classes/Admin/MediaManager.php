@@ -4,6 +4,7 @@ namespace App\Classes\Admin;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 /**

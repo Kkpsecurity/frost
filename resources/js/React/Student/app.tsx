@@ -2,7 +2,7 @@ import "../../core/bootstrap";
 import React, { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import StudentErrorBoundary from "./ErrorBoundry/StudentErrorBoundry";
-import StudentDataLayer from "./Components/StudentDataLayer";
+import StudentDataLayer from "./StudentDataLayer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient({

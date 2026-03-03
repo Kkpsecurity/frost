@@ -96,12 +96,12 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                             const isSelected =
                                 typeof selectedLessonId === "number"
                                     ? Number(selectedLessonId) ===
-                                      Number(lessonId)
+                                    Number(lessonId)
                                     : false;
                             const hasActiveSession =
                                 typeof activeSessionLessonId === "number" &&
                                 Number(activeSessionLessonId) ===
-                                    Number(lessonId);
+                                Number(lessonId);
                             const isDisabled =
                                 disableNavigation &&
                                 !hasActiveSession &&
@@ -115,14 +115,14 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                         backgroundColor: isSelected
                                             ? "#3498db"
                                             : isDisabled
-                                              ? "#2c3e50"
-                                              : baseColor,
+                                                ? "#2c3e50"
+                                                : baseColor,
                                         borderRadius: "0.25rem",
                                         border: isSelected
                                             ? "3px solid #2ecc71"
                                             : hasActiveSession
-                                              ? "2px solid #e74c3c"
-                                              : "1px solid rgba(255,255,255,0.1)",
+                                                ? "2px solid #e74c3c"
+                                                : "1px solid rgba(255,255,255,0.1)",
                                         boxShadow: isSelected
                                             ? "0 4px 8px rgba(52,152,219,0.4)"
                                             : "0 1px 3px rgba(0,0,0,0.1)",

@@ -1,11 +1,11 @@
 /**
  * Student Domain Types & Aliases
- * 
+ *
  * Following React Types & Interfaces Rules:
  * - type = single-dimension props or atomic aliases
  * - interface = multi-field shapes (domain models)
  * - Domain entities end with Type
- * - Props end with Props  
+ * - Props end with Props
  * - Shapes end with Shape
  */
 
@@ -48,7 +48,7 @@ export interface UserType {
     created_at: DateTimeString;
     updated_at: DateTimeString;
     email_verified_at?: DateTimeString;
-    
+
     // Virtual/computed properties
     name?: string;
     fullname?: string;
@@ -103,7 +103,7 @@ export interface CourseType {
     zoom_creds_id?: number;
     needs_range: boolean;
     dates_template?: Record<string, any>;
-    
+
     // Virtual/computed properties
     course_type?: CourseCategory;
     duration_days?: number;
@@ -134,13 +134,13 @@ export interface CourseAuthType {
     exam_admin_id?: UserId;
     range_date_id?: number;
     id_override: boolean;
-    
+
     // Relationships
     course?: CourseType;
     user?: UserType;
     student_units?: StudentUnitType[];
     exam_auths?: ExamAuthType[];
-    
+
     // Virtual/computed properties
     progress?: number;
     status?: CourseStatus;
@@ -161,7 +161,7 @@ export interface CourseUnitType {
     description?: string;
     sort_order: number;
     is_active: boolean;
-    
+
     // Relationships
     course?: CourseType;
     course_unit_lessons?: CourseUnitLessonType[];
@@ -179,7 +179,7 @@ export interface CourseUnitLessonType {
     content?: string;
     sort_order: number;
     is_active: boolean;
-    
+
     // Relationships
     course_unit?: CourseUnitType;
 }
@@ -200,7 +200,7 @@ export interface StudentUnitType {
     started_at?: DateTimeString;
     completed_at?: DateTimeString;
     is_completed: boolean;
-    
+
     // Relationships
     course_auth?: CourseAuthType;
     course_unit?: CourseUnitType;
@@ -220,7 +220,7 @@ export interface StudentLessonType {
     completed_at?: DateTimeString;
     is_completed: boolean;
     time_spent?: number; // in minutes
-    
+
     // Relationships
     student_unit?: StudentUnitType;
     course_unit_lesson?: CourseUnitLessonType;
@@ -245,7 +245,7 @@ export interface ExamAuthType {
     is_passed: boolean;
     attempts: number;
     max_attempts: number;
-    
+
     // Relationships
     course_auth?: CourseAuthType;
     exam?: ExamType;
@@ -384,3 +384,38 @@ export interface StudentProfileShape {
 
 export type StudentDashboardResponse = ApiResponseShape<StudentDashboardShape>;
 export type CourseProgressResponse = ApiResponseShape<CourseProgressShape>;
+
+export interface StudentActiveClassroomShape {
+    course_date_id: number;
+    course_id: CourseId;
+    [key: string]: any;
+}
+
+/**
+ * Student Poll Response Payload - Student-owned state
+ * Mirrors /classroom/student/poll "data" object
+ */
+export interface StudentPollShape {
+    student: StudentType | null;
+
+    // course_auth enrollments (your code treats courses[].id as course_auth_id)
+    courses: Array<CourseAuthType & { course_id: CourseId }>;
+
+    progress: any;
+
+    validations_by_course_auth: Record<string, any> | null;
+    lessons_by_course_auth: Record<string, any> | null;
+
+    active_classroom: StudentActiveClassroomShape | null;
+
+    studentExam: any;
+    studentExamsByCourseAuth: Record<string, any>;
+
+    studentUnit: StudentUnitType | null;
+    studentLessons: StudentLessonType[];
+
+    notifications: any[];
+    assignments: any[];
+
+    challenges?: any[];
+}

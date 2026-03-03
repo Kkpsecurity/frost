@@ -11,15 +11,15 @@ use App\Models\User;
 function vcr_display()
 {
 
-  if (! $CourseDate = DevHelpers::CurrentCourseDate()) {
-    return vcr_header() . '<h3>No active CourseDate</h3>' . vcr_footer();
-  }
+    if (! $CourseDate = DevHelpers::CurrentCourseDate()) {
+        return vcr_header() . '<h3>No active CourseDate</h3>' . vcr_footer();
+    }
 
 
-  return vcr_header($CourseDate)
-    . vcr_accepted($CourseDate)
-    . vcr_queue($CourseDate)
-    . vcr_footer();
+    return vcr_header($CourseDate)
+        . vcr_accepted($CourseDate)
+        . vcr_queue($CourseDate)
+        . vcr_footer();
 }
 
 
@@ -29,28 +29,28 @@ function vcr_display()
 function vcr_accepted(CourseDate $CourseDate)
 {
 
-  $devdata = VideoCallRequest::DevData($CourseDate->id);
+    $devdata = VideoCallRequest::DevData($CourseDate->id);
 
-  if (is_numeric($devdata->inst_user_id)) {
-    $inst_route  = route('sattest.vcr.call_cancel_instructor', $CourseDate->id);
-    $inst_button = '<input type="submit" value="Delete">';
-  } else {
-    $inst_route  = null;
-    $inst_button = null;
-  }
+    if (is_numeric($devdata->inst_user_id)) {
+        $inst_route  = route('sattest.vcr.call_cancel_instructor', $CourseDate->id);
+        $inst_button = '<input type="submit" value="Delete">';
+    } else {
+        $inst_route  = null;
+        $inst_button = null;
+    }
 
-  if (is_numeric($devdata->student_user_id)) {
-    $student_route  = route('sattest.vcr.call_cancel_student', [$CourseDate->id, $devdata->student_user_id]);
-    $student_button = '<input type="submit" value="Delete">';
-  } else {
-    $student_route  = null;
-    $student_button = null;
-  }
+    if (is_numeric($devdata->student_user_id)) {
+        $student_route  = route('sattest.vcr.call_cancel_student', [$CourseDate->id, $devdata->student_user_id]);
+        $student_button = '<input type="submit" value="Delete">';
+    } else {
+        $student_route  = null;
+        $student_button = null;
+    }
 
 
-  $csrf_field = vcr_csrf_field();
+    $csrf_field = vcr_csrf_field();
 
-  return <<<HTML
+    return <<<HTML
 
 <div style="margin-top: 20px; display: table; border: 2px solid #ccc; padding: 10px;">
 <table border="0" cellspacing="0" cellpadding="5">
@@ -95,14 +95,14 @@ HTML;
 function vcr_queue(CourseDate $CourseDate)
 {
 
-  $records = VideoCallRequest::Queue($CourseDate->id);
+    $records = VideoCallRequest::Queue($CourseDate->id);
 
-  if (! $records->count()) {
-    return "\n<h4>Queue is empty</h4>\n";
-  }
+    if (! $records->count()) {
+        return "\n<h4>Queue is empty</h4>\n";
+    }
 
 
-  $html = <<<HTML
+    $html = <<<HTML
 
 <div style="margin-top: 20px; display: table; border: 2px solid #ccc; padding: 10px;">
 <table border="0" cellspacing="0" cellpadding="5">
@@ -116,17 +116,17 @@ function vcr_queue(CourseDate $CourseDate)
 HTML;
 
 
-  $csrf_field = vcr_csrf_field();
+    $csrf_field = vcr_csrf_field();
 
-  foreach ($records as $record) {
+    foreach ($records as $record) {
 
-    $created_at = (new Carbon($record['created_at']))
-      ->tz('America/New_York')
-      ->isoFormat('ddd MM/DD HH:mm:ss');
+        $created_at = (new Carbon($record['created_at']))
+            ->tz('America/New_York')
+            ->isoFormat('ddd MM/DD HH:mm:ss');
 
-    $btn_route = route('sattest.vcr.call_delete_all', [$CourseDate->id, $record['user_id']]);
+        $btn_route = route('sattest.vcr.call_delete_all', [$CourseDate->id, $record['user_id']]);
 
-    $html .= <<<ROW
+        $html .= <<<ROW
 <tr>
   <td>{$created_at}</td>
   <td align="center">{$record['user_id']}</td>
@@ -141,17 +141,17 @@ HTML;
 </tr>
 
 ROW;
-  }
+    }
 
 
-  $html .= <<<HTML
+    $html .= <<<HTML
 </table>
 </div>
 
 HTML;
 
 
-  return $html;
+    return $html;
 }
 
 
@@ -160,16 +160,16 @@ HTML;
 
 function vcr_csrf_field()
 {
-  return '<input type="hidden" name="_token" value="' .  csrf_token() . '">';
+    return '<input type="hidden" name="_token" value="' .  csrf_token() . '">';
 }
 
 
-function vcr_header(CourseDate $CourseDate = null)
+function vcr_header(?CourseDate $CourseDate = null)
 {
 
-  $title = 'Video Call Requests - Redis';
+    $title = 'Video Call Requests - Redis';
 
-  $html = <<<HTML
+    $html = <<<HTML
 <!doctype html>
 <html lang="en">
 <head>
@@ -189,9 +189,9 @@ function vcr_header(CourseDate $CourseDate = null)
 HTML;
 
 
-  if ($CourseDate) {
+    if ($CourseDate) {
 
-    $html .= <<<HTML
+        $html .= <<<HTML
 
 <h3>
   {$title}
@@ -201,16 +201,16 @@ HTML;
 <p>CourseDateID: {$CourseDate->id} &bull; {$CourseDate->StartsAt('ddd MM/DD')}</p>
 
 HTML;
-  }
+    }
 
 
-  return $html;
+    return $html;
 }
 
 
 function vcr_footer()
 {
-  return <<<HTML
+    return <<<HTML
 
 </body>
 </html>

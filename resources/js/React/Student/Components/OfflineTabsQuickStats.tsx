@@ -83,11 +83,11 @@ const OfflineTabsQuickStats: React.FC<OfflineTabsQuickStatsProps> = ({
                         >
                             {lessons.length > 0
                                 ? Math.round(
-                                      (lessons.filter((l) => l.is_completed)
-                                          .length /
-                                          lessons.length) *
-                                          100,
-                                  )
+                                    (lessons.filter((l) => l.is_completed)
+                                        .length /
+                                        lessons.length) *
+                                    100,
+                                )
                                 : 0}
                             %
                         </h3>

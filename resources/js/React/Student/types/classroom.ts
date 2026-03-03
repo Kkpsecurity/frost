@@ -141,3 +141,59 @@ export type UseClassroomQueryResult<T> = {
     error: Error | null;
     refetch: () => void;
 };
+export interface ClassroomPollOkShape<T = any> {
+    success: true;
+    data: T;
+    timestamp?: string;
+    message?: string;
+}
+
+export interface ClassroomPollErrShape {
+    success: false;
+    message: string;
+    error_code?: string;
+    timestamp?: string;
+    error?: string;
+}
+
+export type ClassroomPollResponseShape<T = any> =
+    | ClassroomPollOkShape<T>
+    | ClassroomPollErrShape;
+
+    export interface ClassroomPollActiveLessonShape {
+    id: number; // inst_lesson id (based on current frontend logs)
+    lesson_id: LessonId;
+    is_paused: boolean;
+    paused_at?: string | null;
+    [key: string]: any;
+}
+
+export interface ClassroomPollBreaksShape {
+    breaks_remaining?: number;
+    break_duration_minutes?: number;
+    [key: string]: any;
+}
+
+// Lessons coming from poll might be either {id} or {lesson_id} depending on join
+export interface ClassroomPollLessonShape {
+    id?: LessonId;
+    lesson_id?: LessonId;
+    title: string;
+    duration_minutes?: number | null;
+    [key: string]: any;
+}
+
+export interface ClassroomPollPayloadShape {
+    courseDate?: any | null; // tighten later once service output confirmed
+    instructor?: any | null;
+
+    // core fields used right now
+    lessons?: ClassroomPollLessonShape[];
+    activeLesson?: ClassroomPollActiveLessonShape | null;
+    breaks?: ClassroomPollBreaksShape;
+
+    challenge?: { challenge_id: number; [key: string]: any } | null;
+
+    // keep flexible for service evolution
+    [key: string]: any;
+}

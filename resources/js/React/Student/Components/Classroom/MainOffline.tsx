@@ -20,17 +20,9 @@ interface MainOfflineProps {
     devModeToggle?: React.ReactNode;
 }
 
-/**
- * MainOffline - Self-study classroom mode
- *
- * Layout:
- * - Title Bar: Student tools and information (SchoolDashboardTitleBar component)
- * - Sidebar: All lessons for selected course
- * - Content Area: Tabbed interface (Details, Self Study, Documentation)
- */
 const MainOffline: React.FC<MainOfflineProps> = ({
     courseAuthId,
-    student,
+    student, // kept for contract stability (even if not used yet)
     onBackToDashboard,
     onExamClick,
     devModeToggle,
@@ -38,24 +30,19 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     const classroomContext = useClassroom();
     const studentContext = useStudent();
 
-    const [selectedLessonId, setSelectedLessonId] = useState<number | null>(
-        null,
-    );
+    const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
 
     const [selfStudyLessons, setSelfStudyLessons] = useState<any[]>([]);
-    const [isLoadingSelfStudyLessons, setIsLoadingSelfStudyLessons] =
-        useState(false);
+    const [isLoadingSelfStudyLessons, setIsLoadingSelfStudyLessons] = useState(false);
 
-    // Track active self-study session for sidebar
     const [activeSelfStudySessionLessonId, setActiveSelfStudySessionLessonId] =
         useState<number | null>(null);
 
-    // Tab state management
-    const [activeTab, setActiveTab] = useState<
-        "details" | "self-study" | "documentation"
-    >("details");
+    const [activeTab, setActiveTab] = useState<"details" | "self-study" | "documentation">(
+        "details",
+    );
 
-    // Restore last active tab (and active self-study session) on refresh.
+    // Restore last active tab + self-study session
     const didRestoreRef = React.useRef(false);
     React.useEffect(() => {
         if (didRestoreRef.current) return;
@@ -63,48 +50,32 @@ const MainOffline: React.FC<MainOfflineProps> = ({
 
         const isValidTab = (
             value: any,
-        ): value is "details" | "self-study" | "documentation" => {
-            return (
-                value === "details" ||
-                value === "self-study" ||
-                value === "documentation"
-            );
-        };
+        ): value is "details" | "self-study" | "documentation" =>
+            value === "details" || value === "self-study" || value === "documentation";
 
         try {
-            const storedTab = localStorage.getItem(
-                OFFLINE_ACTIVE_TAB_STORAGE_KEY,
-            );
-            if (isValidTab(storedTab)) {
-                setActiveTab(storedTab);
-            }
+            const storedTab = localStorage.getItem(OFFLINE_ACTIVE_TAB_STORAGE_KEY);
+            if (isValidTab(storedTab)) setActiveTab(storedTab);
         } catch {
             // ignore
         }
 
         try {
-            const raw = localStorage.getItem(
-                OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY,
-            );
+            const raw = localStorage.getItem(OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY);
             if (!raw) return;
+
             const parsed = JSON.parse(raw);
             if (!parsed?.sessionId || !parsed?.lessonId) return;
             if (Number(parsed.courseAuthId) !== Number(courseAuthId)) return;
 
             if (parsed.expiresAt) {
                 const expiresAt = new Date(parsed.expiresAt);
-                if (
-                    Number.isFinite(expiresAt.getTime()) &&
-                    expiresAt <= new Date()
-                ) {
-                    localStorage.removeItem(
-                        OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY,
-                    );
+                if (Number.isFinite(expiresAt.getTime()) && expiresAt <= new Date()) {
+                    localStorage.removeItem(OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY);
                     return;
                 }
             }
 
-            // If a session exists, prioritize jumping back into Self Study.
             setActiveTab("self-study");
             setSelectedLessonId(Number(parsed.lessonId));
         } catch {
@@ -112,7 +83,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         }
     }, [courseAuthId]);
 
-    // Persist last active tab selection.
+    // Persist last active tab
     React.useEffect(() => {
         try {
             localStorage.setItem(OFFLINE_ACTIVE_TAB_STORAGE_KEY, activeTab);
@@ -121,55 +92,36 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         }
     }, [activeTab]);
 
-    // OFFLINE MODE: ALL lessons for the entire course (not just today)
-    // Backend returns all lessons across all course units when no courseDate exists
-    // Students can study any lesson in self-paced mode
-    // Access data property if context is wrapped
-    const classroomData = classroomContext?.data || classroomContext;
-    const backendLessons = classroomData?.lessons || [];
+    // OFFLINE MODE lessons: from classroom context, else fallback/mock
+    const classroomData = (classroomContext as any)?.data || classroomContext;
+    const backendLessons = (classroomData as any)?.lessons || [];
 
-    // 🎨 TEMP: For testing layout with all 18 lessons
-    // TODO: Remove this when backend returns all course lessons in offline mode
+    // TEMP fallback to 18 lessons for layout testing
     const mockLessons =
         backendLessons.length < 18
             ? [
-                  ...backendLessons,
-                  ...Array.from(
-                      { length: 18 - backendLessons.length },
-                      (_, i) => ({
-                          id: 100 + i,
-                          title: `Lesson ${backendLessons.length + i + 1}`,
-                          description: `Course lesson ${backendLessons.length + i + 1}`,
-                          duration_minutes: 60,
-                          order: backendLessons.length + i + 1,
-                          status: "incomplete",
-                          is_completed: false,
-                          is_active: false,
-                          is_paused: false,
-                      }),
-                  ),
-              ]
+                ...backendLessons,
+                ...Array.from({ length: 18 - backendLessons.length }, (_, i) => ({
+                    id: 100 + i,
+                    title: `Lesson ${backendLessons.length + i + 1}`,
+                    description: `Course lesson ${backendLessons.length + i + 1}`,
+                    duration_minutes: 60,
+                    order: backendLessons.length + i + 1,
+                    status: "incomplete",
+                    is_completed: false,
+                    is_active: false,
+                    is_paused: false,
+                })),
+            ]
             : backendLessons;
 
-    const lessons =
-        selfStudyLessons && selfStudyLessons.length > 0
-            ? selfStudyLessons
-            : mockLessons;
-    const studentLessons = studentContext?.studentLessons || [];
-    const activeLesson = null; // No active lesson in offline mode
+    const lessons = selfStudyLessons.length > 0 ? selfStudyLessons : mockLessons;
+
+    const studentLessons = (studentContext as any)?.studentLessons || [];
+    const activeLesson = null; // no "active lesson" in offline mode
     const isLoadingLessons = isLoadingSelfStudyLessons;
 
-    // 🔍 DEBUG: Log lessons data
-    console.log("📚 MainOffline Lessons:", {
-        lessonsCount: lessons.length,
-        backendLessonsCount: backendLessons.length,
-        lessons: lessons,
-        studentLessons: studentLessons,
-        classroomContext: classroomContext,
-        classroomData: classroomData,
-    });
-
-    // Use lesson sidebar hook for helper functions
+    // Sidebar helpers
     const {
         isLessonCompletedByStudent,
         isLessonInProgress,
@@ -182,6 +134,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         activeLesson,
     });
 
+    // Load offline/self-study lesson list from backend
     React.useEffect(() => {
         let isCancelled = false;
 
@@ -192,16 +145,13 @@ const MainOffline: React.FC<MainOfflineProps> = ({
             try {
                 const response = await fetch(
                     `/classroom/self-study/lessons?course_auth_id=${courseAuthId}`,
-                    {
-                        method: "GET",
-                        headers: { Accept: "application/json" },
-                    },
+                    { method: "GET", headers: { Accept: "application/json" } },
                 );
-                const payload = await response.json();
 
+                const payload = await response.json();
                 if (isCancelled) return;
 
-                if (response.ok && payload?.success && payload?.data?.lessons) {
+                if (response.ok && payload?.success && Array.isArray(payload?.data?.lessons)) {
                     setSelfStudyLessons(payload.data.lessons);
                 }
             } catch {
@@ -212,12 +162,12 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         };
 
         load();
-
         return () => {
             isCancelled = true;
         };
     }, [courseAuthId]);
 
+    // Auto-select first incomplete lesson on first load
     React.useEffect(() => {
         if (selectedLessonId !== null) return;
         if (!lessons || lessons.length === 0) return;
@@ -233,11 +183,19 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         setSelectedLessonId(Number(firstIncomplete?.id ?? lessons[0]?.id));
     }, [lessons, selectedLessonId]);
 
+    const { courses } = classroomData as any;
+
+    console.log("MainOffline Render", classroomData);
+
+    const courseTitle = courses?.find((c: any) => {
+        const candidateCourseAuthId = c?.course_auth_id ?? c?.courseAuthId ?? c?.id;
+        return Number(candidateCourseAuthId) === Number(courseAuthId);
+    })?.title;
+
     return (
         <FrostDashboardWrapper>
-            {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
             <SchoolDashboardTitleBar
-                title="Self-Study Mode"
+                title={`Self-Study: ${courseTitle}`}
                 subtitle="Complete lessons at your own pace"
                 icon={<i className="fas fa-book-open"></i>}
                 onBackToDashboard={onBackToDashboard}
@@ -246,47 +204,38 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                 devModeToggle={devModeToggle}
                 courseAuthId={courseAuthId}
             />
+
             <div className="container-fluid px-0">
                 <div className="row g-0">
                     <div className="col-12 px-0">
-                        {/* Main Classroom Layout */}
                         <div className="row g-0">
-                            {/* Left Sidebar - Lessons */}
                             <div className="col-md-2">
                                 <LessonSideBar
                                     lessons={lessons}
                                     isLoadingLessons={isLoadingLessons}
-                                    isLessonCompletedByStudent={
-                                        isLessonCompletedByStudent
-                                    }
+                                    isLessonCompletedByStudent={isLessonCompletedByStudent}
                                     isLessonInProgress={isLessonInProgress}
                                     getLessonStatusColor={getLessonStatusColor}
                                     getLessonTextColor={getLessonTextColor}
                                     getLessonStatusIcon={getLessonStatusIcon}
                                     selectedLessonId={selectedLessonId}
                                     onSelectLesson={(lessonId) => {
-                                        // Prevent navigation during active session unless clearing it
+                                        // Prevent switching during active session
                                         if (
                                             activeSelfStudySessionLessonId &&
-                                            lessonId !==
-                                                activeSelfStudySessionLessonId
+                                            lessonId !== activeSelfStudySessionLessonId
                                         ) {
-                                            // User is trying to switch lessons during active session
                                             return;
                                         }
                                         setSelectedLessonId(lessonId);
                                     }}
-                                    activeSessionLessonId={
-                                        activeSelfStudySessionLessonId
-                                    }
-                                    disableNavigation={
-                                        activeSelfStudySessionLessonId !== null
-                                    }
+                                    activeSessionLessonId={activeSelfStudySessionLessonId}
+                                    disableNavigation={activeSelfStudySessionLessonId !== null}
                                 />
                             </div>
-                            {/* Main Content Area */}
+
                             <div className="col-md-10">
-                                {/* Tab Navigation */}
+                                {/* Tabs */}
                                 <div
                                     className="tabs-navigation"
                                     style={{
@@ -296,32 +245,21 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                     }}
                                 >
                                     <div className="d-flex">
-                                        {/* Details Tab */}
                                         <button
-                                            className={`tab-button ${
-                                                activeTab === "details"
-                                                    ? "active"
-                                                    : ""
-                                            }`}
-                                            onClick={() =>
-                                                setActiveTab("details")
-                                            }
+                                            className={`tab-button ${activeTab === "details" ? "active" : ""
+                                                }`}
+                                            onClick={() => setActiveTab("details")}
                                             style={{
                                                 backgroundColor:
                                                     activeTab === "details"
                                                         ? "#34495e"
                                                         : "transparent",
-                                                color:
-                                                    activeTab === "details"
-                                                        ? "white"
-                                                        : "#95a5a6",
+                                                color: activeTab === "details" ? "white" : "#95a5a6",
                                                 border: "none",
                                                 padding: "1rem 1.5rem",
                                                 cursor: "pointer",
                                                 fontWeight:
-                                                    activeTab === "details"
-                                                        ? "600"
-                                                        : "400",
+                                                    activeTab === "details" ? "600" : "400",
                                                 borderBottom:
                                                     activeTab === "details"
                                                         ? "3px solid #3498db"
@@ -333,16 +271,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             Details
                                         </button>
 
-                                        {/* Self Study Tab */}
                                         <button
-                                            className={`tab-button ${
-                                                activeTab === "self-study"
-                                                    ? "active"
-                                                    : ""
-                                            }`}
-                                            onClick={() =>
-                                                setActiveTab("self-study")
-                                            }
+                                            className={`tab-button ${activeTab === "self-study" ? "active" : ""
+                                                }`}
+                                            onClick={() => setActiveTab("self-study")}
                                             style={{
                                                 backgroundColor:
                                                     activeTab === "self-study"
@@ -356,9 +288,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                                 padding: "1rem 1.5rem",
                                                 cursor: "pointer",
                                                 fontWeight:
-                                                    activeTab === "self-study"
-                                                        ? "600"
-                                                        : "400",
+                                                    activeTab === "self-study" ? "600" : "400",
                                                 borderBottom:
                                                     activeTab === "self-study"
                                                         ? "3px solid #3498db"
@@ -370,38 +300,26 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             Self Study
                                         </button>
 
-                                        {/* Documentation Tab */}
                                         <button
-                                            className={`tab-button ${
-                                                activeTab === "documentation"
-                                                    ? "active"
-                                                    : ""
-                                            }`}
-                                            onClick={() =>
-                                                setActiveTab("documentation")
-                                            }
+                                            className={`tab-button ${activeTab === "documentation" ? "active" : ""
+                                                }`}
+                                            onClick={() => setActiveTab("documentation")}
                                             style={{
                                                 backgroundColor:
-                                                    activeTab ===
-                                                    "documentation"
+                                                    activeTab === "documentation"
                                                         ? "#34495e"
                                                         : "transparent",
                                                 color:
-                                                    activeTab ===
-                                                    "documentation"
+                                                    activeTab === "documentation"
                                                         ? "white"
                                                         : "#95a5a6",
                                                 border: "none",
                                                 padding: "1rem 1.5rem",
                                                 cursor: "pointer",
                                                 fontWeight:
-                                                    activeTab ===
-                                                    "documentation"
-                                                        ? "600"
-                                                        : "400",
+                                                    activeTab === "documentation" ? "600" : "400",
                                                 borderBottom:
-                                                    activeTab ===
-                                                    "documentation"
+                                                    activeTab === "documentation"
                                                         ? "3px solid #3498db"
                                                         : "none",
                                                 transition: "all 0.2s",
@@ -413,7 +331,6 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                     </div>
                                 </div>
 
-                                {/* Tab Content */}
                                 <div
                                     className="tab-content"
                                     style={{
@@ -422,35 +339,25 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                         height: "calc(100vh - 250px)",
                                     }}
                                 >
-                                    {/* Details Tab Content */}
                                     {activeTab === "details" && (
-                                        <TabDetails
-                                            courseAuthId={courseAuthId}
-                                            lessons={lessons}
-                                        />
+                                        <TabDetails courseAuthId={courseAuthId} lessons={lessons} />
                                     )}
 
-                                    {/* Self Study Tab Content */}
                                     {activeTab === "self-study" && (
                                         <TabSelfStudy
                                             courseAuthId={courseAuthId}
                                             lessons={lessons}
                                             selectedLessonId={selectedLessonId}
                                             onSelectLesson={setSelectedLessonId}
-                                            onLessonsUpdated={
-                                                setSelfStudyLessons
-                                            }
+                                            onLessonsUpdated={setSelfStudyLessons}
                                             onActiveSessionChange={
                                                 setActiveSelfStudySessionLessonId
                                             }
                                         />
                                     )}
 
-                                    {/* Documentation Tab Content */}
                                     {activeTab === "documentation" && (
-                                        <TabDocumentation
-                                            courseAuthId={courseAuthId}
-                                        />
+                                        <TabDocumentation courseAuthId={courseAuthId} />
                                     )}
                                 </div>
                             </div>

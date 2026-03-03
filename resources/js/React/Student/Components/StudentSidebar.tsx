@@ -57,15 +57,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
         refreshSession,
     } = useLessonSession();
 
-    // Debug: Log session state for troubleshooting
-    useEffect(() => {
-        console.log("🔍 SIDEBAR SESSION STATE:", {
-            isActive: session?.isActive,
-            lessonId: session?.lessonId,
-            lessonTitle: session?.lessonTitle,
-            fullSession: session,
-        });
-    }, [session]);
+
 
     // Force sidebar to always start expanded (not collapsed)
     // LocalStorage removed to prevent width inconsistencies
@@ -139,11 +131,11 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
     // hasActiveFSTBSession already destructured from hook above
     const activeFSTBSessionData = session?.isActive
         ? {
-              lessonId: session?.lessonId,
-              lessonTitle: session?.lessonTitle,
-              sessionToken: null, // Not needed for display
-              startedAt: session?.startedAt,
-          }
+            lessonId: session?.lessonId,
+            lessonTitle: session?.lessonTitle,
+            sessionToken: null, // Not needed for display
+            startedAt: session?.startedAt,
+        }
         : null;
 
     console.log("🎓 StudentSidebar: Session state from hook:", {
@@ -202,12 +194,12 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
     const studentStatusBadgeClass = hasActiveFSTBSession
         ? "bg-info" // Lesson Active - blue
         : hasStudentUnit
-        ? "bg-secondary" // Session Active - gray
-        : studentAttendance?.is_present
-        ? "bg-success" // In Session - green
-        : studentAttendance?.attendance_status === "left"
-        ? "bg-warning" // Left Session - yellow
-        : "bg-secondary"; // No Session - gray
+            ? "bg-secondary" // Session Active - gray
+            : studentAttendance?.is_present
+                ? "bg-success" // In Session - green
+                : studentAttendance?.attendance_status === "left"
+                    ? "bg-warning" // Left Session - yellow
+                    : "bg-secondary"; // No Session - gray
 
     // Status message based on actual state, not tab
     let studentStatusMessage = "No active class session detected.";
@@ -251,26 +243,26 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
     const classroomStatusLabel = resolvedClassroomLive
         ? "Live"
         : resolvedClassroomWaiting
-        ? "Waiting"
-        : resolvedClassroomScheduled
-        ? "Scheduled"
-        : "Offline";
+            ? "Waiting"
+            : resolvedClassroomScheduled
+                ? "Scheduled"
+                : "Offline";
 
     const classroomStatusBadgeClass = resolvedClassroomLive
         ? "bg-light-success"
         : resolvedClassroomWaiting
-        ? "bg-info"
-        : resolvedClassroomScheduled
-        ? "bg-primary"
-        : "bg-secondary";
+            ? "bg-info"
+            : resolvedClassroomScheduled
+                ? "bg-primary"
+                : "bg-secondary";
 
     const classroomStatusMessage = resolvedClassroomLive
         ? "Your instructor has started the class."
         : resolvedClassroomWaiting
-        ? "Your instructor is preparing to begin."
-        : resolvedClassroomScheduled
-        ? "This class is scheduled for today."
-        : "No class is scheduled right now.";
+            ? "Your instructor is preparing to begin."
+            : resolvedClassroomScheduled
+                ? "This class is scheduled for today."
+                : "No class is scheduled right now.";
 
     const shouldShowJoinReminder =
         resolvedClassroomLive && !studentAttendance?.is_present;
@@ -331,9 +323,8 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                     }
                 >
                     <i
-                        className={`fas ${
-                            isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
-                        }`}
+                        className={`fas ${isCollapsed ? "fa-chevron-right" : "fa-chevron-left"
+                            }`}
                         aria-hidden="true"
                     />
                 </button>
@@ -377,8 +368,8 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
 
                                     {/* For FSTB mode with active session, show lesson start time */}
                                     {isFSTBMode &&
-                                    hasActiveFSTBSession &&
-                                    activeFSTBSessionData ? (
+                                        hasActiveFSTBSession &&
+                                        activeFSTBSessionData ? (
                                         <span
                                             className="text-muted"
                                             style={{ fontSize: "0.75rem" }}
@@ -403,27 +394,27 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                 {/* Bottom row: Instructor and duration */}
                                 {(isInstructorPresent ||
                                     sessionDurationDisplay) && (
-                                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        {isInstructorPresent && (
-                                            <span
-                                                className="text-info"
-                                                style={{ fontSize: "0.75rem" }}
-                                            >
-                                                <i className="fas fa-chalkboard-teacher me-1"></i>
-                                                Live
-                                            </span>
-                                        )}
-                                        {sessionDurationDisplay && (
-                                            <span
-                                                className="text-muted"
-                                                style={{ fontSize: "0.75rem" }}
-                                            >
-                                                <i className="fas fa-stopwatch me-1"></i>
-                                                {sessionDurationDisplay}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
+                                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            {isInstructorPresent && (
+                                                <span
+                                                    className="text-info"
+                                                    style={{ fontSize: "0.75rem" }}
+                                                >
+                                                    <i className="fas fa-chalkboard-teacher me-1"></i>
+                                                    Live
+                                                </span>
+                                            )}
+                                            {sessionDurationDisplay && (
+                                                <span
+                                                    className="text-muted"
+                                                    style={{ fontSize: "0.75rem" }}
+                                                >
+                                                    <i className="fas fa-stopwatch me-1"></i>
+                                                    {sessionDurationDisplay}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                             </div>
                         </div>
                     </div>
@@ -436,8 +427,8 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                     // Check if student has StudentLesson for active lesson
                                     const allLessons = lessons
                                         ? Object.values(lessons).flatMap(
-                                              (c) => c.lessons
-                                          )
+                                            (c) => c.lessons
+                                        )
                                         : [];
                                     // Check has_student_lesson from activeLesson polling data (not lesson list)
                                     const hasStudentLesson =
@@ -918,139 +909,141 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
+                                                            </div >
+                                                        </div >
                                                     );
                                                 }
                                             )}
-                                        </div>
+                                        </div >
                                     );
                                 }
                             )}
-                        </div>
-                    </div>
+                        </div >
+                    </div >
                 )}
 
-            {/* Fallback: No Lessons Available */}
-            {!isCollapsed && !hasLessons && (
-                <div className="border-top border-secondary">
-                    <div className="p-4 text-center">
-                        <div className="text-muted">
-                            <i
-                                className="fas fa-book-open mb-2"
-                                style={{ fontSize: "2rem" }}
-                            ></i>
-                            <p className="mb-0">No lessons available</p>
-                            <small>
-                                Course content will appear here when available
-                            </small>
-                        </div>
-                    </div>
+{/* Fallback: No Lessons Available */ }
+{
+    !isCollapsed && !hasLessons && (
+        <div className="border-top border-secondary">
+            <div className="p-4 text-center">
+                <div className="text-muted">
+                    <i
+                        className="fas fa-book-open mb-2"
+                        style={{ fontSize: "2rem" }}
+                    ></i>
+                    <p className="mb-0">No lessons available</p>
+                    <small>
+                        Course content will appear here when available
+                    </small>
                 </div>
-            )}
-
-            {/* Collapsed state - show lesson initials from dynamic data */}
-            {isCollapsed &&
-                hasLessons &&
-                Object.keys(filteredLessons).length > 0 && (
-                    <div className="d-flex flex-column align-items-center py-2">
-                        {/* Dynamic lesson initials */}
-                        {Object.entries(filteredLessons).flatMap(
-                            ([courseAuthId, courseData]) => {
-                                // Backend already filtered lessons by day for D course
-                                // Show ALL lessons that backend provided
-                                const lessonsToShow = courseData.lessons;
-
-                                return lessonsToShow
-                                    .filter((lesson) => lesson && lesson.title)
-                                    .map((lesson, index) => {
-                                        // Check if this lesson has been started (has started_at timestamp or is_active flag)
-                                        const hasStarted = !!(lesson.started_at || lesson.is_active);
-                                        const isActiveLiveLesson = lesson.is_active === true;
-
-                                        // First lesson should be active (blue) if not completed and no other lesson started
-                                        const isFirstLesson = index === 0;
-                                        const shouldShowAsActive =
-                                            isFirstLesson &&
-                                            !lesson.is_completed &&
-                                            !hasStarted &&
-                                            lesson.status ===
-                                                "credit-available";
-
-                                        return (
-                                            <div
-                                                key={`${courseAuthId}-${lesson.id}`}
-                                                className={`lesson-initial ${
-                                                    lesson.is_completed
-                                                        ? "bg-success"
-                                                        : lesson.status === "in-progress" ||
-                                                          hasStarted ||
-                                                          isActiveLiveLesson
-                                                        ? "bg-primary"
-                                                        : shouldShowAsActive
-                                                        ? "bg-primary"
-                                                        : "bg-secondary"
-                                                } text-white text-center ${
-                                                    index <
-                                                    lessonsToShow.length - 1
-                                                        ? "mb-1"
-                                                        : ""
-                                                }`}
-                                                style={{
-                                                    width: "32px",
-                                                    height: "32px",
-                                                    lineHeight: "32px",
-                                                    fontSize: "14px",
-                                                    fontWeight: "bold",
-                                                    cursor: "pointer",
-                                                }}
-                                                title={`${
-                                                    lesson.title || "Unknown"
-                                                } (${
-                                                    lesson.status === "passed"
-                                                        ? "Completed"
-                                                        : lesson.status ===
-                                                          "failed"
-                                                        ? "Failed"
-                                                        : lesson.status ===
-                                                          "in-progress" ||
-                                                          hasStarted ||
-                                                          isActiveLiveLesson
-                                                        ? "In Progress"
-                                                        : shouldShowAsActive
-                                                        ? "In Progress"
-                                                        : lesson.status ===
-                                                          "credit-available"
-                                                        ? "Available"
-                                                        : "Pending"
-                                                })`}
-                                                onClick={() =>
-                                                    handleLessonClick(lesson)
-                                                }
-                                            >
-                                                {(lesson.title || "?")
-                                                    .charAt(0)
-                                                    .toUpperCase()}
-                                            </div>
-                                        );
-                                    });
-                            }
-                        )}
-                    </div>
-                )}
-
-            {/** Collapsed state - no lessons fallback */}
-            {isCollapsed && !hasLessons && (
-                <div className="d-flex flex-column align-items-center py-3">
-                    <div className="text-muted text-center">
-                        <i className="fas fa-book-open mb-2"></i>
-                        <small className="d-block">No lessons available</small>
-                    </div>
-                </div>
-            )}
-
-            {/** ID Verification moved to ClassroomInfoSidebar (right sidebar) */}
+            </div>
         </div>
+    )
+}
+
+{/* Collapsed state - show lesson initials from dynamic data */ }
+{
+    isCollapsed &&
+        hasLessons &&
+        Object.keys(filteredLessons).length > 0 && (
+            <div className="d-flex flex-column align-items-center py-2">
+                {/* Dynamic lesson initials */}
+                {Object.entries(filteredLessons).flatMap(
+                    ([courseAuthId, courseData]) => {
+                        // Backend already filtered lessons by day for D course
+                        // Show ALL lessons that backend provided
+                        const lessonsToShow = courseData.lessons;
+
+                        return lessonsToShow
+                            .filter((lesson) => lesson && lesson.title)
+                            .map((lesson, index) => {
+                                // Check if this lesson has been started (has started_at timestamp or is_active flag)
+                                const hasStarted = !!(lesson.started_at || lesson.is_active);
+                                const isActiveLiveLesson = lesson.is_active === true;
+
+                                // First lesson should be active (blue) if not completed and no other lesson started
+                                const isFirstLesson = index === 0;
+                                const shouldShowAsActive =
+                                    isFirstLesson &&
+                                    !lesson.is_completed &&
+                                    !hasStarted &&
+                                    lesson.status ===
+                                    "credit-available";
+
+                                return (
+                                    <div
+                                        key={`${courseAuthId}-${lesson.id}`}
+                                        className={`lesson-initial ${lesson.is_completed
+                                            ? "bg-success"
+                                            : lesson.status === "in-progress" ||
+                                                hasStarted ||
+                                                isActiveLiveLesson
+                                                ? "bg-primary"
+                                                : shouldShowAsActive
+                                                    ? "bg-primary"
+                                                    : "bg-secondary"
+                                            } text-white text-center ${index <
+                                                lessonsToShow.length - 1
+                                                ? "mb-1"
+                                                : ""
+                                            }`}
+                                        style={{
+                                            width: "32px",
+                                            height: "32px",
+                                            lineHeight: "32px",
+                                            fontSize: "14px",
+                                            fontWeight: "bold",
+                                            cursor: "pointer",
+                                        }}
+                                        title={`${lesson.title || "Unknown"
+                                            } (${lesson.status === "passed"
+                                                ? "Completed"
+                                                : lesson.status ===
+                                                    "failed"
+                                                    ? "Failed"
+                                                    : lesson.status ===
+                                                        "in-progress" ||
+                                                        hasStarted ||
+                                                        isActiveLiveLesson
+                                                        ? "In Progress"
+                                                        : shouldShowAsActive
+                                                            ? "In Progress"
+                                                            : lesson.status ===
+                                                                "credit-available"
+                                                                ? "Available"
+                                                                : "Pending"
+                                            })`}
+                                        onClick={() =>
+                                            handleLessonClick(lesson)
+                                        }
+                                    >
+                                        {(lesson.title || "?")
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                    </div>
+                                );
+                            });
+                    }
+                )}
+            </div>
+        )
+}
+
+{/** Collapsed state - no lessons fallback */ }
+{
+    isCollapsed && !hasLessons && (
+        <div className="d-flex flex-column align-items-center py-3">
+            <div className="text-muted text-center">
+                <i className="fas fa-book-open mb-2"></i>
+                <small className="d-block">No lessons available</small>
+            </div>
+        </div>
+    )
+}
+
+{/** ID Verification moved to ClassroomInfoSidebar (right sidebar) */ }
+        </div >
     );
 };
 
