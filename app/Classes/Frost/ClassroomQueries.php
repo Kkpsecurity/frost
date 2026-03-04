@@ -30,7 +30,7 @@ use App\Classes\Students\StudentCanJoinLesson;
 
 
 class ClassroomQueries
-{
+{`
 
     //
     // Instructor

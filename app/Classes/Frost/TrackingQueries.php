@@ -8,7 +8,8 @@ namespace App\Classes\Frost;
  * @file TrackingQueries.php
  * @brief Class for tracking queries related to classroom activities.
  * @details Provides methods to retrieve active course dates, lessons, and student units.
- */ValidationsPhotos.php
+ * ValidationsPhotos.php
+ */
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;

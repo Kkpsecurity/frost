@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\MediaFile;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpFoundation\Response;
 
 class StreamingService
 {
@@ -40,7 +39,7 @@ class StreamingService
     /**
      * Stream file with HTTP range support for video/audio
      */
-    public function streamWithRange(MediaFile $file, string $range = null): StreamedResponse
+    public function streamWithRange(MediaFile $file, ?string $range = null): StreamedResponse
     {
         $disk = Storage::disk($file->disk);
         $size = $disk->size($file->path);
@@ -75,7 +74,7 @@ class StreamingService
 
         // Validate range
         if ($start >= $size || $end >= $size || $start > $end) {
-            return response()->stream(function() {}, 416, [
+            return response()->stream(function () {}, 416, [
                 'Content-Range' => "bytes */{$size}"
             ]);
         }
