@@ -202,8 +202,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
             <PauseOverlay pauseRemainingSeconds={pauseRemainingSeconds} />
             {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
             <SchoolDashboardTitleBar
-                title="Live Classroom"
-                courseName={courseNameDisplay}
+                title={courseNameDisplay ?? "Live Classroom"}
                 subtitle={`Instructor: ${instructorName}`}
                 icon={<i className="fas fa-video"></i>}
                 onBackToDashboard={onBackToDashboard}

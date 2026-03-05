@@ -193,8 +193,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     return (
         <FrostDashboardWrapper>
             <SchoolDashboardTitleBar
-                title="Self-Study"
-                courseName={courseTitle ?? undefined}
+                title={courseTitle ?? "Self-Study"}
                 subtitle="Complete lessons at your own pace"
                 icon={<i className="fas fa-book-open"></i>}
                 onBackToDashboard={onBackToDashboard}
