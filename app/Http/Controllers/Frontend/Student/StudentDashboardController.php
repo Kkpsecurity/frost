@@ -1030,6 +1030,7 @@ class StudentDashboardController extends Controller
 
                 return [
                     'id' => $lessonId,
+                    'lesson_id' => $lessonId, // alias so frontend can use either field
                     'title' => $lesson['name'] ?? $lesson['title'] ?? 'Lesson ' . $lessonId,
                     'description' => $lesson['description'] ?? '',
                     'duration_minutes' => $lesson['credit_minutes'] ?? $lesson['duration_minutes'] ?? $lesson['progress_minutes'] ?? 0,
@@ -1807,6 +1808,7 @@ class StudentDashboardController extends Controller
 
                 return [
                     'id' => $lessonId,
+                    'lesson_id' => $lessonId, // alias so frontend can use either field
                     'title' => $lesson['name'] ?? $lesson['title'] ?? 'Lesson ' . $lessonId,
                     'description' => $lesson['description'] ?? '',
                     'duration_minutes' => $lesson['credit_minutes'] ?? $lesson['duration_minutes'] ?? $lesson['progress_minutes'] ?? 0,

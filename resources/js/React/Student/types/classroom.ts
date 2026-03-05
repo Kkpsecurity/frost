@@ -174,10 +174,13 @@ export interface ClassroomPollBreaksShape {
     [key: string]: any;
 }
 
-// Lessons coming from poll might be either {id} or {lesson_id} depending on join
+// Lessons in the classroom poll `lessons[]` array always have `id` = Lesson model id.
+// The backend also emits `lesson_id` as an alias so consumers don't need a ternary.
+// InstLesson / StudentLesson records use `lesson_id` as a FK; they do NOT have `id`
+// referring to the lesson — their own PK is `id` (InstLesson id / StudentLesson id).
 export interface ClassroomPollLessonShape {
-    id?: LessonId;
-    lesson_id?: LessonId;
+    id: LessonId;        // Lesson model PK
+    lesson_id: LessonId; // alias — always equals id
     title: string;
     duration_minutes?: number | null;
     [key: string]: any;

@@ -182,8 +182,8 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     const activeClassroom: any =
         selectedCourseAuthId
             ? (activeClassroomsByAuth[String(selectedCourseAuthId)] ??
-               activeClassroomsByAuth[selectedCourseAuthId] ??
-               null)
+                activeClassroomsByAuth[selectedCourseAuthId] ??
+                null)
             : (studentPoll?.active_classroom ?? null);
 
     // Only activate the classroom poll for the selected course, and only when the

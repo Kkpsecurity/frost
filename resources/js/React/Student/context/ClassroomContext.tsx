@@ -20,9 +20,11 @@ export interface ClassroomContextType {
     instUnit: ClassroomPollDataType["instUnit"] | null;
     // StudentUnit is needed for onboarding gating.
     studentUnit?: any | null;
-    courseUnits: ClassroomPollDataType["courseUnits"];
-    courseLessons: ClassroomPollDataType["courseLessons"];
-    instLessons: ClassroomPollDataType["instLessons"];
+    courseUnits: any[];
+    // Classroom lessons (from poll `lessons[]`): each item has `id` + `lesson_id` (alias)
+    courseLessons: any[];
+    // Instructor lesson records (from `instUnit.inst_lessons[]`): each item has `lesson_id` FK
+    instLessons: any[];
     config: ClassroomPollDataType["config"] | null;
 
     // Status indicators

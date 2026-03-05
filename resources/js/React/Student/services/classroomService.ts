@@ -68,11 +68,16 @@ export const getClassroomStatus = (classroomData: ClassroomPollDataType): string
  * @returns Current lesson or null
  */
 export const getCurrentLesson = (classroomData: ClassroomPollDataType) => {
-    if (!classroomData.instLessons || classroomData.instLessons.length === 0) {
+    // inst_lessons are under instUnit.inst_lessons; instLessons is a context alias
+    const instLessons: any[] = classroomData.instLessons
+        || classroomData.instUnit?.inst_lessons
+        || [];
+
+    if (instLessons.length === 0) {
         return null;
     }
 
-    const currentLesson = classroomData.instLessons.find(
+    const currentLesson = instLessons.find(
         (lesson) => lesson.status === 'in_progress'
     );
 
@@ -80,14 +85,15 @@ export const getCurrentLesson = (classroomData: ClassroomPollDataType) => {
         return null;
     }
 
-    // Find lesson details from courseLessons
-    const lessonData = classroomData.courseLessons.find(
-        (cl) => cl.lesson_id === currentLesson.lesson_id
+    // lessons[] items have `id` = lesson model id; instLesson has `lesson_id` = same value
+    const lessons: any[] = classroomData.lessons || classroomData.courseLessons || [];
+    const lessonData = lessons.find(
+        (cl) => (cl.id ?? cl.lesson_id) === currentLesson.lesson_id
     );
 
     return {
         ...currentLesson,
-        lesson_data: lessonData?.lesson_data,
+        lesson_data: lessonData,
     };
 };
 
@@ -99,7 +105,11 @@ export const getCurrentLesson = (classroomData: ClassroomPollDataType) => {
  * @returns Progress object with current, total, percentage
  */
 export const getLessonProgress = (classroomData: ClassroomPollDataType) => {
-    if (!classroomData.instLessons) {
+    const instLessons: any[] = classroomData.instLessons
+        || classroomData.instUnit?.inst_lessons
+        || [];
+
+    if (instLessons.length === 0) {
         return {
             current: 0,
             total: 0,
@@ -107,11 +117,11 @@ export const getLessonProgress = (classroomData: ClassroomPollDataType) => {
         };
     }
 
-    const completed = classroomData.instLessons.filter(
+    const completed = instLessons.filter(
         (lesson) => lesson.status === 'completed'
     ).length;
 
-    const total = classroomData.instLessons.length;
+    const total = instLessons.length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return {
@@ -160,7 +170,8 @@ export const getCourseUnitsForDay = (classroomData: ClassroomPollDataType) => {
  * @returns Array of course unit lessons
  */
 export const getCourseLessonsForDay = (classroomData: ClassroomPollDataType) => {
-    return classroomData.courseLessons || [];
+    // Backend sends lesson data under `lessons`; `courseLessons` is a legacy alias
+    return classroomData.lessons || classroomData.courseLessons || [];
 };
 
 /**
@@ -172,7 +183,9 @@ export const getCourseLessonsForDay = (classroomData: ClassroomPollDataType) => 
  * @returns Lesson details or null
  */
 export const getLessonById = (classroomData: ClassroomPollDataType, lessonId: number) => {
-    return classroomData.courseLessons.find((cl) => cl.lesson_id === lessonId);
+    // Lessons array items have `id` = lesson model id; also accept `lesson_id` alias
+    const lessons: any[] = classroomData.lessons || classroomData.courseLessons || [];
+    return lessons.find((cl) => (cl.id ?? cl.lesson_id) === lessonId);
 };
 
 /**
