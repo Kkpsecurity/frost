@@ -385,37 +385,79 @@ export interface StudentProfileShape {
 export type StudentDashboardResponse = ApiResponseShape<StudentDashboardShape>;
 export type CourseProgressResponse = ApiResponseShape<CourseProgressShape>;
 
+/**
+ * Active classroom summary for a single enrollment.
+ * Produced by StudentDashboardController.php, included in student poll.
+ */
 export interface StudentActiveClassroomShape {
-    course_date_id: number;
+    status: 'waiting' | 'active' | 'ended';
     course_id: CourseId;
-    [key: string]: any;
+    course_auth_id: number;
+    course_date_id: number;
+    /** InstUnit PK — null when instructor has not started yet (waiting). */
+    inst_unit_id: number | null;
+    /** ISO-8601 string from ->toIso8601String(). Always parseable by new Date(). */
+    starts_at: string | null;
+    ends_at: string | null;
 }
 
 /**
- * Student Poll Response Payload - Student-owned state
- * Mirrors /classroom/student/poll "data" object
+ * Student Poll Response Payload — student-owned state.
+ * Mirrors the `data` object returned by StudentDashboardController@pollStudentData.
+ *
+ * Field notes:
+ *  - courses[].id            = course_auth_id (enrollment PK)
+ *  - courses[].course_name   = flat string, e.g. "DMV Test Prep – D"
+ *  - active_classroom        = first CourseDate today across all courses (legacy single-entry)
+ *  - active_classrooms_by_course_auth = per-enrollment map keyed by course_auth_id (preferred)
  */
 export interface StudentPollShape {
     student: StudentType | null;
 
-    // course_auth enrollments (your code treats courses[].id as course_auth_id)
-    courses: Array<CourseAuthType & { course_id: CourseId }>;
+    /** Enrolled courses. Each item's `id` is the course_auth_id. */
+    courses: Array<CourseAuthType & {
+        course_id: CourseId;
+        course_name: string;
+    }>;
 
-    progress: any;
+    progress: {
+        total_courses: number;
+        completed: number;
+        in_progress: number;
+    };
 
     validations_by_course_auth: Record<string, any> | null;
+    /** Unused / reserved — backend does not populate this yet. */
     lessons_by_course_auth: Record<string, any> | null;
 
+    /** Legacy: single best-guess active classroom entry. Prefer active_classrooms_by_course_auth. */
     active_classroom: StudentActiveClassroomShape | null;
+    /** Per-enrollment classroom map keyed by course_auth_id (number as string). Added Phase 3. */
+    active_classrooms_by_course_auth: Record<string, StudentActiveClassroomShape>;
 
-    studentExam: any;
-    studentExamsByCourseAuth: Record<string, any>;
+    /** Exam readiness for the active enrollment (mirrors active_classroom's course). */
+    studentExam: {
+        is_ready: boolean;
+        next_attempt_at: string | null;
+        missing_id_file: boolean;
+        has_active_attempt: boolean;
+        active_exam_auth_id: number | null;
+    } | null;
+    /** Exam readiness keyed by course_auth_id. */
+    studentExamsByCourseAuth: Record<string, {
+        is_ready: boolean;
+        next_attempt_at: string | null;
+        missing_id_file: boolean;
+        has_active_attempt: boolean;
+        active_exam_auth_id: number | null;
+    }>;
 
+    /** Today's StudentUnit for the active classroom enrollment, or null if not joined. */
     studentUnit: StudentUnitType | null;
+    /** StudentLesson completion records for today's unit. */
     studentLessons: StudentLessonType[];
 
     notifications: any[];
     assignments: any[];
-
-    challenges?: any[];
+    challenges: any[];
 }

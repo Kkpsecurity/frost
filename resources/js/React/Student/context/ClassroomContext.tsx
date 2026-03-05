@@ -1,41 +1,34 @@
 import React, { createContext, ReactNode } from 'react';
-import type { ClassroomPollDataType } from "../types/classroom";
+import type { ClassroomPollPayloadShape, ClassroomPollLessonShape } from "../types/classroom";
 
 /**
- * Classroom Context - Holds all classroom-specific data from polling
+ * Classroom Context — holds classroom-specific data from the classroom poll.
  *
- * Data structure matches /classroom/classroom/poll endpoint response
- * Contains: course, lessons, instructor, sessions, configuration
+ * Data source: StudentDashboardController@getClassData via useClassroomPoll.
+ * Value is null when no classroom poll is active (no class today / OFFLINE route).
  */
 
 export interface ClassroomContextType {
-    // Raw poll data from endpoint
-    data: ClassroomPollDataType | null;
+    /** Raw poll data (the `data` sub-object from the API response). */
+    data: ClassroomPollPayloadShape | null;
 
-    // Convenience accessors
-    course: ClassroomPollDataType["course"] | null;
-    // Note: the classroom poll payload uses `courseDate`.
-    courseDate: any | null;
-    instructor: ClassroomPollDataType["instructor"] | null;
-    instUnit: ClassroomPollDataType["instUnit"] | null;
-    // StudentUnit is needed for onboarding gating.
+    // Convenience accessors derived from `data`
+    course: any | null;
+    courseDate: ClassroomPollPayloadShape['courseDate'];
+    instructor: any | null;
+    instUnit: ClassroomPollPayloadShape['instUnit'];
     studentUnit?: any | null;
     courseUnits: any[];
-    // Classroom lessons (from poll `lessons[]`): each item has `id` + `lesson_id` (alias)
-    courseLessons: any[];
-    // Instructor lesson records (from `instUnit.inst_lessons[]`): each item has `lesson_id` FK
+    /** Lessons for today from `data.lessons`. Each item: { id, lesson_id, title, … } */
+    courseLessons: ClassroomPollLessonShape[];
+    /** Raw inst_lessons from `data.instUnit.inst_lessons`. Each item: { id (InstLesson PK), lesson_id, … } */
     instLessons: any[];
-    config: ClassroomPollDataType["config"] | null;
+    config: any | null;
 
     // Status indicators
     isClassroomActive: boolean;
     isInstructorOnline: boolean;
-    classroomStatus:
-        | "waiting"
-        | "starting"
-        | "active"
-        | "ended"
-        | "not_started";
+    classroomStatus: 'waiting' | 'starting' | 'active' | 'ended' | 'not_started';
 
     // Loading state
     loading: boolean;

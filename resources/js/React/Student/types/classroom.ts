@@ -186,17 +186,82 @@ export interface ClassroomPollLessonShape {
     [key: string]: any;
 }
 
+/**
+ * Classroom poll payload — mirrors the `data` object from StudentDashboardController@getClassData.
+ *
+ * Two response variants exist (historic divergence):
+ *
+ * Variant A (getClassData — primary, used by useClassroomPoll):
+ *   success: true, data: { courseDate, courseUnit, instUnit, instructor, lessons, activeLesson, zoom, challenge }
+ *
+ * Variant B (legacy classroom poll — some older code paths):
+ *   success: true (top-level), courseDate, lessons, instUnit, studentUnit, studentLessons, challenge, config
+ *
+ * StudentDataLayer exposes `classroomPoll` = the `data` sub-object for Variant A.
+ * For Variant B fields hoisted to top level, the context builder accesses them directly.
+ */
 export interface ClassroomPollPayloadShape {
-    courseDate?: any | null; // tighten later once service output confirmed
-    instructor?: any | null;
+    // --- CourseDate summary ---
+    courseDate: {
+        id: number;
+        class_date: string | null;
+        class_time: string | null;
+        duration_minutes: number | null;
+        starts_at?: string | null; // ISO, present on active_classroom entries
+    } | null;
 
-    // core fields used right now
-    lessons?: ClassroomPollLessonShape[];
-    activeLesson?: ClassroomPollActiveLessonShape | null;
+    // --- Course unit for today ---
+    courseUnit: {
+        id: number;
+        name: string;
+        day_number: number | null;
+        course_id: number;
+    } | null;
+
+    // --- Instructor unit (null = instructor not started yet) ---
+    instUnit: {
+        id: number;
+        status: 'active' | 'ended';
+        started_at: string | null;
+        completed_at: string | null;
+        /** Raw inst_lessons array — each item has its own PK `id` and FK `lesson_id`. */
+        inst_lessons?: Array<{
+            id: number;         // InstLesson PK
+            lesson_id: number;  // Lesson FK
+            status?: string;
+            is_paused: boolean;
+            completed_at: string | null;
+            [key: string]: any;
+        }>;
+    } | null;
+
+    instructor: any | null;
+
+    /**
+     * Classroom-scoped lessons for today.
+     * Each item has both `id` (Lesson PK) and `lesson_id` (alias).
+     */
+    lessons: ClassroomPollLessonShape[];
+
+    /** Currently active (in-progress) instructor lesson, or null. */
+    activeLesson: ClassroomPollActiveLessonShape | null;
+
+    /** Break state for the active lesson. */
     breaks?: ClassroomPollBreaksShape;
 
-    challenge?: { challenge_id: number; [key: string]: any } | null;
+    zoom?: any | null;
 
-    // keep flexible for service evolution
+    /** Active participation challenge for this student, or null. */
+    challenge: {
+        challenge_id: number;
+        student_lesson_id: number;
+        is_final: boolean;
+        is_eol: boolean;
+        expires_at: string;
+        time_remaining: number;
+        created_at: string;
+    } | null;
+
+    // Flexible for back-compat with Variant B and future additions
     [key: string]: any;
 }
