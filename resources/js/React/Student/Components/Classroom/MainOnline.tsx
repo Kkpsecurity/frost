@@ -66,16 +66,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     const lessons = classroomData?.lessons || [];
     const studentLessons = studentContext?.studentLessons || [];
     const activeLesson = classroomData?.activeLesson || null;
-    const isLoadingLessons = false; // Replace with real loading state
-
-    // 🔍 DEBUG: Log lessons data
-    console.log("📚 MainOnline Lessons:", {
-        lessonsCount: lessons.length,
-        lessons: lessons,
-        studentLessons: studentLessons,
-        classroom: classroom,
-        classroomData: classroomData,
-    });
+    const isLoadingLessons = false;
 
     // Use lesson sidebar hook for helper functions
     const {

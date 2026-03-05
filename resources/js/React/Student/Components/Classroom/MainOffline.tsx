@@ -92,30 +92,11 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         }
     }, [activeTab]);
 
-    // OFFLINE MODE lessons: from classroom context, else fallback/mock
+    // OFFLINE MODE lessons: self-study endpoint (primary), context lessons as fallback
     const classroomData = (classroomContext as any)?.data || classroomContext;
     const backendLessons = (classroomData as any)?.lessons || [];
 
-    // TEMP fallback to 18 lessons for layout testing
-    const mockLessons =
-        backendLessons.length < 18
-            ? [
-                ...backendLessons,
-                ...Array.from({ length: 18 - backendLessons.length }, (_, i) => ({
-                    id: 100 + i,
-                    title: `Lesson ${backendLessons.length + i + 1}`,
-                    description: `Course lesson ${backendLessons.length + i + 1}`,
-                    duration_minutes: 60,
-                    order: backendLessons.length + i + 1,
-                    status: "incomplete",
-                    is_completed: false,
-                    is_active: false,
-                    is_paused: false,
-                })),
-            ]
-            : backendLessons;
-
-    const lessons = selfStudyLessons.length > 0 ? selfStudyLessons : mockLessons;
+    const lessons = selfStudyLessons.length > 0 ? selfStudyLessons : backendLessons;
 
     const studentLessons = (studentContext as any)?.studentLessons || [];
     const activeLesson = null; // no "active lesson" in offline mode
@@ -182,8 +163,6 @@ const MainOffline: React.FC<MainOfflineProps> = ({
 
         setSelectedLessonId(Number(firstIncomplete?.id ?? lessons[0]?.id));
     }, [lessons, selectedLessonId]);
-
-    console.log("MainOffline Render", classroomData);
 
     const courseTitle = studentContext.courses?.find((c: any) => {
         const candidateCourseAuthId = c?.course_auth_id ?? c?.courseAuthId ?? c?.id;
