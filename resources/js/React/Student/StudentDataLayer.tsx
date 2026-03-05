@@ -118,6 +118,41 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
     // Setter wrapper
     const handleSetSelectedCourseAuthId = (id: number | null) => {
+        // ---------------------------------------------------------------
+        // Course-switch session close
+        //
+        // Rules:
+        //   - Switching from course A → course B (both non-null, different):
+        //     fire a background leave for the active StudentUnit so the
+        //     old session is properly closed before the new one opens.
+        //   - Navigating to the order dashboard (id === null):
+        //     the session stays alive — student may return to the same course.
+        // ---------------------------------------------------------------
+        if (id !== null && selectedCourseAuthId !== null && id !== selectedCourseAuthId) {
+            const activeStudentUnitId = studentPoll?.studentUnit?.id;
+            if (activeStudentUnitId) {
+                const csrfToken =
+                    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
+                fetch("/classroom/session/leave", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": csrfToken,
+                    },
+                    body: JSON.stringify({
+                        student_unit_id: activeStudentUnitId,
+                        reason: "course_switch",
+                    }),
+                    keepalive: true, // completes even if component re-renders mid-flight
+                }).catch(() => {
+                    // Fire-and-forget: if the request fails the session will be
+                    // cleaned up by the next heartbeat timeout on the server side.
+                });
+            }
+        }
+
         if (id === null) {
             setUserExplicitlySelectedDashboard(true);
             localStorage.setItem("frost_user_on_dashboard", "true");
@@ -138,8 +173,44 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     } = useStudentPoll() as any;
 
     const studentPoll = getOkData<any>(studentPollRes);
-    const activeClassroom = studentPoll?.active_classroom ?? null;
-    const courseDateId = activeClassroom?.course_date_id;
+
+    // Prefer the per-course map (new API) so each enrollment is evaluated
+    // independently. Fall back to the legacy single-entry field if the map
+    // is not yet present (old backend / cache).
+    const activeClassroomsByAuth: Record<string, any> =
+        studentPoll?.active_classrooms_by_course_auth ?? {};
+    const activeClassroom: any =
+        selectedCourseAuthId
+            ? (activeClassroomsByAuth[String(selectedCourseAuthId)] ??
+               activeClassroomsByAuth[selectedCourseAuthId] ??
+               null)
+            : (studentPoll?.active_classroom ?? null);
+
+    // Only activate the classroom poll for the selected course, and only when the
+    // class hasn't expired. A class is considered expired (stale/leftover) only when:
+    // - It has no instructor (never started), AND
+    // - The starts_at date is from a PREVIOUS calendar day (not today).
+    // Using a previous-day check instead of a 2-hour check prevents incorrectly
+    // expiring today's class when the instructor is simply late to start.
+    const _acStartsAt = activeClassroom?.starts_at
+        ? new Date(activeClassroom.starts_at).getTime()
+        : null;
+    const _acIsFromToday =
+        _acStartsAt !== null &&
+        !isNaN(_acStartsAt) &&
+        new Date(_acStartsAt).toDateString() === new Date().toDateString();
+    const _acExpired =
+        _acStartsAt !== null &&
+        !isNaN(_acStartsAt) &&
+        !activeClassroom?.inst_unit_id &&
+        !_acIsFromToday;
+
+    const courseDateId =
+        activeClassroom &&
+            selectedCourseAuthId &&
+            !_acExpired
+            ? activeClassroom.course_date_id
+            : null;
 
     const {
         data: classroomPollRes,
@@ -150,7 +221,43 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     const classroomPoll = getOkData<any>(classroomPollRes);
 
     // ---------------------------------------------------------------------
-    // AUTO-SELECT COURSE (CURRENT BEHAVIOR)
+    // RECONCILIATION: validate persisted selectedCourseAuthId against live
+    // enrollment list from the poll.
+    //
+    // Problem: localStorage preserves the last-selected course_auth_id across
+    // page loads. If the student now has different enrollments (e.g. added G
+    // course, or a stale session for a removed course), the stored ID will not
+    // match anything in courses[] — but the auto-select below bails early
+    // because the value is non-null, freezing the UI on the wrong course.
+    //
+    // Fix: once we have a non-empty courses[] from the poll, verify the stored
+    // ID is still valid. If not, clear it (and the dashboard-lock flag) so
+    // auto-select can run cleanly on the next render.
+    // ---------------------------------------------------------------------
+    useEffect(() => {
+        const courses = studentPoll?.courses ?? [];
+
+        // Wait until the poll has returned at least one enrolled course.
+        if (courses.length === 0) return;
+
+        // Nothing stored — nothing to validate.
+        if (selectedCourseAuthId === null) return;
+
+        const isValid = courses.some(
+            (c: any) => Number(c?.id) === selectedCourseAuthId,
+        );
+
+        if (!isValid) {
+            // Stale or orphaned ID: wipe it so auto-select re-runs.
+            localStorage.removeItem("frost_selected_course_auth_id");
+            localStorage.removeItem("frost_user_on_dashboard");
+            setUserExplicitlySelectedDashboard(false);
+            setSelectedCourseAuthId(null);
+        }
+    }, [studentPoll, selectedCourseAuthId]);
+
+    // ---------------------------------------------------------------------
+    // AUTO-SELECT COURSE
     // ---------------------------------------------------------------------
     useEffect(() => {
         if (userExplicitlySelectedDashboard) return;
@@ -247,7 +354,12 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
     // Loading & error
     const isInitialStudentLoad = studentLoading && !studentPollRes;
-    const isInitialClassroomLoad = !!selectedCourseAuthId && classroomLoading && !classroomPollRes;
+    // When courseDateId is null the classroom poll is disabled — never block on it.
+    const isInitialClassroomLoad =
+        !!courseDateId &&
+        !!selectedCourseAuthId &&
+        classroomLoading &&
+        !classroomPollRes;
     const isInitialLoading = isInitialStudentLoad || isInitialClassroomLoad;
 
     const isLoading = studentLoading || classroomLoading;

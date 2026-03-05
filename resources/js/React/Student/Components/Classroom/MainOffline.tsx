@@ -183,7 +183,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         setSelectedLessonId(Number(firstIncomplete?.id ?? lessons[0]?.id));
     }, [lessons, selectedLessonId]);
 
-    const { courses } = classroomData as any;
+    const { courses } = (classroomData as any) ?? {};
 
     console.log("MainOffline Render", classroomData);
 

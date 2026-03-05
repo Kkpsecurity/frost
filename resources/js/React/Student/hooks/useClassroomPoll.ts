@@ -52,11 +52,11 @@ const fetchClassroomPoll = async (courseDateId?: number): Promise<ClassroomPollD
     return response.json();
 };
 
-export const useClassroomPoll = (courseDateId?: number) => {
+export const useClassroomPoll = (courseDateId?: number | null) => {
     return useQuery({
         queryKey: ['classroom-poll', courseDateId],
-        queryFn: () => fetchClassroomPoll(courseDateId),
-        enabled: true, // Always enabled, handle no courseDateId in backend
+        queryFn: () => fetchClassroomPoll(courseDateId ?? undefined),
+        enabled: courseDateId != null && courseDateId > 0,
         placeholderData: keepPreviousData,
         refetchInterval: 5000, // Poll every 5 seconds
         staleTime: 4000, // Data is stale after 4 seconds

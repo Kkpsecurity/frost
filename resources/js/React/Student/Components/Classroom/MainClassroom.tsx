@@ -159,13 +159,13 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
 
                 alert(
                     `✅ Reset Complete!\n\nDeleted:\n` +
-                        `- ${data.counts.student_lessons} StudentLessons\n` +
-                        `- ${data.counts.self_study_lessons} SelfStudyLessons\n` +
-                        `- ${data.counts.challenges} Challenges\n` +
-                        `- ${data.counts.validations} Validations\n` +
-                        `- ${data.counts.student_units} StudentUnits\n` +
-                        `- ${data.counts.exam_auths} ExamAuths\n\n` +
-                        `Page will reload in 1 second...`,
+                    `- ${data.counts.student_lessons} StudentLessons\n` +
+                    `- ${data.counts.self_study_lessons} SelfStudyLessons\n` +
+                    `- ${data.counts.challenges} Challenges\n` +
+                    `- ${data.counts.validations} Validations\n` +
+                    `- ${data.counts.student_units} StudentUnits\n` +
+                    `- ${data.counts.exam_auths} ExamAuths\n\n` +
+                    `Page will reload in 1 second...`,
                 );
 
                 // Force page reload to clear all cached polling data
@@ -411,26 +411,12 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         );
     }
 
-    // Loading classroom data
-    if (!classroomContext) {
-        return (
-            <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ minHeight: "400px" }}
-            >
-                <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">
-                            Loading classroom...
-                        </span>
-                    </div>
-                    <p className="mt-3">Loading classroom...</p>
-                </div>
-            </div>
-        );
-    }
+    // When classroomContext is null there is no active classroom poll (no class scheduled today).
+    // Fall through to the OFFLINE rendering below — do NOT show a spinner here.
 
-    const { courseDate, instUnit, studentUnit, course } = classroomContext;
+    const { courseDate, instUnit, studentUnit, course } = classroomContext ?? {
+        courseDate: null, instUnit: null, studentUnit: null, course: null,
+    };
 
     // When the instructor ends the day, backend may still provide an InstUnit with completed_at/status.
     // Treat that as ENDED so the student does not remain in WAITING.
@@ -536,13 +522,37 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         );
     }
 
-    // WAITING: Class scheduled but instructor hasn't started yet
-    if (courseDate && !instUnit) {
-        const courseName = course?.name || "Class";
-        const classDate = courseDate.class_date
-            ? new Date(courseDate.class_date).toLocaleDateString()
-            : "Today";
-        const classTime = courseDate.class_time || "Soon";
+    // WAITING: Class scheduled but instructor hasn't started yet.
+    // If the scheduled start time is more than 2 hours in the past with no
+    // instructor, the class never happened — fall through to OFFLINE.
+    const courseStartTime = courseDate?.starts_at
+        ? new Date(courseDate.starts_at)
+        : null;
+    const courseExpired =
+        courseStartTime !== null &&
+        Date.now() - courseStartTime.getTime() > 2 * 60 * 60 * 1000;
+
+    if (courseDate && !instUnit && !courseExpired) {
+        // Course name: classroom poll has course=null in WAITING state, so fall
+        // back to the student poll's courses[] which always has enrollment data.
+        const courseAuth = studentContext?.courses?.find(
+            (c: any) => c.id === courseAuthId,
+        );
+        const courseName =
+            courseAuth?.course_name ||
+            courseAuth?.course?.title_long ||
+            courseAuth?.course?.title ||
+            course?.name ||
+            "Class";
+
+        const classDate = courseDate.starts_at
+            ? new Date(courseDate.starts_at).toLocaleDateString()
+            : courseDate.class_date
+                ? new Date(courseDate.class_date).toLocaleDateString()
+                : "Today";
+        const classTime = courseDate.starts_at
+            ? new Date(courseDate.starts_at).toLocaleTimeString()
+            : courseDate.class_time || "Soon";
 
         return (
             <div

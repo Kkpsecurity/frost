@@ -12,13 +12,20 @@ trait RCacheLocker
 
         $key = "lock:{$lock_name}";
 
+        $redis = self::Redis();
+        if ( ! $redis )
+        {
+            // If Redis is unavailable, bypass distributed locking.
+            return true;
+        }
+
         //
         // clear lock
         //
 
         if ( 0 == $lock_timeout )
         {
-            self::Redis()->del( $key );
+            $redis->del( $key );
             return true;
         }
 
@@ -26,7 +33,7 @@ trait RCacheLocker
         // try to set lock
         //
 
-        if ( ! self::Redis()->setnx( $key, true ) )
+        if ( ! $redis->setnx( $key, true ) )
         {
             return false;
         }
@@ -35,7 +42,7 @@ trait RCacheLocker
         // set expiration
         //
 
-        self::Redis()->expire( $key, $lock_timeout );
+        $redis->expire( $key, $lock_timeout );
         return true;
 
     }

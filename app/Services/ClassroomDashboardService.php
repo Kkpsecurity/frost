@@ -8,6 +8,7 @@ use App\Classes\Support\ClassroomQueries;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
+use Carbon\Carbon;
 use Exception;
 
 /**
@@ -253,7 +254,9 @@ class ClassroomDashboardService
             Log::info('ClassroomDashboardService: Resumed existing session', [
                 'student_unit_id' => $existingSession->id,
                 'course_auth_id' => $courseAuthId,
-                'session_age_minutes' => $existingSession->created_at->diffInMinutes(now()),
+                'session_age_minutes' => now()->diffInMinutes(
+                    Carbon::createFromTimestamp($existingSession->created_at)
+                ),
             ]);
 
             return $existingSession;
@@ -339,7 +342,8 @@ class ClassroomDashboardService
             }
 
             // Fallback: check if created_at is older than 12 hours
-            if ($studentUnit->created_at->lt(now()->subHours(12))) {
+            // created_at is cast as 'timestamp' (Unix int) in StudentUnit::$casts
+            if ($studentUnit->created_at < now()->subHours(12)->getTimestamp()) {
                 return true;
             }
 

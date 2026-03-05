@@ -656,6 +656,8 @@ class StudentDashboardController extends Controller
                             'course_auth_id' => $courseAuthId,
                             'course_date_id' => (int) $courseDate->id,
                             'inst_unit_id' => $latestInstUnit?->id,
+                            'starts_at' => $courseDate->starts_at?->toIso8601String(),
+                            'ends_at' => $courseDate->ends_at?->toIso8601String(),
                         ];
 
                         // STUDENT-SPECIFIC DATA (for this individual student)
@@ -720,7 +722,68 @@ class StudentDashboardController extends Controller
             }
 
             // -----------------------------------------------------------------
-            // CHALLENGE HISTORY (student-owned)
+            // ACTIVE CLASSROOMS MAP (per-course-auth)
+            // The single $activeClassroom above picks whichever course has the
+            // earliest starts_at today. When students are enrolled in multiple
+            // courses (e.g. D and G), this can return the wrong course.
+            // Build a map keyed by course_auth_id so the frontend can look up
+            // the correct entry for whichever course the student has selected.
+            // -----------------------------------------------------------------
+            $activeClassroomsByCourseAuth = [];
+            try {
+                $today = now()->format('Y-m-d');
+                $courseIds = $courseAuths->pluck('course_id')->filter()->unique();
+
+                if ($courseIds->isNotEmpty()) {
+                    $allTodayDates = CourseDate::with(['CourseUnit'])
+                        ->whereDate('starts_at', $today)
+                        ->whereHas('CourseUnit', function ($q) use ($courseIds) {
+                            $q->whereIn('course_id', $courseIds);
+                        })
+                        ->orderBy('starts_at', 'asc')
+                        ->get();
+
+                    // Group: course_id → first CourseDate for that course today
+                    $courseDateByCourseId = $allTodayDates
+                        ->groupBy(fn($cd) => (int) ($cd->CourseUnit?->course_id))
+                        ->map->first();
+
+                    foreach ($courseAuths as $ca) {
+                        $cId = (int) $ca->course_id;
+                        if (!isset($courseDateByCourseId[$cId])) {
+                            continue; // No class today for this enrollment
+                        }
+                        $cd = $courseDateByCourseId[$cId];
+
+                        try {
+                            $iu = \App\Models\InstUnit::where('course_date_id', $cd->id)
+                                ->orderByDesc('id')
+                                ->first();
+                        } catch (\Throwable $e2) {
+                            $iu = null;
+                        }
+
+                        $status = 'waiting';
+                        if ($iu) {
+                            $status = $iu->completed_at ? 'ended' : 'active';
+                        }
+
+                        $activeClassroomsByCourseAuth[(int) $ca->id] = [
+                            'status'         => $status,
+                            'course_id'      => $cId,
+                            'course_auth_id' => (int) $ca->id,
+                            'course_date_id' => (int) $cd->id,
+                            'inst_unit_id'   => $iu?->id,
+                            'starts_at'      => $cd->starts_at?->toIso8601String(),
+                            'ends_at'        => $cd->ends_at?->toIso8601String(),
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal: map stays empty, frontend falls back to legacy active_classroom.
+            }
+
+
             // - Uses $studentUnit variable from above if it exists
             // -----------------------------------------------------------------
             $challenges = [];
@@ -796,6 +859,7 @@ class StudentDashboardController extends Controller
                     ],
                     'validations_by_course_auth' => $validationsByCourseAuth,
                     'active_classroom' => $activeClassroom,
+                    'active_classrooms_by_course_auth' => $activeClassroomsByCourseAuth,
                     // Student-owned exam readiness/attempt per enrollment (keyed by course_auth_id)
                     'studentExamsByCourseAuth' => $studentExamsByCourseAuth,
                     // Student-owned exam readiness/attempt for the active enrollment (if any)

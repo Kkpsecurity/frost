@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Frontend\Student;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\Models\CourseDate;
+use App\Models\StudentLesson;
+use App\Models\StudentUnit;
 use App\Services\StudentDashboardService;
 use App\Services\ClassroomDashboardService;
 
@@ -56,12 +59,20 @@ class ClassroomController extends Controller
                 ], 400);
             }
 
-            // Get classroom data from service
-            $classroomData = $this->classroomDashboardService->getClassroomPollData($courseDateId);
+            // Use existing getClassroomData() which returns instructors + courseDates for the user
+            $classroomData = $this->classroomDashboardService->getClassroomData();
+
+            // Filter to the requested course date if provided
+            $courseDate = $classroomData['courseDates']
+                ->firstWhere('id', (int) $courseDateId);
 
             return response()->json([
                 'success' => true,
-                'data' => $classroomData,
+                'data' => [
+                    'courseDate'  => $courseDate,
+                    'instructors' => $classroomData['instructors'],
+                    'courseDates' => $classroomData['courseDates'],
+                ],
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (\Exception $e) {
@@ -99,7 +110,18 @@ class ClassroomController extends Controller
                 ], 400);
             }
 
-            $status = $this->classroomDashboardService->getClassroomStatus($courseAuthId);
+            // Query CourseDate directly — find an active one for courses the student is enrolled in
+            $activeCourseDate = CourseDate::where('is_active', true)
+                ->whereHas('CourseUnit.Courses', fn($q) => $q->whereHas(
+                    'CourseAuths',
+                    fn($q2) => $q2->where('id', $courseAuthId)
+                ))
+                ->whereHas('InstUnit', fn($q) => $q->whereNull('completed_at'))
+                ->first();
+
+            $status = $activeCourseDate
+                ? ['is_active' => true,  'course_date_id' => $activeCourseDate->id, 'inst_unit_id' => $activeCourseDate->InstUnit?->id]
+                : ['is_active' => false, 'reason' => 'no_active_class'];
 
             return response()->json([
                 'success' => true,
@@ -135,14 +157,22 @@ class ClassroomController extends Controller
                 'course_date_id' => 'required|integer',
             ]);
 
-            $result = $this->classroomDashboardService->recordStudentEntry(
+            // Use existing findOrCreateSession — creates or resumes the StudentUnit
+            $studentUnit = $this->classroomDashboardService->findOrCreateSession(
                 $validated['course_auth_id'],
                 $validated['course_date_id']
             );
 
             return response()->json([
                 'success' => true,
-                'data' => $result,
+                'data' => [
+                    'student_unit_id'    => $studentUnit->id,
+                    'course_auth_id'     => $studentUnit->course_auth_id,
+                    'course_date_id'     => $studentUnit->course_date_id,
+                    'inst_unit_id'       => $studentUnit->inst_unit_id,
+                    'created_at'         => $studentUnit->created_at->toIso8601String(),
+                    'session_expires_at' => $studentUnit->session_expires_at?->toIso8601String(),
+                ],
                 'message' => 'Successfully entered classroom',
             ]);
         } catch (\Exception $e) {
@@ -175,14 +205,20 @@ class ClassroomController extends Controller
                 'course_date_id' => 'required|integer',
             ]);
 
-            $result = $this->classroomDashboardService->recordStudentExit(
-                $validated['course_auth_id'],
-                $validated['course_date_id']
-            );
+            // Find the active StudentUnit then use existing recordStudentLeave()
+            $studentUnit = StudentUnit::where('course_auth_id', $validated['course_auth_id'])
+                ->where('course_date_id', $validated['course_date_id'])
+                ->whereNull('completed_at')
+                ->latest()
+                ->first();
+
+            if ($studentUnit) {
+                $this->classroomDashboardService->recordStudentLeave($studentUnit->id, 'exited_classroom');
+            }
 
             return response()->json([
                 'success' => true,
-                'data' => $result,
+                'data'    => ['exited' => (bool) $studentUnit, 'student_unit_id' => $studentUnit?->id],
                 'message' => 'Successfully exited classroom',
             ]);
         } catch (\Exception $e) {
@@ -215,14 +251,19 @@ class ClassroomController extends Controller
                 'lesson_id' => 'required|integer',
             ]);
 
-            $result = $this->classroomDashboardService->recordLessonStart(
-                $validated['student_unit_id'],
-                $validated['lesson_id']
+            // Use StudentLesson::firstOrCreate directly (same pattern as StudentDashboardController)
+            $studentLesson = StudentLesson::firstOrCreate(
+                [
+                    'student_unit_id' => $validated['student_unit_id'],
+                    'lesson_id'       => $validated['lesson_id'],
+                    'completed_at'    => null,
+                ],
+                ['started_at' => now()]
             );
 
             return response()->json([
                 'success' => true,
-                'data' => $result,
+                'data'    => $studentLesson->toArray(),
                 'message' => 'Lesson started',
             ]);
         } catch (\Exception $e) {
@@ -255,14 +296,17 @@ class ClassroomController extends Controller
                 'lesson_id' => 'required|integer',
             ]);
 
-            $result = $this->classroomDashboardService->recordLessonCompletion(
-                $validated['student_unit_id'],
-                $validated['lesson_id']
-            );
+            // Update StudentLesson directly
+            $studentLesson = StudentLesson::where('student_unit_id', $validated['student_unit_id'])
+                ->where('lesson_id', $validated['lesson_id'])
+                ->whereNull('completed_at')
+                ->firstOrFail();
+
+            $studentLesson->update(['completed_at' => now()]);
 
             return response()->json([
                 'success' => true,
-                'data' => $result,
+                'data'    => $studentLesson->fresh()->toArray(),
                 'message' => 'Lesson completed',
             ]);
         } catch (\Exception $e) {
@@ -298,11 +342,26 @@ class ClassroomController extends Controller
                 ], 400);
             }
 
-            $progress = $this->classroomDashboardService->getLessonProgress($studentUnitId);
+            // Query StudentLesson directly
+            $lessons = StudentLesson::where('student_unit_id', $studentUnitId)
+                ->orderBy('started_at')
+                ->get()
+                ->map(fn($sl) => [
+                    'lesson_id'    => $sl->lesson_id,
+                    'started_at'   => $sl->started_at?->toIso8601String(),
+                    'completed_at' => $sl->completed_at?->toIso8601String(),
+                    'failed_at'    => $sl->failed_at?->toIso8601String(),
+                    'is_complete'  => !is_null($sl->completed_at),
+                ]);
 
             return response()->json([
                 'success' => true,
-                'data' => $progress,
+                'data' => [
+                    'student_unit_id' => (int) $studentUnitId,
+                    'lessons'         => $lessons->values(),
+                    'total'           => $lessons->count(),
+                    'completed'       => $lessons->where('is_complete', true)->count(),
+                ],
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (\Exception $e) {

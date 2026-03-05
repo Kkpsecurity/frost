@@ -28,7 +28,11 @@ interface OfflineDashboardProps {
 const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => {
     const student = useStudent();
 
-    const course = student?.courses?.[0]; // First course from student data
+    // Find the selected course enrollment, fall back to first course if no ID passed
+    const courseAuth = courseAuthId
+        ? student?.courses?.find((c: any) => c.id === courseAuthId)
+        : student?.courses?.[0];
+    const course = (courseAuth as any)?.course ?? courseAuth;
 
     return (
         <Container fluid className="py-4">
@@ -47,7 +51,7 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
             {/* Course Information */}
             <Row className="mb-4">
                 <Col>
-                    <h1>📚 {course?.name || "Course"}</h1>
+                    <h1>📚 {(course as any)?.course_name || course?.title_long || course?.title || course?.name || "Course"}</h1>
                     <p className="lead text-muted">
                         {course?.description || "No description available"}
                     </p>
@@ -65,7 +69,7 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
                             {course ? (
                                 <>
                                     <p>
-                                        <strong>Course Name:</strong> {course.name}
+                                        <strong>Course Name:</strong> {(course as any)?.course_name || course.title_long || course.title || course.name}
                                     </p>
                                     <p className="mb-0">
                                         <strong>Status:</strong>{" "}

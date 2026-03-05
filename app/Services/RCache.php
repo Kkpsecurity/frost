@@ -143,7 +143,16 @@ class RCache
 
     public static function Countries($as_hash = false): array
     {
-        $countries = self::Unserialize(self::get('countries'));
+        $record = self::get('countries');
+        if (! $record) {
+            return [];
+        }
+
+        $countries = self::Unserialize($record);
+        if (! is_array($countries)) {
+            return [];
+        }
+
         return ($as_hash ? idx2hash($countries) : $countries);
     }
 }

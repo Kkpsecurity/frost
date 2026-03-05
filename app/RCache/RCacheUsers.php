@@ -89,6 +89,11 @@ trait RCacheUsers
 
         $cache_key = 'Admins';
 
+        if ( is_null( self::$_ModelCaches ) )
+        {
+            self::$_ModelCaches = new Collection;
+        }
+
         if ( self::$_ModelCaches->has( $cache_key ) )
         {
             \kkpdebug('RCacheDebug', 'Admins() :: Returning from ModelCaches');
@@ -100,7 +105,10 @@ trait RCacheUsers
 
         $Admins = new Collection;
 
-        foreach ( self::Unserialize( self::get( 'admin_user_ids' ) ) as $user_id )
+        $admin_user_ids_record = self::get( 'admin_user_ids' );
+        $admin_user_ids = $admin_user_ids_record ? self::Unserialize( $admin_user_ids_record ) : [];
+
+        foreach ( $admin_user_ids as $user_id )
         {
             $Admins->put( $user_id, self::User( $user_id ) );
         }

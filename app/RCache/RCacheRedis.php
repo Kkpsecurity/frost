@@ -22,7 +22,7 @@ trait RCacheRedis
 
     private static $redis_available = null;
 
-    private static function isRedisAvailable() : bool
+    private static function isRedisAvailable(): bool
     {
         if (self::$redis_available === null) {
             try {
@@ -44,53 +44,75 @@ trait RCacheRedis
         return self::$redis_available;
     }
 
-    public static function Redis() : object|null
+    public static function Redis(): object|null
     {
         if (!self::isRedisAvailable()) {
             return null;
         }
 
-        return \Illuminate\Support\Facades\Redis::connection( 'rcache' );
+        return \Illuminate\Support\Facades\Redis::connection('rcache');
     }
 
 
-    public static function RedisDebugBar() : void
+    public static function RedisDebugBar(): void
     {
 
-        if ( ! self::$_report_debugbar ) return;
+        if (! self::$_report_debugbar) return;
 
-        if ( class_exists( '\Debugbar' ) && \Debugbar::isEnabled() )
-        {
+        if (class_exists('\Debugbar') && \Debugbar::isEnabled()) {
             $meminfo = self::RedisMemory();
-            \Debugbar::info( 'Redis Memory Total: ' . $meminfo->total_human  );
-            \Debugbar::info( 'Redis Memory Data:  ' . $meminfo->data_human   );
-            \Debugbar::info( 'Redis Laravel Keys: ' . $meminfo->laravel_keys );
-            \Debugbar::info( 'Redis RCache Keys:  ' . $meminfo->rcache_keys  );
+            \Debugbar::info('Redis Memory Total: ' . $meminfo->total_human);
+            \Debugbar::info('Redis Memory Data:  ' . $meminfo->data_human);
+            \Debugbar::info('Redis Laravel Keys: ' . $meminfo->laravel_keys);
+            \Debugbar::info('Redis RCache Keys:  ' . $meminfo->rcache_keys);
 
-            \Debugbar::info( 'Redis Exists: ' . self::$_redis_exists );
-            \Debugbar::info( 'Redis Reads:  ' . self::$_redis_reads  );
-            \Debugbar::info( 'Redis Writes: ' . self::$_redis_writes );
+            \Debugbar::info('Redis Exists: ' . self::$_redis_exists);
+            \Debugbar::info('Redis Reads:  ' . self::$_redis_reads);
+            \Debugbar::info('Redis Writes: ' . self::$_redis_writes);
+        }
+    }
+
+
+    public static function RedisMemory(): stdClass
+    {
+
+        $redis = self::Redis();
+        if (! $redis) {
+            $zero = TextTk::BytesToString(0);
+            return (object) [
+                'total'        => 0,
+                'total_human'  => $zero,
+                'data'         => 0,
+                'data_human'   => $zero,
+                'laravel_keys' => 0,
+                'rcache_keys'  => 0,
+            ];
         }
 
-    }
+        try {
+            $default_db = Cache::store('redis')->connection()->client()->getConnection()->getParameters()->database;
+            $rcache_db  = $redis->getConnection()->getParameters()->database;
+            $redis_info = $redis->Info();
 
-
-    public static function RedisMemory() : stdClass
-    {
-
-        $default_db = Cache::store( 'redis' )->connection()->client()->getConnection()->getParameters()->database;
-        $rcache_db  = self::Redis()->getConnection()->getParameters()->database;
-        $redis_info = self::Redis()->Info();
-
-        return (object) [
-            'total'        => $redis_info['Memory']['used_memory'],
-            'total_human'  => TextTk::BytesToString( $redis_info['Memory']['used_memory'] ),
-            'data'         => $redis_info['Memory']['used_memory_dataset'],
-            'data_human'   => TextTk::BytesToString( $redis_info['Memory']['used_memory_dataset'] ),
-            'laravel_keys' => $redis_info['Keyspace']["db{$default_db}"]['keys'] ?? 0,
-            'rcache_keys'  => $redis_info['Keyspace']["db{$rcache_db}"]['keys']  ?? 0,
-        ];
-
+            return (object) [
+                'total'        => $redis_info['Memory']['used_memory'],
+                'total_human'  => TextTk::BytesToString($redis_info['Memory']['used_memory']),
+                'data'         => $redis_info['Memory']['used_memory_dataset'],
+                'data_human'   => TextTk::BytesToString($redis_info['Memory']['used_memory_dataset']),
+                'laravel_keys' => $redis_info['Keyspace']["db{$default_db}"]['keys'] ?? 0,
+                'rcache_keys'  => $redis_info['Keyspace']["db{$rcache_db}"]['keys']  ?? 0,
+            ];
+        } catch (\Throwable $e) {
+            $zero = TextTk::BytesToString(0);
+            return (object) [
+                'total'        => 0,
+                'total_human'  => $zero,
+                'data'         => 0,
+                'data_human'   => $zero,
+                'laravel_keys' => 0,
+                'rcache_keys'  => 0,
+            ];
+        }
     }
 
 
@@ -101,52 +123,62 @@ trait RCacheRedis
     ###########################
 
 
-    public static function exists( string $key ) : bool
+    public static function exists(string $key): bool
     {
         self::$_redis_exists++;
         \kkpdebug("EXISTS( '{$key}' )", 'RCacheRedis');
         $redis = self::Redis();
-        return $redis ? $redis->exists( $key ) : false;
+        return $redis ? $redis->exists($key) : false;
     }
 
 
-    public static function get( string $key ) : ?string
+    public static function get(string $key): ?string
     {
         self::$_redis_reads++;
         \kkpdebug("GET( '{$key}' )", 'RCacheRedis');
-        return self::Redis()->get( $key );
+        $redis = self::Redis();
+        return $redis ? $redis->get($key) : null;
     }
 
 
-    public static function set( string $key, $val, int $expire_seconds = null ) : void
+    public static function set(string $key, $val, int $expire_seconds = null): void
     {
         self::$_redis_writes++;
-        if ( is_null( $expire_seconds ) )
-        {
-            \kkpdebug("SET( '{$key}', [value] )", 'RCacheRedis');
-            self::Redis()->set( $key, $val );
+
+        $redis = self::Redis();
+        if (! $redis) {
+            return;
         }
-        else
-        {
+
+        if (is_null($expire_seconds)) {
+            \kkpdebug("SET( '{$key}', [value] )", 'RCacheRedis');
+            $redis->set($key, $val);
+        } else {
             \kkpdebug("SET( '{$key}', [value], 'EX', {$expire_seconds} )", 'RCacheRedis');
-            self::Redis()->set( $key, $val, 'EX', $expire_seconds );
+            $redis->set($key, $val, 'EX', $expire_seconds);
         }
     }
 
 
-    public static function setexp( string $key, int $expire_seconds ) : void
+    public static function setexp(string $key, int $expire_seconds): void
     {
         self::$_redis_writes++;
         \kkpdebug("EXPIRE( '{$key}', {$expire_seconds} )", 'RCacheRedis');
-        self::Redis()->expire( $key, $expire_seconds );
+        $redis = self::Redis();
+        if ($redis) {
+            $redis->expire($key, $expire_seconds);
+        }
     }
 
 
-    public static function delete( string $key ) : void
+    public static function delete(string $key): void
     {
         self::$_redis_writes++;
         \kkpdebug("DEL( '{$key}' )", 'RCacheRedis');
-        self::Redis()->del( $key );
+        $redis = self::Redis();
+        if ($redis) {
+            $redis->del($key);
+        }
     }
 
 
@@ -158,50 +190,51 @@ trait RCacheRedis
     ##################
 
 
-    public static function hexists( string $hkey, $id ) : bool
+    public static function hexists(string $hkey, $id): bool
     {
         self::$_redis_exists++;
         \kkpdebug("HEXISTS( '{$hkey}', '{$id}' )", 'RCacheRedis');
         $redis = self::Redis();
-        return $redis ? $redis->hexists( $hkey, $id ) : false;
+        return $redis ? $redis->hexists($hkey, $id) : false;
     }
 
 
-    public static function hget( string $hkey, $id ) : ?string
+    public static function hget(string $hkey, $id): ?string
     {
         self::$_redis_reads++;
         \kkpdebug("HGET( '{$hkey}', '{$id}' )", 'RCacheRedis');
         $redis = self::Redis();
-        return $redis ? $redis->hget( $hkey, $id ) : null;
+        return $redis ? $redis->hget($hkey, $id) : null;
     }
 
 
-    public static function hgetall( string $hkey ) : ?array
+    public static function hgetall(string $hkey): ?array
     {
         self::$_redis_reads++;
         \kkpdebug("HGETALL( '{$hkey}' )", 'RCacheRedis');
         $redis = self::Redis();
-        return $redis ? $redis->hgetall( $hkey ) : [];
+        return $redis ? $redis->hgetall($hkey) : [];
     }
 
 
-    public static function hset( string $hkey, $id, $val ) : void
+    public static function hset(string $hkey, $id, $val): void
     {
         self::$_redis_writes++;
         \kkpdebug("HSET( '{$hkey}', '{$id}', [value] )", 'RCacheRedis');
         $redis = self::Redis();
         if ($redis) {
-            $redis->hset( $hkey, $id, $val );
+            $redis->hset($hkey, $id, $val);
         }
     }
 
 
-    public static function hdel( string $hkey, $id ) : void
+    public static function hdel(string $hkey, $id): void
     {
         self::$_redis_writes++;
         \kkpdebug("HDEL( '{$hkey}', '{$id}' )", 'RCacheRedis');
-        self::Redis()->hdel( $hkey, $id );
+        $redis = self::Redis();
+        if ($redis) {
+            $redis->hdel($hkey, $id);
+        }
     }
-
-
 }
