@@ -832,6 +832,7 @@ class StudentDashboardController extends Controller
             // Return student data with all courses
             return response()->json([
                 'success' => true,
+                'timestamp' => now()->toIso8601String(),
                 'data' => [
                     'student' => [
                         'id' => $user->id,
@@ -1321,6 +1322,7 @@ class StudentDashboardController extends Controller
 
             return response()->json([
                 'success' => true,
+                'timestamp' => now()->toIso8601String(),
                 'data' => [
                     'courseDate' => $courseDate ? [
                         'id' => $courseDate->id,
@@ -1561,12 +1563,9 @@ class StudentDashboardController extends Controller
             if (!$courseDateId) {
                 return response()->json([
                     'success' => false,
-                    'courseDate' => null,
-                    'courseUnit' => null,
-                    'course' => null,
-                    'lessons' => [],
-                    'instUnit' => null,
-                    'config' => [],
+                    'timestamp' => now()->toIso8601String(),
+                    'data' => null,
+                    'error' => 'course_date_id is required',
                 ]);
             }
 
@@ -1583,14 +1582,9 @@ class StudentDashboardController extends Controller
             if (!$courseDate) {
                 return response()->json([
                     'success' => false,
-                    'courseDate' => null,
-                    'courseUnit' => null,
-                    'course' => null,
-                    'lessons' => [],
-                    'instUnit' => null,
-                    'studentUnit' => null,
-                    'studentLessons' => [],
-                    'config' => [],
+                    'timestamp' => now()->toIso8601String(),
+                    'data' => null,
+                    'error' => 'Course date not found',
                 ]);
             }
 
@@ -1903,15 +1897,18 @@ class StudentDashboardController extends Controller
             // Return classroom data with enhanced lessons and challenge data
             return response()->json([
                 'success' => true,
-                'courseDate' => $courseDate,
-                'courseUnit' => $courseDate->course?->courseUnit,
-                'course' => $courseDate->course,
-                'lessons' => $lessons,
-                'instUnit' => $courseDate->instUnit,
-                'studentUnit' => $studentUnit,
-                'studentLessons' => $studentLessons,
-                'challenge' => $challengeData, // NEW: Active challenge (null if none)
-                'config' => [],
+                'timestamp' => now()->toIso8601String(),
+                'data' => [
+                    'courseDate' => $courseDate,
+                    'courseUnit' => $courseDate->course?->courseUnit,
+                    'course' => $courseDate->course,
+                    'lessons' => $lessons,
+                    'instUnit' => $courseDate->instUnit,
+                    'studentUnit' => $studentUnit,
+                    'studentLessons' => $studentLessons,
+                    'challenge' => $challengeData,
+                    'config' => [],
+                ],
             ]);
         } catch (Exception $e) {
             Log::error('Classroom poll data error: ' . $e->getMessage());
