@@ -8,15 +8,45 @@ use App\Classes\Admin\ChatLogCache;
 use App\Classes\Support\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\ChatLog;
-use App\Models\InstUnit;
+use App\Models\CourseAuth;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ClassroomChatController extends Controller
 {
+    /**
+     * Resolve the course_id for a given course_date_id via its course_unit.
+     * Returns null when the course_date_id does not exist.
+     */
+    private function getCourseIdForDate(int $courseDateId): ?int
+    {
+        return DB::table('course_dates')
+            ->join('course_units', 'course_units.id', '=', 'course_dates.course_unit_id')
+            ->where('course_dates.id', $courseDateId)
+            ->value('course_units.course_id');
+    }
+
+    /**
+     * Verify that the given user is enrolled in the course associated with
+     * the course_date_id.  Guards both GET and POST chat endpoints against
+     * Broken Access Control (OWASP A01).
+     */
+    private function isStudentEnrolled(int $userId, int $courseDateId): bool
+    {
+        $courseId = $this->getCourseIdForDate($courseDateId);
+        if (!$courseId) {
+            return false;
+        }
+
+        return CourseAuth::where('user_id', $userId)
+            ->where('course_id', $courseId)
+            ->exists();
+    }
+
     public function getChat(Request $request): JsonResponse
     {
         $user = Auth::user();
@@ -36,6 +66,10 @@ class ClassroomChatController extends Controller
         }
 
         $courseDateId = (int) $request->input('course_date_id');
+
+        if (!$this->isStudentEnrolled((int) $user->id, $courseDateId)) {
+            return response()->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
 
         // Check if chat is enabled (instructor controls this)
         $enabled = ChatLogCache::IsEnabled($courseDateId);
@@ -97,6 +131,10 @@ class ClassroomChatController extends Controller
         }
 
         $courseDateId = (int) $request->input('course_date_id');
+
+        if (!$this->isStudentEnrolled((int) $user->id, $courseDateId)) {
+            return response()->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
 
         if (!ChatLogCache::IsEnabled($courseDateId)) {
             return response()->json([
