@@ -3,6 +3,7 @@ import React from "react";
 interface LessonSideBarProps {
     lessons: any[];
     isLoadingLessons: boolean;
+    title?: string;
     isLessonCompletedByStudent: (lessonId: number) => boolean;
     isLessonInProgress: (lessonId: number, index: number) => boolean;
     getLessonStatusColor: (lesson: any, index: number) => string;
@@ -17,6 +18,7 @@ interface LessonSideBarProps {
 const LessonSideBar: React.FC<LessonSideBarProps> = ({
     lessons,
     isLoadingLessons,
+    title = "Today's Lessons",
     isLessonCompletedByStudent,
     isLessonInProgress,
     getLessonStatusColor,
@@ -44,7 +46,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                         style={{ color: "white", fontWeight: "600" }}
                     >
                         <i className="fas fa-list me-2"></i>
-                        Today's Lessons
+                        {title}
                     </h6>
                     <span
                         className="badge"

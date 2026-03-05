@@ -114,10 +114,10 @@ const SchoolDashboardTitleBar = ({
                         {classroomStatus && (
                             <span
                                 className={`badge ms-2 ${classroomStatus === "ONLINE"
-                                        ? "bg-success"
-                                        : classroomStatus === "WAITING"
-                                            ? "bg-warning"
-                                            : "bg-secondary"
+                                    ? "bg-success"
+                                    : classroomStatus === "WAITING"
+                                        ? "bg-warning"
+                                        : "bg-secondary"
                                     }`}
                                 style={{
                                     fontSize: "0.9rem",
@@ -125,10 +125,10 @@ const SchoolDashboardTitleBar = ({
                             >
                                 <i
                                     className={`fas ${classroomStatus === "ONLINE"
-                                            ? "fa-wifi"
-                                            : classroomStatus === "WAITING"
-                                                ? "fa-clock"
-                                                : "fa-wifi-slash"
+                                        ? "fa-wifi"
+                                        : classroomStatus === "WAITING"
+                                            ? "fa-clock"
+                                            : "fa-wifi-slash"
                                         } me-1`}
                                 ></i>
                                 {classroomStatus}

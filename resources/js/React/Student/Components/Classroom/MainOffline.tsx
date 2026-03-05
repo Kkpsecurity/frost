@@ -33,7 +33,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
 
     const [selfStudyLessons, setSelfStudyLessons] = useState<any[]>([]);
-    const [isLoadingSelfStudyLessons, setIsLoadingSelfStudyLessons] = useState(false);
+    const [isLoadingSelfStudyLessons, setIsLoadingSelfStudyLessons] = useState(true);
 
     const [activeSelfStudySessionLessonId, setActiveSelfStudySessionLessonId] =
         useState<number | null>(null);
@@ -92,11 +92,9 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         }
     }, [activeTab]);
 
-    // OFFLINE MODE lessons: self-study endpoint (primary), context lessons as fallback
-    const classroomData = (classroomContext as any)?.data || classroomContext;
-    const backendLessons = (classroomData as any)?.lessons || [];
-
-    const lessons = selfStudyLessons.length > 0 ? selfStudyLessons : backendLessons;
+    // OFFLINE MODE: use self-study endpoint lessons only (no course date → all course lessons).
+    // Never fall back to classroom-context lessons which only contain today's unit.
+    const lessons = selfStudyLessons;
 
     const studentLessons = (studentContext as any)?.studentLessons || [];
     const activeLesson = null; // no "active lesson" in offline mode
@@ -120,7 +118,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         let isCancelled = false;
 
         const load = async () => {
-            if (!courseAuthId) return;
+            if (!courseAuthId) {
+                setIsLoadingSelfStudyLessons(false);
+                return;
+            }
 
             setIsLoadingSelfStudyLessons(true);
             try {
@@ -130,13 +131,16 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                 );
 
                 const payload = await response.json();
-                if (isCancelled) return;
 
-                if (response.ok && payload?.success && Array.isArray(payload?.data?.lessons)) {
-                    setSelfStudyLessons(payload.data.lessons);
+                if (!isCancelled) {
+                    if (response.ok && payload?.success && Array.isArray(payload?.data?.lessons)) {
+                        setSelfStudyLessons(payload.data.lessons);
+                    } else {
+                        console.error('[MainOffline] self-study/lessons failed', response.status, payload);
+                    }
                 }
-            } catch {
-                // non-fatal: fall back to context/mock lessons
+            } catch (err) {
+                console.error('[MainOffline] self-study/lessons fetch error', err);
             } finally {
                 if (!isCancelled) setIsLoadingSelfStudyLessons(false);
             }
@@ -190,6 +194,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                 <LessonSideBar
                                     lessons={lessons}
                                     isLoadingLessons={isLoadingLessons}
+                                    title="Course Lessons"
                                     isLessonCompletedByStudent={isLessonCompletedByStudent}
                                     isLessonInProgress={isLessonInProgress}
                                     getLessonStatusColor={getLessonStatusColor}

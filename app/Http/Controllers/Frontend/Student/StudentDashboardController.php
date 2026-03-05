@@ -1484,15 +1484,28 @@ class StudentDashboardController extends Controller
             }
 
             $course = $courseAuth->GetCourse();
-            $lessons = $course ? $course->GetLessons() : collect();
+
+            // If a course_date_id is supplied, return only that day's unit lessons.
+            // Without it (offline/self-study), return all course lessons.
+            $courseDateId = (int) $request->query('course_date_id', 0);
+            if ($courseDateId > 0) {
+                $courseDate = CourseDate::find($courseDateId);
+                $courseUnit = $courseDate ? RCache::CourseUnits($courseDate->course_unit_id) : null;
+                $lessons = $courseUnit ? $courseUnit->GetLessons() : collect();
+            } else {
+                $lessons = $course ? $course->GetLessons() : collect();
+            }
 
             $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
             /** @var \App\Services\PauseTimeCalculator $pauseCalculator */
             $pauseCalculator = app(\App\Services\PauseTimeCalculator::class);
 
-            // Completion keys come from PCLCache
-            $pcl = $courseAuth->PCLCache();
-            $completedLessonIds = is_array($pcl) ? array_keys($pcl) : [];
+            // Get completed lesson IDs directly from self_study_lessons table
+            $completedLessonIds = \App\Models\SelfStudyLesson::where('course_auth_id', $courseAuth->id)
+                ->whereNotNull('completed_at')
+                ->pluck('lesson_id')
+                ->map(fn($id) => (int) $id)
+                ->all();
 
             $payloadLessons = $lessons->map(function ($lesson) use ($completedLessonIds, $bufferMinutes, $pauseCalculator) {
                 $lessonId = (int) ($lesson->id ?? 0);
@@ -1536,7 +1549,7 @@ class StudentDashboardController extends Controller
                     'lessons' => $payloadLessons,
                 ],
             ]);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Self-study lessons error', [
                 'error' => $e->getMessage(),
                 'course_auth_id' => $request->query('course_auth_id'),
