@@ -233,8 +233,8 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                 Number(selectedLesson.effective_video_seconds) > 0
                     ? Number(selectedLesson.effective_video_seconds)
                     : Number(selectedLesson.video_seconds) > 0
-                      ? Number(selectedLesson.video_seconds)
-                      : Math.max(
+                        ? Number(selectedLesson.video_seconds)
+                        : Math.max(
                             60,
                             Number(selectedLesson.duration_minutes || 0) * 60,
                         );
@@ -358,8 +358,8 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
         typeof selectedLesson?.video_minutes === "number"
             ? Number(selectedLesson.video_minutes)
             : selectedLesson?.video_seconds
-              ? Math.ceil(Number(selectedLesson.video_seconds) / 60)
-              : null;
+                ? Math.ceil(Number(selectedLesson.video_seconds) / 60)
+                : null;
     const remainingMinutes = quota
         ? Math.floor(Number(quota.remaining_hours || 0) * 60)
         : null;
@@ -373,10 +373,10 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
         remainingMinutes === null ? true : requiredMinutes <= remainingMinutes;
     const pauseRemainingMinutes = activeSession
         ? Math.max(
-              0,
-              Number(activeSession.totalPauseAllowed) -
-                  Number(activeSession.pauseUsed),
-          )
+            0,
+            Number(activeSession.totalPauseAllowed) -
+            Number(activeSession.pauseUsed),
+        )
         : 0;
 
     const sessionTimeRemainingMinutes = React.useMemo(() => {
@@ -553,7 +553,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     ? ` • Video: ${videoMinutes} min`
                                                     : ""}
                                                 {typeof selectedLesson.required_minutes ===
-                                                "number"
+                                                    "number"
                                                     ? ` • Required: ${requiredMinutes} min`
                                                     : ""}
                                                 {selectedLesson.is_completed
@@ -561,7 +561,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     : " • Status: Pending"}
                                             </div>
                                             {isSessionForSelectedLesson &&
-                                            activeSession ? (
+                                                activeSession ? (
                                                 <div
                                                     className="mt-2"
                                                     style={mutedText}
@@ -575,7 +575,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     %{" • "}Pause Remaining:{" "}
                                                     {pauseRemainingMinutes} min
                                                     {typeof sessionTimeRemainingMinutes ===
-                                                    "number"
+                                                        "number"
                                                         ? ` • Time Remaining: ${sessionTimeRemainingMinutes} min`
                                                         : ""}
                                                 </div>
@@ -613,7 +613,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                     </div>
 
                                     {isSessionForSelectedLesson &&
-                                    activeSession ? (
+                                        activeSession ? (
                                         <div className="mt-3">
                                             {!isPlayerUnlocked ? (
                                                 <div
@@ -674,7 +674,6 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                         }
                                                         simulationSpeed={10}
                                                         requireUserPlay={true}
-                                                        useViewportHeight={true}
                                                         onComplete={
                                                             handleCompleteSession
                                                         }
@@ -685,21 +684,21 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                                     if (!prev)
                                                                         return prev;
                                                                     const next: ActiveSession =
-                                                                        {
-                                                                            ...prev,
-                                                                            playbackProgressSeconds:
-                                                                                Math.floor(
-                                                                                    Number(
-                                                                                        data.playedSeconds ||
-                                                                                            0,
-                                                                                    ),
-                                                                                ),
-                                                                            completionPercentage:
+                                                                    {
+                                                                        ...prev,
+                                                                        playbackProgressSeconds:
+                                                                            Math.floor(
                                                                                 Number(
-                                                                                    data.percentage ||
-                                                                                        0,
+                                                                                    data.playedSeconds ||
+                                                                                    0,
                                                                                 ),
-                                                                        };
+                                                                            ),
+                                                                        completionPercentage:
+                                                                            Number(
+                                                                                data.percentage ||
+                                                                                0,
+                                                                            ),
+                                                                    };
                                                                     try {
                                                                         localStorage.setItem(
                                                                             STORAGE_KEY,
@@ -727,7 +726,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                         <div className="mt-3 text-warning">
                                             Not enough quota for this session.
                                             {typeof remainingMinutes ===
-                                            "number" ? (
+                                                "number" ? (
                                                 <>
                                                     {" "}
                                                     Required: {

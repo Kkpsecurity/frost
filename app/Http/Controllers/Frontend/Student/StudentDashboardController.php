@@ -571,7 +571,8 @@ class StudentDashboardController extends Controller
             $studentExamsByCourseAuth = [];
             foreach ($courseAuths as $courseAuth) {
                 try {
-                    $examObj = $courseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
+                    $examFmt = 'YYYY-MM-DD[T]HH:mm:ssZ';
+                    $examObj = $courseAuth->ClassroomExam($examFmt);
                     $activeExamAuth = $courseAuth->ActiveExamAuth();
 
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = [
@@ -677,7 +678,8 @@ class StudentDashboardController extends Controller
                                 }
 
                                 if ($activeCourseAuth) {
-                                    $examObj = $activeCourseAuth->ClassroomExam('YYYY-MM-DD[T]HH:mm:ssZ');
+                                    $examFmt2 = 'YYYY-MM-DD[T]HH:mm:ssZ';
+                                    $examObj = $activeCourseAuth->ClassroomExam($examFmt2);
                                     $activeExamAuth = $activeCourseAuth->ActiveExamAuth();
 
                                     $activeStudentExam = [
