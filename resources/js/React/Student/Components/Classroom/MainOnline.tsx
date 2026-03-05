@@ -100,6 +100,11 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     const instructorEmail = instructor?.email || null;
     const instructorAvatar = instructor?.avatar || "/images/default-avatar.png";
 
+    const courseNameDisplay = studentContext.courses?.find((c: any) => {
+        const id = c?.course_auth_id ?? c?.courseAuthId ?? c?.id;
+        return Number(id) === Number(courseAuthId);
+    })?.course_name ?? undefined;
+
     // Get today's day name for headshot lookup
     const getTodayKey = () => {
         try {
@@ -198,6 +203,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
             {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
             <SchoolDashboardTitleBar
                 title="Live Classroom"
+                courseName={courseNameDisplay}
                 subtitle={`Instructor: ${instructorName}`}
                 icon={<i className="fas fa-video"></i>}
                 onBackToDashboard={onBackToDashboard}

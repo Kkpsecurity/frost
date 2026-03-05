@@ -567,6 +567,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                 {/* Title Bar */}
                 <SchoolDashboardTitleBar
                     title="Classroom"
+                    courseName={courseName !== "Class" ? courseName : undefined}
                     subtitle={`Waiting for instructor | Student: ${student?.name || "N/A"}`}
                     icon={<i className="fas fa-clock"></i>}
                     onBackToDashboard={onBackToDashboard}

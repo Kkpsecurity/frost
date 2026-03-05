@@ -5,6 +5,7 @@ import { useStudent } from "../context/StudentContext";
 const SchoolDashboardTitleBar = ({
     title,
     subtitle,
+    courseName,
     icon,
     onBackToDashboard,
     onExamClick,
@@ -135,9 +136,17 @@ const SchoolDashboardTitleBar = ({
                         )}
                     </h4>
 
+                    {courseName && (
+                        <p
+                            className="mb-0 mt-1 text-white"
+                            style={{ fontSize: "0.875rem", opacity: 0.85 }}
+                        >
+                            {courseName}
+                        </p>
+                    )}
                     {subtitle && (
                         <p
-                            className="mb-0 mt-2 text-white-50"
+                            className="mb-0 mt-1 text-white-50"
                             style={{ fontSize: "1rem" }}
                         >
                             {subtitle}

@@ -183,19 +183,18 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         setSelectedLessonId(Number(firstIncomplete?.id ?? lessons[0]?.id));
     }, [lessons, selectedLessonId]);
 
-    const { courses } = (classroomData as any) ?? {};
-
     console.log("MainOffline Render", classroomData);
 
-    const courseTitle = courses?.find((c: any) => {
+    const courseTitle = studentContext.courses?.find((c: any) => {
         const candidateCourseAuthId = c?.course_auth_id ?? c?.courseAuthId ?? c?.id;
         return Number(candidateCourseAuthId) === Number(courseAuthId);
-    })?.title;
+    })?.course_name ?? null;
 
     return (
         <FrostDashboardWrapper>
             <SchoolDashboardTitleBar
-                title={`Self-Study: ${courseTitle}`}
+                title="Self-Study"
+                courseName={courseTitle ?? undefined}
                 subtitle="Complete lessons at your own pace"
                 icon={<i className="fas fa-book-open"></i>}
                 onBackToDashboard={onBackToDashboard}

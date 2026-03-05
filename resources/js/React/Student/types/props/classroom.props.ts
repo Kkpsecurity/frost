@@ -36,6 +36,8 @@ export type SchoolDashboardProps = {
 export type SchoolDashboardTitleBarProps = {
     title: string;
     subtitle?: string | React.ReactNode;
+    /** Selected course name — shown as a secondary line below the title */
+    courseName?: string;
     icon?: React.ReactNode;
     className?: string;
     onBackToDashboard?: () => void;
