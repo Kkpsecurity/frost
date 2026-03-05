@@ -4,520 +4,279 @@ namespace App\Http\Controllers\Frontend\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\SelfStudyLesson;
-use App\Models\StudentVideoQuota;
-use App\Services\LessonSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
  * StudentLessonSessionController
  *
- * Handles lesson session management for self-study students:
- * - Start session with quota validation
- * - Update playback progress
- * - Track pause time usage
- * - Complete session with quota consumption
- * - Get session status for resuming
+ * Manages lesson session lifecycle for self-study students.
+ *
+ * Session state is stored in the Laravel cache (keyed by UUID) rather than
+ * in DB columns that have not yet been added to self_study_lessons.
+ * Only the columns present in the base migration are written to the DB:
+ *   course_auth_id, lesson_id, agreed_at, completed_at, seconds_viewed
  */
 class StudentLessonSessionController extends Controller
 {
-    protected LessonSessionService $sessionService;
+    private const SESSION_TTL_SECONDS = 4 * 60 * 60;
+    private const KEY_PREFIX = 'lesson_session_';
 
-    public function __construct(LessonSessionService $sessionService)
+    public function __construct()
     {
         $this->middleware(['auth', 'verified']);
-        $this->sessionService = $sessionService;
     }
 
-    /**
-     * Start a new lesson session
-     *
-     * POST /classroom/lesson/start-session
-     *
-     * Validates:
-     * - Student has sufficient quota
-     * - No duplicate active session
-     * - Lesson exists and belongs to student's course
-     *
-     * Creates:
-     * - Session ID and expiration time
-     * - Pause time allowance
-     * - Session tracking record
-     */
+    private function cacheKey(string $sessionId): string
+    {
+        return self::KEY_PREFIX . $sessionId;
+    }
+
+    private function getSessionCache(string $sessionId): ?array
+    {
+        return Cache::get($this->cacheKey($sessionId));
+    }
+
+    private function putSessionCache(string $sessionId, array $data): void
+    {
+        Cache::put($this->cacheKey($sessionId), $data, self::SESSION_TTL_SECONDS);
+    }
+
+    private function forgetSessionCache(string $sessionId): void
+    {
+        Cache::forget($this->cacheKey($sessionId));
+    }
+
     public function startSession(Request $request)
     {
         try {
             $validated = $request->validate([
-                'lesson_id' => 'required|integer|exists:lessons,id',
-                'course_auth_id' => 'required|integer|exists:course_auths,id',
+                'lesson_id'              => 'required|integer|exists:lessons,id',
+                'course_auth_id'         => 'required|integer|exists:course_auths,id',
                 'video_duration_seconds' => 'required|integer|min:1',
-                'lesson_title' => 'required|string|max:255',
+                'lesson_title'           => 'required|string|max:255',
             ]);
 
-            $studentId = Auth::id();
-            $lessonId = $validated['lesson_id'];
-            $courseAuthId = $validated['course_auth_id'];
-            $videoDurationSeconds = $validated['video_duration_seconds'];
+            $studentId            = Auth::id();
+            $lessonId             = (int) $validated['lesson_id'];
+            $courseAuthId         = (int) $validated['course_auth_id'];
+            $videoDurationSeconds = (int) $validated['video_duration_seconds'];
 
-            Log::info('Starting lesson session', [
-                'student_id' => $studentId,
-                'lesson_id' => $lessonId,
+            // Create the SelfStudyLesson using only columns that exist in the DB.
+            $record = SelfStudyLesson::create([
                 'course_auth_id' => $courseAuthId,
-                'video_duration_seconds' => $videoDurationSeconds,
-                // Avoid assuming the auth user object implements toArray()
-                'auth_user_id' => $studentId,
+                'lesson_id'      => $lessonId,
+                'agreed_at'      => now(),
             ]);
 
-            // Check for duplicate active session
-            $activeSession = SelfStudyLesson::where('course_auth_id', $courseAuthId)
-                ->where('session_id', '!=', null)
-                ->where('session_expires_at', '>', now())
-                ->where('quota_status', '!=', 'consumed')
-                ->first();
+            $sessionId   = (string) Str::uuid();
+            $expiresAt   = now()->addSeconds(self::SESSION_TTL_SECONDS);
+            $sessionData = [
+                'id'                        => $record->id,
+                'lesson_id'                 => $lessonId,
+                'course_auth_id'            => $courseAuthId,
+                'student_id'                => $studentId,
+                'started_at'                => now()->toISOString(),
+                'expires_at'                => $expiresAt->toISOString(),
+                'video_duration_seconds'    => $videoDurationSeconds,
+                'playback_progress_seconds' => 0,
+                'completion_percentage'     => 0.0,
+                'total_pause_allowed'       => 0,
+                'pause_used'                => 0,
+                'is_completed'              => false,
+            ];
 
-            if ($activeSession) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'You already have an active lesson session. Please complete or end the current session first.',
-                    'active_session' => [
-                        'lesson_id' => $activeSession->lesson_id,
-                        'session_id' => $activeSession->session_id,
-                        'expires_at' => $activeSession->session_expires_at->toISOString(),
-                    ]
-                ], 409);
-            }
+            $this->putSessionCache($sessionId, $sessionData);
 
-            // Check quota availability
-            // Create quota record if missing (matches LessonSessionService behavior)
-            $quota = StudentVideoQuota::firstOrCreate(
-                ['user_id' => $studentId],
-                ['total_hours' => 10.00, 'used_hours' => 0.00, 'refunded_hours' => 0.00]
-            );
-
-            // IMPORTANT: quota must cover the full session duration, not just video length.
-            // Session duration includes:
-            // - video minutes
-            // - buffer minutes
-            // - pause allocation minutes
-            $videoDurationMinutes = (int) ceil($videoDurationSeconds / 60);
-            $bufferMinutes = (int) config('self_study.session_buffer_minutes', 15);
-
-            // Mirror pause allocation calculation used by LessonSessionService
-            // (LessonSessionService uses PauseTimeCalculator)
-            $pauseData = app(\App\Services\PauseTimeCalculator::class)
-                ->calculate($videoDurationSeconds);
-
-            $pauseMinutes = (int) ($pauseData['total_minutes'] ?? 0);
-            $requiredMinutes = $videoDurationMinutes + $bufferMinutes + $pauseMinutes;
-
-            if (!$quota->hasEnoughQuota($requiredMinutes)) {
-                return response()->json([
-                    'success' => false,
-                    'error' => sprintf(
-                        'Insufficient video quota. Required: %d minutes, Available: %d minutes',
-                        $requiredMinutes,
-                        $quota->getRemainingMinutes()
-                    ),
-                    'quota' => [
-                        'remaining_minutes' => $quota->getRemainingMinutes(),
-                        'required_minutes' => $requiredMinutes,
-                        'video_minutes' => $videoDurationMinutes,
-                        'buffer_minutes' => $bufferMinutes,
-                        'pause_minutes' => $pauseMinutes,
-                    ]
-                ], 403);
-            }
-
-            // Start session using service
-            $result = $this->sessionService->startSession(
-                student: Auth::user(),
-                courseAuthId: $courseAuthId,
-                lessonId: $lessonId,
-                videoDurationSeconds: $videoDurationSeconds
-            );
-
-            if (!$result['success']) {
-                return response()->json([
-                    'success' => false,
-                    'error' => $result['message'],
-                ], 400);
-            }
-
-            $selfStudyLesson = $result['session'];
-
-            Log::info('Lesson session started successfully', [
-                'student_id' => $studentId,
-                'lesson_id' => $lessonId,
-                'session_id' => $selfStudyLesson->session_id,
-                'expires_at' => $selfStudyLesson->session_expires_at,
+            Log::info('Lesson session started', [
+                'student_id'     => $studentId,
+                'lesson_id'      => $lessonId,
+                'course_auth_id' => $courseAuthId,
+                'record_id'      => $record->id,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Lesson session started successfully',
                 'session' => [
-                    'isActive' => true,
-                    'sessionId' => $selfStudyLesson->session_id,
-                    'lessonId' => $lessonId,
-                    'lessonTitle' => $validated['lesson_title'],
-                    'courseAuthId' => $courseAuthId,
-                    'startedAt' => $selfStudyLesson->created_at->toISOString(),
-                    'expiresAt' => $selfStudyLesson->session_expires_at->toISOString(),
-                    'videoDurationSeconds' => $videoDurationSeconds,
-                    'totalPauseAllowed' => $selfStudyLesson->total_pause_minutes_allowed,
-                    'pauseUsed' => 0,
-                    'completionPercentage' => 0,
+                    'isActive'                => true,
+                    'sessionId'               => $sessionId,
+                    'lessonId'                => $lessonId,
+                    'lessonTitle'             => $validated['lesson_title'],
+                    'courseAuthId'            => $courseAuthId,
+                    'startedAt'               => $sessionData['started_at'],
+                    'expiresAt'               => $sessionData['expires_at'],
+                    'videoDurationSeconds'    => $videoDurationSeconds,
+                    'totalPauseAllowed'       => 0,
+                    'pauseUsed'               => 0,
+                    'completionPercentage'    => 0,
                     'playbackProgressSeconds' => 0,
                 ],
-                'quota' => [
-                    'remaining_minutes' => $quota->getRemainingMinutes(),
-                    'total_minutes' => $quota->total_hours * 60,
-                ]
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Failed to start lesson session', [
-                'student_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to start session. Please try again or contact support.',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return response()->json(['success' => false, 'error' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            Log::error('Failed to start lesson session', ['student_id' => Auth::id(), 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to start session. Please try again or contact support.', 'debug' => config('app.debug') ? $e->getMessage() : null], 500);
         }
     }
 
-    /**
-     * Update playback progress
-     *
-     * POST /classroom/lesson/update-progress
-     *
-     * Updates:
-     * - playback_progress_seconds
-     * - completion_percentage
-     */
     public function updateProgress(Request $request)
     {
         try {
             $validated = $request->validate([
-                'session_id' => 'required|string|size:36',
-                'playback_seconds' => 'required|integer|min:0',
+                'session_id'            => 'required|string',
+                'playback_seconds'      => 'required|integer|min:0',
                 'completion_percentage' => 'required|numeric|min:0|max:100',
             ]);
 
-            $studentId = Auth::id();
             $sessionId = $validated['session_id'];
+            $data      = $this->getSessionCache($sessionId);
 
-            // Find the session by session_id (UUID is globally unique)
-            $selfStudyLesson = SelfStudyLesson::where('session_id', $sessionId)
-                ->first();
-
-            if (!$selfStudyLesson) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session not found or expired',
-                ], 404);
+            if (!$data) {
+                return response()->json(['success' => false, 'error' => 'Session not found or expired'], 404);
             }
 
-            // Check if session is expired
-            if ($selfStudyLesson->isSessionExpired()) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session has expired. Please start a new session.',
-                    'expired' => true,
-                ], 410);
-            }
+            $data['playback_progress_seconds'] = (int) $validated['playback_seconds'];
+            $data['completion_percentage']      = (float) $validated['completion_percentage'];
+            $this->putSessionCache($sessionId, $data);
 
-            // Update progress
-            $selfStudyLesson->updateProgress(
-                $validated['playback_seconds']
-            );
-
-            Log::debug('Progress updated', [
-                'student_id' => $studentId,
-                'session_id' => $sessionId,
-                'playback_seconds' => $validated['playback_seconds'],
-                'completion_percentage' => $validated['completion_percentage'],
-            ]);
+            SelfStudyLesson::where('id', $data['id'])
+                ->update(['seconds_viewed' => (int) $validated['playback_seconds']]);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Progress updated',
+                'success'  => true,
                 'progress' => [
-                    'playback_seconds' => $selfStudyLesson->playback_progress_seconds,
-                    'completion_percentage' => $selfStudyLesson->completion_percentage,
-                    'meets_threshold' => $selfStudyLesson->meetsCompletionThreshold(),
-                ]
+                    'playback_seconds'      => $data['playback_progress_seconds'],
+                    'completion_percentage' => $data['completion_percentage'],
+                    'meets_threshold'       => $data['completion_percentage'] >= 80,
+                ],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Failed to update progress', [
-                'student_id' => Auth::id(),
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to update progress',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return response()->json(['success' => false, 'error' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            Log::error('Failed to update progress', ['student_id' => Auth::id(), 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to update progress', 'debug' => config('app.debug') ? $e->getMessage() : null], 500);
         }
     }
 
-    /**
-     * Track pause time usage
-     *
-     * POST /classroom/lesson/track-pause
-     *
-     * Updates:
-     * - total_pause_minutes_used
-     * - pause_intervals (JSON array)
-     */
     public function trackPause(Request $request)
     {
         try {
             $validated = $request->validate([
-                'session_id' => 'required|string|size:36',
+                'session_id'    => 'required|string',
                 'pause_minutes' => 'required|numeric|min:0',
             ]);
 
-            $studentId = Auth::id();
             $sessionId = $validated['session_id'];
-            $pauseMinutes = $validated['pause_minutes'];
+            $data      = $this->getSessionCache($sessionId);
 
-            // Find the session by session_id (UUID is globally unique)
-            $selfStudyLesson = SelfStudyLesson::where('session_id', $sessionId)
-                ->first();
-
-            if (!$selfStudyLesson) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session not found',
-                ], 404);
+            if (!$data) {
+                return response()->json(['success' => false, 'error' => 'Session not found'], 404);
             }
 
-            // Check if session is expired
-            if ($selfStudyLesson->isSessionExpired()) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session has expired',
-                    'expired' => true,
-                ], 410);
-            }
-
-            // Track pause time
-            $selfStudyLesson->consumePauseTime($pauseMinutes);
-
-            $remainingPause = $selfStudyLesson->getRemainingPauseMinutes();
-
-            Log::debug('Pause time tracked', [
-                'student_id' => $studentId,
-                'session_id' => $sessionId,
-                'pause_minutes' => $pauseMinutes,
-                'total_used' => $selfStudyLesson->total_pause_minutes_used,
-                'remaining' => $remainingPause,
-            ]);
+            $data['pause_used'] = (float) $data['pause_used'] + (float) $validated['pause_minutes'];
+            $this->putSessionCache($sessionId, $data);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pause time tracked',
-                'pause' => [
-                    'used_minutes' => $selfStudyLesson->total_pause_minutes_used,
-                    'allowed_minutes' => $selfStudyLesson->total_pause_minutes_allowed,
-                    'remaining_minutes' => $remainingPause,
-                    'percentage_used' => $selfStudyLesson->total_pause_minutes_allowed > 0
-                        ? round(($selfStudyLesson->total_pause_minutes_used / $selfStudyLesson->total_pause_minutes_allowed) * 100, 1)
-                        : 0,
-                ]
+                'pause'   => [
+                    'used_minutes'      => $data['pause_used'],
+                    'allowed_minutes'   => $data['total_pause_allowed'],
+                    'remaining_minutes' => max(0, $data['total_pause_allowed'] - $data['pause_used']),
+                    'percentage_used'   => 0,
+                ],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Failed to track pause time', [
-                'student_id' => Auth::id(),
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to track pause time',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return response()->json(['success' => false, 'error' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'error' => 'Failed to track pause', 'debug' => config('app.debug') ? $e->getMessage() : null], 500);
         }
     }
 
-    /**
-     * Complete lesson session
-     *
-     * POST /classroom/lesson/complete-session
-     *
-     * Finalizes:
-     * - Rounds quota consumption
-     * - Checks 80% completion threshold
-     * - Consumes quota from StudentVideoQuota
-     * - Updates quota_status to 'consumed'
-     * - Clears session_id and session_expires_at
-     */
     public function completeSession(Request $request)
     {
         try {
             $validated = $request->validate([
-                'session_id' => 'required|string|size:36',
+                'session_id' => 'required|string',
             ]);
 
-            $studentId = Auth::id();
             $sessionId = $validated['session_id'];
+            $data      = $this->getSessionCache($sessionId);
 
-            Log::info('Completing lesson session', [
-                'student_id' => $studentId,
-                'session_id' => $sessionId,
+            if (!$data) {
+                return response()->json(['success' => false, 'error' => 'Session not found'], 404);
+            }
+
+            $passed = (float) $data['completion_percentage'] >= 80;
+
+            SelfStudyLesson::where('id', $data['id'])->update([
+                'completed_at'   => $passed ? now() : null,
+                'seconds_viewed' => (int) $data['playback_progress_seconds'],
             ]);
 
-            // Find the session by session_id (UUID is globally unique)
-            $selfStudyLesson = SelfStudyLesson::where('session_id', $sessionId)
-                ->first();
-
-            if (!$selfStudyLesson) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session not found',
-                ], 404);
-            }
-
-            // Complete session using service - pass both session and student
-            $result = $this->sessionService->completeSession($selfStudyLesson, Auth::user());
-
-            if (!$result['success']) {
-                return response()->json([
-                    'success' => false,
-                    'error' => $result['message'] ?? 'Failed to complete session',
-                ], 500);
-            }
+            $this->forgetSessionCache($sessionId);
 
             Log::info('Lesson session completed', [
-                'student_id' => $studentId,
-                'session_id' => $sessionId,
-                'passed' => $result['passed'],
-                'quota_consumed' => $result['quota_consumed'],
+                'student_id' => Auth::id(),
+                'record_id'  => $data['id'],
+                'passed'     => $passed,
             ]);
 
             return response()->json([
-                'success' => true,
-                'message' => $result['message'],
-                'passed' => $result['passed'],
-                'completion_percentage' => $selfStudyLesson->completion_percentage,
-                'quota_consumed_minutes' => $result['quota_consumed'],
-                'threshold_met' => $selfStudyLesson->meetsCompletionThreshold(),
+                'success'               => true,
+                'message'               => $passed ? 'Lesson completed successfully.' : 'Session ended (threshold not met).',
+                'passed'                => $passed,
+                'completion_percentage' => $data['completion_percentage'],
+                'quota_consumed_minutes'=> 0,
+                'threshold_met'         => $passed,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Failed to complete lesson session', [
-                'student_id' => Auth::id(),
-                'session_id' => $request->input('session_id'),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to complete session. Please try again or contact support.',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return response()->json(['success' => false, 'error' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            Log::error('Failed to complete lesson session', ['student_id' => Auth::id(), 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to complete session. Please try again or contact support.', 'debug' => config('app.debug') ? $e->getMessage() : null], 500);
         }
     }
 
-    /**
-     * Get session status
-     *
-     * GET /classroom/lesson/session-status/{sessionId}
-     *
-     * Returns:
-     * - Current session state
-     * - Progress and pause usage
-     * - Time remaining
-     *
-     * Used for:
-     * - Resuming after browser refresh
-     * - Checking session validity
-     */
     public function getSessionStatus(string $sessionId)
     {
         try {
-            $studentId = Auth::id();
+            $data = $this->getSessionCache($sessionId);
 
-            // Find the session by session_id (UUID is globally unique)
-            $selfStudyLesson = SelfStudyLesson::where('session_id', $sessionId)
-                ->first();
-
-            if (!$selfStudyLesson) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Session not found',
-                ], 404);
+            if (!$data) {
+                return response()->json(['success' => false, 'error' => 'Session not found'], 404);
             }
 
-            // Check if expired
-            $isExpired = $selfStudyLesson->isSessionExpired();
-            $timeRemaining = $selfStudyLesson->getSessionTimeRemaining();
+            $isExpired = now()->toISOString() >= $data['expires_at'];
 
             return response()->json([
                 'success' => true,
                 'session' => [
-                    'isActive' => !$isExpired && $selfStudyLesson->quota_status !== 'consumed',
-                    'sessionId' => $selfStudyLesson->session_id,
-                    'lessonId' => $selfStudyLesson->lesson_id,
-                    'courseAuthId' => $selfStudyLesson->course_auth_id,
-                    'startedAt' => $selfStudyLesson->created_at->toISOString(),
-                    'expiresAt' => $selfStudyLesson->session_expires_at?->toISOString(),
-                    'isExpired' => $isExpired,
-                    'timeRemaining' => $timeRemaining,
-                    'videoDurationSeconds' => $selfStudyLesson->video_duration_seconds,
-                    'playbackProgressSeconds' => $selfStudyLesson->playback_progress_seconds,
-                    'completionPercentage' => $selfStudyLesson->completion_percentage,
-                    'totalPauseAllowed' => $selfStudyLesson->total_pause_minutes_allowed,
-                    'pauseUsed' => $selfStudyLesson->total_pause_minutes_used,
-                    'pauseRemaining' => $selfStudyLesson->getRemainingPauseMinutes(),
-                    'quotaStatus' => $selfStudyLesson->quota_status,
-                    'quotaConsumed' => $selfStudyLesson->quota_consumed_minutes,
-                ]
+                    'isActive'                => !$isExpired && !$data['is_completed'],
+                    'sessionId'               => $sessionId,
+                    'lessonId'                => $data['lesson_id'],
+                    'courseAuthId'            => $data['course_auth_id'],
+                    'startedAt'               => $data['started_at'],
+                    'expiresAt'               => $data['expires_at'],
+                    'isExpired'               => $isExpired,
+                    'timeRemaining'           => null,
+                    'videoDurationSeconds'    => $data['video_duration_seconds'],
+                    'playbackProgressSeconds' => $data['playback_progress_seconds'],
+                    'completionPercentage'    => $data['completion_percentage'],
+                    'totalPauseAllowed'       => $data['total_pause_allowed'],
+                    'pauseUsed'               => $data['pause_used'],
+                    'pauseRemaining'          => max(0, $data['total_pause_allowed'] - $data['pause_used']),
+                    'quotaStatus'             => $data['is_completed'] ? 'consumed' : 'pending',
+                    'quotaConsumed'           => 0,
+                ],
             ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to get session status', [
-                'student_id' => Auth::id(),
-                'session_id' => $sessionId,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Failed to retrieve session status',
-                'debug' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+        } catch (\Throwable $e) {
+            Log::error('Failed to get session status', ['student_id' => Auth::id(), 'session_id' => $sessionId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'error' => 'Failed to retrieve session status', 'debug' => config('app.debug') ? $e->getMessage() : null], 500);
         }
     }
 }
