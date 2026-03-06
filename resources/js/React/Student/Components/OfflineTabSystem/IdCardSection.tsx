@@ -11,11 +11,13 @@ const cardStyle: React.CSSProperties = {
 interface IdCardSectionProps {
     validations: any;
     student: any;
+    courseAuthId?: number | null;
 }
 
 const IdCardSection: React.FC<IdCardSectionProps> = ({
     validations,
     student,
+    courseAuthId = null,
 }) => {
     type CaptureType = "upload" | "webcam" | "preview" | null;
     const [showCaptureType, setShowCaptureType] =
@@ -140,19 +142,20 @@ const IdCardSection: React.FC<IdCardSectionProps> = ({
                                 data={{
                                     course_date_id: null,
                                     student_unit_id: null,
+                                    course_auth_id: courseAuthId ?? null,
                                 }}
                                 photoType="idcard"
                                 student={(student as any) || ({} as any)}
                                 validations={
                                     validations
                                         ? {
-                                              headshot:
-                                                  (validations as any)
-                                                      ?.headshot ?? null,
-                                              idcard:
-                                                  (validations as any)
-                                                      ?.idcard ?? null,
-                                          }
+                                            headshot:
+                                                (validations as any)
+                                                    ?.headshot ?? null,
+                                            idcard:
+                                                (validations as any)
+                                                    ?.idcard ?? null,
+                                        }
                                         : null
                                 }
                                 showCaptureType={showCaptureType as any}

@@ -121,11 +121,16 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                     <IdCardSection
                         validations={validations}
                         student={student?.student ?? null}
+                        courseAuthId={courseAuthId}
                     />
                 </div>
 
                 <div className="col-12 col-lg-6">
-                    <SignaturesSection />
+                    <SignaturesSection
+                        courseAuthId={courseAuthId}
+                        studentId={(student?.student as any)?.id ?? null}
+                        existingSignatureUrl={(validations as any)?.signature ?? null}
+                    />
                 </div>
             </div>
         </div>

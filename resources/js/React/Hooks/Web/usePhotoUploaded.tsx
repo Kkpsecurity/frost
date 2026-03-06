@@ -242,10 +242,13 @@ const usePhotoUploaded = ({
                 // Upload the converted file to the server
                 const formData = new FormData();
                 formData.append("photoType", photoType);
-                if (student.course_auth_id) {
+                // Prefer course_auth_id on the student object; fall back to data.course_auth_id
+                const resolvedCourseAuthId =
+                    student.course_auth_id ?? (data as any)?.course_auth_id ?? null;
+                if (resolvedCourseAuthId) {
                     formData.append(
                         "course_auth_id",
-                        student.course_auth_id.toString()
+                        resolvedCourseAuthId.toString()
                     );
                 }
                 if (data?.course_date_id) {
