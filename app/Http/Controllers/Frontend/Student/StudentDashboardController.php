@@ -250,10 +250,29 @@ class StudentDashboardController extends Controller
             $onboardingCompleted = $this->hasCompletedOnboarding($courseAuth->user_id, $todayUnit->id);
         }
 
+        // Resolve signature URL — stored per CourseAuth in StudentUnit.verified['signature_path']
+        $signatureUrl = null;
+        $signatureUnit = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+            ->orderByDesc('course_date_id')
+            ->limit(25)
+            ->get()
+            ->first(function ($unit) {
+                $v = $this->decodeVerifiedData($unit->getRawOriginal('verified'));
+                return !empty($v['signature_path']);
+            });
+        if ($signatureUnit) {
+            $v = $this->decodeVerifiedData($signatureUnit->getRawOriginal('verified'));
+            $rel = ltrim((string) $v['signature_path'], '/');
+            if (\Storage::disk('public')->exists($rel)) {
+                $signatureUrl = url('storage/' . $rel);
+            }
+        }
+
         return [
             // Backward-compatible fields used by onboarding UI.
             'idcard' => $idCardUrl,
             'headshot' => $headshotByDay,
+            'signature' => $signatureUrl,
 
             // Explicit review statuses (optional for now).
             // IMPORTANT: Only report approved/rejected if the file actually exists
@@ -2946,6 +2965,77 @@ class StudentDashboardController extends Controller
                 'success' => false,
                 'message' => 'Upload failed: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * POST /classroom/save-student-signature
+     * Save a student's drawn signature (base64 PNG dataURL) for their course enrollment.
+     */
+    public function saveStudentSignature(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'course_auth_id' => 'required|integer|exists:course_auths,id',
+                'student_id'     => 'required|integer',
+                'signature'      => 'required|string',
+            ]);
+
+            $user = Auth::user();
+            if ((int) $validated['student_id'] !== (int) $user->id) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+            }
+
+            $courseAuth = CourseAuth::where('id', (int) $validated['course_auth_id'])
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$courseAuth) {
+                return response()->json(['success' => false, 'message' => 'Enrollment not found'], 404);
+            }
+
+            // Decode base64 dataURL — accept png/jpeg/jpg/webp
+            $dataUrl = $validated['signature'];
+            if (!preg_match('/^data:image\/(png|jpeg|jpg|webp);base64,/', $dataUrl)) {
+                return response()->json(['success' => false, 'message' => 'Invalid signature format'], 422);
+            }
+            $base64Data = (string) preg_replace('/^data:image\/[a-z]+;base64,/', '', $dataUrl);
+            $imageData  = base64_decode($base64Data, true);
+            if ($imageData === false || strlen($imageData) === 0) {
+                return response()->json(['success' => false, 'message' => 'Invalid base64 data'], 422);
+            }
+
+            // Deterministic path: media/validations/signatures/{course_auth_id}_{name}.png
+            $safeName     = strtolower(str_replace([' ', '/'], ['_', ''], $user->name ?? 'student'));
+            $relativePath = 'media/validations/signatures/' . $courseAuth->id . '_' . $safeName . '.png';
+
+            \Storage::disk('public')->put($relativePath, $imageData);
+
+            // Record in most-recent StudentUnit.verified
+            $studentUnit = StudentUnit::where('course_auth_id', (int) $courseAuth->id)
+                ->orderByDesc('course_date_id')
+                ->first();
+
+            if ($studentUnit) {
+                $verified = $this->decodeVerifiedData($studentUnit->getRawOriginal('verified'));
+                $verified['signature_path']     = $relativePath;
+                $verified['signature_saved_at'] = now()->toISOString();
+                $studentUnit->verified = $verified;
+                $studentUnit->save();
+            }
+
+            $signatureUrl = url('storage/' . $relativePath);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Signature saved',
+                'data'    => ['signature_url' => $signatureUrl],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('saveStudentSignature failed', ['error' => $e->getMessage(), 'user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'message' => 'Failed to save signature'], 500);
         }
     }
 

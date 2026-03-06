@@ -154,6 +154,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/classroom/upload-student-photo', [StudentDashboardController::class, 'uploadStudentPhoto'])
         ->name('classroom.upload-student-photo');
 
+    Route::post('/classroom/save-student-signature', [StudentDashboardController::class, 'saveStudentSignature'])
+        ->name('classroom.save-student-signature');
+
     Route::get('/classroom/id-verification/status/{studentId}', [StudentDashboardController::class, 'getIdVerificationStatus'])
         ->where('studentId', '[0-9]+')
         ->name('classroom.id-verification.status');
