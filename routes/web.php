@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     // Notification routes
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'markAllNotificationsRead'])->name('notifications.mark-all-read');
     Route::get('/notifications/{notification}/read', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'markNotificationRead'])->name('notifications.mark-read');
+    Route::post('/notifications/{notification}/delete', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'deleteNotification'])->name('notifications.delete');
 
     // Web Push subscription routes
     Route::prefix('push')->name('push.')->group(function () {

@@ -810,8 +810,20 @@ class ProfileController extends Controller
         $notification->markAsRead();
 
         // Redirect to the notification's URL if available, otherwise to notifications page
-        $redirectUrl = $notification->data['url'] ?? route('account.index', ['section' => 'notifications']);
+        $redirectUrl = $notification->data['url'] ?? route('account.index', ['section' => 'inbox']);
 
         return redirect($redirectUrl);
+    }
+
+    /**
+     * Delete a single notification
+     */
+    public function deleteNotification($notificationId)
+    {
+        $user = Auth::user();
+        $notification = $user->notifications()->findOrFail($notificationId);
+        $notification->delete();
+
+        return back()->with('success', 'Notification deleted.');
     }
 }
