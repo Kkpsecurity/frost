@@ -35,7 +35,9 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
 
     const studentContext = useStudent();
     const [loading, setLoading] = useState(true);
+    const [loadingLessons, setLoadingLessons] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [fetchedLessons, setFetchedLessons] = useState<any[]>([]);
     const [lessonStats, setLessonStats] = useState({
         total: 0,
         completed: 0,
@@ -143,9 +145,6 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
         (studentContext as any)?.selectedCourse?.name ||
         "Course";
 
-    const lessonPayload =
-        studentContext?.lessonsByCourseAuth?.[courseAuthId] ?? null;
-
     const handleResetExam = async () => {
         if (resettingExam) return;
 
@@ -180,6 +179,9 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                 if (examAuth?.id) {
                     clearExamLocalState(examAuth.id);
                 }
+                // Also clear the active-exam-auth localStorage key so MainClassroom
+                // does not immediately re-open ExamRoom on the next load.
+                clearStoredActiveExamAuthId();
                 alert(
                     `✅ ${data.message || "Exam reset successful"} - Reloading...`,
                 );
@@ -187,7 +189,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             } else {
                 alert(
                     "❌ Failed to reset exam: " +
-                        (data.error || "Unknown error"),
+                    (data.error || "Unknown error"),
                 );
                 setResettingExam(false);
             }
@@ -317,7 +319,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             } else {
                 alert(
                     "Failed to load exam: " +
-                        (refreshedData.error || "Unknown error"),
+                    (refreshedData.error || "Unknown error"),
                 );
             }
         } catch (error) {
@@ -424,7 +426,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             } else {
                 alert(
                     "Failed to start exam: " +
-                        (data.error || data.message || "Unknown error"),
+                    (data.error || data.message || "Unknown error"),
                 );
                 setStartingExam(false);
             }
@@ -434,6 +436,38 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             setStartingExam(false);
         }
     };
+
+    // Fetch lessons directly (like MainOffline) — student poll does not include lessons_by_course_auth
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            if (!courseAuthId) {
+                setLoadingLessons(false);
+                return;
+            }
+            setLoadingLessons(true);
+            try {
+                const resp = await fetch(
+                    `/classroom/self-study/lessons?course_auth_id=${courseAuthId}`,
+                    { method: "GET", headers: { Accept: "application/json" } },
+                );
+                const payload = await resp.json();
+                if (!cancelled) {
+                    if (resp.ok && payload?.success && Array.isArray(payload?.data?.lessons)) {
+                        setFetchedLessons(payload.data.lessons);
+                    } else {
+                        console.error("🎓 ExamRoom: lessons fetch failed", resp.status, payload);
+                    }
+                }
+            } catch (err) {
+                if (!cancelled) console.error("🎓 ExamRoom: lessons fetch error", err);
+            } finally {
+                if (!cancelled) setLoadingLessons(false);
+            }
+        };
+        load();
+        return () => { cancelled = true; };
+    }, [courseAuthId]);
 
     useEffect(() => {
         console.log("🎓 ExamRoom mounted", {
@@ -449,7 +483,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             has_previous_attempt: studentExam?.has_previous_attempt,
             previous_exam_score: studentExam?.previous_exam_score,
             previous_exam_passed: studentExam?.previous_exam_passed,
-            lessonPayload,
+            fetchedLessons,
         });
 
         // Fetch exam attempts to show history
@@ -471,17 +505,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             }
         }
 
-        if (!lessonPayload) {
-            console.log("🎓 ExamRoom: lesson payload not yet available");
-            setLessonStats({ total: 0, completed: 0 });
-            setLoading(false);
-            return;
-        }
-
-        const lessons = Array.isArray(lessonPayload.lessons)
-            ? lessonPayload.lessons
-            : [];
-        const completed = lessons.filter(
+        const completed = fetchedLessons.filter(
             (lesson: any) =>
                 lesson.is_completed ||
                 lesson.status === "completed" ||
@@ -489,22 +513,24 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
         ).length;
 
         setLessonStats({
-            total: lessons.length,
+            total: fetchedLessons.length,
             completed,
         });
         setLoading(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         courseAuthId,
-        lessonPayload,
+        fetchedLessons,
         studentExam?.has_active_attempt,
         studentExam?.active_exam_auth_id,
     ]);
 
-    // Determine if student is eligible to take exam
-    // If studentExam exists with is_ready=true, or if we're in ExamRoom at all (means backend allowed it)
+    // Determine if student is eligible to take exam.
+    // Only trust backend is_ready (which already calls AllLessonsCompleted + exam gate checks).
+    // The local lessonStats fallback is kept only when ALL lessons are verified complete (total > 0).
     const isExamEligible =
-        studentExam?.is_ready || lessonStats.completed === lessonStats.total;
+        studentExam?.is_ready ||
+        (lessonStats.total > 0 && lessonStats.completed === lessonStats.total);
     const hasActiveAttempt = studentExam?.has_active_attempt;
     const shouldAutoResume =
         studentExam?.has_active_attempt &&
@@ -512,8 +538,8 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
         !examAuth &&
         examView === "dashboard";
 
-    // Loading state
-    if (loading || loadingExam || shouldAutoResume) {
+    // Loading state — wait for both lesson fetch and any in-flight exam auth load
+    if (loading || loadingLessons || loadingExam || shouldAutoResume) {
         return (
             <div
                 className="d-flex justify-content-center align-items-center"
@@ -608,9 +634,10 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                             className="mb-0"
                                             style={{ color: "#b8c5d6" }}
                                         >
-                                            🎉 Congratulations! You've completed
-                                            all {lessonStats.completed} lessons.
-                                            You're ready for the final exam!
+                                            {lessonStats.total > 0 && lessonStats.completed >= lessonStats.total
+                                                ? `🎉 Congratulations! You've completed all ${lessonStats.total} lessons. You're ready for the final exam!`
+                                                : `🎓 Your exam access is ready. (${lessonStats.completed} / ${lessonStats.total} lessons completed)`
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -643,7 +670,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     style={{
                                                         backgroundColor:
                                                             attemptStats.remaining >
-                                                            0
+                                                                0
                                                                 ? "#27ae60"
                                                                 : "#e74c3c",
                                                         fontSize: "0.75rem",
@@ -740,24 +767,24 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                 </button>
                                             </>
                                         ) : isExamEligible &&
-                                          attemptStats.remaining > 0 ? (
+                                            attemptStats.remaining > 0 ? (
                                             <>
                                                 {attemptStats.remaining ===
                                                     1 && (
-                                                    <div
-                                                        className="alert mb-3"
-                                                        style={{
-                                                            backgroundColor:
-                                                                "rgba(241, 196, 15, 0.1)",
-                                                            border: "1px solid #f1c40f",
-                                                            color: "#fff",
-                                                        }}
-                                                    >
-                                                        <i className="fas fa-exclamation-triangle me-2"></i>
-                                                        ⚠️ This is your final
-                                                        attempt!
-                                                    </div>
-                                                )}
+                                                        <div
+                                                            className="alert mb-3"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    "rgba(241, 196, 15, 0.1)",
+                                                                border: "1px solid #f1c40f",
+                                                                color: "#fff",
+                                                            }}
+                                                        >
+                                                            <i className="fas fa-exclamation-triangle me-2"></i>
+                                                            ⚠️ This is your final
+                                                            attempt!
+                                                        </div>
+                                                    )}
                                                 <button
                                                     className="btn btn-lg w-100"
                                                     style={{
@@ -782,7 +809,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                         <>
                                                             <i className="fas fa-play-circle me-2"></i>
                                                             {attemptStats.total >
-                                                            0
+                                                                0
                                                                 ? "Retake Exam"
                                                                 : "Begin Exam"}
                                                         </>
@@ -1036,10 +1063,10 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                 >
                                                     {lessonStats.total > 0
                                                         ? Math.round(
-                                                              (lessonStats.completed /
-                                                                  lessonStats.total) *
-                                                                  100,
-                                                          )
+                                                            (lessonStats.completed /
+                                                                lessonStats.total) *
+                                                            100,
+                                                        )
                                                         : 0}
                                                     %
                                                 </div>
@@ -1197,11 +1224,10 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                             }}
                                                         >
                                                             <i
-                                                                className={`fas ${
-                                                                    studentExam.previous_exam_passed
-                                                                        ? "fa-check"
-                                                                        : "fa-times"
-                                                                } text-white fa-2x`}
+                                                                className={`fas ${studentExam.previous_exam_passed
+                                                                    ? "fa-check"
+                                                                    : "fa-times"
+                                                                    } text-white fa-2x`}
                                                             ></i>
                                                         </div>
                                                         <h5
@@ -1258,17 +1284,17 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                         >
                                                             {studentExam.previous_exam_completed_at
                                                                 ? new Date(
-                                                                      Number(
-                                                                          studentExam.previous_exam_completed_at,
-                                                                      ) * 1000,
-                                                                  ).toLocaleDateString(
-                                                                      undefined,
-                                                                      {
-                                                                          year: "numeric",
-                                                                          month: "short",
-                                                                          day: "numeric",
-                                                                      },
-                                                                  )
+                                                                    Number(
+                                                                        studentExam.previous_exam_completed_at,
+                                                                    ) * 1000,
+                                                                ).toLocaleDateString(
+                                                                    undefined,
+                                                                    {
+                                                                        year: "numeric",
+                                                                        month: "short",
+                                                                        day: "numeric",
+                                                                    },
+                                                                )
                                                                 : "N/A"}
                                                         </h6>
                                                     </div>

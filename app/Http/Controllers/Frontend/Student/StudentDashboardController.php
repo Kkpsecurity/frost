@@ -597,6 +597,10 @@ class StudentDashboardController extends Controller
 
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = [
                         'is_ready' => (bool) ($examObj->is_ready ?? false),
+                        // True only when the student has genuinely completed all course lessons.
+                        // Unlike is_ready, this is NOT affected by exam_admin_id overrides.
+                        // Used by the frontend to decide whether to auto-route to ExamRoom.
+                        'all_lessons_completed' => $courseAuth->AllLessonsCompleted(),
                         'next_attempt_at' => $examObj->next_attempt_at ?? null,
                         'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
                         'has_active_attempt' => $activeExamAuth !== null,

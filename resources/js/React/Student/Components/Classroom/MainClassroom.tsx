@@ -378,11 +378,13 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         studentContext?.studentExamsByCourseAuth?.[courseAuthId];
 
     // Check if exam is actually ready (not just if the key exists)
-    // Only show exam room if:
-    // 1. Backend says exam is ready (studentExam?.is_ready)
-    // 2. OR student has an active exam attempt (studentExam?.has_active_attempt)
+    // Only auto-route to ExamRoom if:
+    // 1. Student genuinely completed all lessons (NOT affected by exam_admin_id bypass)
+    // 2. OR student has an active exam attempt in progress
+    // NOTE: is_ready intentionally NOT used here — it can be true via admin override
+    // even when lessons are incomplete, which would wrongly suppress the offline classroom.
     const allLessonsComplete =
-        studentExam?.is_ready || studentExam?.has_active_attempt;
+        studentExam?.all_lessons_completed || studentExam?.has_active_attempt;
 
     console.log("🎓 ExamRoom Auto-Detection:", {
         courseAuthId,
