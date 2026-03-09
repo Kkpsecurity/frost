@@ -64,7 +64,12 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     // ONLINE MODE: Lessons for TODAY only (based on courseUnit/day_number)
     // Backend returns lessons for current CourseUnit (e.g., Wednesday = Day 3 lessons)
     const lessons = classroomData?.lessons || [];
-    const studentLessons = studentContext?.studentLessons || [];
+    // Use per-enrollment lesson completions when available (avoids showing Course D's
+    // completion status when the dev toggle forces Online view for Course G).
+    const studentLessons =
+        (courseAuthId && studentContext?.lessonsByCourseAuth?.[courseAuthId]) ||
+        studentContext?.studentLessons ||
+        [];
     const activeLesson = classroomData?.activeLesson || null;
     const isLoadingLessons = false;
 

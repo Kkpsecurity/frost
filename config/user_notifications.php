@@ -276,6 +276,13 @@ return [
                 'channels' => ['database', 'mail', 'browser'],
                 'user_controllable' => false,
             ],
+            'self_study_lesson_completed' => [
+                'key' => 'self_study.lesson_completed',
+                'name' => 'Self-Study Lesson Completed',
+                'priority' => 'low',
+                'channels' => ['database'],
+                'user_controllable' => true,
+            ],
         ],
 
         /*

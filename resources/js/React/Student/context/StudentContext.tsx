@@ -33,6 +33,8 @@ export interface StudentExam {
     previous_exam_passed: boolean;
     previous_exam_score: string | null;
     previous_exam_completed_at: string | null;
+    /** Backend reason why exam is NOT ready (null means it IS ready). E.g. 'lessons', 'cooldown', 'inactive', 'already_passed' */
+    failure_reason: string | null;
 }
 
 export interface StudentContextType {

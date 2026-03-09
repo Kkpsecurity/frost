@@ -593,6 +593,7 @@ class StudentDashboardController extends Controller
                     $examFmt = 'YYYY-MM-DD[T]HH:mm:ssZ';
                     $examObj = $courseAuth->ClassroomExam($examFmt);
                     $activeExamAuth = $courseAuth->ActiveExamAuth();
+                    $failureReason = $courseAuth->ExamReadinessFailureReason();
 
                     $studentExamsByCourseAuth[(int) $courseAuth->id] = [
                         'is_ready' => (bool) ($examObj->is_ready ?? false),
@@ -600,6 +601,8 @@ class StudentDashboardController extends Controller
                         'missing_id_file' => (bool) ($examObj->missing_id_file ?? false),
                         'has_active_attempt' => $activeExamAuth !== null,
                         'active_exam_auth_id' => $activeExamAuth ? (int) $activeExamAuth->id : null,
+                        // Surface the reason so the frontend console can explain why exam is ready/blocked
+                        'failure_reason' => $failureReason['reason'] ?? null,
                     ];
 
                     \Log::info("✅ Exam data for courseAuthId {$courseAuth->id}: is_ready=" . ($examObj->is_ready ? 'true' : 'false'));
@@ -1521,12 +1524,35 @@ class StudentDashboardController extends Controller
             /** @var \App\Services\PauseTimeCalculator $pauseCalculator */
             $pauseCalculator = app(\App\Services\PauseTimeCalculator::class);
 
-            // Get completed lesson IDs directly from self_study_lessons table
-            $completedLessonIds = \App\Models\SelfStudyLesson::where('course_auth_id', $courseAuth->id)
+            // A lesson is considered "completed" if the student finished it in EITHER:
+            //   (a) self-study / offline mode  → SelfStudyLesson.completed_at
+            //   (b) live / instructor-led mode → StudentLesson.completed_at (via StudentUnit)
+            //
+            // IMPORTANT: this must mirror exactly what AllLessonsCompleted() / CompletedLessons()
+            // counts on the backend exam gate.  If the two sources diverge the student sees the
+            // exam room (is_ready=true) but the sidebar shows the lessons as incomplete.
+
+            // (a) Self-study completions
+            $selfStudyCompletedIds = \App\Models\SelfStudyLesson::where('course_auth_id', $courseAuth->id)
                 ->whereNotNull('completed_at')
                 ->pluck('lesson_id')
                 ->map(fn($id) => (int) $id)
                 ->all();
+
+            // (b) Live-class completions (StudentLesson → StudentUnit → CourseAuth)
+            $studentUnitIds = \App\Models\StudentUnit::where('course_auth_id', $courseAuth->id)
+                ->pluck('id');
+
+            $liveCompletedIds = $studentUnitIds->isNotEmpty()
+                ? \App\Models\StudentLesson::whereIn('student_unit_id', $studentUnitIds)
+                ->whereNotNull('completed_at')
+                ->pluck('lesson_id')
+                ->map(fn($id) => (int) $id)
+                ->all()
+                : [];
+
+            // Merge and de-duplicate — same logic as CompletedLessons()
+            $completedLessonIds = array_values(array_unique(array_merge($selfStudyCompletedIds, $liveCompletedIds)));
 
             $payloadLessons = $lessons->map(function ($lesson) use ($completedLessonIds, $bufferMinutes, $pauseCalculator) {
                 $lessonId = (int) ($lesson->id ?? 0);

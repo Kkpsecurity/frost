@@ -387,12 +387,24 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     };
 
     // Guard with courseDateId: keepPreviousData can leave stale data from a
-    // prior course's live session after the query is disabled (courseDateId=null).
-    // Without this guard, switching from Course D (live) → Course G (offline)
-    // would retain Course D's instructor/lessons in the context, causing dev
-    // tools "Online" toggle to show the wrong course.
+    // prior course's live session after the query is disabled (courseDateId=null)
+    // OR while the new course's poll is still loading (courseDateId changed but
+    // classroomPoll still shows the old course's data).
+    //
+    // Two-part guard:
+    //   1. courseDateId is non-null (discard when G is offline).
+    //   2. classroomPoll.courseDate.id matches courseDateId (discard stale D data
+    //      that keepPreviousData briefly shows after switching from D → G).
+    //
+    // Without part 2, switching from Course D (live) → Course G (waiting)
+    // briefly populates the context with D's instructor/lessons, causing the
+    // dev-tools "Online" toggle to show the wrong course.
+    const classroomPollMatchesCurrent =
+        classroomPoll?.courseDate?.id != null &&
+        classroomPoll.courseDate.id === courseDateId;
+
     const classroomContextValue: ClassroomContextType | null =
-        courseDateId && classroomPoll
+        courseDateId && classroomPoll && classroomPollMatchesCurrent
             ? {
                 data: classroomPoll,
                 course: null,

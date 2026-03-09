@@ -43,6 +43,16 @@ const SchoolDashboardTitleBar = ({
             "  - next_attempt_at:",
             effectiveStudentExam.next_attempt_at,
         );
+        console.log(
+            "  - failure_reason:",
+            (effectiveStudentExam as any).failure_reason ?? "(none — exam is ready)",
+        );
+        if ((effectiveStudentExam as any).failure_reason === null && effectiveStudentExam.is_ready) {
+            console.log("  ℹ️  Exam is READY — all lessons complete (or admin override)");
+        }
+        if ((effectiveStudentExam as any).failure_reason === 'lessons') {
+            console.warn("  ⚠️  Exam blocked: not all lessons completed");
+        }
     } else {
         console.warn(
             "❌ No exam data found for courseAuthId:",

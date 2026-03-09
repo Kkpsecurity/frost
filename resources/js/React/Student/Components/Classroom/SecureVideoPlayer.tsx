@@ -437,14 +437,15 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
     };
 
     // Handle completion
-    const handleCompletion = () => {
+    const handleCompletion = async () => {
         setPlaying(false);
 
-        // Final progress update
+        // Await the final progress flush so the cache has the correct
+        // completion_percentage before completeSession reads it.
         const finalPercentage = (furthestPointReached / duration) * 100;
-        updateProgress(furthestPointReached, finalPercentage);
+        await updateProgress(furthestPointReached, finalPercentage);
 
-        // Notify parent
+        // Notify parent (triggers completeSession on the backend)
         onComplete();
     };
 
@@ -725,8 +726,8 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                         resolvedPlaybackProgressSeconds > 0
                                             ? resolvedPlaybackProgressSeconds
                                             : (resolvedCompletionPercentage /
-                                                  100) *
-                                              video.duration;
+                                                100) *
+                                            video.duration;
                                     setFurthestPointReached(savedPosition);
                                     setCurrentTime(savedPosition);
                                     video.currentTime = savedPosition;

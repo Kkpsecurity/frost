@@ -63,6 +63,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
         quota,
         isLoading: isLoadingQuota,
         error: quotaError,
+        refetch: refetchQuota,
     } = useVideoQuota();
 
     const [isStarting, setIsStarting] = React.useState(false);
@@ -328,6 +329,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
             onActiveSessionChange?.(null);
 
             await refreshLessons();
+            refetchQuota();
         } catch (e: any) {
             setError(e?.message || "Failed to complete session");
         } finally {

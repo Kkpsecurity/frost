@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Frontend\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\SelfStudyLesson;
+use App\Models\StudentVideoQuota;
+use App\Notifications\Classroom\SelfStudyLessonCompletedNotification;
+use App\Services\QuotaRoundingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -65,12 +68,18 @@ class StudentLessonSessionController extends Controller
             $courseAuthId         = (int) $validated['course_auth_id'];
             $videoDurationSeconds = (int) $validated['video_duration_seconds'];
 
-            // Create the SelfStudyLesson using only columns that exist in the DB.
-            $record = SelfStudyLesson::create([
-                'course_auth_id' => $courseAuthId,
-                'lesson_id'      => $lessonId,
-                'agreed_at'      => now(),
-            ]);
+            // Find or create the SelfStudyLesson record.
+            // firstOrCreate prevents a duplicate-key crash when the student
+            // re-opens a lesson they already have a record for.
+            $record = SelfStudyLesson::firstOrCreate(
+                [
+                    'course_auth_id' => $courseAuthId,
+                    'lesson_id'      => $lessonId,
+                ],
+                [
+                    'agreed_at' => now(),
+                ]
+            );
 
             $sessionId   = (string) Str::uuid();
             $expiresAt   = now()->addSeconds(self::SESSION_TTL_SECONDS);
@@ -213,26 +222,64 @@ class StudentLessonSessionController extends Controller
 
             $passed = (float) $data['completion_percentage'] >= 80;
 
-            SelfStudyLesson::where('id', $data['id'])->update([
-                'completed_at'   => $passed ? now() : null,
-                'seconds_viewed' => (int) $data['playback_progress_seconds'],
-            ]);
+            // Calculate quota to consume: round watched seconds up to nearest
+            // standard increment (15 / 30 / 60 min) to match the old service.
+            $watchedSeconds  = (int) $data['playback_progress_seconds'];
+            $watchedMinutes  = (int) ceil($watchedSeconds / 60);
+            $rounder         = new QuotaRoundingService();
+            $quotaMinutes    = $rounder->roundUp(max(1, $watchedMinutes));
+
+            /** @var SelfStudyLesson $selfStudyRecord */
+            $selfStudyRecord = SelfStudyLesson::find($data['id']);
+            if ($selfStudyRecord) {
+                $selfStudyRecord->completed_at   = $passed ? now() : null;
+                $selfStudyRecord->seconds_viewed = $watchedSeconds;
+                $selfStudyRecord->save();
+
+                // Refresh PCLCache so the lesson shows as completed immediately.
+                $selfStudyRecord->CourseAuth?->PCLCache(true);
+            } else {
+                // Fallback: raw update if model not found (shouldn't happen).
+                SelfStudyLesson::where('id', $data['id'])->update([
+                    'completed_at'   => $passed ? now() : null,
+                    'seconds_viewed' => $watchedSeconds,
+                ]);
+            }
+
+            // Deduct from student quota regardless of pass/fail —
+            // the student consumed the time even if they didn't reach 80%.
+            $quota = StudentVideoQuota::where('user_id', Auth::id())->first();
+            if ($quota) {
+                $quota->consumeQuota($quotaMinutes);
+            }
+
+            // Notify the student about the completed/ended session.
+            $user = Auth::user();
+            if ($user && $selfStudyRecord) {
+                $user->notify(new SelfStudyLessonCompletedNotification(
+                    $selfStudyRecord,
+                    $passed,
+                    $quotaMinutes,
+                ));
+            }
 
             $this->forgetSessionCache($sessionId);
 
             Log::info('Lesson session completed', [
-                'student_id' => Auth::id(),
-                'record_id'  => $data['id'],
-                'passed'     => $passed,
+                'student_id'      => Auth::id(),
+                'record_id'       => $data['id'],
+                'passed'          => $passed,
+                'watched_seconds' => $watchedSeconds,
+                'quota_minutes'   => $quotaMinutes,
             ]);
 
             return response()->json([
-                'success'               => true,
-                'message'               => $passed ? 'Lesson completed successfully.' : 'Session ended (threshold not met).',
-                'passed'                => $passed,
-                'completion_percentage' => $data['completion_percentage'],
-                'quota_consumed_minutes'=> 0,
-                'threshold_met'         => $passed,
+                'success'                => true,
+                'message'                => $passed ? 'Lesson completed successfully.' : 'Session ended (threshold not met).',
+                'passed'                 => $passed,
+                'completion_percentage'  => $data['completion_percentage'],
+                'quota_consumed_minutes' => $quotaMinutes,
+                'threshold_met'          => $passed,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['success' => false, 'error' => 'Validation failed', 'errors' => $e->errors()], 422);
