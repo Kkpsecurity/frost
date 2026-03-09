@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * StudentVideoQuota Model
- * 
+ *
  * Tracks video quota allocation, usage, and refunds for students
  * in self-study mode.
  */
@@ -23,6 +23,7 @@ class StudentVideoQuota extends Model
      */
     protected $fillable = [
         'user_id',
+        'course_auth_id',
         'total_hours',
         'used_hours',
         'refunded_hours',
@@ -89,7 +90,7 @@ class StudentVideoQuota extends Model
         if ($total <= 0) {
             return 0;
         }
-        
+
         return ($this->getRemainingHours() / $total) * 100;
     }
 

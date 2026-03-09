@@ -234,10 +234,11 @@ class DevToolsController extends Controller
         }
 
         $userId = Auth::id();
+        $courseAuthId = $request->integer('course_auth_id');
 
         try {
             $quota = StudentVideoQuota::firstOrCreate(
-                ['user_id' => $userId],
+                ['user_id' => $userId, 'course_auth_id' => $courseAuthId],
                 ['total_hours' => 10.00, 'used_hours' => 0.00, 'refunded_hours' => 0.00]
             );
 

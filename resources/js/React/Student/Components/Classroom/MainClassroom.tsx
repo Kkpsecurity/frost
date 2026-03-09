@@ -202,7 +202,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                     "X-Requested-With": "XMLHttpRequest",
                 },
                 credentials: "same-origin",
-                body: JSON.stringify({}),
+                body: JSON.stringify({ course_auth_id: courseAuthId }),
             });
 
             const data = await response.json();

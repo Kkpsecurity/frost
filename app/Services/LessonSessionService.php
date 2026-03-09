@@ -112,7 +112,7 @@ class LessonSessionService
 
             // Get or create student quota record
             $quota = StudentVideoQuota::firstOrCreate(
-                ['user_id' => $student->id],
+                ['user_id' => $student->id, 'course_auth_id' => $courseAuthId],
                 ['total_hours' => 10.00, 'used_hours' => 0.00, 'refunded_hours' => 0.00]
             );
 
@@ -234,7 +234,9 @@ class LessonSessionService
             ]);
 
             // Consume quota from student
-            $quota = StudentVideoQuota::where('user_id', $student->id)->first();
+            $quota = StudentVideoQuota::where('user_id', $student->id)
+                ->where('course_auth_id', $session->course_auth_id)
+                ->first();
             if ($quota) {
                 $quota->consumeQuota($roundedQuotaMinutes);
             }
@@ -325,7 +327,9 @@ class LessonSessionService
 
             // Refund the quota
             $refundMinutes = $failedSession->quota_consumed_minutes;
-            $quota = StudentVideoQuota::where('user_id', $student->id)->first();
+            $quota = StudentVideoQuota::where('user_id', $student->id)
+                ->where('course_auth_id', $failedSession->course_auth_id)
+                ->first();
 
             if ($quota) {
                 $quota->refundQuota($refundMinutes);

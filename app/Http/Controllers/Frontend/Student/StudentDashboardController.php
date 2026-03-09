@@ -2048,6 +2048,7 @@ class StudentDashboardController extends Controller
     {
         try {
             $user = Auth::user();
+            $courseAuthId = (int) request('course_auth_id');
 
             if (!$user) {
                 return response()->json([
@@ -2056,8 +2057,15 @@ class StudentDashboardController extends Controller
                 ], 401);
             }
 
+            if ($courseAuthId <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'course_auth_id is required'
+                ], 422);
+            }
+
             $quota = StudentVideoQuota::firstOrCreate(
-                ['user_id' => $user->id],
+                ['user_id' => $user->id, 'course_auth_id' => $courseAuthId],
                 ['total_hours' => 10.0, 'used_hours' => 0.0, 'refunded_hours' => 0.0]
             );
 

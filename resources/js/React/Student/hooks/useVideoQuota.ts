@@ -19,8 +19,8 @@ interface UseVideoQuotaResult {
     refetch: () => void;
 }
 
-const fetchVideoQuota = async (): Promise<VideoQuotaData> => {
-    const response = await fetch('/classroom/video-quota', {
+const fetchVideoQuota = async (courseAuthId: number): Promise<VideoQuotaData> => {
+    const response = await fetch(`/classroom/video-quota?course_auth_id=${courseAuthId}`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -46,7 +46,7 @@ export const useVideoQuota = (courseAuthId: number): UseVideoQuotaResult => {
         refetch
     } = useQuery({
         queryKey: ['video-quota', courseAuthId],
-        queryFn: fetchVideoQuota,
+        queryFn: () => fetchVideoQuota(courseAuthId),
         staleTime: 30 * 1000, // 30 seconds
         retry: 3,
         refetchOnWindowFocus: true, // Refresh when user returns to window

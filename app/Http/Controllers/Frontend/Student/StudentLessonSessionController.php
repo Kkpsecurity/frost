@@ -248,7 +248,9 @@ class StudentLessonSessionController extends Controller
 
             // Deduct from student quota regardless of pass/fail —
             // the student consumed the time even if they didn't reach 80%.
-            $quota = StudentVideoQuota::where('user_id', Auth::id())->first();
+            $quota = StudentVideoQuota::where('user_id', Auth::id())
+                ->where('course_auth_id', $data['course_auth_id'])
+                ->first();
             if ($quota) {
                 $quota->consumeQuota($quotaMinutes);
             }
