@@ -64,7 +64,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
         isLoading: isLoadingQuota,
         error: quotaError,
         refetch: refetchQuota,
-    } = useVideoQuota();
+    } = useVideoQuota(courseAuthId);
 
     const [isStarting, setIsStarting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);

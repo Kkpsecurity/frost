@@ -113,7 +113,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
         quota,
         isLoading: isLoadingQuota,
         error: quotaError,
-    } = useVideoQuota();
+    } = useVideoQuota(courseAuthId);
 
     // Lesson session hook - manages active session with locking
     const {

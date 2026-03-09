@@ -213,7 +213,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
             }
 
             // Refresh quota everywhere (Self-Study tab uses this query).
-            queryClient.invalidateQueries({ queryKey: ["video-quota"] });
+            queryClient.invalidateQueries({ queryKey: ["video-quota", courseAuthId] });
 
             alert("✅ Video quota reset.");
         } catch (error) {

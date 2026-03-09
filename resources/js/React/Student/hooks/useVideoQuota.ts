@@ -38,14 +38,14 @@ const fetchVideoQuota = async (): Promise<VideoQuotaData> => {
     return data.data || data; // Handle both {data: {...}} and direct response
 };
 
-export const useVideoQuota = (): UseVideoQuotaResult => {
+export const useVideoQuota = (courseAuthId: number): UseVideoQuotaResult => {
     const {
         data,
         isLoading,
         error,
         refetch
     } = useQuery({
-        queryKey: ['video-quota'],
+        queryKey: ['video-quota', courseAuthId],
         queryFn: fetchVideoQuota,
         staleTime: 30 * 1000, // 30 seconds
         retry: 3,
