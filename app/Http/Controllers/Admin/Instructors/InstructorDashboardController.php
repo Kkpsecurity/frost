@@ -178,6 +178,26 @@ class InstructorDashboardController extends Controller
     }
 
     /**
+     * Resolve the correct Zoom email for a given instructor and course title.
+     * Single source of truth — used by status check, toggle, and force-disable on start.
+     */
+    private function resolveZoomEmail($instructor, string $courseTitle): string
+    {
+        $courseTitle = strtoupper($courseTitle);
+        if (in_array($instructor->role_id ?? null, [1, 2])) {
+            // System Admin (1) or Administrator/Support (2) always use admin account
+            return 'instructor_admin@stgroupusa.com';
+        }
+        if (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
+            return 'instructor_d@stgroupusa.com';
+        }
+        if (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
+            return 'instructor_g@stgroupusa.com';
+        }
+        return 'instructor_admin@stgroupusa.com';
+    }
+
+    /**
      * Get zoom data for instructor (shared logic between poll and status endpoint)
      */
     private function getZoomDataForInstructor($instructor, $activeInstUnit = null)
@@ -192,22 +212,10 @@ class InstructorDashboardController extends Controller
             }
 
             $course = $activeInstUnit->CourseDate->CourseUnit->Course ?? null;
-            $courseTitle = strtoupper($course->title ?? '');
+            $courseTitle = $course->title ?? '';
 
-            // Determine which Zoom account to use based on course type
-            $zoomEmail = null;
-            if (in_array($instructor->role_id, [1, 2])) {
-                // System Admin (1) or Administrator/Support (2) use admin account for testing
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
-                // D class courses - should typically be disabled
-                $zoomEmail = 'instructor_d@stgroupusa.com';
-            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
-                // G class courses use instructor_g account
-                $zoomEmail = 'instructor_g@stgroupusa.com';
-            } else {
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            }
+            // Determine which Zoom account to use based on course type and instructor role
+            $zoomEmail = $this->resolveZoomEmail($instructor, $courseTitle);
 
             // Get the SPECIFIC Zoom credential for this instructor/course
             $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
@@ -995,7 +1003,21 @@ class InstructorDashboardController extends Controller
 
                 // InstUnit exists - check if it's the current instructor trying to take control
                 if ($instUnit->created_by == $admin->id) {
-                    // Same instructor - just return existing session info
+                    // Same instructor - force-disable Zoom as failsafe before returning
+                    $existingCourse = $instUnit->CourseDate->CourseUnit->Course ?? null;
+                    if ($existingCourse) {
+                        $existingZoomEmail = $this->resolveZoomEmail($admin, $existingCourse->title ?? '');
+                        $existingZoomCreds = \App\Models\ZoomCreds::where('zoom_email', $existingZoomEmail)->first();
+                        if ($existingZoomCreds) {
+                            $existingZoomCreds->zoom_status = 'disabled';
+                            $existingZoomCreds->save();
+                            Log::info('Zoom force-disabled on classroom re-claim (failsafe)', [
+                                'inst_unit_id' => $instUnit->id,
+                                'zoom_email' => $existingZoomEmail,
+                            ]);
+                        }
+                    }
+
                     $instructor = \App\Models\User::find($instUnit->created_by);
                     $assistant = $instUnit->assistant_id ? \App\Models\User::find($instUnit->assistant_id) : null;
 
@@ -1038,35 +1060,23 @@ class InstructorDashboardController extends Controller
             // Refresh to get the created_at timestamp
             $instUnit->refresh();
 
-            // NOTE: Zoom credentials remain DISABLED by default
-            // Instructor must manually enable screen sharing when ready
-            // This prevents automatic screen sharing before instructor is prepared
-
-            // Force disable Zoom if it was left enabled from previous session
+            // NOTE: Zoom credentials remain DISABLED by default.
+            // Instructor must manually enable screen sharing when ready.
+            // Force-disable the correct Zoom account unconditionally as a failsafe,
+            // in case it was left enabled from any previous session.
             $course = $courseDate->CourseUnit?->Course;
             if ($course) {
-                $courseTitle = strtoupper($course->title ?? '');
-
-                // Determine which Zoom credential should be used for this course
-                if (strpos($courseTitle, ' A') !== false || strpos($courseTitle, 'A40') !== false || strpos($courseTitle, 'A20') !== false) {
-                    $zoomEmail = 'instructor_admin@stgroupusa.com';
-                } elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
-                    $zoomEmail = 'instructor_d@stgroupusa.com';
-                } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
-                    $zoomEmail = 'instructor_g@stgroupusa.com';
-                } else {
-                    $zoomEmail = 'instructor_admin@stgroupusa.com';
-                }
-
+                $zoomEmail = $this->resolveZoomEmail($admin, $course->title ?? '');
                 $zoomCreds = \App\Models\ZoomCreds::where('zoom_email', $zoomEmail)->first();
-                if ($zoomCreds && $zoomCreds->zoom_status === 'enabled') {
+                if ($zoomCreds) {
+                    $previousStatus = $zoomCreds->zoom_status;
                     $zoomCreds->zoom_status = 'disabled';
                     $zoomCreds->save();
 
-                    Log::info('Zoom automatically disabled during classroom claim', [
+                    Log::info('Zoom force-disabled on class start (failsafe)', [
                         'inst_unit_id' => $instUnit->id,
                         'zoom_email' => $zoomEmail,
-                        'previous_status' => 'enabled',
+                        'previous_status' => $previousStatus,
                     ]);
                 }
             }
@@ -3142,23 +3152,10 @@ class InstructorDashboardController extends Controller
             }
 
             $course = $activeInstUnit->CourseDate->CourseUnit->Course ?? null;
-            $courseTitle = strtoupper($course->title ?? '');
+            $courseTitle = $course->title ?? '';
 
-            // Determine which Zoom account to use
-            // Priority 1: Admin/Support roles (role_id 1 or 2) always use admin account for testing
-            $zoomEmail = null;
-            if (in_array($instructor->role_id, [1, 2])) {
-                // System Admin (1) or Administrator/Support (2) use admin account for testing
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            }
-            // Priority 2: Course type determines account (D or G)
-            elseif (strpos($courseTitle, ' D') !== false || strpos($courseTitle, 'D40') !== false || strpos($courseTitle, 'D20') !== false) {
-                $zoomEmail = 'instructor_d@stgroupusa.com';
-            } elseif (strpos($courseTitle, ' G') !== false || strpos($courseTitle, 'G40') !== false || strpos($courseTitle, 'G20') !== false) {
-                $zoomEmail = 'instructor_g@stgroupusa.com';
-            } else {
-                $zoomEmail = 'instructor_admin@stgroupusa.com';
-            }
+            // Resolve which Zoom account applies to this instructor + course (single source of truth)
+            $zoomEmail = $this->resolveZoomEmail($instructor, $courseTitle);
 
             // Get requested status
             $requestedStatus = $request->input('status');

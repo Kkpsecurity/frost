@@ -102,7 +102,18 @@ class BackendStudentService
 
             $now = Carbon::now();
 
-            $students = $studentUnits->map(function ($su) use ($now) {
+            // Preload StudentActivity records for all student units in one bulk query
+            // to avoid N+1 queries when checking rules_accepted and onboarding_completed.
+            $studentUnitIds = $studentUnits->pluck('id')->toArray();
+            $activityMap = \App\Models\StudentActivity::whereIn('student_unit_id', $studentUnitIds)
+                ->whereIn('activity_type', [
+                    \App\Models\StudentActivity::TYPE_RULES_ACCEPTED,
+                    'onboarding_completed',
+                ])
+                ->get(['student_unit_id', 'activity_type'])
+                ->groupBy('student_unit_id');
+
+            $students = $studentUnits->map(function ($su) use ($now, $activityMap) {
                 $user = $su->CourseAuth?->User ?? null;
                 if (!$user) {
                     return null;
@@ -120,30 +131,45 @@ class BackendStudentService
                     default             => 'offline',
                 };
 
-                // Verification flags stored as JSON in `verified` column
-                $verified     = false;
-                $verifiedData = $su->verified;
+                // Per-step onboarding flags from the `verified` JSON column
+                $verifiedData = $su->getRawOriginal('verified');
                 if (is_string($verifiedData)) {
-                    $verifiedData = json_decode($verifiedData, true) ?? null;
+                    $verifiedData = json_decode($verifiedData, true) ?? [];
                 }
-                if (is_array($verifiedData)) {
-                    $verified = (bool) (($verifiedData['id_card_uploaded'] ?? false) && ($verifiedData['headshot_uploaded'] ?? false));
+                if (!is_array($verifiedData)) {
+                    $verifiedData = [];
                 }
+                $idCardUploaded   = (bool) ($verifiedData['id_card_uploaded'] ?? false);
+                $headshotUploaded = (bool) ($verifiedData['headshot_uploaded'] ?? false);
+
+                // terms_accepted: CourseAuth.agreed_at is already eager-loaded
+                $termsAccepted = ($su->CourseAuth?->agreed_at !== null);
+
+                // rules_accepted / onboarding_completed from preloaded StudentActivity map
+                $unitActivities      = $activityMap->get((int) $su->id, collect());
+                $rulesAccepted       = $unitActivities->contains('activity_type', \App\Models\StudentActivity::TYPE_RULES_ACCEPTED);
+                $onboardingCompleted = $unitActivities->contains('activity_type', 'onboarding_completed');
 
                 $fullName = trim(($user->fname ?? '') . ' ' . ($user->lname ?? ''));
 
                 return [
-                    'id'               => (int) $su->id,
-                    'student_id'       => (int) $user->id,
-                    'student_name'     => $fullName !== '' ? $fullName : ($user->email ?? 'Student'),
-                    'student_email'    => (string) ($user->email ?? ''),
-                    'avatar'           => (string) ($user->avatar ?? ''),
-                    'course_auth_id'   => (int) ($su->course_auth_id ?? 0),
-                    'student_unit_id'  => (int) $su->id,
-                    'status'           => $status,
-                    'joined_at'        => $su->created_at ? Carbon::parse($su->created_at)->toAtomString() : null,
-                    'verified'         => $verified,
-                    'progress_percent' => 0,
+                    'id'                  => (int) $su->id,
+                    'student_id'          => (int) $user->id,
+                    'student_name'        => $fullName !== '' ? $fullName : ($user->email ?? 'Student'),
+                    'student_email'       => (string) ($user->email ?? ''),
+                    'avatar'              => (string) ($user->avatar ?? ''),
+                    'course_auth_id'      => (int) ($su->course_auth_id ?? 0),
+                    'student_unit_id'     => (int) $su->id,
+                    'status'              => $status,
+                    'joined_at'           => $su->created_at ? Carbon::parse($su->created_at)->toAtomString() : null,
+                    'verified'            => $idCardUploaded && $headshotUploaded,
+                    'progress_percent'    => 0,
+                    // Per-step onboarding tracking
+                    'terms_accepted'      => $termsAccepted,
+                    'rules_accepted'      => $rulesAccepted,
+                    'id_card_uploaded'    => $idCardUploaded,
+                    'headshot_uploaded'   => $headshotUploaded,
+                    'onboarding_completed' => $onboardingCompleted,
                 ];
             })->filter()->values();
 

@@ -73,6 +73,16 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     const activeLesson = classroomData?.activeLesson || null;
     const isLoadingLessons = false;
 
+    const activeLessonId = activeLesson?.lesson_id ?? null;
+    const activeLessonStartTime =
+        activeLesson?.started_at ||
+        activeLesson?.start_time ||
+        activeLesson?.created_at ||
+        activeLesson?.startedAt ||
+        activeLesson?.startTime ||
+        activeLesson?.createdAt ||
+        null;
+
     // Use lesson sidebar hook for helper functions
     const {
         isLessonCompletedByStudent,
@@ -229,10 +239,9 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                     getLessonStatusColor={getLessonStatusColor}
                                     getLessonTextColor={getLessonTextColor}
                                     getLessonStatusIcon={getLessonStatusIcon}
-                                    selectedLessonId={activeLesson?.id || null}
-                                    activeSessionLessonId={
-                                        activeLesson?.id || null
-                                    }
+                                    onSelectLesson={setSelectedLessonId}
+                                    selectedLessonId={selectedLessonId}
+                                    activeSessionLessonId={activeLessonId}
                                     disableNavigation={false}
                                 />
                             </div>
@@ -342,18 +351,15 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                         null
                                     }
                                     startTime={
-                                        lessons.find(
-                                            (l) => l.is_active === true,
-                                        )?.started_at ||
-                                        lessons.find(
-                                            (l) => l.id === selectedLessonId,
-                                        )?.started_at ||
-                                        null
+                                        // activeLesson carries started_at; lessons[] may not
+                                        activeLessonStartTime
                                     }
                                     isPaused={
+                                        activeLesson?.is_paused ||
                                         lessons.find(
                                             (l) => l.is_active === true,
-                                        )?.is_paused || false
+                                        )?.is_paused ||
+                                        false
                                     }
                                 />
                             </div>

@@ -1,33 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-
-interface Lesson {
-    id: number;
-    title: string;
-    sort_order: number;
-    lesson_type: string;
-    is_completed: boolean;
-    duration_minutes: number;
-    description: string;
-    content_url: string | null;
-    objectives: string | null;
-}
-
-interface InstLesson {
-    id: number;
-    lesson_id: number;
-    created_at: string;
-    completed_at: string | null;
-    is_paused: boolean;
-}
-
-interface LessonsPanelProps {
-    courseDateId?: number;
-    collapsed: boolean;
-    onToggle: () => void;
-    instUnit?: any; // Contains instLessons
-    zoomReady?: boolean;
-}
+import { Lesson, LessonsPanelProps } from "./LessonsPanelTypes";
+import { lessonPanelStyles } from "./LessonsPanelUtils";
+import LessonItem from "./LessonItem";
+import PauseModal from "./PauseModal";
+import ActiveLessonPanel from "./ActiveLessonPanel";
+import LessonListPanel from "./LessonListPanel";
 
 /**
  * LessonsPanel - Left sidebar showing today's lessons
@@ -383,36 +361,11 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
         return false;
     };
 
-    const getLessonIcon = (lessonType: string) => {
-        switch (lessonType) {
-            case "video":
-                return "fa-video";
-            case "reading":
-                return "fa-book";
-            case "quiz":
-                return "fa-clipboard-question";
-            case "assignment":
-                return "fa-file-pen";
-            default:
-                return "fa-book-open";
-        }
-    };
-
-    const formatDuration = (minutes: number) => {
-        if (minutes < 60) {
-            return `${minutes}m`;
-        }
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-    };
-
     return (
         <>
             <aside
-                className={`sidebar sidebar-left ${
-                    collapsed ? "collapsed" : ""
-                }`}
+                className={`sidebar sidebar-left ${collapsed ? "collapsed" : ""
+                    }`}
             >
                 <div className="sidebar-header">
                     <div className="sidebar-title">
@@ -430,11 +383,10 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                         title={collapsed ? "Expand" : "Collapse"}
                     >
                         <i
-                            className={`fas ${
-                                collapsed
-                                    ? "fa-chevron-right"
-                                    : "fa-chevron-left"
-                            }`}
+                            className={`fas ${collapsed
+                                ? "fa-chevron-right"
+                                : "fa-chevron-left"
+                                }`}
                         />
                     </button>
                 </div>
@@ -492,185 +444,32 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                     )}
 
                                     {activeLessonId && (
-                                        <div className="m-3">
-                                            <button
-                                                className="btn btn-sm btn-warning w-100"
-                                                title="Pause class (take a break)"
-                                                disabled={
-                                                    !isZoomReady ||
-                                                    actionLoading ||
-                                                    isPaused ||
-                                                    (breaksRemaining !==
-                                                        undefined &&
-                                                        breaksRemaining <= 0)
-                                                }
-                                                onClick={async () => {
-                                                    console.log(
-                                                        "🖱️ Pause button clicked",
-                                                        {
-                                                            activeLessonId,
-                                                            courseDateId,
-                                                        },
-                                                    );
-                                                    await postLessonAction(
-                                                        "/admin/instructors/lessons/pause",
-                                                        activeLessonId,
-                                                    );
-                                                }}
-                                            >
-                                                <i className="fas fa-pause me-1" />
-                                                {actionLoading
-                                                    ? "Pausing..."
-                                                    : "Pause Class"}
-                                                {breaksRemaining !==
-                                                    undefined &&
-                                                    breaksRemaining > 0 && (
-                                                        <span className="ms-1">
-                                                            ({breaksRemaining}{" "}
-                                                            left)
-                                                        </span>
-                                                    )}
-                                            </button>
-                                            {typeof breaksAllowed ===
-                                                "number" && (
-                                                <div className="mt-1">
-                                                    <small className="text-white-50">
-                                                        Breaks:{" "}
-                                                        {breaksTaken ?? 0}/
-                                                        {breaksAllowed}
-                                                        {typeof breaksRemaining ===
-                                                        "number"
-                                                            ? ` (${breaksRemaining} remaining)`
-                                                            : ""}
-                                                    </small>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <ActiveLessonPanel
+                                            activeLessonId={activeLessonId}
+                                            courseDateId={courseDateId || 0}
+                                            isZoomReady={isZoomReady}
+                                            isPaused={isPaused}
+                                            breaksRemaining={breaksRemaining}
+                                            breaksAllowed={breaksAllowed}
+                                            breaksTaken={breaksTaken}
+                                            postLessonAction={postLessonAction}
+                                            actionLoading={actionLoading}
+                                        />
                                     )}
 
-                                    <div className="lessons-list">
-                                        {lessons.map((lesson, index) => {
-                                            const completed = isLessonCompleted(
-                                                lesson.id,
-                                            );
-                                            const active = isLessonActive(
-                                                lesson.id,
-                                            );
-                                            const enabled = isLessonEnabled(
-                                                lesson,
-                                                index,
-                                            );
-
-                                            return (
-                                                <div
-                                                    key={lesson.id}
-                                                    className={`lesson-item ${
-                                                        completed
-                                                            ? "completed"
-                                                            : ""
-                                                    } ${
-                                                        active ? "active" : ""
-                                                    }`}
-                                                >
-                                                    <div className="lesson-number">
-                                                        {index + 1}
-                                                    </div>
-                                                    <div className="lesson-content">
-                                                        <div className="lesson-header">
-                                                            <i
-                                                                className={`fas ${getLessonIcon(
-                                                                    lesson.lesson_type,
-                                                                )} mr-2`}
-                                                            />
-                                                            <h6 className="lesson-title mb-0">
-                                                                {lesson.title}
-                                                            </h6>
-                                                        </div>
-                                                        <div className="lesson-meta">
-                                                            <span className="lesson-duration">
-                                                                <i className="far fa-clock me-1" />
-                                                                {formatDuration(
-                                                                    lesson.duration_minutes,
-                                                                )}
-                                                            </span>
-                                                            {completed && (
-                                                                <span className="lesson-status text-success">
-                                                                    <i className="fas fa-check-circle me-1" />
-                                                                    Completed
-                                                                </span>
-                                                            )}
-                                                            {active &&
-                                                                !completed && (
-                                                                    <span className="lesson-status text-primary">
-                                                                        <i className="fas fa-play-circle me-1" />
-                                                                        In
-                                                                        Progress
-                                                                    </span>
-                                                                )}
-                                                            {!active &&
-                                                                !completed &&
-                                                                !enabled && (
-                                                                    <span className="lesson-status text-muted">
-                                                                        <i className="fas fa-lock me-1" />
-                                                                        Locked
-                                                                    </span>
-                                                                )}
-                                                        </div>
-                                                        {!completed &&
-                                                            !active && (
-                                                                <button
-                                                                    className="btn btn-sm btn-primary btn-start-lesson mt-2"
-                                                                    disabled={
-                                                                        !enabled
-                                                                    }
-                                                                    title={
-                                                                        !isZoomReady
-                                                                            ? "Setup Zoom first"
-                                                                            : !enabled
-                                                                              ? "Complete previous lesson first"
-                                                                              : "Start this lesson"
-                                                                    }
-                                                                    onClick={() =>
-                                                                        postLessonAction(
-                                                                            "/admin/instructors/lessons/start",
-                                                                            lesson.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <i className="fas fa-play me-1" />
-                                                                    Start Lesson
-                                                                </button>
-                                                            )}
-                                                        {active &&
-                                                            !completed && (
-                                                                <div className="w-100 mt-2">
-                                                                    <button
-                                                                        className="btn btn-sm btn-success w-100"
-                                                                        title="Mark lesson as complete"
-                                                                        disabled={
-                                                                            actionLoading
-                                                                        }
-                                                                        onClick={() =>
-                                                                            postLessonAction(
-                                                                                "/admin/instructors/lessons/complete",
-                                                                                lesson.id,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <i className="fas fa-check me-1" />
-                                                                        Complete
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                    <LessonListPanel
+                                        lessons={lessons}
+                                        isLessonCompleted={isLessonCompleted}
+                                        isLessonActive={isLessonActive}
+                                        isLessonEnabled={isLessonEnabled}
+                                        actionLoading={actionLoading}
+                                        isZoomReady={isZoomReady}
+                                        postLessonAction={postLessonAction}
+                                    />
 
                                     {actionMessage && (
                                         <div className="alert alert-info m-3">
-                                            <i className="fas fa-info-circle mr-2" />
+                                            <i className="fas fa-info-circle me-2" />
                                             {actionMessage}
                                         </div>
                                     )}
@@ -688,9 +487,7 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                                                 title="End the day and close this class session"
                                             >
                                                 <i className="fas fa-flag-checkered me-1" />
-                                                {endDayLoading
-                                                    ? "Ending day..."
-                                                    : "End Day"}
+                                                {endDayLoading ? "Ending day..." : "End Day"}
                                             </button>
                                         </div>
                                     )}
@@ -701,338 +498,25 @@ const LessonsPanel: React.FC<LessonsPanelProps> = ({
                 </div>
 
                 {/* Lesson Panel Specific Styles */}
-                <style>{`
-        .lessons-list {
-          padding: 0;
-        }
-
-        .lesson-item {
-          display: flex;
-          gap: 12px;
-          padding: 15px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          transition: background 0.2s;
-        }
-
-        .lesson-item:hover {
-          background: rgba(255, 255, 255, 0.05);
-        }
-
-        .lesson-item.completed {
-          opacity: 0.7;
-        }
-
-        .lesson-item.active {
-          background: rgba(0, 123, 255, 0.1);
-          border-left: 3px solid #007bff;
-        }
-
-        .lesson-item.active .lesson-number {
-          background: #007bff;
-          color: white;
-        }
-
-        .lesson-number {
-          flex-shrink: 0;
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 50%;
-          font-weight: 600;
-          font-size: 14px;
-          color: white;
-        }
-
-        .lesson-content {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .lesson-header {
-          display: flex;
-          align-items: center;
-          margin-bottom: 6px;
-        }
-
-        .lesson-title {
-          font-size: 14px;
-          font-weight: 500;
-          color: white;
-          line-height: 1.4;
-        }
-
-        .lesson-meta {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.7);
-          margin-bottom: 8px;
-        }
-
-        .lesson-duration {
-          display: flex;
-          align-items: center;
-        }
-
-        .lesson-status {
-          display: flex;
-          align-items: center;
-        }
-
-        .btn-start-lesson {
-          width: 100%;
-          font-size: 12px;
-          padding: 6px 12px;
-        }
-
-        .lesson-count-badge {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          background: #007bff;
-          color: white;
-          border-radius: 50%;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          font-weight: 600;
-        }
-      `}</style>
+                <style>{lessonPanelStyles}</style>
             </aside>
 
-            {/* Full-Screen Pause Modal - Red Backdrop */}
+            {/* Full-Screen Pause Modal */}
             {showPauseModal && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(220, 38, 38, 0.95)", // Red backdrop
-                        zIndex: 9999,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backdropFilter: "blur(4px)",
+                <PauseModal
+                    isPaused={isPaused}
+                    breakTimeRemaining={breakTimeRemaining}
+                    breakDurationMinutes={breakDurationMinutes}
+                    breaksRemaining={breaksRemaining}
+                    actionMessage={actionMessage}
+                    pausedLessonId={pausedLessonId}
+                    actionLoading={actionLoading}
+                    onAction={postLessonAction}
+                    onClose={() => {
+                        setShowPauseModal(false);
+                        setPausedLessonId(null);
                     }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: "#1f2937",
-                            borderRadius: "12px",
-                            padding: "40px",
-                            maxWidth: "500px",
-                            width: "90%",
-                            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                            border: "2px solid rgba(220, 38, 38, 0.5)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                textAlign: "center",
-                                marginBottom: "30px",
-                            }}
-                        >
-                            <i
-                                className="fas fa-pause-circle"
-                                style={{
-                                    fontSize: "64px",
-                                    color: "#dc2626",
-                                    marginBottom: "20px",
-                                }}
-                            />
-                            <h2
-                                style={{ color: "white", marginBottom: "10px" }}
-                            >
-                                Lesson Paused
-                            </h2>
-                            <p
-                                style={{
-                                    color: "rgba(255, 255, 255, 0.7)",
-                                    fontSize: "16px",
-                                }}
-                            >
-                                Take a break. Students will see the lesson is
-                                paused.
-                            </p>
-                            {isPaused && breakTimeRemaining > 0 && (
-                                <div
-                                    style={{
-                                        backgroundColor:
-                                            "rgba(59, 130, 246, 0.2)",
-                                        border: "2px solid rgba(59, 130, 246, 0.5)",
-                                        borderRadius: "12px",
-                                        padding: "20px",
-                                        marginTop: "20px",
-                                        marginBottom: "10px",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: "14px",
-                                            color: "#93c5fd",
-                                            marginBottom: "8px",
-                                        }}
-                                    >
-                                        Break Time Remaining
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: "48px",
-                                            fontWeight: "bold",
-                                            color:
-                                                breakTimeRemaining <= 60
-                                                    ? "#fbbf24"
-                                                    : "white",
-                                            fontFamily: "monospace",
-                                        }}
-                                    >
-                                        {Math.floor(breakTimeRemaining / 60)}:
-                                        {String(
-                                            breakTimeRemaining % 60,
-                                        ).padStart(2, "0")}
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: "12px",
-                                            color: "#93c5fd",
-                                            marginTop: "8px",
-                                        }}
-                                    >
-                                        Break Duration: {breakDurationMinutes}{" "}
-                                        minutes
-                                    </div>
-                                </div>
-                            )}
-                            {breaksRemaining !== undefined && (
-                                <p
-                                    style={{
-                                        color: "#fbbf24",
-                                        fontSize: "14px",
-                                        marginTop: "10px",
-                                    }}
-                                >
-                                    <i className="fas fa-info-circle me-2" />
-                                    {breaksRemaining} break
-                                    {breaksRemaining !== 1 ? "s" : ""} remaining
-                                </p>
-                            )}
-                            {actionMessage && (
-                                <div
-                                    style={{
-                                        backgroundColor:
-                                            "rgba(220, 38, 38, 0.2)",
-                                        border: "1px solid rgba(220, 38, 38, 0.5)",
-                                        borderRadius: "8px",
-                                        padding: "12px",
-                                        marginTop: "15px",
-                                        color: "#fca5a5",
-                                    }}
-                                >
-                                    <i className="fas fa-exclamation-triangle me-2" />
-                                    {actionMessage}
-                                </div>
-                            )}
-                        </div>
-
-                        <div style={{ display: "flex", gap: "12px" }}>
-                            {!isPaused && (
-                                <>
-                                    <button
-                                        className="btn btn-success btn-lg"
-                                        style={{
-                                            flex: 1,
-                                            fontSize: "18px",
-                                            padding: "12px",
-                                        }}
-                                        disabled={actionLoading}
-                                        onClick={async () => {
-                                            console.log(
-                                                "🖱️ Start Break button clicked",
-                                                {
-                                                    pausedLessonId,
-                                                    actionLoading,
-                                                    courseDateId,
-                                                },
-                                            );
-
-                                            if (pausedLessonId) {
-                                                console.log(
-                                                    "✅ pausedLessonId exists, calling postLessonAction",
-                                                );
-                                                await postLessonAction(
-                                                    "/admin/instructors/lessons/pause",
-                                                    pausedLessonId,
-                                                );
-                                                // Don't close modal - stays open while paused
-                                            } else {
-                                                console.error(
-                                                    "❌ pausedLessonId is null/undefined",
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        <i className="fas fa-pause me-2" />
-                                        {actionLoading
-                                            ? "Pausing..."
-                                            : "Start Break"}
-                                    </button>
-                                    <button
-                                        className="btn btn-secondary btn-lg"
-                                        style={{
-                                            flex: 1,
-                                            fontSize: "18px",
-                                            padding: "12px",
-                                        }}
-                                        disabled={actionLoading}
-                                        onClick={() => {
-                                            setShowPauseModal(false);
-                                            setPausedLessonId(null);
-                                        }}
-                                    >
-                                        <i className="fas fa-times me-2" />
-                                        Cancel
-                                    </button>
-                                </>
-                            )}
-                            {isPaused && (
-                                <button
-                                    className="btn btn-success btn-lg"
-                                    style={{
-                                        width: "100%",
-                                        fontSize: "18px",
-                                        padding: "12px",
-                                    }}
-                                    disabled={actionLoading}
-                                    onClick={async () => {
-                                        if (pausedLessonId) {
-                                            await postLessonAction(
-                                                "/admin/instructors/lessons/resume",
-                                                pausedLessonId,
-                                            );
-                                            // Close modal after resuming
-                                            setShowPauseModal(false);
-                                            setPausedLessonId(null);
-                                        }
-                                    }}
-                                >
-                                    <i className="fas fa-play me-2" />
-                                    {actionLoading
-                                        ? "Resuming..."
-                                        : "Resume Lesson"}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                />
             )}
         </>
     );

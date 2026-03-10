@@ -25,7 +25,40 @@ interface Student {
     joined_at?: string;
     verified: boolean;
     progress_percent: number;
+    // Per-step onboarding tracking
+    terms_accepted?: boolean;
+    rules_accepted?: boolean;
+    id_card_uploaded?: boolean;
+    headshot_uploaded?: boolean;
+    onboarding_completed?: boolean;
 }
+
+/** Small coloured badge showing a single onboarding step status */
+const OnboardingStepBadge: React.FC<{
+    done: boolean;
+    icon: string;
+    label: string;
+    abbr: string;
+}> = ({ done, icon, label, abbr }) => (
+    <span
+        title={label + (done ? " ✓" : " — pending")}
+        style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "2px",
+            fontSize: "0.68rem",
+            padding: "1px 5px",
+            borderRadius: "3px",
+            backgroundColor: done ? "rgba(46,204,113,0.18)" : "rgba(255,255,255,0.07)",
+            color: done ? "#2ecc71" : "#7f8c8d",
+            border: `1px solid ${done ? "rgba(46,204,113,0.35)" : "rgba(255,255,255,0.1)"}`,
+            whiteSpace: "nowrap",
+        }}
+    >
+        <i className={`fas ${icon}`} style={{ fontSize: "0.6rem" }} />
+        {" "}{abbr}
+    </span>
+);
 
 /**
  * StudentsPanel - Right sidebar panel showing active students with real-time status
@@ -232,9 +265,8 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({
                 {paginatedStudents.map((student, index) => (
                     <div
                         key={student.id}
-                        className={`list-group-item list-group-item-action bg-transparent px-3 py-2 ${
-                            index === 0 ? "border-top-0" : ""
-                        }`}
+                        className={`list-group-item list-group-item-action bg-transparent px-3 py-2 ${index === 0 ? "border-top-0" : ""
+                            }`}
                     >
                         <div className="d-flex align-items-start gap-2">
                             {student.avatar ? (
@@ -291,6 +323,33 @@ const StudentsPanel: React.FC<StudentsPanelProps> = ({
                                     title={student.student_email}
                                 >
                                     {student.student_email}
+                                </div>
+                                {/* Onboarding identity step tracker */}
+                                <div className="d-flex gap-1 mt-1">
+                                    <OnboardingStepBadge
+                                        done={!!student.terms_accepted}
+                                        icon="fa-file-signature"
+                                        label="Terms accepted"
+                                        abbr="T"
+                                    />
+                                    <OnboardingStepBadge
+                                        done={!!student.rules_accepted}
+                                        icon="fa-gavel"
+                                        label="Rules accepted"
+                                        abbr="R"
+                                    />
+                                    <OnboardingStepBadge
+                                        done={!!student.id_card_uploaded}
+                                        icon="fa-id-card"
+                                        label="ID card uploaded"
+                                        abbr="ID"
+                                    />
+                                    <OnboardingStepBadge
+                                        done={!!student.headshot_uploaded}
+                                        icon="fa-camera"
+                                        label="Headshot uploaded"
+                                        abbr="HS"
+                                    />
                                 </div>
                             </div>
                         </div>

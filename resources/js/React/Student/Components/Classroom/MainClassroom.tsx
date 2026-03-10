@@ -57,8 +57,8 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     const [devMode, setDevMode] = useState<"auto" | "online" | "offline">(
         "auto",
     );
-    // Show toggle in all modes for now (remove this line later to restrict to dev only)
-    const showToggle = true; // TODO: Change to import.meta.env.DEV when done testing
+    // Only sysadmin (role_id 1) and admin (role_id 2) may see dev tools
+    const showToggle = student?.role_id === 1 || student?.role_id === 2;
 
     // 🛠️ DEV TOOLS: Lesson management functions
     const handleCompleteAllLessons = async (mode: "online" | "offline") => {
