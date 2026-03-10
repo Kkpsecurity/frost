@@ -5,6 +5,7 @@ interface LessonSideBarProps {
     isLoadingLessons: boolean;
     title?: string;
     isLessonCompletedByStudent: (lessonId: number) => boolean;
+    isLessonFailedByStudent: (lessonId: number) => boolean;
     isLessonInProgress: (lessonId: number, index: number) => boolean;
     getLessonStatusColor: (lesson: any, index: number) => string;
     getLessonTextColor: (lesson: any, index: number) => string;
@@ -20,6 +21,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
     isLoadingLessons,
     title = "Today's Lessons",
     isLessonCompletedByStudent,
+    isLessonFailedByStudent,
     isLessonInProgress,
     getLessonStatusColor,
     getLessonTextColor,
@@ -91,6 +93,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                             const lessonId = lesson.lesson_id || lesson.id;
                             const isCompleted =
                                 isLessonCompletedByStudent(lessonId);
+                            const isFailed = isLessonFailedByStudent(lessonId);
                             const inProgress = isLessonInProgress(
                                 lessonId,
                                 index,
@@ -207,6 +210,8 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                                 </span>
                                             ) : isCompleted ? (
                                                 "Completed"
+                                            ) : isFailed ? (
+                                                "Failed"
                                             ) : inProgress ? (
                                                 "In Progress"
                                             ) : (

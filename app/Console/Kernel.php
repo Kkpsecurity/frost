@@ -74,6 +74,14 @@ class Kernel extends ConsoleKernel
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/session-timeout.log'));
 
+        // Generate participation challenges server-side every minute.
+        // Ensures challenges are created/tracked even when student polling stops (inactive tab).
+        $schedule->command('challenges:generate-pending')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/challenges-generate-pending.log'));
+
         // Expire pending participation challenges every minute.
         // Ensures challenges fail on-time even if the student leaves the site/tab.
         $schedule->command('challenges:expire-pending')
@@ -81,6 +89,14 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/challenges-expire-pending.log'));
+
+        // Backfill missed live lessons after the join window expires.
+        // Creates missing StudentLesson rows and marks them DNC so the UI does not show "Pending" forever.
+        $schedule->command('classrooms:dnc-missed-lessons')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/classrooms-dnc-missed-lessons.log'));
 
         // Monitor cron job health every 15 minutes
         $schedule->command('cron:health-check --silent')

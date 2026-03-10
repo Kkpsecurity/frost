@@ -56,6 +56,8 @@ class StudentLesson extends Model
         'updated_at'        => 'datetime',
         'dnc_at'            => 'datetime',
         'completed_at'      => 'datetime',
+        'failed_at'         => 'datetime',
+        'failure_reason'    => 'string',
         'completed_by'      => 'integer',   // IF instructor override
 
     ];

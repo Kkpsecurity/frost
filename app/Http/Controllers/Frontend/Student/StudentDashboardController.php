@@ -738,6 +738,11 @@ class StudentDashboardController extends Controller
                                             'lesson_id' => (int) $sl->lesson_id,
                                             'completed_at' => $sl->completed_at?->toISOString(),
                                             'is_completed' => $sl->completed_at !== null,
+                                            'dnc_at' => $sl->dnc_at?->toISOString(),
+                                            'is_dnc' => $sl->dnc_at !== null,
+                                            'failed_at' => $sl->failed_at?->toISOString(),
+                                            'failure_reason' => $sl->failure_reason,
+                                            'is_failed' => $sl->failed_at !== null,
                                         ];
                                     })
                                     ->toArray();
@@ -1280,9 +1285,54 @@ class StudentDashboardController extends Controller
                             );
                         }
 
+                        // --- CHECK 2: EOLReady() for instructor-completed lessons ---
+                        // If the instructor completed a lesson but the student has not received credit yet,
+                        // EOL should take precedence over creating new challenges for the next active lesson.
+                        // EOLReady() self-guards: it returns null unless InstLesson->completed_at is set.
+                        $pendingStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $challengeStudentUnit->id)
+                            ->whereNull('completed_at')
+                            ->whereNull('dnc_at')
+                            ->whereHas('InstLesson', function ($q) {
+                                $q->whereNotNull('completed_at');
+                            })
+                            ->orderBy('id')
+                            ->get();
+
+                        foreach ($pendingStudentLessons as $pendingLesson) {
+                            $eolResponse = Challenger::EOLReady($pendingLesson, $completedLessonIds);
+
+                            if ($eolResponse && $eolResponse->challenge_id) {
+                                $eolChallenge = \App\Models\Challenge::find($eolResponse->challenge_id);
+
+                                if ($eolChallenge && !$eolChallenge->completed_at && !$eolChallenge->failed_at) {
+                                    $expiresAt     = \Carbon\Carbon::parse($eolChallenge->expires_at);
+                                    $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
+
+                                    $challengeData = [
+                                        'challenge_id'      => $eolChallenge->id,
+                                        'student_lesson_id' => $eolChallenge->student_lesson_id,
+                                        'is_final'          => (bool) $eolResponse->is_final,
+                                        'is_eol'            => (bool) $eolResponse->is_eol,
+                                        'expires_at'        => $eolChallenge->expires_at->toISOString(),
+                                        'time_remaining'    => (int) $timeRemaining,
+                                        'created_at'        => $eolChallenge->created_at->toISOString(),
+                                    ];
+
+                                    Log::info('Challenge (EOLReady) active for student', [
+                                        'student_id'        => $user->id,
+                                        'challenge_id'      => $eolChallenge->id,
+                                        'student_lesson_id' => $eolChallenge->student_lesson_id,
+                                        'time_remaining'    => $timeRemaining,
+                                    ]);
+
+                                    break; // Only one EOL challenge at a time
+                                }
+                            }
+                        }
+
                         // --- CHECK 1: Ready() for the currently active lesson ---
                         // Skip if no active lesson or lesson is paused (break time).
-                        if ($activeLessonId && !($activeInstLesson?->is_paused)) {
+                        if ($challengeData === null && $activeLessonId && !($activeInstLesson?->is_paused)) {
                             $activeStudentLesson = \App\Models\StudentLesson::where('student_unit_id', $challengeStudentUnit->id)
                                 ->where('lesson_id', $activeLessonId)
                                 ->whereNull('completed_at')
@@ -1314,49 +1364,6 @@ class StudentDashboardController extends Controller
                                             'is_final'       => $challengerResponse->is_final,
                                             'time_remaining' => $timeRemaining,
                                         ]);
-                                    }
-                                }
-                            }
-                        }
-
-                        // --- CHECK 2: EOLReady() for instructor-completed lessons ---
-                        // Find any student lesson that is pending credit (instructor done,
-                        // student not yet marked complete). EOLReady() self-guards: it
-                        // returns null unless InstLesson->completed_at is set.
-                        if ($challengeData === null) {
-                            $pendingStudentLessons = \App\Models\StudentLesson::where('student_unit_id', $challengeStudentUnit->id)
-                                ->whereNull('completed_at')
-                                ->whereNull('dnc_at')
-                                ->get();
-
-                            foreach ($pendingStudentLessons as $pendingLesson) {
-                                $eolResponse = Challenger::EOLReady($pendingLesson, $completedLessonIds);
-
-                                if ($eolResponse && $eolResponse->challenge_id) {
-                                    $eolChallenge = \App\Models\Challenge::find($eolResponse->challenge_id);
-
-                                    if ($eolChallenge && !$eolChallenge->completed_at && !$eolChallenge->failed_at) {
-                                        $expiresAt     = \Carbon\Carbon::parse($eolChallenge->expires_at);
-                                        $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
-
-                                        $challengeData = [
-                                            'challenge_id'      => $eolChallenge->id,
-                                            'student_lesson_id' => $eolChallenge->student_lesson_id,
-                                            'is_final'          => (bool) $eolResponse->is_final,
-                                            'is_eol'            => (bool) $eolResponse->is_eol,
-                                            'expires_at'        => $eolChallenge->expires_at->toISOString(),
-                                            'time_remaining'    => (int) $timeRemaining,
-                                            'created_at'        => $eolChallenge->created_at->toISOString(),
-                                        ];
-
-                                        Log::info('Challenge (EOLReady) active for student', [
-                                            'student_id'        => $user->id,
-                                            'challenge_id'      => $eolChallenge->id,
-                                            'student_lesson_id' => $eolChallenge->student_lesson_id,
-                                            'time_remaining'    => $timeRemaining,
-                                        ]);
-
-                                        break; // Only one EOL challenge at a time
                                     }
                                 }
                             }
@@ -1688,6 +1695,11 @@ class StudentDashboardController extends Controller
                     'lesson_id' => $sl->lesson_id,
                     'completed_at' => $sl->completed_at?->toISOString(),
                     'is_completed' => !is_null($sl->completed_at),
+                    'dnc_at' => $sl->dnc_at?->toISOString(),
+                    'is_dnc' => $sl->dnc_at !== null,
+                    'failed_at' => $sl->failed_at?->toISOString(),
+                    'failure_reason' => $sl->failure_reason,
+                    'is_failed' => $sl->failed_at !== null,
                 ];
             })->toArray() : [];
 

@@ -103,6 +103,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     // Sidebar helpers
     const {
         isLessonCompletedByStudent,
+        isLessonFailedByStudent,
         isLessonInProgress,
         getLessonStatusColor,
         getLessonTextColor,
@@ -196,6 +197,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                     isLoadingLessons={isLoadingLessons}
                                     title="Course Lessons"
                                     isLessonCompletedByStudent={isLessonCompletedByStudent}
+                                    isLessonFailedByStudent={isLessonFailedByStudent}
                                     isLessonInProgress={isLessonInProgress}
                                     getLessonStatusColor={getLessonStatusColor}
                                     getLessonTextColor={getLessonTextColor}

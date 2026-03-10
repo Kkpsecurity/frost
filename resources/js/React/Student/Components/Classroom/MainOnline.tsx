@@ -108,6 +108,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     // Use lesson sidebar hook for helper functions
     const {
         isLessonCompletedByStudent,
+        isLessonFailedByStudent,
         isLessonInProgress,
         getLessonStatusColor,
         getLessonTextColor,
@@ -256,6 +257,9 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                     isLoadingLessons={isLoadingLessons}
                                     isLessonCompletedByStudent={
                                         isLessonCompletedByStudent
+                                    }
+                                    isLessonFailedByStudent={
+                                        isLessonFailedByStudent
                                     }
                                     isLessonInProgress={isLessonInProgress}
                                     getLessonStatusColor={getLessonStatusColor}

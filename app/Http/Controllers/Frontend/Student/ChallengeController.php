@@ -139,6 +139,36 @@ class ChallengeController extends Controller
             }
 
             // Check if challenge has expired
+            if (! $challenge->expires_at) {
+                Log::error('Challenge missing expires_at during response attempt', [
+                    'challenge_id' => $challengeId,
+                    'user_id' => $user->id,
+                    'is_final' => (bool) $challenge->is_final,
+                    'is_eol' => (bool) $challenge->is_eol,
+                ]);
+
+                // Best-effort: mark failed so final/EOL side-effects can still run.
+                try {
+                    Challenger::MarkFailed($challenge);
+                } catch (\Throwable $e) {
+                    // Non-fatal
+                }
+
+                $fresh = $challenge->fresh();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Challenge is invalid (missing expiration)',
+                    'challenge' => [
+                        'id' => $challenge->id,
+                        'status' => $fresh?->failed_at ? 'failed' : 'invalid',
+                        'failed_at' => $fresh?->failed_at?->toISOString(),
+                        'is_final' => (bool) $challenge->is_final,
+                        'is_eol' => (bool) $challenge->is_eol,
+                    ],
+                ], 400);
+            }
+
             if (now()->greaterThan($challenge->expires_at)) {
                 // Auto-mark as failed (use Challenger so final/EOL side-effects are preserved)
                 Challenger::MarkFailed($challenge);
@@ -169,25 +199,56 @@ class ChallengeController extends Controller
             if ($completed) {
                 Challenger::MarkCompleted($challenge);
 
-                Log::info('Challenge completed by student', [
+                // Re-check persisted state — MarkCompleted() can mark failed on validation
+                // (e.g., race where expires_at passes between UI submit and processing).
+                $freshChallenge = $challenge->fresh();
+
+                if ($freshChallenge?->completed_at) {
+                    Log::info('Challenge completed by student', [
+                        'challenge_id' => $challengeId,
+                        'user_id' => $user->id,
+                        'student_lesson_id' => $studentLesson->id,
+                        'is_final' => (bool) $challenge->is_final,
+                        'is_eol' => (bool) $challenge->is_eol,
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Challenge completed successfully',
+                        'challenge' => [
+                            'id' => $challenge->id,
+                            'status' => 'completed',
+                            'completed_at' => $freshChallenge->completed_at?->toISOString(),
+                            'is_final' => (bool) $challenge->is_final,
+                            'is_eol' => (bool) $challenge->is_eol,
+                        ],
+                    ]);
+                }
+
+                if ($freshChallenge?->failed_at) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Challenge could not be completed (expired)',
+                        'challenge' => [
+                            'id' => $challenge->id,
+                            'status' => 'failed',
+                            'failed_at' => $freshChallenge->failed_at?->toISOString(),
+                            'expires_at' => $freshChallenge->expires_at?->toISOString(),
+                            'is_final' => (bool) $challenge->is_final,
+                            'is_eol' => (bool) $challenge->is_eol,
+                        ],
+                    ], 400);
+                }
+
+                Log::warning('Challenge completion returned no final state', [
                     'challenge_id' => $challengeId,
                     'user_id' => $user->id,
-                    'student_lesson_id' => $studentLesson->id,
-                    'is_final' => $challenge->is_final,
-                    'is_eol' => $challenge->is_eol,
                 ]);
 
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Challenge completed successfully',
-                    'challenge' => [
-                        'id' => $challenge->id,
-                        'status' => 'completed',
-                        'completed_at' => $challenge->fresh()->completed_at->toISOString(),
-                        'is_final' => (bool) $challenge->is_final,
-                        'is_eol' => (bool) $challenge->is_eol,
-                    ],
-                ]);
+                    'success' => false,
+                    'message' => 'Challenge could not be completed',
+                ], 409);
             } else {
                 // Student explicitly failed/dismissed challenge
                 // This shouldn't normally happen with slider UI, but handle it
@@ -196,7 +257,7 @@ class ChallengeController extends Controller
                     'message' => 'Challenge not completed',
                 ], 400);
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Challenge response error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

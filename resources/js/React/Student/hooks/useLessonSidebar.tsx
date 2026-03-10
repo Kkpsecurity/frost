@@ -9,6 +9,7 @@ interface UseLessonSidebarProps {
 
 interface UseLessonSidebarReturn {
     isLessonCompletedByStudent: (lessonId: number) => boolean;
+    isLessonFailedByStudent: (lessonId: number) => boolean;
     isLessonInProgress: (lessonId: number, index: number) => boolean;
     getLessonStatusColor: (lesson: any, index: number) => string;
     getLessonTextColor: (lesson: any, index: number) => string;
@@ -67,11 +68,48 @@ export const useLessonSidebar = ({
     }, [studentLessons, lessons]);
 
     /**
+     * Check if a lesson is failed/DNC for THIS student
+     */
+    const isLessonFailedByStudent = useMemo(() => {
+        return (lessonId: number): boolean => {
+            // When studentLessons aren't available, fall back to any flags present on lesson payload.
+            if (!studentLessons || studentLessons.length === 0) {
+                const lesson = lessons?.find(
+                    (l: any) => (l.lesson_id || l.id) === lessonId,
+                );
+                return (
+                    lesson?.dnc_at != null ||
+                    lesson?.is_dnc === true ||
+                    lesson?.failed_at != null ||
+                    lesson?.is_failed === true ||
+                    lesson?.status === "dnc" ||
+                    lesson?.status === "failed"
+                );
+            }
+
+            const studentLesson = studentLessons.find(
+                (sl: any) => (sl.lesson_id || sl.id) === lessonId,
+            );
+
+            return (
+                studentLesson?.dnc_at != null ||
+                studentLesson?.is_dnc === true ||
+                studentLesson?.failed_at != null ||
+                studentLesson?.is_failed === true
+            );
+        };
+    }, [studentLessons, lessons]);
+
+    /**
      * Check if a lesson is in progress (active but not completed)
      */
     const isLessonInProgress = useMemo(() => {
         return (lessonId: number, index: number): boolean => {
             if (!lessons || lessons.length === 0) return false;
+
+            if (isLessonFailedByStudent(lessonId)) {
+                return false;
+            }
 
             const lesson = lessons.find(
                 (l: any) => (l.lesson_id || l.id) === lessonId,
@@ -92,7 +130,7 @@ export const useLessonSidebar = ({
 
             return false;
         };
-    }, [lessons, activeLesson, isLessonCompletedByStudent]);
+    }, [lessons, activeLesson, isLessonCompletedByStudent, isLessonFailedByStudent]);
 
     /**
      * Get background color for lesson status
@@ -104,6 +142,11 @@ export const useLessonSidebar = ({
             // Completed - Green
             if (isLessonCompletedByStudent(lessonId)) {
                 return "#27ae60"; // Success green
+            }
+
+            // Failed/DNC - Red
+            if (isLessonFailedByStudent(lessonId)) {
+                return "#e74c3c"; // Error red (re-used elsewhere in UI)
             }
 
             // In Progress - Blue
@@ -119,7 +162,7 @@ export const useLessonSidebar = ({
             // Not started - Gray
             return "#34495e"; // Dark gray
         };
-    }, [isLessonCompletedByStudent, isLessonInProgress]);
+    }, [isLessonCompletedByStudent, isLessonFailedByStudent, isLessonInProgress]);
 
     /**
      * Get text color for lesson (contrast with background)
@@ -148,6 +191,16 @@ export const useLessonSidebar = ({
                 );
             }
 
+            // Failed/DNC - X circle
+            if (isLessonFailedByStudent(lessonId)) {
+                return (
+                    <i
+                        className="fas fa-times-circle"
+                        style={{ color: "#fff" }}
+                    ></i>
+                );
+            }
+
             // In Progress - Spinner
             if (isLessonInProgress(lessonId, index)) {
                 return (
@@ -171,10 +224,11 @@ export const useLessonSidebar = ({
             // Not started - Book icon
             return <i className="fas fa-book" style={{ color: "#95a5a6" }}></i>;
         };
-    }, [isLessonCompletedByStudent, isLessonInProgress]);
+    }, [isLessonCompletedByStudent, isLessonFailedByStudent, isLessonInProgress]);
 
     return {
         isLessonCompletedByStudent,
+        isLessonFailedByStudent,
         isLessonInProgress,
         getLessonStatusColor,
         getLessonTextColor,
