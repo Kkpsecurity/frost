@@ -66,15 +66,15 @@ const SchoolDashboardTitleBar = ({
         );
     }
 
-    // 🎯 Show exam button ONLY if backend confirms readiness:
-    // 1. Backend says exam is ready (is_ready=true means all lessons completed + no blocking conditions)
-    // 2. Student has an active exam attempt
+    // 🎯 Show exam button ONLY when:
+    // 1. All lessons are genuinely complete (all_lessons_completed is NEVER bypassed by exam_admin_id)
+    // 2. OR student already has an active exam attempt in progress
     //
-    // Note: is_ready already checks AllLessonsCompleted() on backend via ExamReady()
-    // We REMOVED the onExamClick override to strictly enforce lesson completion requirement
+    // We intentionally do NOT use is_ready here because is_ready=true for admin-override accounts
+    // even when lessons are not finished, which would surface the button prematurely.
     const showExamButton = Boolean(
         effectiveStudentExam?.has_active_attempt ||
-        effectiveStudentExam?.is_ready, // is_ready=true means lessons complete + exam available
+        effectiveStudentExam?.all_lessons_completed,
     );
 
     console.log("Exam button visibility check:");

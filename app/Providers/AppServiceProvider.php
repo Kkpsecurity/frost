@@ -68,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
     private function guardDestructiveDatabaseCommands(): void
     {
         $dangerous = [
+            'migrate',
             'migrate:fresh',
             'migrate:reset',
             'migrate:rollback',

@@ -1,6 +1,7 @@
 import React from "react";
 import SecureVideoPlayer from "../Classroom/SecureVideoPlayer";
 import { useVideoQuota } from "../../hooks/useVideoQuota";
+import SelfStudyHelpModal from "./SelfStudyHelpModal";
 
 type SelfStudyLesson = {
     id: number;
@@ -73,6 +74,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
     const [isCompleting, setIsCompleting] = React.useState(false);
     const [isPlayerUnlocked, setIsPlayerUnlocked] = React.useState(false);
     const [nowTick, setNowTick] = React.useState<number>(() => Date.now());
+    const [showHelpModal, setShowHelpModal] = React.useState(false);
 
     const selectedLesson = React.useMemo(() => {
         if (!selectedLessonId) return null;
@@ -437,10 +439,54 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
 
     return (
         <div className="self-study-tab">
-            <h3 style={{ color: "white", marginBottom: "1.5rem" }}>
-                <i className="fas fa-play-circle me-2"></i>
-                Self Study Mode
-            </h3>
+            <SelfStudyHelpModal
+                isOpen={showHelpModal}
+                onClose={() => setShowHelpModal(false)}
+            />
+            <div
+                className="d-flex align-items-center justify-content-between"
+                style={{ marginBottom: "1.5rem" }}
+            >
+                <h3 style={{ color: "white", margin: 0 }}>
+                    <i className="fas fa-play-circle me-2"></i>
+                    Self Study Mode
+                </h3>
+                <button
+                    onClick={() => setShowHelpModal(true)}
+                    title="Self Study Help"
+                    aria-label="Open Self Study Help"
+                    style={{
+                        background: "none",
+                        border: "2px solid #95a5a6",
+                        borderRadius: "50%",
+                        color: "#95a5a6",
+                        width: "28px",
+                        height: "28px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        padding: 0,
+                        lineHeight: 1,
+                        flexShrink: 0,
+                        transition: "border-color 0.15s, color 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                        const btn = e.currentTarget;
+                        btn.style.borderColor = "#ecf0f1";
+                        btn.style.color = "#ecf0f1";
+                    }}
+                    onMouseLeave={(e) => {
+                        const btn = e.currentTarget;
+                        btn.style.borderColor = "#95a5a6";
+                        btn.style.color = "#95a5a6";
+                    }}
+                >
+                    ?
+                </button>
+            </div>
 
             <div className="row g-3">
                 <div className="col-12">

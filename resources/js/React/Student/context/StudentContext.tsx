@@ -35,6 +35,8 @@ export interface StudentExam {
     previous_exam_completed_at: string | null;
     /** Backend reason why exam is NOT ready (null means it IS ready). E.g. 'lessons', 'cooldown', 'inactive', 'already_passed' */
     failure_reason: string | null;
+    /** True only when every required lesson is completed — never bypassed by exam_admin_id override */
+    all_lessons_completed: boolean;
 }
 
 export interface StudentContextType {
