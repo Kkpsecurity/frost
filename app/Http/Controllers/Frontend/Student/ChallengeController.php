@@ -140,8 +140,8 @@ class ChallengeController extends Controller
 
             // Check if challenge has expired
             if (now()->greaterThan($challenge->expires_at)) {
-                // Auto-mark as failed
-                $challenge->MarkFailed();
+                // Auto-mark as failed (use Challenger so final/EOL side-effects are preserved)
+                Challenger::MarkFailed($challenge);
 
                 Log::info('Challenge expired during response attempt', [
                     'challenge_id' => $challengeId,

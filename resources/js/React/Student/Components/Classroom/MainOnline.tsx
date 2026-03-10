@@ -83,6 +83,28 @@ const MainOnline: React.FC<MainOnlineProps> = ({
         activeLesson?.createdAt ||
         null;
 
+    // Challenge history should only show the active lesson (not prior lessons in the same day/unit).
+    const studentLessonsArray: any[] = Array.isArray(studentLessons)
+        ? studentLessons
+        : Array.isArray((studentLessons as any)?.lessons)
+            ? ((studentLessons as any).lessons as any[])
+            : [];
+
+    const activeStudentLessonIdForHistory: number | null = activeLessonId
+        ? (studentLessonsArray.find(
+            (sl: any) => Number(sl?.lesson_id) === Number(activeLessonId),
+        )?.id ?? null)
+        : null;
+
+    const activeLessonChallenges =
+        activeStudentLessonIdForHistory && Array.isArray(studentContext?.challenges)
+            ? studentContext.challenges.filter(
+                (c: any) =>
+                    Number(c?.student_lesson_id) ===
+                    Number(activeStudentLessonIdForHistory),
+            )
+            : [];
+
     // Use lesson sidebar hook for helper functions
     const {
         isLessonCompletedByStudent,
@@ -574,7 +596,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
 
                                 {/* Challenge History */}
                                 <ChallengeHistory
-                                    challenges={studentContext?.challenges}
+                                    challenges={activeLessonChallenges}
                                 />
                             </div>
                         </div>

@@ -76,7 +76,7 @@ trait SendRandom
         // random selection
         //
 
-        if (self::_Randomizer(clone $CreatedAt, self::$_config->lesson_random_max)) {
+        if (self::_Randomizer(clone $CreatedAt, $maxInterval)) {
             kkpdebug('Challenger_Msg', "{$debug_tag} Creating Challenge");
             return self::_CreateChallenge();
         }

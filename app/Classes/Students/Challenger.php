@@ -14,6 +14,7 @@ use App\Classes\Students\Challenger\TraitLoader;
 use App\Models\Challenge;
 use App\Models\StudentActivity;
 use App\Models\StudentLesson;
+use App\Services\StudentActivityTracker;
 use Illuminate\Support\Facades\Log;
 use KKP\Laravel\Traits\AssertConfigTrait;
 
@@ -30,6 +31,34 @@ class Challenger
     protected static StudentLesson $_StudentLesson;
 
 
+    protected static function _MaxRegularChallenges(): int
+    {
+
+        // If the rate is disabled/misconfigured, do not cap.
+        $perHour = (int) (self::$_config->challenges_per_hour ?? 0);
+        if ($perHour <= 0) {
+            return PHP_INT_MAX;
+        }
+
+        $lessonMinutes = 0;
+
+        try {
+            $lessonMinutes = (int) (self::$_StudentLesson?->GetCourseUnitLesson()?->progress_minutes ?? 0);
+        } catch (\Throwable $e) {
+            $lessonMinutes = 0;
+        }
+
+        if ($lessonMinutes <= 0) {
+            $lessonMinutes = 60;
+        }
+
+        // Scale linearly from the per-hour target (60m => 6 challenges).
+        $max = (int) round(($lessonMinutes / 60) * $perHour);
+
+        return $max < 1 ? 1 : $max;
+    }
+
+
     public static function init(int|StudentLesson|null $StudentLesson = null): self
     {
 
@@ -41,6 +70,7 @@ class Challenger
         self::$_config = self::AssertConfig('challenger', [
             'challenge_time',
             'challenge_expires_at',
+            'challenges_per_hour',
             'lesson_start_min',
             'lesson_start_max',
             'lesson_random_min',
@@ -336,6 +366,47 @@ class Challenger
                 return;
             }
 
+            $data = [
+                'challenge_id'      => (int) $Challenge->id,
+                'student_lesson_id' => (int) $Challenge->student_lesson_id,
+                'lesson_id'         => (int) ($studentLesson?->lesson_id ?? 0),
+                'is_final'          => (bool) $Challenge->is_final,
+                'is_eol'            => (bool) $Challenge->is_eol,
+                'expires_at'        => $Challenge->expires_at?->toISOString(),
+            ];
+
+            // Prefer the StudentActivityTracker in HTTP context so session/IP/URL metadata is captured.
+            // Fall back to direct StudentActivity::create (needed for scheduler/CLI contexts).
+            if (! app()->runningInConsole()) {
+                try {
+                    /** @var StudentActivityTracker $tracker */
+                    $tracker = app(StudentActivityTracker::class);
+                    $activity = $tracker->track(
+                        $userId,
+                        StudentActivity::CATEGORY_INTERACTION,
+                        $activityType,
+                        [
+                            'course_auth_id'  => (int) ($studentUnit?->course_auth_id ?? 0),
+                            'course_date_id'  => (int) ($studentUnit?->course_date_id ?? 0),
+                            'student_unit_id' => (int) ($studentUnit?->id ?? 0),
+                            'inst_unit_id'    => (int) ($studentUnit?->inst_unit_id ?? 0),
+                            'description'     => $description,
+                            'data'            => $data,
+                        ]
+                    );
+
+                    if ($activity) {
+                        return;
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Challenger: Failed to log activity via tracker', [
+                        'error'         => $e->getMessage(),
+                        'activity_type' => $activityType,
+                        'challenge_id'  => $Challenge->id ?? null,
+                    ]);
+                }
+            }
+
             StudentActivity::create([
                 'user_id'         => $userId,
                 'course_auth_id'  => (int) ($studentUnit?->course_auth_id ?? 0),
@@ -345,13 +416,7 @@ class Challenger
                 'category'        => StudentActivity::CATEGORY_INTERACTION,
                 'activity_type'   => $activityType,
                 'description'     => $description,
-                'data' => [
-                    'challenge_id'      => (int) $Challenge->id,
-                    'student_lesson_id' => (int) $Challenge->student_lesson_id,
-                    'lesson_id'         => (int) ($studentLesson?->lesson_id ?? 0),
-                    'is_final'          => (bool) $Challenge->is_final,
-                    'is_eol'            => (bool) $Challenge->is_eol,
-                ],
+                'data'            => $data,
             ]);
         } catch (\Throwable $e) {
             Log::warning('Challenger: Failed to log activity', [
@@ -431,26 +496,26 @@ class Challenger
 
     protected static function _DevelMode(): void
     {
-        // Check if dev_mode is explicitly enabled in config, or if we're in non-production environment
-        $devModeEnabled = self::$_config->dev_mode ?? false;
-        $isNonProduction = ! app()->environment('production');
+        // Dev timing overrides must be explicitly enabled.
+        // Otherwise, always respect the configured timing windows in config/challenger.php.
+        $devModeEnabled = (bool) (self::$_config->dev_mode ?? false);
 
-        if ($devModeEnabled || $isNonProduction) {
-            // Use configured dev timings if available, otherwise use legacy hardcoded values
-            self::$_config->lesson_start_min    = self::$_config->dev_lesson_start_min ?? 30;
-            self::$_config->lesson_start_max    = self::$_config->dev_lesson_start_max ?? 120;
-            self::$_config->lesson_random_min   = self::$_config->dev_lesson_random_min ?? 60;
-            self::$_config->lesson_random_max   = self::$_config->dev_lesson_random_max ?? 180;
-            self::$_config->final_challenge_min = self::$_config->dev_final_challenge_min ?? 90;
-            self::$_config->final_challenge_max = self::$_config->dev_final_challenge_max ?? 240;
-
-            Log::info('🚀 Challenger DEV MODE ENABLED', [
-                'dev_mode_flag' => $devModeEnabled,
-                'is_non_production' => $isNonProduction,
-                'lesson_start_window' => self::$_config->lesson_start_min . 's - ' . self::$_config->lesson_start_max . 's',
-                'lesson_random_window' => self::$_config->lesson_random_min . 's - ' . self::$_config->lesson_random_max . 's',
-                'final_challenge_window' => self::$_config->final_challenge_min . 's - ' . self::$_config->final_challenge_max . 's',
-            ]);
+        if (! $devModeEnabled) {
+            return;
         }
+
+        // Use configured dev timings if available, otherwise use legacy hardcoded values.
+        self::$_config->lesson_start_min    = self::$_config->dev_lesson_start_min ?? 30;
+        self::$_config->lesson_start_max    = self::$_config->dev_lesson_start_max ?? 120;
+        self::$_config->lesson_random_min   = self::$_config->dev_lesson_random_min ?? 60;
+        self::$_config->lesson_random_max   = self::$_config->dev_lesson_random_max ?? 180;
+        self::$_config->final_challenge_min = self::$_config->dev_final_challenge_min ?? 90;
+        self::$_config->final_challenge_max = self::$_config->dev_final_challenge_max ?? 240;
+
+        Log::info('Challenger DEV MODE ENABLED', [
+            'lesson_start_window'    => self::$_config->lesson_start_min . 's - ' . self::$_config->lesson_start_max . 's',
+            'lesson_random_window'   => self::$_config->lesson_random_min . 's - ' . self::$_config->lesson_random_max . 's',
+            'final_challenge_window' => self::$_config->final_challenge_min . 's - ' . self::$_config->final_challenge_max . 's',
+        ]);
     }
 }

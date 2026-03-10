@@ -74,6 +74,14 @@ class Kernel extends ConsoleKernel
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/session-timeout.log'));
 
+        // Expire pending participation challenges every minute.
+        // Ensures challenges fail on-time even if the student leaves the site/tab.
+        $schedule->command('challenges:expire-pending')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/challenges-expire-pending.log'));
+
         // Monitor cron job health every 15 minutes
         $schedule->command('cron:health-check --silent')
             ->cron('*/15 * * * *') // Every 15 minutes

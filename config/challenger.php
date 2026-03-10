@@ -2,10 +2,26 @@
 
 return [
 
-    'disabled'              => env('CHALLENGER_DISBLED', false),
+    'disabled'              => env('CHALLENGER_DISABLED', env('CHALLENGER_DISBLED', false)),
+
+    // Optional: speed up timing windows for local testing.
+    // When false, Challenger always uses the normal timing windows below.
+    'dev_mode'              => env('CHALLENGER_DEV_MODE', false),
+
+    // Dev-mode timing overrides (seconds)
+    'dev_lesson_start_min'      => (int) env('CHALLENGER_DEV_LESSON_START_MIN', 30),
+    'dev_lesson_start_max'      => (int) env('CHALLENGER_DEV_LESSON_START_MAX', 120),
+    'dev_lesson_random_min'     => (int) env('CHALLENGER_DEV_LESSON_RANDOM_MIN', 60),
+    'dev_lesson_random_max'     => (int) env('CHALLENGER_DEV_LESSON_RANDOM_MAX', 180),
+    'dev_final_challenge_min'   => (int) env('CHALLENGER_DEV_FINAL_CHALLENGE_MIN', 90),
+    'dev_final_challenge_max'   => (int) env('CHALLENGER_DEV_FINAL_CHALLENGE_MAX', 240),
 
     'challenge_time'        => 300,  // 5 min
     'challenge_expires_at'  => 335,  // 5m 35s; challenge_time + fudge factor
+
+    // Rate limit: target number of (non-final, non-EOL) challenges per 60 minutes.
+    // Example: 60-minute lesson @ 6/hour => max 6 regular challenges.
+    'challenges_per_hour'   => 6,
 
     // random window
     'lesson_start_min'      => 300,  // 5min

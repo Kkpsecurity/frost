@@ -31,47 +31,62 @@ trait CreateChallenge
         }
 
 
+        $isFinal = (bool) ($flags['is_final'] ?? false);
+        $isEol   = (bool) ($flags['is_eol']   ?? false);
+
+        // Rate limit regular challenges (non-final, non-EOL) based on lesson duration.
+        if (! $isFinal && ! $isEol) {
+
+            // Rolling window cap: no more than N regular challenges in any 60-minute window.
+            $perHour = (int) (self::$_config->challenges_per_hour ?? 0);
+            if ($perHour > 0) {
+                $recentRegular = Challenge::query()
+                    ->where('student_lesson_id', self::$_StudentLesson->id)
+                    ->where('is_final', false)
+                    ->where('is_eol', false)
+                    ->where('created_at', '>=', Carbon::now()->subHour())
+                    ->count();
+
+                if ($recentRegular >= $perHour) {
+                    kkpdebug('Challenger_Dbg', "{$debug_tag} regular challenge hourly cap reached ({$recentRegular}/{$perHour})");
+                    RCache::Locker($locker_key, 0);
+                    return null;
+                }
+            }
+
+            $maxRegular = self::_MaxRegularChallenges();
+            $existingRegular = Challenge::query()
+                ->where('student_lesson_id', self::$_StudentLesson->id)
+                ->where('is_final', false)
+                ->where('is_eol', false)
+                ->count();
+
+            if ($existingRegular >= $maxRegular) {
+                kkpdebug('Challenger_Dbg', "{$debug_tag} max regular challenges reached ({$existingRegular}/{$maxRegular})");
+                RCache::Locker($locker_key, 0);
+                return null;
+            }
+        }
+
+
         $Challenge = Challenge::create([
             'student_lesson_id' => self::$_StudentLesson->id,
-            'is_final'          => $flags['is_final'] ?? false,
-            'is_eol'            => $flags['is_eol']   ?? false,
+            'is_final'          => $isFinal,
+            'is_eol'            => $isEol,
             'expires_at'        => Carbon::now()->addSeconds(self::$_config->challenge_expires_at),
         ]);
 
 
         RCache::Locker($locker_key, 0);
 
-
-        // Log challenge_presented activity — non-fatal
-        try {
-            $studentUnit = self::$_StudentLesson->StudentUnit;
-            $courseAuth  = $studentUnit?->CourseAuth;
-            $userId      = (int) ($courseAuth?->user_id ?? 0);
-
-            if ($userId > 0) {
-                StudentActivity::create([
-                    'user_id'         => $userId,
-                    'course_auth_id'  => (int) ($studentUnit?->course_auth_id ?? 0),
-                    'course_date_id'  => (int) ($studentUnit?->course_date_id ?? 0),
-                    'student_unit_id' => (int) ($studentUnit?->id ?? 0),
-                    'inst_unit_id'    => (int) ($studentUnit?->inst_unit_id ?? 0),
-                    'category'        => StudentActivity::CATEGORY_INTERACTION,
-                    'activity_type'   => StudentActivity::TYPE_CHALLENGE_PRESENTED,
-                    'description'     => 'Challenge presented'
-                        . (($flags['is_final'] ?? false) ? ' (final)' : '')
-                        . (($flags['is_eol']   ?? false) ? ' (EOL)'   : ''),
-                    'data' => [
-                        'challenge_id'      => (int) $Challenge->id,
-                        'student_lesson_id' => (int) $Challenge->student_lesson_id,
-                        'lesson_id'         => (int) self::$_StudentLesson->lesson_id,
-                        'is_final'          => (bool) ($flags['is_final'] ?? false),
-                        'is_eol'            => (bool) ($flags['is_eol']   ?? false),
-                    ],
-                ]);
-            }
-        } catch (\Throwable $e) {
-            // Non-fatal — never break challenge creation
-        }
+        // Log challenge_presented activity (non-fatal)
+        self::_LogChallengeActivity(
+            $Challenge,
+            StudentActivity::TYPE_CHALLENGE_PRESENTED,
+            'Challenge presented'
+                . ($isFinal ? ' (final)' : '')
+                . ($isEol ? ' (EOL)' : '')
+        );
 
 
         kkpdebug(

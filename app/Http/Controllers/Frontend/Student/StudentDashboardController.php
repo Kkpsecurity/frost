@@ -822,6 +822,30 @@ class StudentDashboardController extends Controller
                         ->pluck('id');
 
                     if ($studentLessons->isNotEmpty()) {
+                        // If any pending challenges have expired, mark them failed so the result is recorded
+                        // even when the student is not actively polling the classroom endpoint.
+                        // Keep this small/cheap: only process a limited number per poll.
+                        try {
+                            $expiredPending = \App\Models\Challenge::whereIn('student_lesson_id', $studentLessons)
+                                ->whereNull('completed_at')
+                                ->whereNull('failed_at')
+                                ->whereNotNull('expires_at')
+                                ->where('expires_at', '<=', now())
+                                ->orderBy('id')
+                                ->limit(25)
+                                ->get();
+
+                            foreach ($expiredPending as $pendingChallenge) {
+                                try {
+                                    Challenger::MarkFailed($pendingChallenge);
+                                } catch (\Throwable $e) {
+                                    // Non-fatal: continue marking others
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            // Non-fatal
+                        }
+
                         // Get challenges (completed, failed, or expired only - not pending)
                         $challenges = \App\Models\Challenge::whereIn('student_lesson_id', $studentLessons)
                             ->where(function ($q) {

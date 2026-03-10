@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "../Student/Components/Dashboard/MainDashboard";
 import PageLoader from "../Shared/Components/Widgets/PageLoader";
@@ -104,6 +104,13 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
     // Challenge state
     const [activeChallenge, setActiveChallenge] = useState<ChallengeData | null>(null);
+
+    // Prevent modal flicker: after successfully completing a challenge, the next poll
+    // can still briefly return the same challenge_id (5s poll interval). Suppress it.
+    const suppressChallengeRef = useRef<{ id: number; until: number } | null>(null);
+
+    // Student activity tracking (tab visibility)
+    const tabHiddenAtRef = useRef<string | null>(null);
 
     // Persist selection
     useEffect(() => {
@@ -221,6 +228,54 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     const classroomPoll = getOkData<any>(classroomPollRes);
 
     // ---------------------------------------------------------------------
+    // STUDENT ACTIVITY: TAB VISIBILITY
+    // Record tab hidden/visible events while in an active classroom session,
+    // so challenge timeouts can be correlated with student presence.
+    // ---------------------------------------------------------------------
+    useEffect(() => {
+        if (!courseDateId) return;
+
+        const csrfToken =
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
+
+        const track = (isVisible: boolean, hiddenAt: string | null) => {
+            fetch("/api/student/activity/tab-visibility", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": csrfToken,
+                },
+                body: JSON.stringify({
+                    is_visible: isVisible,
+                    hidden_at: hiddenAt,
+                }),
+                keepalive: true,
+            }).catch(() => {
+                // Non-blocking: tracking must never break classroom UX
+            });
+        };
+
+        const onVisibilityChange = () => {
+            if (document.hidden) {
+                tabHiddenAtRef.current = new Date().toISOString();
+                track(false, null);
+            } else {
+                track(true, tabHiddenAtRef.current);
+                tabHiddenAtRef.current = null;
+            }
+        };
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+
+        return () => {
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+            tabHiddenAtRef.current = null;
+        };
+    }, [courseDateId]);
+
+    // ---------------------------------------------------------------------
     // RECONCILIATION: validate persisted selectedCourseAuthId against live
     // enrollment list from the poll.
     //
@@ -318,6 +373,27 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     useEffect(() => {
         const challenge = classroomPoll?.challenge ?? null;
 
+        // If backend stops sending challenges, clear any suppression.
+        if (!challenge?.challenge_id) {
+            suppressChallengeRef.current = null;
+        }
+
+        // Suppress a just-completed challenge_id until the poll catches up.
+        if (challenge?.challenge_id && suppressChallengeRef.current) {
+            const suppress = suppressChallengeRef.current;
+
+            if (suppress.id === Number(challenge.challenge_id)) {
+                if (Date.now() < suppress.until) {
+                    return;
+                }
+                // Suppression expired: allow it to show again if it is truly still active.
+                suppressChallengeRef.current = null;
+            } else {
+                // New challenge id: stop suppressing the old one.
+                suppressChallengeRef.current = null;
+            }
+        }
+
         if (challenge?.challenge_id) {
             if (!activeChallenge || activeChallenge.challenge_id !== challenge.challenge_id) {
                 setActiveChallenge(challenge);
@@ -345,6 +421,11 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         const result = await response.json();
         if (!result.success) throw new Error(result.message || "Failed to submit challenge response");
 
+        // Hide the modal immediately and suppress re-opening on the next poll.
+        suppressChallengeRef.current = {
+            id: Number(challengeId),
+            until: Date.now() + 15000, // 15s covers 1-3 poll intervals
+        };
         setActiveChallenge(null);
     };
 
