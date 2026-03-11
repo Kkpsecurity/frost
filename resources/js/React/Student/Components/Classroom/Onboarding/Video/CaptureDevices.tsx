@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "react-bootstrap";
 import { toast } from "react-toastify";
 
@@ -55,6 +55,9 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
      */
     const [headshot, setHeadshot] = useState<string | null>(null);
     const [idcard, setIdcard] = useState<string | null>(null);
+
+    // Prevents the validations poll from re-setting local state after the user clicks Retake
+    const retakeModeRef = useRef<{ headshot: boolean; idcard: boolean }>({ headshot: false, idcard: false });
 
     /**
      * Modern Take Photo Button
@@ -217,12 +220,14 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
             }
         }
 
-        if (headshotToSet) {
+        if (headshotToSet && !retakeModeRef.current.headshot) {
             setHeadshot(headshotToSet);
         }
 
         // Handle ID card
-        setIdcard(validations.idcard);
+        if (!retakeModeRef.current.idcard) {
+            setIdcard(validations.idcard);
+        }
 
     }, [validations, student, setHeadshot, setIdcard]);
 
@@ -287,6 +292,40 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                     display: 'flex',
                     gap: '8px'
                 }}>
+                    {/* Retake button — only shown when an image already exists */}
+                    {((photoType === 'headshot' && headshot) || (photoType === 'idcard' && idcard)) && (
+                        <button
+                            onClick={() => {
+                                if (photoType === 'headshot') {
+                                    retakeModeRef.current.headshot = true;
+                                    setHeadshot(null);
+                                }
+                                if (photoType === 'idcard') {
+                                    retakeModeRef.current.idcard = true;
+                                    setIdcard(null);
+                                }
+                                setShowCaptureType(null);
+                            }}
+                            style={{
+                                background: 'rgba(239,68,68,0.15)',
+                                border: '1px solid rgba(239,68,68,0.5)',
+                                borderRadius: '8px',
+                                padding: '8px 16px',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                minWidth: '90px',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            🔄 Retake
+                        </button>
+                    )}
                     <TakePhoto
                         photoType={photoType}
                         headshot={headshot}
@@ -315,6 +354,8 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                         headshot={headshot}
                         idcard={idcard}
                         onStepComplete={() => {
+                            retakeModeRef.current.headshot = false;
+                            retakeModeRef.current.idcard = false;
                             toast.success(
                                 photoType === "headshot"
                                     ? "Headshot uploaded successfully"
@@ -338,6 +379,8 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                         headshot={headshot}
                         idcard={idcard}
                         onStepComplete={() => {
+                            retakeModeRef.current.headshot = false;
+                            retakeModeRef.current.idcard = false;
                             toast.success(
                                 photoType === "headshot"
                                     ? "Headshot uploaded successfully"

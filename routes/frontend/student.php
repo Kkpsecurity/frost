@@ -131,16 +131,16 @@ Route::middleware(['auth'])->group(function () {
     /**
      * Class Status Routes for Waiting Room / Onboarding Flow
      */
-    Route::get('/api/student/class-status/{courseDateId}', [StudentDashboardController::class, 'getClassStatus'])
+    Route::get('/classroom/student/class-status/{courseDateId}', [StudentDashboardController::class, 'getClassStatus'])
         ->where('courseDateId', '[0-9]+')
-        ->name('api.student.class-status');
+        ->name('classroom.student.class-status');
 
-    Route::get('/api/student/find-active-class', [StudentDashboardController::class, 'findActiveClass'])
-        ->name('api.student.find-active-class');
+    Route::get('/classroom/student/find-active-class', [StudentDashboardController::class, 'findActiveClass'])
+        ->name('classroom.student.find-active-class');
 
-    Route::get('/api/student/course-auth/{courseAuthId}/lessons', [StudentDashboardController::class, 'getCourseAuthLessons'])
+    Route::get('/classroom/student/course-auth/{courseAuthId}/lessons', [StudentDashboardController::class, 'getCourseAuthLessons'])
         ->where('courseAuthId', '[0-9]+')
-        ->name('api.student.course-auth.lessons');
+        ->name('classroom.student.course-auth.lessons');
 
     /**
      * Student ID Verification Routes
@@ -284,33 +284,33 @@ Route::middleware(['auth'])->group(function () {
     /**
      * Student Activity Tracking Routes
      */
-    Route::prefix('api/student/activity')->group(function () {
+    Route::prefix('classroom/activity')->group(function () {
         Route::post('/site-entry', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackSiteEntry'])
-            ->name('api.student.activity.site-entry');
+            ->name('classroom.activity.site-entry');
 
         Route::post('/site-exit', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackSiteExit'])
-            ->name('api.student.activity.site-exit');
+            ->name('classroom.activity.site-exit');
 
         Route::post('/classroom-entry', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackClassroomEntry'])
-            ->name('api.student.activity.classroom-entry');
+            ->name('classroom.activity.classroom-entry');
 
         Route::post('/agreement-accepted', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackAgreementAccepted'])
-            ->name('api.student.activity.agreement-accepted');
+            ->name('classroom.activity.agreement-accepted');
 
         Route::post('/rules-accepted', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackRulesAccepted'])
-            ->name('api.student.activity.rules-accepted');
+            ->name('classroom.activity.rules-accepted');
 
         Route::post('/tab-visibility', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackTabVisibility'])
-            ->name('api.student.activity.tab-visibility');
+            ->name('classroom.activity.tab-visibility');
 
         Route::post('/button-click', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'trackButtonClick'])
-            ->name('api.student.activity.button-click');
+            ->name('classroom.activity.button-click');
 
         Route::get('/timeline', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'getTimeline'])
-            ->name('api.student.activity.timeline');
+            ->name('classroom.activity.timeline');
 
         Route::get('/away-time', [\App\Http\Controllers\Frontend\Student\StudentActivityController::class, 'getAwayTime'])
-            ->name('api.student.activity.away-time');
+            ->name('classroom.activity.away-time');
     });
 
     // Main student classroom dashboard

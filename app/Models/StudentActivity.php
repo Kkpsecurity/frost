@@ -61,6 +61,7 @@ class StudentActivity extends Model
     public const TYPE_RULES_ACCEPTED = 'rules_accepted';
     public const TYPE_ID_CARD_UPLOADED = 'id_card_uploaded';
     public const TYPE_HEADSHOT_UPLOADED = 'headshot_uploaded';
+    public const TYPE_ONBOARDING_COMPLETED = 'onboarding_completed';
     public const TYPE_TAB_HIDDEN = 'tab_hidden';
     public const TYPE_TAB_VISIBLE = 'tab_visible';
     public const TYPE_IDLE_START = 'idle_start';
@@ -71,6 +72,8 @@ class StudentActivity extends Model
     public const TYPE_LESSON_COMPLETED = 'lesson_completed';
     public const TYPE_LESSON_PAUSED = 'lesson_paused';
     public const TYPE_LESSON_UNPAUSED = 'lesson_unpaused';
+    public const TYPE_LESSON_ASSIGNED = 'lesson_assigned'; // Present at lesson start — got a StudentLesson
+    public const TYPE_LESSON_ABSENT   = 'lesson_absent';   // Not present at lesson start — no StudentLesson created
 
     // Challenge participation
     public const TYPE_CHALLENGE_PRESENTED = 'challenge_presented';

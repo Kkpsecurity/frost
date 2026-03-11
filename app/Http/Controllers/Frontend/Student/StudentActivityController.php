@@ -21,7 +21,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track site entry
-     * POST /api/student/activity/site-entry
+     * POST /classroom/activity/site-entry
      */
     public function trackSiteEntry(Request $request): JsonResponse
     {
@@ -42,7 +42,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track site exit
-     * POST /api/student/activity/site-exit
+     * POST /classroom/activity/site-exit
      */
     public function trackSiteExit(Request $request): JsonResponse
     {
@@ -63,7 +63,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track classroom entry
-     * POST /api/student/activity/classroom-entry
+     * POST /classroom/activity/classroom-entry
      */
     public function trackClassroomEntry(Request $request): JsonResponse
     {
@@ -101,7 +101,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track agreement acceptance
-     * POST /api/student/activity/agreement-accepted
+     * POST /classroom/activity/agreement-accepted
      */
     public function trackAgreementAccepted(Request $request): JsonResponse
     {
@@ -138,7 +138,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track rules acceptance
-     * POST /api/student/activity/rules-accepted
+     * POST /classroom/activity/rules-accepted
      */
     public function trackRulesAccepted(Request $request): JsonResponse
     {
@@ -169,7 +169,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track tab visibility change
-     * POST /api/student/activity/tab-visibility
+     * POST /classroom/activity/tab-visibility
      */
     public function trackTabVisibility(Request $request): JsonResponse
     {
@@ -209,7 +209,7 @@ class StudentActivityController extends Controller
 
     /**
      * Track button click
-     * POST /api/student/activity/button-click
+     * POST /classroom/activity/button-click
      */
     public function trackButtonClick(Request $request): JsonResponse
     {
@@ -247,7 +247,7 @@ class StudentActivityController extends Controller
 
     /**
      * Get student activity timeline
-     * GET /api/student/activity/timeline
+     * GET /classroom/activity/timeline
      */
     public function getTimeline(Request $request): JsonResponse
     {
@@ -266,7 +266,7 @@ class StudentActivityController extends Controller
 
     /**
      * Get time away from site (audit report)
-     * GET /api/student/activity/away-time
+     * GET /classroom/activity/away-time
      */
     public function getAwayTime(Request $request): JsonResponse
     {

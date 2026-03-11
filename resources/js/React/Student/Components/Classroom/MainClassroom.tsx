@@ -36,6 +36,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
     const studentContext = useStudent();
     const queryClient = useQueryClient();
     const [onboardingKey, setOnboardingKey] = useState(0); // Key to force refresh after onboarding
+    const [onboardingCompleting, setOnboardingCompleting] = useState(false); // Suppress flicker between onComplete and poll refresh
     const [showExamRoom, setShowExamRoom] = useState(false); // Exam room state
     const [hasExitedExamRoom, setHasExitedExamRoom] = useState(false); // Track if user explicitly exited
 
@@ -445,7 +446,13 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
         // Determine if onboarding is needed
         // Check validations.onboarding_completed instead of studentUnit.onboarding_completed
         // Validations object manages all onboarding requirements (terms, rules, identity)
-        const needsOnboarding = !validations?.onboarding_completed;
+        // Also skip if we just completed and are waiting for the poll to confirm
+        const needsOnboarding = !validations?.onboarding_completed && !onboardingCompleting;
+
+        // Once poll confirms completion, clear the local flag
+        if (onboardingCompleting && validations?.onboarding_completed) {
+            setOnboardingCompleting(false);
+        }
 
         console.log("🔍 Onboarding check:", {
             hasStudentUnit: !!studentUnit,
@@ -468,7 +475,8 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                     courseAuth={courseData} // Pass course data which includes agreed_at
                     validations={validations || null}
                     onComplete={() => {
-                        // Force classroom context to refresh by incrementing key
+                        // Suppress the re-render flicker while waiting for poll to confirm
+                        setOnboardingCompleting(true);
                         setOnboardingKey((prev) => prev + 1);
                         console.log(
                             "✅ Onboarding complete - polling will refresh automatically",

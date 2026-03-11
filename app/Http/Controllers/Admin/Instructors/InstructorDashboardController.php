@@ -41,19 +41,22 @@ class InstructorDashboardController extends Controller
     protected ClassroomService $classroomService;
     protected BackendStudentService $studentService;
     protected IdentityVerificationService $identityService;
+    protected \App\Services\StudentActivityTracker $activityTracker;
 
     public function __construct(
         InstructorDashboardService $dashboardService,
         CourseDatesService $courseDatesService,
         ClassroomService $classroomService,
         BackendStudentService $studentService,
-        IdentityVerificationService $identityService
+        IdentityVerificationService $identityService,
+        \App\Services\StudentActivityTracker $activityTracker
     ) {
         $this->dashboardService = $dashboardService;
         $this->courseDatesService = $courseDatesService;
         $this->classroomService = $classroomService;
         $this->studentService = $studentService;
         $this->identityService = $identityService;
+        $this->activityTracker = $activityTracker;
 
         // Make sure that the validation directories are created
         $idcardsPath = config('storage.paths.idcards', 'idcards');
@@ -2231,7 +2234,7 @@ class InstructorDashboardController extends Controller
         Log::info('startLesson validation passed');
 
         try {
-            $courseDate = \App\Models\CourseDate::with(['InstUnit', 'StudentUnits'])->findOrFail($request->course_date_id);
+            $courseDate = \App\Models\CourseDate::with(['InstUnit', 'StudentUnits.CourseAuth.User'])->findOrFail($request->course_date_id);
 
             if (!$this->hasInstructorAccess($courseDate)) {
                 return response()->json([
@@ -2282,27 +2285,79 @@ class InstructorDashboardController extends Controller
             // Refresh to get the created_at timestamp
             $instLesson->refresh();
 
-            // ✅ CREATE STUDENT LESSONS: When instructor starts a lesson, create StudentLesson records for all students
-            $studentUnits = $courseDate->StudentUnits;
+            // ✅ CREATE STUDENT LESSONS: Only for students currently online (≤5 min since last heartbeat).
+            // Track presence status for ALL students regardless.
+            $studentUnits  = $courseDate->StudentUnits;
+            $now           = \Carbon\Carbon::now();
+            $presentCount  = 0;
+            $absentCount   = 0;
+
             foreach ($studentUnits as $studentUnit) {
-                \App\Models\StudentLesson::firstOrCreate(
-                    [
-                        'student_unit_id' => $studentUnit->id,
-                        'lesson_id' => $request->lesson_id,
-                    ],
-                    [
-                        'inst_lesson_id' => $instLesson->id,
-                        'completed_at' => null,
-                    ]
-                );
+                $user = $studentUnit->CourseAuth?->User;
+                if (!$user) {
+                    continue; // Skip if user cannot be resolved
+                }
+
+                // A student is "online" if their student_unit record was touched within the last 5 minutes
+                // (Eloquent update() via heartbeat auto-bumps updated_at)
+                $lastActivity   = $studentUnit->updated_at
+                    ? (($studentUnit->updated_at instanceof \Carbon\Carbon)
+                        ? $studentUnit->updated_at
+                        : \Carbon\Carbon::parse($studentUnit->updated_at))
+                    : null;
+
+                $isOnline = $lastActivity && $lastActivity->diffInMinutes($now) <= 5;
+
+                $sharedContext = [
+                    'course_auth_id'  => $studentUnit->course_auth_id,
+                    'course_date_id'  => $courseDate->id,
+                    'student_unit_id' => $studentUnit->id,
+                ];
+
+                if ($isOnline) {
+                    // Student is present — create their StudentLesson
+                    \App\Models\StudentLesson::firstOrCreate(
+                        [
+                            'student_unit_id' => $studentUnit->id,
+                            'lesson_id'       => $request->lesson_id,
+                        ],
+                        [
+                            'inst_lesson_id' => $instLesson->id,
+                            'completed_at'   => null,
+                        ]
+                    );
+
+                    $this->activityTracker->trackLessonAssigned(
+                        $user->id,
+                        $studentUnit->id,
+                        $request->lesson_id,
+                        $instLesson->id,
+                        $sharedContext
+                    );
+
+                    $presentCount++;
+                } else {
+                    // Student is absent — no StudentLesson, but record their absence
+                    $this->activityTracker->trackLessonAbsent(
+                        $user->id,
+                        $studentUnit->id,
+                        $request->lesson_id,
+                        $instLesson->id,
+                        $sharedContext
+                    );
+
+                    $absentCount++;
+                }
             }
 
             Log::info('Instructor started lesson', [
-                'instructor_id' => Auth::guard('admin')->id(),
-                'course_date_id' => $request->course_date_id,
-                'lesson_id' => $request->lesson_id,
-                'inst_lesson_id' => $instLesson->id,
-                'student_lessons_created' => $studentUnits->count(),
+                'instructor_id'           => Auth::guard('admin')->id(),
+                'course_date_id'          => $request->course_date_id,
+                'lesson_id'               => $request->lesson_id,
+                'inst_lesson_id'          => $instLesson->id,
+                'students_present'        => $presentCount,
+                'students_absent'         => $absentCount,
+                'student_lessons_created' => $presentCount,
             ]);
 
             // Fire lesson started event → notifies all students in the session

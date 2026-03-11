@@ -140,30 +140,44 @@ class Validation extends Model
     {
         $subfolder = $this->course_auth_id ? '/idcards/' : '/headshots/';
 
-        // For ID cards, use course_auth_id_fullname pattern
+        // ID Card: {courseAuthId}_{firstName}_{lastName}
         if ($this->course_auth_id) {
             $courseAuth = $this->CourseAuth;
             if ($courseAuth && $courseAuth->User) {
-                $student = $courseAuth->User;
+                $user = $courseAuth->User;
                 $filenameBase = $this->course_auth_id . '_' .
-                    strtolower(str_replace(' ', '_', $student->name));
+                    strtolower($user->fname) . '_' . strtolower($user->lname);
                 return 'media/' . self::PATH_PRE . $subfolder . $filenameBase;
             }
+            throw new \RuntimeException(
+                "Validation#{$this->id}: Cannot resolve ID card path — CourseAuth#{$this->course_auth_id} has no linked User"
+            );
         }
 
-        // For headshots, use student_unit_id pattern if available
-        if (!$this->course_auth_id && $this->student_unit_id) {
+        // Headshot: {studentUnitId}_{date}_{firstName}_{lastName}
+        // Uses StudentUnit→CourseAuth→User (NOT StudentUnit→Student which has no FK on this table)
+        if ($this->student_unit_id) {
             $studentUnit = $this->StudentUnit;
-            if ($studentUnit && $studentUnit->Student) {
-                $student = $studentUnit->Student;
-                $filenameBase = $this->student_unit_id . '_' .
-                    strtolower(str_replace(' ', '_', $student->name));
-                return 'media/' . self::PATH_PRE . $subfolder . $filenameBase;
+            if ($studentUnit) {
+                $courseAuth = $studentUnit->CourseAuth;
+                if ($courseAuth && $courseAuth->User) {
+                    $user = $courseAuth->User;
+                    $date = $studentUnit->CourseDate
+                        ? $studentUnit->CourseDate->starts_at->format('Y-m-d')
+                        : now()->format('Y-m-d');
+                    $filenameBase = $this->student_unit_id . '_' . $date . '_' .
+                        strtolower($user->fname) . '_' . strtolower($user->lname);
+                    return 'media/' . self::PATH_PRE . $subfolder . $filenameBase;
+                }
             }
+            throw new \RuntimeException(
+                "Validation#{$this->id}: Cannot resolve headshot path — StudentUnit#{$this->student_unit_id} has no linked CourseAuth/User"
+            );
         }
 
-        // Fallback to UUID pattern
-        return self::PATH_PRE . $subfolder . $this->uuid;
+        throw new \RuntimeException(
+            "Validation#{$this->id}: Cannot resolve path — neither course_auth_id nor student_unit_id is set"
+        );
     }
 
 

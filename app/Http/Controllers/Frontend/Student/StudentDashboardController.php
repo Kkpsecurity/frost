@@ -33,6 +33,7 @@ use App\Services\ClassroomDashboardService;
 use App\Services\StudentUnitService;
 use App\Services\SelfStudyLessonService;
 use App\Services\PauseAllocationService;
+use App\Services\StudentActivityTracker;
 use App\Models\ZoomCreds;
 use App\Classes\Students\Challenger;
 use App\Models\StudentLesson;
@@ -43,6 +44,13 @@ use App\Models\StudentVideoQuota;
 class StudentDashboardController extends Controller
 {
     use PageMetaDataTrait;
+
+    protected StudentActivityTracker $activityTracker;
+
+    public function __construct(StudentActivityTracker $activityTracker)
+    {
+        $this->activityTracker = $activityTracker;
+    }
 
     private function repairValidationsIdSequenceIfNeeded(): void
     {
@@ -2341,18 +2349,15 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
-        // Track rules acceptance in student_activity table
-        \App\Models\StudentActivity::create([
-            'user_id' => $user->id,
-            'student_unit_id' => $studentUnit->id,
-            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
-            'activity_type' => \App\Models\StudentActivity::TYPE_RULES_ACCEPTED,
-            'description' => 'Student accepted classroom rules',
-            'data' => [
+        // Track rules acceptance — idempotent via tracker (no duplicate per student_unit)
+        $this->activityTracker->trackRulesAccepted(
+            $user->id,
+            $studentUnit->id,
+            [
                 'course_date_id' => $courseDate->id,
-                'accepted_at' => now()->toIso8601String()
+                'course_auth_id' => $studentUnit->course_auth_id,
             ]
-        ]);
+        );
 
         return response()->json([
             'success' => true,
@@ -2463,17 +2468,10 @@ class StudentDashboardController extends Controller
             ], 422);
         }
 
-        // Track onboarding completion in student_activity
-        \App\Models\StudentActivity::create([
-            'user_id' => $user->id,
-            'student_unit_id' => $studentUnit->id,
-            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
-            'activity_type' => 'onboarding_completed',
-            'description' => 'Student completed onboarding process',
-            'data' => [
-                'course_date_id' => $courseDate->id,
-                'completed_at' => now()->toIso8601String()
-            ]
+        // Track onboarding completion — idempotent via tracker
+        $this->activityTracker->trackOnboardingCompleted($user->id, $studentUnit->id, [
+            'course_date_id' => $courseDate->id,
+            'course_auth_id' => $studentUnit->course_auth_id,
         ]);
 
         return response()->json([
@@ -2521,7 +2519,7 @@ class StudentDashboardController extends Controller
 
         $path = $validation
             ? $validation->RelPathForExtension($extension)
-            : ('validations/idcards/' . $file->hashName());
+            : ('media/validations/idcards/' . $file->hashName());
 
         Storage::disk('public')->putFileAs(
             dirname($path),
@@ -2533,21 +2531,12 @@ class StudentDashboardController extends Controller
         $verified['id_card_uploaded'] = true;
         $verified['id_card_path'] = $path;
         $verified['id_card_uploaded_at'] = now()->toISOString();
-        $studentUnit->verified = $verified;
-        $studentUnit->save();
-
-        // Track ID card upload in student_activity table
-        \App\Models\StudentActivity::create([
-            'user_id' => $user->id,
-            'student_unit_id' => $studentUnit->id,
-            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
-            'activity_type' => \App\Models\StudentActivity::TYPE_ID_CARD_UPLOADED,
-            'description' => 'Student uploaded ID card for verification',
-            'data' => [
-                'course_date_id' => $courseDate->id,
-                'file_path' => $path,
-                'uploaded_at' => now()->toIso8601String()
-            ]
+        \DB::table('student_unit')
+            ->where('id', $studentUnit->id)
+            ->update(['verified' => json_encode($verified)]);
+        $this->activityTracker->trackIdCardUploaded($user->id, $studentUnit->id, [
+            'course_date_id' => $courseDate->id,
+            'course_auth_id' => $studentUnit->course_auth_id,
         ]);
 
         return response()->json([
@@ -2604,21 +2593,14 @@ class StudentDashboardController extends Controller
         $verified['headshot_uploaded'] = true;
         $verified['headshot_path'] = $path;
         $verified['headshot_uploaded_at'] = now()->toISOString();
-        $studentUnit->verified = $verified;
-        $studentUnit->save();
+        \DB::table('student_unit')
+            ->where('id', $studentUnit->id)
+            ->update(['verified' => json_encode($verified)]);
 
-        // Track headshot upload in student_activity table
-        \App\Models\StudentActivity::create([
-            'user_id' => $user->id,
-            'student_unit_id' => $studentUnit->id,
-            'category' => \App\Models\StudentActivity::CATEGORY_AGREEMENT,
-            'activity_type' => \App\Models\StudentActivity::TYPE_HEADSHOT_UPLOADED,
-            'description' => 'Student uploaded headshot photo for verification',
-            'data' => [
-                'course_date_id' => $courseDate->id,
-                'file_path' => $path,
-                'uploaded_at' => now()->toIso8601String()
-            ]
+        // Track headshot upload — idempotent via tracker
+        $this->activityTracker->trackHeadshotUploaded($user->id, $studentUnit->id, [
+            'course_date_id' => $courseDate->id,
+            'course_auth_id' => $studentUnit->course_auth_id,
         ]);
 
         return response()->json([
@@ -2782,11 +2764,11 @@ class StudentDashboardController extends Controller
 
             // Determine storage path based on photo type
             $photoType = $validated['photoType'];
-            $storageFolder = 'validations/photos';
+            $storageFolder = 'media/validations/photos';
             if ($photoType === 'headshot') {
-                $storageFolder = 'validations/headshots';
+                $storageFolder = 'media/validations/headshots';
             } elseif ($photoType === 'id_card' || $photoType === 'idcard') {
-                $storageFolder = 'validations/idcards';
+                $storageFolder = 'media/validations/idcards';
             }
 
             \Log::error('uploadStudentPhoto: Storage folder determination', [
@@ -2977,8 +2959,10 @@ class StudentDashboardController extends Controller
                     $verified['id_card_uploaded_at'] = now()->toISOString();
                 }
 
-                $studentUnit->verified = $verified;
-                $studentUnit->save();
+                // Use direct DB update to bypass model observer/cache layer (avoids Redis dependency)
+                \DB::table('student_unit')
+                    ->where('id', $studentUnit->id)
+                    ->update(['verified' => json_encode($verified)]);
 
                 \Log::info('uploadStudentPhoto: StudentUnit verified data updated', [
                     'student_unit_id' => $studentUnit->id,
@@ -2986,7 +2970,7 @@ class StudentDashboardController extends Controller
                     'verified_data' => $verified,
                 ]);
             } catch (\Exception $e) {
-                // If updating verified data fails, still save the file but log the error
+                // If updating verified data fails, still track and return success
                 \Log::error('uploadStudentPhoto: Failed to update StudentUnit verified data', [
                     'student_unit_id' => $studentUnit->id,
                     'photo_type' => $validated['photoType'],
@@ -2994,7 +2978,17 @@ class StudentDashboardController extends Controller
                     'raw_verified' => $studentUnit->getRawOriginal('verified') ?? 'null',
                 ]);
 
-                // Return success but with warning about verification update failure
+                // Still track — tracker uses DB directly, not Redis
+                $trackContext = [
+                    'course_date_id' => $validated['course_date_id'] ?? null,
+                    'course_auth_id' => $validated['course_auth_id'] ?? null,
+                ];
+                if ($validated['photoType'] === 'headshot') {
+                    $this->activityTracker->trackHeadshotUploaded($user->id, $studentUnit->id, $trackContext);
+                } elseif (in_array($validated['photoType'], ['id_card', 'idcard'])) {
+                    $this->activityTracker->trackIdCardUploaded($user->id, $studentUnit->id, $trackContext);
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => ucfirst($validated['photoType']) . ' uploaded successfully (verification update failed)',
@@ -3007,6 +3001,17 @@ class StudentDashboardController extends Controller
                         'warning' => 'File uploaded but verification status could not be updated',
                     ],
                 ]);
+            }
+
+            // Track via proper tracker (idempotent, sets course_date_id column)
+            $trackContext = [
+                'course_date_id' => $validated['course_date_id'] ?? null,
+                'course_auth_id' => $validated['course_auth_id'] ?? null,
+            ];
+            if ($validated['photoType'] === 'headshot') {
+                $this->activityTracker->trackHeadshotUploaded($user->id, $studentUnit->id, $trackContext);
+            } elseif (in_array($validated['photoType'], ['id_card', 'idcard'])) {
+                $this->activityTracker->trackIdCardUploaded($user->id, $studentUnit->id, $trackContext);
             }
 
             return response()->json([
@@ -3154,7 +3159,7 @@ class StudentDashboardController extends Controller
 
             $idPath = $validation
                 ? $validation->RelPathForExtension($extension)
-                : ('validations/idcards/' . $file->hashName());
+                : ('media/validations/idcards/' . $file->hashName());
 
             Storage::disk('public')->putFileAs(dirname($idPath), $file, basename($idPath));
             $verified['id_card_uploaded'] = true;

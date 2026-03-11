@@ -111,8 +111,8 @@ const ValidationConfirmationView: React.FC<{
                                 {!idCardUrl && !headshotUrl
                                     ? "Both ID card and headshot images are missing. Please upload them to continue."
                                     : !idCardUrl
-                                    ? "ID card image is missing. Please upload it to continue."
-                                    : "Headshot image is missing. Please upload it to continue."}
+                                        ? "ID card image is missing. Please upload it to continue."
+                                        : "Headshot image is missing. Please upload it to continue."}
                             </p>
                         </div>
                     )}
@@ -261,6 +261,15 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
     const [countdown, setCountdown] = useState<number>(0);
     const [pendingType, setPendingType] = useState<'idcard' | 'headshot' | null>(null);
 
+    // Set when the user explicitly clicks a Back button — suppresses auto-advance
+    // so the student can re-upload without being immediately pushed forward again.
+    const userNavigatedBackRef = React.useRef(false);
+
+    const goBack = (step: number) => {
+        userNavigatedBackRef.current = true;
+        setCurrentStep(step);
+    };
+
     /**
      * Create a state to hold the capture type
      * webcam | upload
@@ -359,6 +368,9 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
             return;
         }
 
+        // User clicked Back — let them stay on the step they chose.
+        if (userNavigatedBackRef.current) return;
+
         if (currentStep === 2 && idCardUrl) {
             // ID is already done, go to headshot
             setCurrentStep(3);
@@ -435,8 +447,12 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
         );
     };
 
-    const renderStepContent = () => {
+    // Scroll to top only when the step changes, not on every re-render.
+    React.useEffect(() => {
         window.scrollTo(0, 0);
+    }, [currentStep]);
+
+    const renderStepContent = () => {
         switch (currentStep) {
             case 1:
                 return (
@@ -460,6 +476,7 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         currentStep={currentStep}
                         onUploaded={() => {
                             setValidationMessage('ID uploaded. Waiting validation…');
+                            userNavigatedBackRef.current = false;
                             beginCountdown(3, 'idcard');
                         }}
                         debug={debug}
@@ -481,6 +498,7 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         isImageSet={() => true}
                         onUploaded={() => {
                             setValidationMessage('Headshot uploaded. Waiting validation…');
+                            userNavigatedBackRef.current = false;
                             beginCountdown(4, 'headshot');
                         }}
                         debug={debug}
@@ -491,7 +509,7 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                     <ValidationConfirmationView
                         validations={validations}
                         student={student}
-                        setCurrentStep={setCurrentStep}
+                        setCurrentStep={goBack}
                         onComplete={onComplete}
                     />
                 );

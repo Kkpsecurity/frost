@@ -112,6 +112,10 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     // Student activity tracking (tab visibility)
     const tabHiddenAtRef = useRef<string | null>(null);
 
+    // Prevent duplicate classroom_entry fires: track the last courseDateId we
+    // already reported so a re-render loop doesn't fire it twice.
+    const classroomEntryFiredRef = useRef<number | null>(null);
+
     // Persist selection
     useEffect(() => {
         if (selectedCourseAuthId !== null) {
@@ -239,7 +243,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
 
         const track = (isVisible: boolean, hiddenAt: string | null) => {
-            fetch("/api/student/activity/tab-visibility", {
+            fetch("/classroom/activity/tab-visibility", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -274,6 +278,43 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             tabHiddenAtRef.current = null;
         };
     }, [courseDateId]);
+
+    // ---------------------------------------------------------------------
+    // STUDENT ACTIVITY: CLASSROOM ENTRY
+    // Fire once per course_date_id as soon as the student has an active
+    // classroom session (courseDateId transitions null → value).
+    // ---------------------------------------------------------------------
+    useEffect(() => {
+        if (!courseDateId) return;
+        if (!selectedCourseAuthId) return;
+
+        // Already fired for this session — skip.
+        if (classroomEntryFiredRef.current === courseDateId) return;
+        classroomEntryFiredRef.current = courseDateId;
+
+        const csrfToken =
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
+
+        fetch("/classroom/activity/classroom-entry", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": csrfToken,
+            },
+            body: JSON.stringify({
+                course_auth_id: selectedCourseAuthId,
+                course_date_id: courseDateId,
+                student_unit_id: studentPoll?.studentUnit?.id ?? null,
+                inst_unit_id: activeClassroom?.inst_unit_id ?? null,
+            }),
+            keepalive: true,
+        }).catch(() => {
+            // Non-blocking: reset the ref so it can retry on next render
+            classroomEntryFiredRef.current = null;
+        });
+    }, [courseDateId, selectedCourseAuthId]);
 
     // ---------------------------------------------------------------------
     // RECONCILIATION: validate persisted selectedCourseAuthId against live

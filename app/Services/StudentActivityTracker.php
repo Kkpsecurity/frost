@@ -98,7 +98,7 @@ class StudentActivityTracker
     }
 
     /**
-     * Track classroom entry
+     * Track classroom entry — idempotent: only one record per user+course_date per day.
      */
     public function trackClassroomEntry(
         int $userId,
@@ -106,6 +106,18 @@ class StudentActivityTracker
         int $courseDateId,
         array $context = []
     ): ?StudentActivity {
+        // Return existing record if already tracked today to prevent duplicates
+        // caused by page refreshes or React effect re-runs.
+        $existing = StudentActivity::where('user_id', $userId)
+            ->where('course_date_id', $courseDateId)
+            ->where('activity_type', StudentActivity::TYPE_CLASSROOM_ENTRY)
+            ->whereDate('created_at', today())
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
         return $this->track(
             $userId,
             StudentActivity::CATEGORY_ENTRY,
@@ -139,13 +151,22 @@ class StudentActivityTracker
     }
 
     /**
-     * Track rules acceptance
+     * Track rules acceptance — idempotent: only one record per student_unit.
      */
     public function trackRulesAccepted(
         int $userId,
         int $studentUnitId,
         array $context = []
     ): ?StudentActivity {
+        $existing = StudentActivity::where('user_id', $userId)
+            ->where('student_unit_id', $studentUnitId)
+            ->where('activity_type', StudentActivity::TYPE_RULES_ACCEPTED)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
         return $this->track(
             $userId,
             StudentActivity::CATEGORY_AGREEMENT,
@@ -153,6 +174,144 @@ class StudentActivityTracker
             array_merge([
                 'student_unit_id' => $studentUnitId,
                 'description' => 'Student accepted classroom rules',
+            ], $context)
+        );
+    }
+
+    /**
+     * Track ID card upload — idempotent: only one record per student_unit.
+     */
+    public function trackIdCardUploaded(
+        int $userId,
+        int $studentUnitId,
+        array $context = []
+    ): ?StudentActivity {
+        $existing = StudentActivity::where('user_id', $userId)
+            ->where('student_unit_id', $studentUnitId)
+            ->where('activity_type', StudentActivity::TYPE_ID_CARD_UPLOADED)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return $this->track(
+            $userId,
+            StudentActivity::CATEGORY_AGREEMENT,
+            StudentActivity::TYPE_ID_CARD_UPLOADED,
+            array_merge([
+                'student_unit_id' => $studentUnitId,
+                'description' => 'Student uploaded ID card for verification',
+            ], $context)
+        );
+    }
+
+    /**
+     * Track headshot upload — idempotent: only one record per student_unit.
+     */
+    public function trackHeadshotUploaded(
+        int $userId,
+        int $studentUnitId,
+        array $context = []
+    ): ?StudentActivity {
+        $existing = StudentActivity::where('user_id', $userId)
+            ->where('student_unit_id', $studentUnitId)
+            ->where('activity_type', StudentActivity::TYPE_HEADSHOT_UPLOADED)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return $this->track(
+            $userId,
+            StudentActivity::CATEGORY_AGREEMENT,
+            StudentActivity::TYPE_HEADSHOT_UPLOADED,
+            array_merge([
+                'student_unit_id' => $studentUnitId,
+                'description' => 'Student uploaded headshot photo for verification',
+            ], $context)
+        );
+    }
+
+    /**
+     * Track lesson presence — student was online when instructor started the lesson.
+     * A StudentLesson record was created for them.
+     */
+    public function trackLessonAssigned(
+        int $userId,
+        int $studentUnitId,
+        int $lessonId,
+        int $instLessonId,
+        array $context = []
+    ): ?StudentActivity {
+        return $this->track(
+            $userId,
+            StudentActivity::CATEGORY_SYSTEM,
+            StudentActivity::TYPE_LESSON_ASSIGNED,
+            array_merge([
+                'student_unit_id' => $studentUnitId,
+                'description'     => 'Student was present when lesson started — lesson assigned',
+                'data'            => [
+                    'lesson_id'      => $lessonId,
+                    'inst_lesson_id' => $instLessonId,
+                    'presence'       => 'present',
+                ],
+            ], $context)
+        );
+    }
+
+    /**
+     * Track lesson absence — student was offline when instructor started the lesson.
+     * No StudentLesson record was created for them.
+     */
+    public function trackLessonAbsent(
+        int $userId,
+        int $studentUnitId,
+        int $lessonId,
+        int $instLessonId,
+        array $context = []
+    ): ?StudentActivity {
+        return $this->track(
+            $userId,
+            StudentActivity::CATEGORY_SYSTEM,
+            StudentActivity::TYPE_LESSON_ABSENT,
+            array_merge([
+                'student_unit_id' => $studentUnitId,
+                'description'     => 'Student was not present when lesson started — no lesson assigned',
+                'data'            => [
+                    'lesson_id'      => $lessonId,
+                    'inst_lesson_id' => $instLessonId,
+                    'presence'       => 'absent',
+                ],
+            ], $context)
+        );
+    }
+
+    /**
+     * Track onboarding completion — idempotent: only one record per student_unit.
+     */
+    public function trackOnboardingCompleted(
+        int $userId,
+        int $studentUnitId,
+        array $context = []
+    ): ?StudentActivity {
+        $existing = StudentActivity::where('user_id', $userId)
+            ->where('student_unit_id', $studentUnitId)
+            ->where('activity_type', StudentActivity::TYPE_ONBOARDING_COMPLETED)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return $this->track(
+            $userId,
+            StudentActivity::CATEGORY_AGREEMENT,
+            StudentActivity::TYPE_ONBOARDING_COMPLETED,
+            array_merge([
+                'student_unit_id' => $studentUnitId,
+                'description' => 'Student completed onboarding process',
             ], $context)
         );
     }

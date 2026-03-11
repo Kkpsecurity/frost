@@ -180,6 +180,40 @@ const MainOnline: React.FC<MainOnlineProps> = ({
 
     const todayHeadshotUrl: string | null = getTodayHeadshotUrl();
 
+    // Verification review statuses — 'missing' | 'uploaded' | 'approved' | 'rejected'
+    const idCardStatus: string = validations?.idcard_status ?? (idCardUrl ? "uploaded" : "missing");
+    const headshotStatus: string = validations?.headshot_status ?? (todayHeadshotUrl ? "uploaded" : "missing");
+
+    // Badge renderer for review status
+    const renderVerificationBadge = (status: string) => {
+        if (status === "missing") return null;
+        const cfg: Record<string, { color: string; bg: string; icon: string; label: string }> = {
+            approved: { color: "#155724", bg: "#d4edda", icon: "fa-check-circle", label: "Verified" },
+            rejected: { color: "#721c24", bg: "#f8d7da", icon: "fa-times-circle", label: "Rejected" },
+            uploaded: { color: "#856404", bg: "#fff3cd", icon: "fa-clock", label: "Pending Review" },
+        };
+        const c = cfg[status] ?? cfg.uploaded;
+        return (
+            <div
+                style={{
+                    marginTop: "0.35rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    fontSize: "0.7rem",
+                    fontWeight: 600,
+                    padding: "0.2rem 0.45rem",
+                    borderRadius: "0.35rem",
+                    backgroundColor: c.bg,
+                    color: c.color,
+                }}
+            >
+                <i className={`fas ${c.icon}`}></i>
+                {c.label}
+            </div>
+        );
+    };
+
     // 🚨 PAUSE DETECTION: Monitor activeLesson for pause state changes
     useEffect(() => {
         if (
@@ -541,6 +575,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                         Missing
                                                     </div>
                                                 )}
+                                                {renderVerificationBadge(idCardStatus)}
                                             </div>
                                             <div
                                                 style={{ flex: 1, minWidth: 0 }}
@@ -588,6 +623,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                         Missing
                                                     </div>
                                                 )}
+                                                {renderVerificationBadge(headshotStatus)}
                                             </div>
                                         </div>
                                     </div>
