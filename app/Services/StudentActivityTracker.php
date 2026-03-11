@@ -321,6 +321,15 @@ class StudentActivityTracker
      */
     public function trackTabHidden(int $userId, array $context = []): ?StudentActivity
     {
+        $lessonId      = $context['lesson_id']      ?? null;
+        $instLessonId  = $context['inst_lesson_id'] ?? null;
+        unset($context['lesson_id'], $context['inst_lesson_id']);
+
+        $data = array_filter([
+            'lesson_id'      => $lessonId,
+            'inst_lesson_id' => $instLessonId,
+        ]);
+
         return $this->track(
             $userId,
             StudentActivity::CATEGORY_SYSTEM,
@@ -328,6 +337,7 @@ class StudentActivityTracker
             array_merge([
                 'description' => 'Student tab hidden (left site)',
                 'started_at' => now(),
+                'data' => $data ?: null,
             ], $context)
         );
     }
@@ -345,18 +355,26 @@ class StudentActivityTracker
             $duration = now()->diffInSeconds($hiddenAt);
         }
 
+        $lessonId     = $context['lesson_id']      ?? null;
+        $instLessonId = $context['inst_lesson_id'] ?? null;
+        unset($context['lesson_id'], $context['inst_lesson_id']);
+
+        $data = array_filter([
+            'lesson_id'      => $lessonId,
+            'inst_lesson_id' => $instLessonId,
+            'away_time'      => $duration,
+            'away_formatted' => $duration ? gmdate('H:i:s', $duration) : null,
+        ]);
+
         return $this->track(
             $userId,
             StudentActivity::CATEGORY_SYSTEM,
             StudentActivity::TYPE_TAB_VISIBLE,
             array_merge([
-                'description' => 'Student tab visible (returned to site)',
-                'ended_at' => now(),
+                'description'      => 'Student tab visible (returned to site)',
+                'ended_at'         => now(),
                 'duration_seconds' => $duration,
-                'data' => $duration ? [
-                    'away_time' => $duration,
-                    'away_formatted' => gmdate('H:i:s', $duration),
-                ] : null,
+                'data'             => $data ?: null,
             ], $context)
         );
     }

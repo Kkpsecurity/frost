@@ -174,8 +174,10 @@ class StudentActivityController extends Controller
     public function trackTabVisibility(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'is_visible' => 'required|boolean',
-            'hidden_at' => 'nullable|date',
+            'is_visible'     => 'required|boolean',
+            'hidden_at'      => 'nullable|date',
+            'lesson_id'      => 'nullable|integer|min:1',
+            'inst_lesson_id' => 'nullable|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -188,14 +190,19 @@ class StudentActivityController extends Controller
         $userId = Auth::id();
         $isVisible = $request->input('is_visible');
 
+        $context = array_filter([
+            'lesson_id'      => $request->input('lesson_id'),
+            'inst_lesson_id' => $request->input('inst_lesson_id'),
+        ]);
+
         if ($isVisible) {
             // Tab became visible (student returned)
             $hiddenAt = $request->input('hidden_at') ? Carbon::parse($request->input('hidden_at')) : null;
-            $activity = $this->tracker->trackTabVisible($userId, $hiddenAt);
+            $activity = $this->tracker->trackTabVisible($userId, $hiddenAt, $context);
             $message = 'Tab visibility tracked (returned to site)';
         } else {
             // Tab became hidden (student left)
-            $activity = $this->tracker->trackTabHidden($userId);
+            $activity = $this->tracker->trackTabHidden($userId, $context);
             $message = 'Tab visibility tracked (left site)';
         }
 

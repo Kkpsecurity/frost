@@ -116,6 +116,11 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     // already reported so a re-render loop doesn't fire it twice.
     const classroomEntryFiredRef = useRef<number | null>(null);
 
+    // Tracks the currently-active lesson (inst_lesson id + lesson_id) so the
+    // tab-visibility handler can include lesson context without needing to
+    // capture classroomPoll in the closure (avoids stale-ref issues).
+    const activeLessonRef = useRef<{ id: number; lesson_id: number } | null>(null);
+
     // Persist selection
     useEffect(() => {
         if (selectedCourseAuthId !== null) {
@@ -231,10 +236,16 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
     const classroomPoll = getOkData<any>(classroomPollRes);
 
+    // Keep activeLessonRef in sync with the classroomPoll so the tab-visibility
+    // closure always reads the current lesson without a stale capture.
+    useEffect(() => {
+        activeLessonRef.current = classroomPoll?.activeLesson ?? null;
+    }, [classroomPoll]);
+
     // ---------------------------------------------------------------------
     // STUDENT ACTIVITY: TAB VISIBILITY
     // Record tab hidden/visible events while in an active classroom session,
-    // so challenge timeouts can be correlated with student presence.
+    // so the instructor can see which students left during a lesson.
     // ---------------------------------------------------------------------
     useEffect(() => {
         if (!courseDateId) return;
@@ -243,6 +254,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
             document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
 
         const track = (isVisible: boolean, hiddenAt: string | null) => {
+            const lesson = activeLessonRef.current;
             fetch("/classroom/activity/tab-visibility", {
                 method: "POST",
                 headers: {
@@ -254,6 +266,8 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                 body: JSON.stringify({
                     is_visible: isVisible,
                     hidden_at: hiddenAt,
+                    lesson_id: lesson?.lesson_id ?? null,
+                    inst_lesson_id: lesson?.id ?? null,
                 }),
                 keepalive: true,
             }).catch(() => {
