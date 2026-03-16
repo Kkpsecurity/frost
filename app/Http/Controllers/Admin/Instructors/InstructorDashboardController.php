@@ -1096,8 +1096,18 @@ class InstructorDashboardController extends Controller
                 'note' => 'Zoom remains disabled - instructor must manually enable when ready'
             ]);
 
-            // Fire classroom session started event → notifies all enrolled students
-            event(new \App\Events\Classroom\ClassSessionStarted($instUnit, (int) $courseDateId));
+            // Fire classroom session started event → notifies all enrolled students.
+            // Wrapped in its own try/catch: if a listener throws (e.g. Redis down with
+            // QUEUE_CONNECTION=sync), the class still starts successfully and the HTTP
+            // response is not affected.
+            try {
+                event(new \App\Events\Classroom\ClassSessionStarted($instUnit, (int) $courseDateId));
+            } catch (\Exception $eventException) {
+                Log::warning('InstructorDashboardController: ClassSessionStarted event failed (class still started)', [
+                    'inst_unit_id' => $instUnit->id,
+                    'error' => $eventException->getMessage(),
+                ]);
+            }
 
             // Return success with classroom session data
             return response()->json([

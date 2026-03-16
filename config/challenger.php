@@ -16,8 +16,9 @@ return [
     'dev_final_challenge_min'   => (int) env('CHALLENGER_DEV_FINAL_CHALLENGE_MIN', 90),
     'dev_final_challenge_max'   => (int) env('CHALLENGER_DEV_FINAL_CHALLENGE_MAX', 240),
 
-    'challenge_time'        => 300,  // 5 min
-    'challenge_expires_at'  => 335,  // 5m 35s; challenge_time + fudge factor
+    'challenge_time'        => (int) env('CHALLENGER_CHALLENGE_TIME', 180),         // default: 3 min
+    'challenge_expires_at'  => (int) env('CHALLENGER_CHALLENGE_EXPIRES_AT', 215),    // default: 3m 35s; challenge_time + fudge factor
+    'warning_before_seconds' => (int) env('CHALLENGER_WARNING_BEFORE_SECONDS', 30), // default: 30 sec warning before expiry
 
     // Rate limit: target number of (non-final, non-EOL) challenges per 60 minutes.
     // Example: 60-minute lesson @ 6/hour => max 6 regular challenges.

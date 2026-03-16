@@ -23,6 +23,7 @@ export interface ChallengeData {
     is_eol: boolean;
     expires_at: string; // ISO timestamp
     time_remaining: number; // seconds
+    warning_before_seconds: number; // seconds before expiry to play warning sound
     created_at: string; // ISO timestamp
 }
 
@@ -174,6 +175,9 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         challenge.time_remaining,
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [sliderKey, setSliderKey] = useState(0);
+    const warningPlayedRef = React.useRef(false);
+    const warningThreshold = challenge.warning_before_seconds ?? 30;
 
     // Format time as MM:SS
     const formatTime = (seconds: number): string => {
@@ -182,7 +186,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
     };
 
-    // Countdown timer
+    // Countdown timer + warning audio trigger
     useEffect(() => {
         const interval = setInterval(() => {
             setTimeRemaining((prev) => {
@@ -191,12 +195,29 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                     // Challenge expired - will be handled by backend on next poll
                     return 0;
                 }
-                return prev - 1;
+
+                const next = prev - 1;
+
+                // Fire warning audio the moment we cross the warning threshold (once only)
+                if (next <= warningThreshold && !warningPlayedRef.current) {
+                    warningPlayedRef.current = true;
+                    try {
+                        const warningAudio = new Audio("/sounds/challenge-warning.mp3");
+                        warningAudio.volume = 0.7;
+                        warningAudio.play().catch((err) => {
+                            console.warn("Could not play challenge warning sound:", err);
+                        });
+                    } catch (err) {
+                        console.warn("Warning audio not supported or file missing:", err);
+                    }
+                }
+
+                return next;
             });
         }, 1000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [warningThreshold]);
 
     // Play audio alert on mount
     useEffect(() => {
@@ -222,6 +243,8 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         } catch (error) {
             console.error("Failed to complete challenge:", error);
             setIsSubmitting(false);
+            // Reset the slider so the student can try again
+            setSliderKey((k) => k + 1);
 
             if (onError) {
                 onError(
@@ -235,21 +258,28 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
     const isUrgent = timeRemaining <= 60; // Last minute is urgent
     const isFinal = challenge.is_final;
+    const isEol = challenge.is_eol;
 
     return (
-        <ModalOverlay isFinal={isFinal}>
-            <ModalContent isFinal={isFinal}>
+        <ModalOverlay isFinal={isFinal || isEol}>
+            <ModalContent isFinal={isFinal || isEol}>
                 <Header>
-                    <Icon isFinal={isFinal}>{isFinal ? "⚠️" : "👋"}</Icon>
-                    <Title isFinal={isFinal}>
-                        {isFinal
-                            ? "FINAL PARTICIPATION CHECK"
-                            : "Participation Check"}
+                    <Icon isFinal={isFinal || isEol}>
+                        {isEol ? "🏁" : isFinal ? "⚠️" : "👋"}
+                    </Icon>
+                    <Title isFinal={isFinal || isEol}>
+                        {isEol
+                            ? "END OF LESSON CHECK"
+                            : isFinal
+                                ? "FINAL PARTICIPATION CHECK"
+                                : "Participation Check"}
                     </Title>
                     <Subtitle>
-                        {isFinal
-                            ? "This is your last chance to confirm you are actively participating in the lesson."
-                            : "Please confirm that you are present and following along with the lesson."}
+                        {isEol
+                            ? "The lesson has ended. Confirm you were present to receive credit for this lesson."
+                            : isFinal
+                                ? "This is your last chance to confirm you are actively participating in the lesson."
+                                : "Please confirm that you are present and following along with the lesson."}
                     </Subtitle>
                 </Header>
 
@@ -262,6 +292,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
                 <SliderContainer>
                     <ChallengeSlider
+                        key={sliderKey}
                         onComplete={handleSliderComplete}
                         disabled={isSubmitting || timeRemaining === 0}
                     />
@@ -271,16 +302,16 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                     {isSubmitting
                         ? "Submitting your response..."
                         : timeRemaining === 0
-                          ? "Time expired - waiting for next poll..."
-                          : "Slide the button all the way to the right to confirm your presence."}
+                            ? "Time expired - waiting for next poll..."
+                            : "Slide the button all the way to the right to confirm your presence."}
                 </InfoText>
 
-                {isFinal && (
+                {(isFinal || isEol) && (
                     <WarningBox>
                         <WarningText>
-                            ⚠️ Warning: Missing this challenge will mark the
-                            lesson as "Did Not Complete" and you may need to
-                            retake it.
+                            {isEol
+                                ? "⚠️ Warning: If you do not complete this end-of-lesson check, the lesson will be marked as \"Did Not Complete\" and you may need to retake it."
+                                : "⚠️ Warning: Missing this challenge will mark the lesson as \"Did Not Complete\" and you may need to retake it."}
                         </WarningText>
                     </WarningBox>
                 )}

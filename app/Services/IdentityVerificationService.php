@@ -97,11 +97,15 @@ class IdentityVerificationService
                 }
             }
 
-            // Update StudentUnit if both are approved
+            // Update StudentUnit if both are approved.
+            // Use DB::table() directly to bypass the Observable trait which requires Redis.
             if ($fullyVerified && $studentUnit) {
-                $studentUnit->verified = true;
-                $studentUnit->verification_method = 'manual_' . $this->getApproverRole($approver);
-                $studentUnit->save();
+                \DB::table('student_unit')
+                    ->where('id', $studentUnit->id)
+                    ->update([
+                        'verified'             => true,
+                        'verification_method'  => 'manual_' . $this->getApproverRole($approver),
+                    ]);
             }
 
             Log::info('Single validation approved', [
@@ -113,7 +117,17 @@ class IdentityVerificationService
                 'notes' => $notes,
             ]);
 
-            event(new ValidationApproved($validation, $validationType, $fullyVerified, $studentUnit));
+            // Wrapped in its own try/catch: if a listener throws (e.g. Redis/broadcast down
+            // with QUEUE_CONNECTION=sync), the approval is already persisted and we must
+            // still return success so the frontend refreshes the UI.
+            try {
+                event(new ValidationApproved($validation, $validationType, $fullyVerified, $studentUnit));
+            } catch (Exception $eventException) {
+                Log::warning('IdentityVerificationService: ValidationApproved event failed (approval still saved)', [
+                    'validation_id' => $validationId,
+                    'error' => $eventException->getMessage(),
+                ]);
+            }
 
             return [
                 'success' => true,
@@ -266,11 +280,15 @@ class IdentityVerificationService
                 $errors[] = 'Headshot validation not found';
             }
 
-            // Update StudentUnit if both approved
+            // Update StudentUnit if both approved.
+            // Use DB::table() directly to bypass the Observable trait which requires Redis.
             if ($approvedCount === 2) {
-                $studentUnit->verified = true;
-                $studentUnit->verification_method = 'manual_' . $this->getApproverRole($approver);
-                $studentUnit->save();
+                \DB::table('student_unit')
+                    ->where('id', $studentUnit->id)
+                    ->update([
+                        'verified'             => true,
+                        'verification_method'  => 'manual_' . $this->getApproverRole($approver),
+                    ]);
             }
 
             Log::info('Identity verification approved', [
@@ -282,16 +300,25 @@ class IdentityVerificationService
                 'notes' => $notes,
             ]);
 
-            // Fire notification using the ID card (or headshot) as the representative validation
+            // Fire notification using the ID card (or headshot) as the representative validation.
+            // Wrapped in its own try/catch for the same reason as approveSingleValidation —
+            // VerificationCompleteNotification uses the 'browser' channel which requires Redis.
             $repValidation = $idCardValidation ?? $headshotValidation;
             if ($repValidation && $approvedCount > 0) {
                 $repType = $idCardValidation ? 'id_card' : 'headshot';
-                event(new ValidationApproved(
-                    $repValidation,
-                    $repType,
-                    $approvedCount === 2,
-                    $approvedCount === 2 ? $studentUnit : null,
-                ));
+                try {
+                    event(new ValidationApproved(
+                        $repValidation,
+                        $repType,
+                        $approvedCount === 2,
+                        $approvedCount === 2 ? $studentUnit : null,
+                    ));
+                } catch (Exception $eventException) {
+                    Log::warning('IdentityVerificationService: ValidationApproved event failed (bulk approval still saved)', [
+                        'student_id' => $studentId,
+                        'error' => $eventException->getMessage(),
+                    ]);
+                }
             }
 
             return [

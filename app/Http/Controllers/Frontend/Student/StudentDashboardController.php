@@ -1317,13 +1317,14 @@ class StudentDashboardController extends Controller
                                     $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
 
                                     $challengeData = [
-                                        'challenge_id'      => $eolChallenge->id,
-                                        'student_lesson_id' => $eolChallenge->student_lesson_id,
-                                        'is_final'          => (bool) $eolResponse->is_final,
-                                        'is_eol'            => (bool) $eolResponse->is_eol,
-                                        'expires_at'        => $eolChallenge->expires_at->toISOString(),
-                                        'time_remaining'    => (int) $timeRemaining,
-                                        'created_at'        => $eolChallenge->created_at->toISOString(),
+                                        'challenge_id'          => $eolChallenge->id,
+                                        'student_lesson_id'     => $eolChallenge->student_lesson_id,
+                                        'is_final'              => (bool) $eolResponse->is_final,
+                                        'is_eol'                => (bool) $eolResponse->is_eol,
+                                        'expires_at'            => $eolChallenge->expires_at->toISOString(),
+                                        'time_remaining'        => (int) $timeRemaining,
+                                        'warning_before_seconds' => $eolResponse->warning_before_seconds,
+                                        'created_at'            => $eolChallenge->created_at->toISOString(),
                                     ];
 
                                     Log::info('Challenge (EOLReady) active for student', [
@@ -1357,13 +1358,14 @@ class StudentDashboardController extends Controller
                                         $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
 
                                         $challengeData = [
-                                            'challenge_id'      => $activeChallenge->id,
-                                            'student_lesson_id' => $activeChallenge->student_lesson_id,
-                                            'is_final'          => (bool) $challengerResponse->is_final,
-                                            'is_eol'            => (bool) $challengerResponse->is_eol,
-                                            'expires_at'        => $activeChallenge->expires_at->toISOString(),
-                                            'time_remaining'    => (int) $timeRemaining,
-                                            'created_at'        => $activeChallenge->created_at->toISOString(),
+                                            'challenge_id'          => $activeChallenge->id,
+                                            'student_lesson_id'     => $activeChallenge->student_lesson_id,
+                                            'is_final'              => (bool) $challengerResponse->is_final,
+                                            'is_eol'                => (bool) $challengerResponse->is_eol,
+                                            'expires_at'            => $activeChallenge->expires_at->toISOString(),
+                                            'time_remaining'        => (int) $timeRemaining,
+                                            'warning_before_seconds' => $challengerResponse->warning_before_seconds,
+                                            'created_at'            => $activeChallenge->created_at->toISOString(),
                                         ];
 
                                         Log::info('Challenge (Ready) active for student', [
@@ -1434,6 +1436,25 @@ class StudentDashboardController extends Controller
                     ),
                     // Active participation challenge for this student (null = no challenge right now)
                     'challenge' => $challengeData,
+                    // Break/pause timer data — used by the student countdown timer.
+                    // Must live in this response (not instructor poll) because this is
+                    // the endpoint the React classroom hook polls every 5 seconds.
+                    'breaks' => (function () use ($activeInstLesson): ?array {
+                        if (!$activeInstLesson || !$activeInstLesson->is_paused) {
+                            return null;
+                        }
+                        $currentBreak   = $activeInstLesson->CurrentBreak();
+                        $breakNumber    = (int) ($currentBreak?->break_number ?? 1);
+                        $breakDurations = config('frost.instructor_breaks.break_durations_minutes', [1 => 15, 2 => 10, 3 => 15]);
+                        $breakDuration  = (int) ($breakDurations[$breakNumber] ?? 15);
+
+                        return [
+                            'is_paused'              => true,
+                            'break_number'           => $breakNumber,
+                            'break_duration_minutes' => $breakDuration,
+                            'paused_at'              => $currentBreak?->started_at?->toIso8601String(),
+                        ];
+                    })(),
                 ],
             ]);
         } catch (Exception $e) {
@@ -1924,23 +1945,70 @@ class StudentDashboardController extends Controller
             })->sortBy('order')->values()->toArray();
 
             // -----------------------------------------------------------------
-            // STEP 1: CHALLENGE SYSTEM INTEGRATION
-            // Check if student has an active challenge for current lesson
+            // CHALLENGE SYSTEM — classroom poll
+            //
+            // CHECK A — EOLReady(): lesson completed by instructor but student
+            //   hasn't received credit yet. Must run FIRST and takes priority.
+            //   Works even when $activeLessonId is null (lesson is done).
+            //
+            // CHECK B — Ready(): active lesson, creates/returns random challenges.
+            //   Only runs when an active non-paused lesson exists and CHECK A
+            //   found nothing.
             // -----------------------------------------------------------------
             $challengeData = null;
 
-            if ($studentUnit && $activeLessonId) {
+            if ($studentUnit) {
                 try {
-                    // Resolve StudentLesson for the active lesson.
-                    // Use the already-fetched $todaysStudentLessons collection first — it is scoped to
-                    // today's inst_lesson_id so we never accidentally pick up a stale record from a
-                    // prior class session.  If the record isn't there yet (student arrived after the
-                    // instructor fired startLesson, or batch-creation missed them), lazily create it
-                    // so the challenge timing window starts immediately.
-                    $activeStudentLesson = $todaysStudentLessons->get($activeLessonId);
-                    if (!$activeStudentLesson) {
+                    $completedLessonIds = $todaysStudentLessons
+                        ->filter(fn($sl) => $sl->completed_at !== null)
+                        ->pluck('lesson_id')
+                        ->toArray();
+
+                    // --- CHECK A: EOLReady() ---
+                    // Find any StudentLesson where the instructor ended the lesson
+                    // but the student hasn't received credit yet.
+                    $pendingStudentLessons = $todaysStudentLessons
+                        ->filter(fn($sl) => is_null($sl->completed_at) && is_null($sl->dnc_at));
+
+                    foreach ($pendingStudentLessons as $pendingLesson) {
+                        // EOLReady() self-guards: returns null unless InstLesson->completed_at is set.
+                        $eolResponse = Challenger::EOLReady($pendingLesson, $completedLessonIds);
+
+                        if ($eolResponse && $eolResponse->challenge_id) {
+                            $eolChallenge = \App\Models\Challenge::find($eolResponse->challenge_id);
+
+                            if ($eolChallenge && !$eolChallenge->completed_at && !$eolChallenge->failed_at) {
+                                $expiresAt     = \Carbon\Carbon::parse($eolChallenge->expires_at);
+                                $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
+
+                                $challengeData = [
+                                    'challenge_id'           => $eolChallenge->id,
+                                    'student_lesson_id'      => $eolChallenge->student_lesson_id,
+                                    'is_final'               => (bool) $eolResponse->is_final,
+                                    'is_eol'                 => (bool) $eolResponse->is_eol,
+                                    'expires_at'             => $eolChallenge->expires_at->toISOString(),
+                                    'time_remaining'         => (int) $timeRemaining,
+                                    'warning_before_seconds' => $eolResponse->warning_before_seconds,
+                                    'created_at'             => $eolChallenge->created_at->toISOString(),
+                                ];
+
+                                Log::info('EOL Challenge active for student (classroom poll)', [
+                                    'student_id'   => $user->id,
+                                    'challenge_id' => $eolChallenge->id,
+                                ]);
+
+                                break; // Only one EOL challenge at a time
+                            }
+                        }
+                    }
+
+                    // --- CHECK B: Ready() for the active lesson ---
+                    if ($challengeData === null && $activeLessonId) {
                         $activeInstLessonRef = $todaysInstLessons->get($activeLessonId);
-                        if ($activeInstLessonRef && !$activeInstLessonRef->is_paused) {
+
+                        // Lazily create StudentLesson if student arrived after lesson started.
+                        $activeStudentLesson = $todaysStudentLessons->get($activeLessonId);
+                        if (!$activeStudentLesson && $activeInstLessonRef && !$activeInstLessonRef->is_paused) {
                             $activeStudentLesson = \App\Models\StudentLesson::firstOrCreate(
                                 [
                                     'student_unit_id' => $studentUnit->id,
@@ -1951,44 +2019,35 @@ class StudentDashboardController extends Controller
                                 ]
                             );
                         }
-                    }
 
-                    if ($activeStudentLesson) {
-                        // Get completed lesson IDs for this student
-                        $completedLessonIds = $todaysStudentLessons
-                            ->filter(fn($sl) => $sl->completed_at !== null)
-                            ->pluck('lesson_id')
-                            ->toArray();
+                        if ($activeStudentLesson && !($activeInstLessonRef?->is_paused)) {
+                            $challengerResponse = Challenger::Ready($activeStudentLesson, $completedLessonIds);
 
-                        // Initialize Challenger system and check if challenge should be shown
-                        Challenger::init($activeStudentLesson);
-                        $challengerResponse = Challenger::Ready($activeStudentLesson, $completedLessonIds);
+                            if ($challengerResponse && $challengerResponse->challenge_id) {
+                                $challenge = \App\Models\Challenge::find($challengerResponse->challenge_id);
 
-                        if ($challengerResponse && $challengerResponse->challenge_id) {
-                            // Load the actual Challenge model to get full data
-                            $challenge = \App\Models\Challenge::find($challengerResponse->challenge_id);
+                                if ($challenge && !$challenge->completed_at && !$challenge->failed_at) {
+                                    $expiresAt     = \Carbon\Carbon::parse($challenge->expires_at);
+                                    $timeRemaining = max(0, now()->diffInSeconds($expiresAt, false));
 
-                            if ($challenge && !$challenge->completed_at && !$challenge->failed_at) {
-                                $now = now();
-                                $expiresAt = \Carbon\Carbon::parse($challenge->expires_at);
-                                $timeRemaining = max(0, $now->diffInSeconds($expiresAt, false));
+                                    $challengeData = [
+                                        'challenge_id'           => $challenge->id,
+                                        'student_lesson_id'      => $challenge->student_lesson_id,
+                                        'is_final'               => (bool) $challengerResponse->is_final,
+                                        'is_eol'                 => (bool) $challengerResponse->is_eol,
+                                        'expires_at'             => $challenge->expires_at->toISOString(),
+                                        'time_remaining'         => (int) $timeRemaining,
+                                        'warning_before_seconds' => $challengerResponse->warning_before_seconds,
+                                        'created_at'             => $challenge->created_at->toISOString(),
+                                    ];
 
-                                $challengeData = [
-                                    'challenge_id' => $challenge->id,
-                                    'student_lesson_id' => $challenge->student_lesson_id,
-                                    'is_final' => (bool) $challengerResponse->is_final,
-                                    'is_eol' => (bool) $challengerResponse->is_eol,
-                                    'expires_at' => $challenge->expires_at->toISOString(),
-                                    'time_remaining' => (int) $timeRemaining,
-                                    'created_at' => $challenge->created_at->toISOString(),
-                                ];
-
-                                Log::info('Challenge active for student', [
-                                    'student_id' => $user->id,
-                                    'challenge_id' => $challenge->id,
-                                    'is_final' => $challengerResponse->is_final,
-                                    'time_remaining' => $timeRemaining,
-                                ]);
+                                    Log::info('Challenge active for student (classroom poll)', [
+                                        'student_id'   => $user->id,
+                                        'challenge_id' => $challenge->id,
+                                        'is_final'     => $challengerResponse->is_final,
+                                        'time_remaining' => $timeRemaining,
+                                    ]);
+                                }
                             }
                         }
                     }
@@ -2000,6 +2059,21 @@ class StudentDashboardController extends Controller
                         'active_lesson_id' => $activeLessonId,
                     ]);
                 }
+            }
+
+            // Build break data so the student timer always matches the admin timer.
+            // The expected duration per break is driven by config, not stored per-row.
+            $breaksData = null;
+            $activeInstLessonForBreak = $activeLessonId ? $todaysInstLessons->get($activeLessonId) : null;
+            if ($activeInstLessonForBreak?->is_paused) {
+                $currentBreak       = $activeInstLessonForBreak->Breaks?->first();
+                $breakNumber        = $currentBreak?->break_number ?? 1;
+                $breakDurations     = config('frost.instructor_breaks.break_durations_minutes', [1 => 15, 2 => 10, 3 => 15]);
+                $breaksAllowed      = (int) config('frost.instructor_breaks.breaks_allowed_per_day', 3);
+                $breaksData = [
+                    'break_duration_minutes' => $breakDurations[$breakNumber] ?? 15,
+                    'breaks_remaining'       => max(0, $breaksAllowed - $breakNumber),
+                ];
             }
 
             // Return classroom data with enhanced lessons and challenge data
@@ -2015,6 +2089,7 @@ class StudentDashboardController extends Controller
                     'studentUnit' => $studentUnit,
                     'studentLessons' => $studentLessons,
                     'challenge' => $challengeData,
+                    'breaks' => $breaksData,
                     'config' => [],
                 ],
             ]);

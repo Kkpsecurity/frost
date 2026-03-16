@@ -50,6 +50,7 @@ class Challenger
         self::$_config = self::AssertConfig('challenger', [
             'challenge_time',
             'challenge_expires_at',
+            'warning_before_seconds',
             'lesson_start_min',
             'lesson_start_max',
             'lesson_random_min',
@@ -62,6 +63,7 @@ class Challenger
 
 
         self::$_ChallengerResponse = new ChallengerResponse(self::$_config->challenge_time);
+        self::$_ChallengerResponse->warning_before_seconds = self::$_config->warning_before_seconds;
 
 
         if ($StudentLesson) {

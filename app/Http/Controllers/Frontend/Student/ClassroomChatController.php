@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Frontend\Student;
 
 use App\Classes\Admin\ChatLogCache;
-use App\Classes\Support\MiscQueries;
 use App\Http\Controllers\Controller;
 use App\Models\ChatLog;
 use App\Models\CourseAuth;
@@ -76,7 +75,26 @@ class ClassroomChatController extends Controller
 
         $messages = [];
         if ($enabled) {
-            $chatMessages = MiscQueries::RecentChatMessages($courseDateId, (int) $user->id);
+            // Always apply the student privacy filter (hub-and-spoke):
+            // - Student sees their own messages (student_id matches, inst_id is null)
+            // - Student sees all instructor messages (inst_id is not null)
+            // - Student does NOT see other students' messages
+            // NOTE: MiscQueries::RecentChatMessages() has an instructor-bypass that fires
+            // when user_id === instUnit.created_by. In test environments where the instructor
+            // is also enrolled as a student this exposed all students' messages. Bypass it
+            // by querying directly with the student-only filter.
+            $chatMessages = ChatLog::where('course_date_id', $courseDateId)
+                ->whereNull('hidden_at')
+                ->where(function ($query) use ($user) {
+                    $query->where(function ($inner) use ($user) {
+                        $inner->where('student_id', $user->id)
+                            ->whereNull('inst_id');
+                    })->orWhereNotNull('inst_id');
+                })
+                ->orderBy('id', 'desc')
+                ->limit(50)
+                ->get()
+                ->reverse();
 
             foreach ($chatMessages as $chatMessage) {
                 $authorId = (int) ($chatMessage->student_id ?? $chatMessage->inst_id ?? 0);

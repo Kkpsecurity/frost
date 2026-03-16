@@ -459,29 +459,45 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
     }, [classroomPoll, activeChallenge]);
 
     const handleChallengeComplete = async (challengeId: number): Promise<void> => {
-        const response = await fetch("/classroom/challenge-respond", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CSRF-TOKEN":
-                    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
-            },
-            body: JSON.stringify({ challenge_id: challengeId, completed: true }),
-        });
+        let response: Response;
+        try {
+            response = await fetch("/classroom/challenge-respond", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN":
+                        document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
+                },
+                body: JSON.stringify({ challenge_id: challengeId, completed: true }),
+            });
+        } catch (networkError) {
+            // True network failure (offline, timeout) — let the modal stay open so student can retry.
+            throw networkError;
+        }
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json().catch(() => ({ success: false, message: "Invalid response" }));
 
-        const result = await response.json();
-        if (!result.success) throw new Error(result.message || "Failed to submit challenge response");
+        // Suppress & close the modal for any terminal state:
+        //   200 success, already-completed (200), failed, or expired (400).
+        // Only actual network errors (caught above) leave the modal open.
+        const terminalStatuses = ["completed", "failed", "expired", "invalid"];
+        const isTerminal =
+            result.success ||
+            terminalStatuses.includes(result.challenge?.status ?? "");
 
-        // Hide the modal immediately and suppress re-opening on the next poll.
-        suppressChallengeRef.current = {
-            id: Number(challengeId),
-            until: Date.now() + 15000, // 15s covers 1-3 poll intervals
-        };
-        setActiveChallenge(null);
+        if (isTerminal) {
+            suppressChallengeRef.current = {
+                id: Number(challengeId),
+                until: Date.now() + 15000, // 15s covers 1-3 poll intervals
+            };
+            setActiveChallenge(null);
+            return;
+        }
+
+        // Non-terminal failure (auth error, validation, server error) — let modal retry.
+        throw new Error(result.message || "Failed to submit challenge response");
     };
 
     const handleChallengeError = (error: string): void => {
@@ -573,6 +589,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
 
                 {activeChallenge && (
                     <ChallengeModal
+                        key={activeChallenge.challenge_id}
                         challenge={activeChallenge}
                         onComplete={handleChallengeComplete}
                         onError={handleChallengeError}

@@ -86,8 +86,8 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
             console.error(
                 "❌ Failed to approve ID card:",
                 error?.response?.data?.message ||
-                    error?.message ||
-                    "Unknown error",
+                error?.message ||
+                "Unknown error",
             );
         },
     });
@@ -117,8 +117,8 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
             console.error(
                 "❌ Failed to approve headshot:",
                 error?.response?.data?.message ||
-                    error?.message ||
-                    "Unknown error",
+                error?.message ||
+                "Unknown error",
             );
         },
     });
@@ -376,14 +376,13 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
                 {/* Status Badge */}
                 <div className="mb-3">
                     <span
-                        className={`badge ${
-                            data.fully_verified
+                        className={`badge ${data.fully_verified
                                 ? "bg-success"
                                 : data.idcard.status === "rejected" ||
                                     data.headshot.status === "rejected"
-                                  ? "bg-danger"
-                                  : "bg-warning text-dark"
-                        }`}
+                                    ? "bg-danger"
+                                    : "bg-warning text-dark"
+                            }`}
                     >
                         {data.fully_verified && (
                             <i className="fas fa-check-circle me-1"></i>
@@ -402,8 +401,8 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
                             ? "FULLY VERIFIED"
                             : data.idcard.status === "rejected" ||
                                 data.headshot.status === "rejected"
-                              ? "REJECTED"
-                              : "PENDING"}
+                                ? "REJECTED"
+                                : "PENDING"}
                     </span>
                 </div>
 
@@ -418,37 +417,21 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
                                     ID Card Photo
                                 </h6>
                                 <span
-                                    className={`badge ${
-                                        idcard.status === "approved"
+                                    className={`badge ${idcard.status === "approved"
                                             ? "bg-success"
                                             : idcard.status === "rejected"
-                                              ? "bg-danger"
-                                              : idcard.status === "uploaded"
-                                                ? "bg-warning text-dark"
-                                                : "bg-secondary"
-                                    }`}
+                                                ? "bg-danger"
+                                                : idcard.status === "uploaded"
+                                                    ? "bg-warning text-dark"
+                                                    : "bg-secondary"
+                                        }`}
                                 >
                                     {idcard.status.toUpperCase()}
                                 </span>
                             </div>
                             <div className="card-body p-2">
                                 {idcard.image_url ? (
-                                    <div
-                                        className="position-relative"
-                                        style={{
-                                            cursor:
-                                                zoomLevel === "id"
-                                                    ? "zoom-out"
-                                                    : "zoom-in",
-                                        }}
-                                        onClick={() =>
-                                            setZoomLevel(
-                                                zoomLevel === "id"
-                                                    ? null
-                                                    : "id",
-                                            )
-                                        }
-                                    >
+                                    <>
                                         <img
                                             src={idcard.image_url}
                                             alt="ID Card"
@@ -457,21 +440,42 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
                                                 maxHeight:
                                                     zoomLevel === "id"
                                                         ? "none"
-                                                        : "300px",
+                                                        : "200px",
                                                 objectFit: "contain",
+                                                cursor:
+                                                    zoomLevel === "id"
+                                                        ? "zoom-out"
+                                                        : "zoom-in",
                                             }}
+                                            onClick={() =>
+                                                setZoomLevel(
+                                                    zoomLevel === "id"
+                                                        ? null
+                                                        : "id",
+                                                )
+                                            }
                                         />
-                                        <div className="position-absolute top-0 end-0 m-2">
-                                            <span className="badge bg-dark">
+                                        <div className="text-center mt-1">
+                                            <small
+                                                className="text-muted"
+                                                style={{ cursor: "pointer" }}
+                                                onClick={() =>
+                                                    setZoomLevel(
+                                                        zoomLevel === "id"
+                                                            ? null
+                                                            : "id",
+                                                    )
+                                                }
+                                            >
                                                 <i
                                                     className={`fas fa-search-${zoomLevel === "id" ? "minus" : "plus"} me-1`}
                                                 ></i>
                                                 {zoomLevel === "id"
                                                     ? "Zoom Out"
                                                     : "Zoom In"}
-                                            </span>
+                                            </small>
                                         </div>
-                                    </div>
+                                    </>
                                 ) : (
                                     <div className="text-center text-muted py-5">
                                         <i className="fas fa-image fa-3x mb-3"></i>
@@ -581,37 +585,21 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
                                     Today's Headshot
                                 </h6>
                                 <span
-                                    className={`badge ${
-                                        headshot.status === "approved"
+                                    className={`badge ${headshot.status === "approved"
                                             ? "bg-success"
                                             : headshot.status === "rejected"
-                                              ? "bg-danger"
-                                              : headshot.status === "uploaded"
-                                                ? "bg-warning text-dark"
-                                                : "bg-secondary"
-                                    }`}
+                                                ? "bg-danger"
+                                                : headshot.status === "uploaded"
+                                                    ? "bg-warning text-dark"
+                                                    : "bg-secondary"
+                                        }`}
                                 >
                                     {headshot.status.toUpperCase()}
                                 </span>
                             </div>
                             <div className="card-body p-2">
                                 {headshot.image_url ? (
-                                    <div
-                                        className="position-relative"
-                                        style={{
-                                            cursor:
-                                                zoomLevel === "headshot"
-                                                    ? "zoom-out"
-                                                    : "zoom-in",
-                                        }}
-                                        onClick={() =>
-                                            setZoomLevel(
-                                                zoomLevel === "headshot"
-                                                    ? null
-                                                    : "headshot",
-                                            )
-                                        }
-                                    >
+                                    <>
                                         <img
                                             src={headshot.image_url}
                                             alt="Headshot"
@@ -620,21 +608,42 @@ const StudentIdentityPanel: React.FC<StudentIdentityPanelProps> = ({
                                                 maxHeight:
                                                     zoomLevel === "headshot"
                                                         ? "none"
-                                                        : "300px",
+                                                        : "200px",
                                                 objectFit: "contain",
+                                                cursor:
+                                                    zoomLevel === "headshot"
+                                                        ? "zoom-out"
+                                                        : "zoom-in",
                                             }}
+                                            onClick={() =>
+                                                setZoomLevel(
+                                                    zoomLevel === "headshot"
+                                                        ? null
+                                                        : "headshot",
+                                                )
+                                            }
                                         />
-                                        <div className="position-absolute top-0 end-0 m-2">
-                                            <span className="badge bg-dark">
+                                        <div className="text-center mt-1">
+                                            <small
+                                                className="text-muted"
+                                                style={{ cursor: "pointer" }}
+                                                onClick={() =>
+                                                    setZoomLevel(
+                                                        zoomLevel === "headshot"
+                                                            ? null
+                                                            : "headshot",
+                                                    )
+                                                }
+                                            >
                                                 <i
                                                     className={`fas fa-search-${zoomLevel === "headshot" ? "minus" : "plus"} me-1`}
                                                 ></i>
                                                 {zoomLevel === "headshot"
                                                     ? "Zoom Out"
                                                     : "Zoom In"}
-                                            </span>
+                                            </small>
                                         </div>
-                                    </div>
+                                    </>
                                 ) : (
                                     <div className="text-center text-muted py-5">
                                         <i className="fas fa-camera fa-3x mb-3"></i>

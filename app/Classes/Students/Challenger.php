@@ -63,6 +63,14 @@ class Challenger
     {
 
         if (isset(self::$_config) && is_object(self::$_config)) {
+            // Config already loaded — still update $_StudentLesson if a new one is provided.
+            if ($StudentLesson) {
+                if (is_int($StudentLesson)) {
+                    self::$_StudentLesson = StudentLesson::findOrFail($StudentLesson);
+                } else {
+                    self::$_StudentLesson = $StudentLesson;
+                }
+            }
             return new self();
         }
 
@@ -70,6 +78,7 @@ class Challenger
         self::$_config = self::AssertConfig('challenger', [
             'challenge_time',
             'challenge_expires_at',
+            'warning_before_seconds',
             'challenges_per_hour',
             'lesson_start_min',
             'lesson_start_max',
@@ -83,6 +92,7 @@ class Challenger
 
 
         self::$_ChallengerResponse = new ChallengerResponse(self::$_config->challenge_time);
+        self::$_ChallengerResponse->warning_before_seconds = self::$_config->warning_before_seconds;
 
 
         if ($StudentLesson) {
@@ -183,11 +193,33 @@ class Challenger
 
 
         //
-        // Last challenge was failed (non-final) — send Final challenge
+        // Last challenge was failed (non-final) — only DNC on TWO consecutive failures.
+        // Rule: fail → pass → fail = streak reset → treat as a normal random challenge.
+        //       fail → fail              = consecutive   → immediate DNC, no further popup.
         //
 
-        if ($LastChallenge->failed_at && ! $LastChallenge->is_final) {
-            return self::_SendFinal($LastChallenge); // ?ChallengerResponse
+        if ($LastChallenge->failed_at && ! $LastChallenge->is_final && ! $LastChallenge->is_eol) {
+
+            $PreviousChallenge = Challenge::where('student_lesson_id', self::$_StudentLesson->id)
+                ->where('id', '<', $LastChallenge->id)
+                ->orderByDesc('id')
+                ->first();
+
+            $isConsecutiveFail = $PreviousChallenge && $PreviousChallenge->failed_at
+                && ! $PreviousChallenge->is_final
+                && ! $PreviousChallenge->is_eol;
+
+            kkpdebug('Challenger_Msg', "{$debug_tag} LastChallenge failed — consecutive:{$isConsecutiveFail} prev_id:" . ($PreviousChallenge?->id ?? 'none'));
+
+            if ($isConsecutiveFail) {
+                // Two consecutive failures — DNC immediately, no further challenge popup.
+                kkpdebug('Challenger_Msg', "{$debug_tag} *** Consecutive fail — Marking StudentLesson DNC ***");
+                self::$_StudentLesson->MarkDNC();
+                return null;
+            }
+
+            // First failure in a streak — treat as resolved, send next random
+            return self::_SendRandom($LastChallenge); // ?ChallengerResponse
         }
 
 
@@ -236,11 +268,13 @@ class Challenger
     public static function MarkCompleted(int|Challenge $Challenge): void
     {
 
-        self::init();
-
         if (is_int($Challenge)) {
             $Challenge = Challenge::findOrFail($Challenge);
         }
+
+        // Always initialise with the Challenge's own StudentLesson so that
+        // _ValidateChallenge() has the correct context (e.g. is_paused check).
+        self::init($Challenge->StudentLesson);
 
 
         $debug_tag = "MarkCompleted(CH:{$Challenge->id})";
@@ -284,11 +318,13 @@ class Challenger
     public static function MarkFailed(int|Challenge $Challenge): void
     {
 
-        self::init();
-
         if (is_int($Challenge)) {
             $Challenge = Challenge::findOrFail($Challenge);
         }
+
+        // Always initialise with the Challenge's own StudentLesson so that
+        // _ValidateChallenge() has the correct context.
+        self::init($Challenge->StudentLesson);
 
 
         $debug_tag = "MarkFailed(CH:{$Challenge->id})";
@@ -465,6 +501,20 @@ class Challenger
 
         if ($Challenge->failed_at) {
             #kkpdebug( 'Challenger_Dbg', "{$debug_tag} Challenge->failed_at" );
+            return false;
+        }
+
+        //
+        // Lesson is paused — extend expiry so the challenge stays valid after resume.
+        // Do NOT show the challenge while paused (return false), but also do NOT mark
+        // it failed. Each poll during a pause rolls expires_at forward by the full
+        // challenge window, ensuring the student gets the complete response window
+        // once the lesson resumes.
+        //
+
+        if (self::$_StudentLesson->InstLesson->is_paused) {
+            $Challenge->update(['expires_at' => Carbon::now()->addSeconds(self::$_config->challenge_expires_at)]);
+            kkpdebug('Challenger_Dbg', "{$debug_tag} lesson paused — extending expires_at, not showing");
             return false;
         }
 

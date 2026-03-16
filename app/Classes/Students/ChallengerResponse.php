@@ -11,6 +11,7 @@ class ChallengerResponse
 {
 
     public $challenge_time = 0;
+    public $warning_before_seconds = 30;
     public $challenge_id   = null;
     public $is_final       = false;
     public $is_eol         = false;
