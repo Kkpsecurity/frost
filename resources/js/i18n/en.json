@@ -264,5 +264,34 @@
     "statusCompleted": "Completed",
     "statusFailed": "Failed",
     "statusExpired": "Expired"
+  },
+  "chat": {
+    "chatRoom": "Chat Room",
+    "loadingChat": "Loading chat...",
+    "chatUnavailable": "Chat temporarily unavailable",
+    "chatDisabled": "Chat is disabled.",
+    "noMessages": "No messages yet. Say hi!",
+    "typePlaceholder": "Type a message...",
+    "disabledPlaceholder": "Chat is disabled",
+    "send": "Send"
+  },
+  "askInstructor": {
+    "title": "Ask Instructor",
+    "helperBreak": "Class is on break. Submit a question for the instructor.",
+    "helperTeaching": "Chat is disabled during teaching. Submit a question for the instructor.",
+    "validationError": "Please fill in topic and question.",
+    "submitSuccess": "Received. Instructor will respond.",
+    "submitError": "Failed to submit question",
+    "topicPlaceholder": "Topic (e.g. Module 3)",
+    "urgencyNormal": "Normal",
+    "urgencyUrgent": "Urgent",
+    "questionPlaceholder": "Your question...",
+    "submitting": "Submitting...",
+    "submit": "Submit",
+    "recentQuestions": "Your recent questions",
+    "loading": "Loading...",
+    "queueUnavailable": "Queue temporarily unavailable",
+    "noQuestions": "No questions yet.",
+    "instructorReply": "Instructor reply"
   }
 }

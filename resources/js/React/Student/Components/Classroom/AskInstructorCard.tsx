@@ -5,6 +5,7 @@ import {
     useAskInstructorSubmit,
 } from "../../../Hooks/ClassroomAskInstructorHooks";
 import { toast } from "react-toastify";
+import { t } from "@/i18n";
 
 interface AskInstructorCardProps {
     courseDateId: number | null;
@@ -23,38 +24,38 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
 
     const helperText =
         mode === "BREAK"
-            ? "Class is on break. Submit a question for the instructor."
-            : "Chat is disabled during teaching. Submit a question for the instructor.";
+            ? t("askInstructor.helperBreak")
+            : t("askInstructor.helperTeaching");
 
     const onSubmit = async () => {
         if (!courseDateId) return;
 
-        const t = topic.trim();
+        const trimmedTopic = topic.trim();
         const q = question.trim();
-        if (!t || !q) {
-            toast.error("Please fill in topic and question.");
+        if (!trimmedTopic || !q) {
+            toast.error(t("askInstructor.validationError"));
             return;
         }
 
         try {
             const res = await mutateAsync({
                 course_date_id: courseDateId,
-                topic: t,
+                topic: trimmedTopic,
                 urgency,
                 question: q,
             });
 
             if (!res?.success) {
-                toast.error(res?.message || "Failed to submit question");
+                toast.error(res?.message || t("askInstructor.submitError"));
                 return;
             }
 
-            toast.success(res?.message || "Received. Instructor will respond.");
+            toast.success(res?.message || t("askInstructor.submitSuccess"));
             setTopic("");
             setUrgency("Normal");
             setQuestion("");
         } catch (e: any) {
-            toast.error("Failed to submit question");
+            toast.error(t("askInstructor.submitError"));
         }
     };
 
@@ -76,7 +77,7 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
             >
                 <h6 className="mb-0" style={{ color: "white" }}>
                     <i className="fas fa-question-circle me-2"></i>
-                    Ask Instructor
+                    {t("askInstructor.title")}
                 </h6>
             </div>
 
@@ -99,7 +100,7 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
                         className="form-control"
                         value={topic}
                         onChange={(e) => setTopic(e.target.value)}
-                        placeholder="Topic (e.g. Module 3)"
+                        placeholder={t("askInstructor.topicPlaceholder")}
                         disabled={isPending}
                         style={{
                             backgroundColor: "rgba(0,0,0,0.15)",
@@ -120,8 +121,8 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
                             maxWidth: "135px",
                         }}
                     >
-                        <option value="Normal">Normal</option>
-                        <option value="Urgent">Urgent</option>
+                        <option value="Normal">{t("askInstructor.urgencyNormal")}</option>
+                        <option value="Urgent">{t("askInstructor.urgencyUrgent")}</option>
                     </select>
                 </div>
 
@@ -129,7 +130,7 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
                     className="form-control"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Your question..."
+                    placeholder={t("askInstructor.questionPlaceholder")}
                     disabled={isPending}
                     rows={3}
                     style={{
@@ -147,25 +148,25 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
                     disabled={isPending || !topic.trim() || !question.trim()}
                     style={{ width: "100%" }}
                 >
-                    {isPending ? "Submitting..." : "Submit"}
+                    {isPending ? t("askInstructor.submitting") : t("askInstructor.submit")}
                 </button>
 
                 <div style={{ marginTop: "0.75rem" }}>
                     <div style={{ color: "#ecf0f1", fontWeight: 600, fontSize: "0.9rem" }}>
-                        Your recent questions
+                        {t("askInstructor.recentQuestions")}
                     </div>
 
                     {isLoading ? (
                         <div style={{ color: "#95a5a6", fontSize: "0.85rem", marginTop: "0.25rem" }}>
-                            Loading...
+                            {t("askInstructor.loading")}
                         </div>
                     ) : isError ? (
                         <div style={{ color: "#95a5a6", fontSize: "0.85rem", marginTop: "0.25rem" }}>
-                            Queue temporarily unavailable
+                            {t("askInstructor.queueUnavailable")}
                         </div>
                     ) : questions.length === 0 ? (
                         <div style={{ color: "#95a5a6", fontSize: "0.85rem", marginTop: "0.25rem" }}>
-                            No questions yet.
+                            {t("askInstructor.noQuestions")}
                         </div>
                     ) : (
                         <div style={{ marginTop: "0.5rem" }}>
@@ -215,7 +216,7 @@ const AskInstructorCard: React.FC<AskInstructorCardProps> = ({ courseDateId, mod
                                             }}
                                         >
                                             <div style={{ color: "#95a5a6", fontSize: "0.75rem" }}>
-                                                Instructor reply
+                                                {t("askInstructor.instructorReply")}
                                             </div>
                                             <div
                                                 style={{

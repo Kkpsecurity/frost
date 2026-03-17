@@ -4,6 +4,7 @@ import {
     usePostClassroomChatMessage,
     ClassroomChatMessage,
 } from "../../../Hooks/ClassroomChatHooks";
+import { t } from "@/i18n";
 
 interface ClassroomChatCardProps {
     courseDateId: number | null;
@@ -51,18 +52,18 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({
             >
                 <h6 className="mb-0" style={{ color: "white" }}>
                     <i className="fas fa-comments me-2"></i>
-                    Chat Room
+                    {t("chat.chatRoom")}
                 </h6>
             </div>
 
             <div className="card-body" style={{ padding: "0.75rem" }}>
                 {isLoading ? (
                     <div style={{ color: "#95a5a6", fontSize: "0.9rem" }}>
-                        Loading chat...
+                        {t("chat.loadingChat")}
                     </div>
                 ) : isError ? (
                     <div style={{ color: "#95a5a6", fontSize: "0.9rem" }}>
-                        Chat temporarily unavailable
+                        {t("chat.chatUnavailable")}
                     </div>
                 ) : !enabled ? (
                     <div
@@ -74,7 +75,7 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({
                             padding: "0.75rem",
                         }}
                     >
-                        Chat is disabled.
+                        {t("chat.chatDisabled")}
                     </div>
                 ) : (
                     <>
@@ -97,7 +98,7 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({
                                         padding: "1rem 0.5rem",
                                     }}
                                 >
-                                    No messages yet. Say hi!
+                                    {t("chat.noMessages")}
                                 </div>
                             ) : (
                                 messages.map((m) => (
@@ -193,8 +194,8 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({
                                 }}
                                 placeholder={
                                     enabled
-                                        ? "Type a message..."
-                                        : "Chat is disabled"
+                                        ? t("chat.typePlaceholder")
+                                        : t("chat.disabledPlaceholder")
                                 }
                                 disabled={isPending || !enabled}
                                 style={{
@@ -216,7 +217,7 @@ const ClassroomChatCard: React.FC<ClassroomChatCardProps> = ({
                                     opacity: enabled ? 1 : 0.5,
                                 }}
                             >
-                                Send
+                                {t("chat.send")}
                             </button>
                         </div>
                     </>

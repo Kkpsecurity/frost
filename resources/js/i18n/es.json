@@ -254,6 +254,35 @@
     "statusFailed": "Fallido",
     "statusExpired": "Expirado"
   },
+  "chat": {
+    "chatRoom": "Sala de Chat",
+    "loadingChat": "Cargando chat...",
+    "chatUnavailable": "Chat temporalmente no disponible",
+    "chatDisabled": "El chat está desactivado.",
+    "noMessages": "¡Aún no hay mensajes. ¡Di hola!",
+    "typePlaceholder": "Escribe un mensaje...",
+    "disabledPlaceholder": "Chat desactivado",
+    "send": "Enviar"
+  },
+  "askInstructor": {
+    "title": "Preguntar al Instructor",
+    "helperBreak": "La clase está en descanso. Envía una pregunta para el instructor.",
+    "helperTeaching": "El chat está desactivado durante la enseñanza. Envía una pregunta para el instructor.",
+    "validationError": "Por favor completa el tema y la pregunta.",
+    "submitSuccess": "Recibido. El instructor responderá pronto.",
+    "submitError": "Error al enviar la pregunta",
+    "topicPlaceholder": "Tema (p. ej. Módulo 3)",
+    "urgencyNormal": "Normal",
+    "urgencyUrgent": "Urgente",
+    "questionPlaceholder": "Tu pregunta...",
+    "submitting": "Enviando...",
+    "submit": "Enviar",
+    "recentQuestions": "Tus preguntas recientes",
+    "loading": "Cargando...",
+    "queueUnavailable": "Cola temporalmente no disponible",
+    "noQuestions": "Aún no hay preguntas.",
+    "instructorReply": "Respuesta del instructor"
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Algo salió mal. Por favor, inténtalo de nuevo.",
