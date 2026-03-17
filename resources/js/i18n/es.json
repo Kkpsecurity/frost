@@ -216,6 +216,23 @@
     "videoLessons": "Lecciones en Video",
     "documents": "Documentos"
   },
+  "pause": {
+    "videoPaused": "Video en Pausa",
+    "pauseSubtitle": "{{label}} - {{duration}} minutos",
+    "timeRemaining": "Tiempo restante",
+    "pauseEndingSoon": "¡La pausa está por terminar!",
+    "pauseEndingSeconds": "¡La pausa termina en {{seconds}} segundos!",
+    "autoResume": "El video se reanudará automáticamente cuando expire el tiempo de pausa",
+    "lessonPaused": "Lección en Pausa",
+    "instructorPaused": "Tu instructor ha pausado la lección. Por favor espera.",
+    "breakDurationLabel": "Descanso de {{duration}} minutos",
+    "syncingTimer": "Sincronizando temporizador...",
+    "breakEndingSoon": "¡El descanso está por terminar - prepárate para continuar!",
+    "breakRemaining": "{{count}} descanso restante",
+    "breaksRemaining": "{{count}} descansos restantes",
+    "breakTime": "Tiempo de Descanso",
+    "breakMessage": "Tu instructor está tomando un breve descanso. La lección se reanudará pronto. Permanece en esta página para continuar cuando esté listo."
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Algo salió mal. Por favor, inténtalo de nuevo.",

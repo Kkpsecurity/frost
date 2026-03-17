@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { t } from "@/i18n";
 
 interface StudentLessonPauseModalProps {
     isVisible: boolean;
@@ -191,7 +192,7 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                             }}
                         />
                         <h2 style={{ color: "white", marginBottom: "10px" }}>
-                            Lesson Paused
+                            {t("pause.lessonPaused")}
                         </h2>
                         <p
                             style={{
@@ -199,7 +200,7 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                 fontSize: "16px",
                             }}
                         >
-                            Your instructor has paused the lesson. Please wait.
+                            {t("pause.instructorPaused")}
                         </p>
 
                         {/* Countdown Timer */}
@@ -232,8 +233,8 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                 }}
                             >
                                 {isSynced
-                                    ? `${breakDurationMinutes}-minute break`
-                                    : "Syncing break timer..."}
+                                    ? t("pause.breakDurationLabel", { duration: breakDurationMinutes })
+                                    : t("pause.syncingTimer")}
                             </div>
                             {/* Progress Bar */}
                             <div
@@ -271,7 +272,7 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                 }}
                             >
                                 <i className="fas fa-exclamation-triangle me-2" />
-                                Break ending soon - get ready to resume!
+                                {t("pause.breakEndingSoon")}
                             </div>
                         )}
                         {lessonTitle && (
@@ -296,8 +297,9 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                 }}
                             >
                                 <i className="fas fa-info-circle me-2" />
-                                {breaksRemaining} break
-                                {breaksRemaining !== 1 ? "s" : ""} remaining
+                                {breaksRemaining === 1
+                                    ? t("pause.breakRemaining", { count: breaksRemaining })
+                                    : t("pause.breaksRemaining", { count: breaksRemaining })}
                             </p>
                         )}
 
@@ -336,7 +338,7 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                             fontWeight: "600",
                                         }}
                                     >
-                                        Break Time
+                                        {t("pause.breakTime")}
                                     </h6>
                                     <p
                                         style={{
@@ -345,9 +347,7 @@ const StudentLessonPauseModal: React.FC<StudentLessonPauseModalProps> = ({
                                             margin: 0,
                                         }}
                                     >
-                                        Your instructor is taking a short break.
-                                        The lesson will resume shortly. Stay on
-                                        this page to continue when ready.
+                                        {t("pause.breakMessage")}
                                     </p>
                                 </div>
                             </div>

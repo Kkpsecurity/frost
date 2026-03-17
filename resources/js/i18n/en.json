@@ -226,5 +226,22 @@
     "yes": "Yes",
     "no": "No",
     "student": "Student"
+  },
+  "pause": {
+    "videoPaused": "Video Paused",
+    "pauseSubtitle": "{{label}} - {{duration}} minutes",
+    "timeRemaining": "Time remaining",
+    "pauseEndingSoon": "Pause time ending soon!",
+    "pauseEndingSeconds": "Pause time ending in {{seconds}} seconds!",
+    "autoResume": "Video will automatically resume when pause time expires",
+    "lessonPaused": "Lesson Paused",
+    "instructorPaused": "Your instructor has paused the lesson. Please wait.",
+    "breakDurationLabel": "{{duration}}-minute break",
+    "syncingTimer": "Syncing break timer...",
+    "breakEndingSoon": "Break ending soon - get ready to resume!",
+    "breakRemaining": "{{count}} break remaining",
+    "breaksRemaining": "{{count}} breaks remaining",
+    "breakTime": "Break Time",
+    "breakMessage": "Your instructor is taking a short break. The lesson will resume shortly. Stay on this page to continue when ready."
   }
 }

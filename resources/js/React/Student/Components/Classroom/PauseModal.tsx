@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { t } from "@/i18n";
 
 interface PauseModalProps {
     isVisible: boolean;
@@ -122,7 +123,7 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         className="text-center mb-2"
                         style={{ color: "white", fontWeight: "600" }}
                     >
-                        Video Paused
+                        {t("pause.videoPaused")}
                     </h3>
 
                     {/* Pause Label */}
@@ -130,7 +131,7 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         className="text-center mb-4"
                         style={{ color: "#95a5a6", fontSize: "1.1rem" }}
                     >
-                        {pauseLabel} - {pauseDurationMinutes} minutes
+                        {t("pause.pauseSubtitle", { label: pauseLabel, duration: pauseDurationMinutes })}
                     </p>
 
                     {/* Countdown Timer */}
@@ -156,8 +157,8 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         </div>
                         <small style={{ color: "#95a5a6" }}>
                             {showWarning
-                                ? "Pause time ending soon!"
-                                : "Time remaining"}
+                                ? t("pause.pauseEndingSoon")
+                                : t("pause.timeRemaining")}
                         </small>
                     </div>
 
@@ -198,7 +199,7 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         >
                             <i className="fas fa-exclamation-triangle me-2"></i>
                             <strong>
-                                Pause time ending in {remainingSeconds} seconds!
+                                {t("pause.pauseEndingSeconds", { seconds: remainingSeconds })}
                             </strong>
                         </div>
                     )}
@@ -212,7 +213,7 @@ const PauseModal: React.FC<PauseModalProps> = ({
                         }}
                     >
                         <i className="fas fa-info-circle me-2"></i>
-                        Video will automatically resume when pause time expires
+                        {t("pause.autoResume")}
                     </div>
                 </div>
             </div>
