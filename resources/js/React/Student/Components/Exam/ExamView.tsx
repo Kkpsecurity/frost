@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { t } from "@/i18n";
 
 interface ExamViewProps {
     examAuth: any;
@@ -189,19 +190,19 @@ const ExamView: React.FC<ExamViewProps> = ({
                     <div className="d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">
                             <i className="fas fa-file-alt me-2"></i>
-                            Exam: {examAuth.course?.title || "Course Exam"}
+                            {t("examView.examLabel")} {examAuth.course?.title || t("examView.courseExamFallback")}
                         </h4>
                         <div>
                             <i className="fas fa-clock me-2"></i>
                             <strong style={{ fontSize: "1.5rem" }}>
-                                Timer disabled
+                                {t("examView.timerDisabled")}
                             </strong>
                         </div>
                         <div>
                             <span className="me-3">
-                                Questions: {examAuth.questions?.length || 0}
+                                {t("examView.questions", { n: examAuth.questions?.length || 0 })}
                             </span>
-                            <span>Answered: {Object.keys(answers).length}</span>
+                            <span>{t("examView.answered", { n: Object.keys(answers).length })}</span>
                         </div>
                     </div>
 
@@ -217,7 +218,7 @@ const ExamView: React.FC<ExamViewProps> = ({
                                 }}
                                 onClick={handleDevAutofill}
                             >
-                                DEV: Auto Fill Answers
+                                {t("examView.devAutoFill")}
                             </button>
                         </div>
                     )}
@@ -359,7 +360,7 @@ const ExamView: React.FC<ExamViewProps> = ({
                                             }}
                                             onClick={handleDevAutofill}
                                         >
-                                            DEV: Auto Fill Answers
+                                            {t("examView.devAutoFill")}
                                         </button>
                                     </div>
                                 )}
@@ -375,13 +376,12 @@ const ExamView: React.FC<ExamViewProps> = ({
                                     }}
                                 >
                                     <i className="fas fa-check me-2"></i>
-                                    Submit Exam
+                                    {t("examView.submitExam")}
                                 </button>
 
                                 {!allAnswered && (
                                     <div className="mt-3 text-muted">
-                                        Answer all questions to enable submit. (
-                                        {answeredQuestions}/{totalQuestions})
+                                        {t("examView.answerAllFirst", { answered: answeredQuestions, total: totalQuestions })}
                                     </div>
                                 )}
                             </div>

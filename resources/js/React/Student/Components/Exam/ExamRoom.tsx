@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { t } from "@/i18n";
 import { useStudent } from "../../context/StudentContext";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import FrostDashboardWrapper from "../../Styles/FrostDashboardWrapper.styled";
@@ -548,10 +549,10 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                 <div className="text-center">
                     <div className="spinner-border text-primary" role="status">
                         <span className="visually-hidden">
-                            Loading exam room...
+                            {t("examRoom.loadingExamRoom")}
                         </span>
                     </div>
-                    <p className="mt-3">Loading exam room...</p>
+                    <p className="mt-3">{t("examRoom.loadingExamRoom")}</p>
                 </div>
             </div>
         );
@@ -585,7 +586,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
             {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
             <SchoolDashboardTitleBar
                 title={courseName}
-                subtitle="Complete your final exam"
+                subtitle={t("examRoom.subtitle")}
                 icon={<i className="fas fa-graduation-cap"></i>}
                 onBackToDashboard={handleBackToDashboard}
                 devModeToggle={devModeToggle}
@@ -635,8 +636,8 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                             style={{ color: "#b8c5d6" }}
                                         >
                                             {lessonStats.total > 0 && lessonStats.completed >= lessonStats.total
-                                                ? `🎉 Congratulations! You've completed all ${lessonStats.total} lessons. You're ready for the final exam!`
-                                                : `🎓 Your exam access is ready. (${lessonStats.completed} / ${lessonStats.total} lessons completed)`
+                                                ? t("examRoom.allLessonsCompleted", { total: lessonStats.total })
+                                                : t("examRoom.examAccessReady", { completed: lessonStats.completed, total: lessonStats.total })
                                             }
                                         </p>
                                     </div>
@@ -663,7 +664,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                     >
                                         <h5 className="mb-0">
                                             <i className="fas fa-clipboard-check me-2"></i>
-                                            Exam Status
+                                            {t("examRoom.examStatus")}
                                             {attemptStats.total > 0 && (
                                                 <span
                                                     className="badge ms-2"
@@ -676,9 +677,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                         fontSize: "0.75rem",
                                                     }}
                                                 >
-                                                    Attempts:{" "}
-                                                    {attemptStats.total} /{" "}
-                                                    {attemptStats.max}
+                                                    {t("examRoom.attempts", { total: attemptStats.total, max: attemptStats.max })}
                                                 </span>
                                             )}
                                         </h5>
@@ -707,11 +706,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                                     }}
                                                                 >
                                                                     <span>
-                                                                        Attempt{" "}
-                                                                        {
-                                                                            attemptNumber
-                                                                        }
-                                                                        :
+                                                                        {t("examRoom.attemptRow", { n: attemptNumber })}
                                                                     </span>
                                                                     <span
                                                                         style={{
@@ -750,7 +745,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     }}
                                                 >
                                                     <i className="fas fa-clock me-2"></i>
-                                                    You have an exam in progress
+                                                    {t("examRoom.examInProgress")}
                                                 </div>
                                                 <button
                                                     className="btn btn-lg w-100"
@@ -763,7 +758,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     onClick={handleResumeExam}
                                                 >
                                                     <i className="fas fa-redo me-2"></i>
-                                                    Resume Exam
+                                                    {t("examRoom.resumeExam")}
                                                 </button>
                                             </>
                                         ) : isExamEligible &&
@@ -781,8 +776,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                             }}
                                                         >
                                                             <i className="fas fa-exclamation-triangle me-2"></i>
-                                                            ⚠️ This is your final
-                                                            attempt!
+                                                            {t("examRoom.finalAttemptWarning")}
                                                         </div>
                                                     )}
                                                 <button
@@ -803,15 +797,15 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                                 role="status"
                                                                 aria-hidden="true"
                                                             ></span>
-                                                            Starting Exam...
+                                                            {t("examRoom.startingExam")}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <i className="fas fa-play-circle me-2"></i>
                                                             {attemptStats.total >
                                                                 0
-                                                                ? "Retake Exam"
-                                                                : "Begin Exam"}
+                                                                ? t("examRoom.retakeExam")
+                                                                : t("examRoom.beginExam")}
                                                         </>
                                                     )}
                                                 </button>
@@ -829,16 +823,10 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                 >
                                                     <i className="fas fa-exclamation-triangle me-2"></i>
                                                     <strong>
-                                                        No More Attempts
-                                                        Available
+                                                        {t("examRoom.noMoreAttempts")}
                                                     </strong>
                                                     <p className="mb-0 mt-2">
-                                                        You have used all{" "}
-                                                        {attemptStats.max}{" "}
-                                                        attempts for this exam.
-                                                        Please contact your
-                                                        instructor for
-                                                        assistance.
+                                                        {t("examRoom.noAttemptsMsg", { max: attemptStats.max })}
                                                     </p>
                                                 </div>
                                                 <button
@@ -854,8 +842,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     disabled
                                                 >
                                                     <i className="fas fa-ban me-2"></i>
-                                                    Retake Exam (No Attempts
-                                                    Left)
+                                                    {t("examRoom.retakeNoAttempts")}
                                                 </button>
                                                 <button
                                                     className="btn btn-sm w-100"
@@ -875,13 +862,12 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                                 role="status"
                                                                 aria-hidden="true"
                                                             ></span>
-                                                            Resetting...
+                                                            {t("examRoom.resetting")}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <i className="fas fa-undo me-2"></i>
-                                                            DEV: Reset All Exam
-                                                            Attempts
+                                                            {t("examRoom.devResetAttempts")}
                                                         </>
                                                     )}
                                                 </button>
@@ -900,23 +886,18 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                                 color: "#fff",
                                                             }}
                                                         >
-                                                            Exam Details:
+                                                            {t("examRoom.examDetails")}
                                                         </strong>
                                                         <ul className="mt-2">
                                                             <li>
-                                                                Questions:{" "}
-                                                                {studentExam.num_questions ||
-                                                                    "N/A"}
+                                                                {t("examRoom.detailQuestions", { n: studentExam.num_questions || "N/A" })}
                                                             </li>
                                                             <li>
-                                                                Passing Score:{" "}
-                                                                {studentExam.num_to_pass ||
-                                                                    "N/A"}
+                                                                {t("examRoom.detailPassingScore", { n: studentExam.num_to_pass || "N/A" })}
                                                             </li>
                                                             <li>
-                                                                Time Limit:{" "}
                                                                 {studentExam.policy_expire_seconds
-                                                                    ? `${Math.floor(studentExam.policy_expire_seconds / 60)} minutes`
+                                                                    ? t("examRoom.detailTimeLimit", { n: Math.floor(studentExam.policy_expire_seconds / 60) })
                                                                     : "N/A"}
                                                             </li>
                                                         </ul>
@@ -940,12 +921,12 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                                 role="status"
                                                                 aria-hidden="true"
                                                             ></span>
-                                                            Starting Exam...
+                                                            {t("examRoom.startingExam")}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <i className="fas fa-play-circle me-2"></i>
-                                                            Begin Exam
+                                                            {t("examRoom.beginExam")}
                                                         </>
                                                     )}
                                                 </button>
@@ -962,7 +943,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     }}
                                                 >
                                                     <i className="fas fa-clock me-2"></i>
-                                                    You have an exam in progress
+                                                    {t("examRoom.examInProgress")}
                                                 </div>
                                                 <button
                                                     className="btn btn-lg w-100"
@@ -975,7 +956,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     onClick={handleResumeExam}
                                                 >
                                                     <i className="fas fa-redo me-2"></i>
-                                                    Resume Exam
+                                                    {t("examRoom.resumeExam")}
                                                 </button>
                                             </>
                                         ) : (
@@ -988,8 +969,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                 }}
                                             >
                                                 <i className="fas fa-info-circle me-2"></i>
-                                                Complete all lessons to unlock
-                                                the exam
+                                                {t("examRoom.completeLessonsFirst")}
                                             </div>
                                         )}
                                     </div>
@@ -1014,7 +994,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                     >
                                         <h5 className="mb-0">
                                             <i className="fas fa-trophy me-2"></i>
-                                            Course Progress
+                                            {t("examRoom.courseProgress")}
                                         </h5>
                                     </div>
                                     <div className="card-body">
@@ -1026,7 +1006,7 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                         fontWeight: "bold",
                                                     }}
                                                 >
-                                                    Lessons Completed
+                                                    {t("examRoom.lessonsCompleted")}
                                                 </span>
                                                 <span
                                                     style={{
@@ -1088,12 +1068,10 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                 className="mb-2"
                                                 style={{ color: "#2ecc71" }}
                                             >
-                                                Ready for Exam!
+                                                {t("examRoom.readyForExam")}
                                             </h4>
                                             <p style={{ color: "#b8c5d6" }}>
-                                                You've successfully completed
-                                                all required lessons for{" "}
-                                                {course?.name || "this course"}.
+                                                {t("examRoom.completedAllLessons", { course: course?.name || "this course" })}
                                             </p>
                                         </div>
                                     </div>
@@ -1142,25 +1120,17 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                     <i className="fas fa-check-circle fa-4x"></i>
                                                 </div>
                                                 <h2 className="mb-3">
-                                                    🎉 Congratulations! You
-                                                    Passed!
+                                                    {t("examRoom.congratsPassed")}
                                                 </h2>
                                                 <h3 className="mb-4">
-                                                    Score:{" "}
-                                                    {studentExam.previous_exam_score ||
-                                                        "N/A"}
+                                                    {t("examRoom.score", { score: studentExam.previous_exam_score || "N/A" })}
                                                 </h3>
                                                 {studentExam.previous_exam_completed_at && (
                                                     <p
                                                         className="mb-0"
                                                         style={{ opacity: 0.9 }}
                                                     >
-                                                        Completed on{" "}
-                                                        {new Date(
-                                                            Number(
-                                                                studentExam.previous_exam_completed_at,
-                                                            ) * 1000,
-                                                        ).toLocaleString()}
+                                                        {t("examRoom.completedOn", { date: new Date(Number(studentExam.previous_exam_completed_at) * 1000).toLocaleString() })}
                                                     </p>
                                                 )}
                                             </div>
@@ -1322,14 +1292,12 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                                                                     role="status"
                                                                     aria-hidden="true"
                                                                 ></span>
-                                                                Resetting...
+                                                                {t("examRoom.resetting")}
                                                             </>
                                                         ) : (
                                                             <>
                                                                 <i className="fas fa-trash me-2"></i>
-                                                                🔧 DEV: Reset
-                                                                All Exam
-                                                                Attempts
+                                                                {t("examRoom.devResetAttempts")}
                                                             </>
                                                         )}
                                                     </button>
@@ -1357,52 +1325,46 @@ const ExamRoom: React.FC<ExamRoomProps> = ({
                             >
                                 <h5 className="mb-0">
                                     <i className="fas fa-lightbulb me-2"></i>
-                                    Exam Instructions
+                                    {t("examRoom.examInstructions")}
                                 </h5>
                             </div>
                             <div className="card-body">
                                 <div className="row">
                                     <div className="col-md-6">
                                         <h6 style={{ color: "#3498db" }}>
-                                            Before You Begin:
+                                            {t("examRoom.beforeYouBegin")}
                                         </h6>
                                         <ul style={{ color: "#b8c5d6" }}>
                                             <li>
-                                                Find a quiet environment free
-                                                from distractions
+                                                {t("examRoom.instr1")}
                                             </li>
                                             <li>
-                                                Ensure you have a stable
-                                                internet connection
+                                                {t("examRoom.instr2")}
                                             </li>
                                             <li>
-                                                Have your ID ready for
-                                                verification if required
+                                                {t("examRoom.instr3")}
                                             </li>
                                             <li>
-                                                Read all questions carefully
-                                                before answering
+                                                {t("examRoom.instr4")}
                                             </li>
                                         </ul>
                                     </div>
                                     <div className="col-md-6">
                                         <h6 style={{ color: "#3498db" }}>
-                                            During the Exam:
+                                            {t("examRoom.duringTheExam")}
                                         </h6>
                                         <ul style={{ color: "#b8c5d6" }}>
                                             <li>
-                                                You cannot pause once you start
+                                                {t("examRoom.instr5")}
                                             </li>
                                             <li>
-                                                All questions must be answered
+                                                {t("examRoom.instr6")}
                                             </li>
                                             <li>
-                                                Double-check your answers before
-                                                submitting
+                                                {t("examRoom.instr7")}
                                             </li>
                                             <li>
-                                                The timer will count down
-                                                automatically
+                                                {t("examRoom.instr8")}
                                             </li>
                                         </ul>
                                     </div>

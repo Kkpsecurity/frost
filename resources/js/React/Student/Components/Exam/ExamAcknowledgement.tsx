@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 interface ExamAcknowledgementProps {
     studentExam: any;
@@ -19,11 +20,11 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
         studentExam?.exam ||
         (studentExam?.exam_id
             ? {
-                  id: studentExam.exam_id,
-                  num_questions: studentExam.num_questions,
-                  num_to_pass: studentExam.num_to_pass,
-                  policy_expire_seconds: studentExam.policy_expire_seconds,
-              }
+                id: studentExam.exam_id,
+                num_questions: studentExam.num_questions,
+                num_to_pass: studentExam.num_to_pass,
+                policy_expire_seconds: studentExam.policy_expire_seconds,
+            }
             : null);
     const errorMessage = studentExam?.error;
 
@@ -55,7 +56,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <i className="fas fa-exclamation-triangle me-2"></i>
-                                Exam Configuration Error
+                                {t("examAck.configError")}
                             </h4>
                             <p
                                 style={{
@@ -74,7 +75,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                     marginBottom: "1.5rem",
                                 }}
                             >
-                                <strong>Debug Information:</strong>
+                                <strong>{t("examAck.debugInfo")}</strong>
                                 <div
                                     style={{
                                         marginTop: "0.5rem",
@@ -83,15 +84,15 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                     }}
                                 >
                                     <div>
-                                        studentExam available:{" "}
-                                        {studentExam ? "Yes" : "No"}
+                                        {t("examAck.studentExamAvailable")}{" "}
+                                        {studentExam ? t("examAck.yes") : t("examAck.no")}
                                     </div>
                                     <div>
-                                        exam object: {exam ? "Yes" : "No"}
+                                        {t("examAck.examObject")} {exam ? t("examAck.yes") : t("examAck.no")}
                                     </div>
                                     {studentExam && (
                                         <div style={{ marginTop: "0.5rem" }}>
-                                            Raw data:{" "}
+                                            {t("examAck.rawData")}{" "}
                                             {JSON.stringify(
                                                 studentExam,
                                                 null,
@@ -111,7 +112,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <i className="fas fa-arrow-left me-2"></i>
-                                Back to Dashboard
+                                {t("examAck.backToDashboard")}
                             </button>
                         </div>
                     </div>
@@ -149,11 +150,10 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <i className="fas fa-exclamation-triangle me-2"></i>
-                                Exam Configuration Missing
+                                {t("examAck.configMissing")}
                             </h4>
                             <p style={{ color: "#ecf0f1" }}>
-                                The exam configuration could not be loaded. The
-                                exam object is missing.
+                                {t("examAck.configMissingMsg")}
                             </p>
                             <button
                                 className="btn btn-lg mt-3"
@@ -165,7 +165,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <i className="fas fa-arrow-left me-2"></i>
-                                Back to Dashboard
+                                {t("examAck.backToDashboard")}
                             </button>
                         </div>
                     </div>
@@ -210,14 +210,13 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                             className="fw-bold mb-3"
                             style={{ color: "#ecf0f1" }}
                         >
-                            Beginning the Exam
+                            {t("examAck.beginningExam")}
                         </h2>
                         <h4
                             className="lead fw-bold mb-4"
                             style={{ color: "#bdc3c7" }}
                         >
-                            When you click Begin Exam below, you will begin your
-                            exam.
+                            {t("examAck.beginExamLead")}
                         </h4>
 
                         <div
@@ -230,13 +229,11 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                             }}
                         >
                             <i className="fas fa-clock me-2"></i>
-                            You will have{" "}
+                            {t("examAck.timeWarningBefore")}{" "}
                             <strong>
                                 {formatTime(exam.policy_expire_seconds || 7200)}
                             </strong>{" "}
-                            to complete your exam. If you do not submit your
-                            answers in that time, you will automatically fail
-                            the exam.
+                            {t("examAck.timeWarningAfter")}
                         </div>
 
                         <ul className="list-group mb-4">
@@ -248,7 +245,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                     color: "#ecf0f1",
                                 }}
                             >
-                                <span>Total Questions:</span>
+                                <span>{t("examAck.totalQuestions")}</span>
                                 <strong style={{ color: "#3498db" }}>
                                     {exam.num_questions}
                                 </strong>
@@ -261,7 +258,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                     color: "#ecf0f1",
                                 }}
                             >
-                                <span>Required to Pass:</span>
+                                <span>{t("examAck.requiredToPass")}</span>
                                 <strong style={{ color: "#3498db" }}>
                                     {exam.num_to_pass}
                                 </strong>
@@ -282,7 +279,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <i className="fas fa-play me-2"></i>
-                                Begin Exam
+                                {t("examAck.beginExam")}
                             </button>
                             <button
                                 type="button"
@@ -296,7 +293,7 @@ const ExamAcknowledgement: React.FC<ExamAcknowledgementProps> = ({
                                 }}
                             >
                                 <i className="fas fa-arrow-left me-2"></i>
-                                Back to Dashboard
+                                {t("examAck.backToDashboard")}
                             </button>
                         </div>
                     </div>

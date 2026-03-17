@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { t } from "@/i18n";
 
 interface ExamReviewProps {
     attempt: any;
@@ -75,8 +76,8 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                     </div>
                     <div>
                         <h5 className="mb-0" style={{ color: "#fff" }}>
-                            Attempt {attemptNumber}:
-                            {passed ? " Passed ✓" : " Failed ✗"}
+                            {t("examReview.attemptLabel", { n: attemptNumber })}{" "}
+                            {passed ? t("examReview.passed") : t("examReview.failed")}
                         </h5>
                         <small style={{ color: "#b8c5d6" }}>
                             {completedDate}
@@ -127,7 +128,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                     {score}
                                 </h3>
                                 <small style={{ color: "#b8c5d6" }}>
-                                    Correct
+                                    {t("examReview.correct")}
                                 </small>
                             </div>
                         </div>
@@ -148,7 +149,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                     {total - score}
                                 </h3>
                                 <small style={{ color: "#b8c5d6" }}>
-                                    Incorrect
+                                    {t("examReview.incorrect")}
                                 </small>
                             </div>
                         </div>
@@ -169,7 +170,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                     {exam?.num_to_pass || "N/A"}
                                 </h3>
                                 <small style={{ color: "#b8c5d6" }}>
-                                    Required to Pass
+                                    {t("examReview.requiredToPass")}
                                 </small>
                             </div>
                         </div>
@@ -189,10 +190,10 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                         marginBottom: "0.5rem",
                                     }}
                                 >
-                                    {passed ? "PASS" : "FAIL"}
+                                    {passed ? t("examReview.pass") : t("examReview.fail")}
                                 </h3>
                                 <small style={{ color: "#b8c5d6" }}>
-                                    Result
+                                    {t("examReview.result")}
                                 </small>
                             </div>
                         </div>
@@ -201,7 +202,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                     {/* Question Review */}
                     <h5 style={{ color: "#fff", marginBottom: "1.5rem" }}>
                         <i className="fas fa-clipboard-list me-2"></i>
-                        Question Review
+                        {t("examReview.questionReview")}
                     </h5>
 
                     {questions.length === 0 ? (
@@ -214,7 +215,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                             }}
                         >
                             <i className="fas fa-info-circle me-2"></i>
-                            No question details available for this attempt.
+                            {t("examReview.noQuestions")}
                         </div>
                     ) : (
                         <div
@@ -231,10 +232,10 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                 // Get answer text
                                 const studentAnswerText = studentAnswerNum
                                     ? question[`answer_${studentAnswerNum}`]
-                                    : "Not answered";
+                                    : t("examReview.notAnswered");
                                 const correctAnswerText = question.correct
                                     ? question[`answer_${question.correct}`]
-                                    : "Unknown";
+                                    : t("examReview.unknown");
 
                                 return (
                                     <div
@@ -310,7 +311,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                                         <i
                                                             className={`fas ${isCorrect ? "fa-check" : "fa-times"} me-2`}
                                                         ></i>
-                                                        Your Answer:
+                                                        {t("examReview.yourAnswer")}
                                                     </strong>
                                                     <div
                                                         className="mt-2 p-3 rounded"
@@ -336,7 +337,7 @@ const ExamReview: React.FC<ExamReviewProps> = ({
                                                             }}
                                                         >
                                                             <i className="fas fa-check-circle me-2"></i>
-                                                            Correct Answer:
+                                                            {t("examReview.correctAnswer")}
                                                         </strong>
                                                         <div
                                                             className="mt-2 p-3 rounded"

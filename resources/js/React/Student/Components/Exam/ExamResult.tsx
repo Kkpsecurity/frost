@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 interface ExamResultProps {
     examAuth: any;
@@ -95,8 +96,8 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                 </div>
                                 <h2 className="mb-0 mt-3">
                                     {passed
-                                        ? "Congratulations! You Passed!"
-                                        : "Sorry, You Did Not Pass"}
+                                        ? t("examResult.congratsPassed")
+                                        : t("examResult.didNotPass")}
                                 </h2>
                             </div>
                             <div className="card-body p-4">
@@ -104,7 +105,7 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                     <div className="col-md-4">
                                         <div className="mb-3">
                                             <h5 className="text-muted">
-                                                Your Score
+                                                {t("examResult.yourScore")}
                                             </h5>
                                             <div
                                                 style={{
@@ -118,14 +119,14 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                                 {score}
                                             </div>
                                             <div className="text-muted">
-                                                out of {totalQuestions}
+                                                {t("examResult.outOf", { total: totalQuestions })}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="col-md-4">
                                         <div className="mb-3">
                                             <h5 className="text-muted">
-                                                Percentage
+                                                {t("examResult.percentage")}
                                             </h5>
                                             <div
                                                 style={{
@@ -138,28 +139,22 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                             >
                                                 {totalQuestions > 0
                                                     ? Math.round(
-                                                          (score /
-                                                              totalQuestions) *
-                                                              100,
-                                                      )
+                                                        (score /
+                                                            totalQuestions) *
+                                                        100,
+                                                    )
                                                     : 0}
                                                 %
                                             </div>
                                             <div className="text-muted">
-                                                Required:{" "}
-                                                {Math.round(
-                                                    (numToPass /
-                                                        totalQuestions) *
-                                                        100,
-                                                )}
-                                                %
+                                                {t("examResult.requiredPct", { pct: Math.round((numToPass / totalQuestions) * 100) })}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="col-md-4">
                                         <div className="mb-3">
                                             <h5 className="text-muted">
-                                                Questions Correct
+                                                {t("examResult.questionsCorrect")}
                                             </h5>
                                             <div
                                                 style={{
@@ -173,8 +168,7 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                                 {score}/{totalQuestions}
                                             </div>
                                             <div className="text-muted">
-                                                Required: {numToPass}/
-                                                {totalQuestions}
+                                                {t("examResult.requiredFraction", { pass: numToPass, total: totalQuestions })}
                                             </div>
                                         </div>
                                     </div>
@@ -184,7 +178,7 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                     <div className="alert alert-warning mt-3 text-center">
                                         <i className="fas fa-clock me-2"></i>
                                         <strong>
-                                            Next Attempt Available:
+                                            {t("examResult.nextAttemptAvailable")}
                                         </strong>{" "}
                                         {formatNextAttemptTime(
                                             examAuth.next_attempt_at,
@@ -200,11 +194,10 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                 <div className="card-header bg-white">
                                     <h4 className="mb-0">
                                         <i className="fas fa-exclamation-triangle text-warning me-2"></i>
-                                        Questions Missed by Lesson
+                                        {t("examResult.questionsMissedByLesson")}
                                     </h4>
                                     <p className="text-muted mb-0 mt-2">
-                                        Review these lessons to improve your
-                                        understanding
+                                        {t("examResult.reviewLessons")}
                                     </p>
                                 </div>
                                 <div className="card-body">
@@ -220,12 +213,9 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                                 </h5>
                                                 <div className="ms-4">
                                                     <div className="badge bg-danger mb-2">
-                                                        {questions.length}{" "}
-                                                        question
                                                         {questions.length > 1
-                                                            ? "s"
-                                                            : ""}{" "}
-                                                        missed
+                                                            ? t("examResult.questionMissedPlural", { count: questions.length })
+                                                            : t("examResult.questionMissedSingular", { count: questions.length })}
                                                     </div>
                                                     <ul className="list-unstyled">
                                                         {questions.map(
@@ -263,7 +253,7 @@ const ExamResult: React.FC<ExamResultProps> = ({
                                 }}
                             >
                                 <i className="fas fa-home me-2"></i>
-                                Back to Dashboard
+                                {t("examResult.backToDashboard")}
                             </button>
                         </div>
                     </div>
