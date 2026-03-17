@@ -1,5 +1,6 @@
 import React from "react";
 import StudentCoursesTable from "../Tables/StudentCoursesTable";
+import { t } from "@/i18n";
 
 interface OrderDashboardProps {
     data?: any;
@@ -65,13 +66,15 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
                             }}
                         >
                             <h2 style={{ marginBottom: "1rem", fontWeight: "700" }}>
-                                Welcome back, {data?.student?.first_name || "Student"}!
+                                {t('dashboard.welcome', { name: data?.student?.first_name || t('common.student') })}
                             </h2>
                             <p style={{ fontSize: "1.1rem", marginBottom: "0.5rem", opacity: 0.95 }}>
-                                You have {courses?.length || 0} course{courses?.length !== 1 ? "s" : ""} enrolled.
+                                {courses?.length === 1
+                                    ? t('dashboard.coursesEnrolledOne', { count: String(courses.length) })
+                                    : t('dashboard.coursesEnrolledMany', { count: String(courses?.length || 0) })}
                             </p>
                             <p style={{ fontSize: "0.95rem", opacity: 0.85 }}>
-                                Select a course below to continue learning or access course materials.
+                                {t('dashboard.welcomeSubtitle')}
                             </p>
                         </div>
                     </div>
@@ -95,7 +98,7 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
                                     }}
                                 >
                                     <i className="fas fa-graduation-cap me-2"></i>
-                                    My Courses
+                                    {t('dashboard.myCourses')}
                                 </h5>
 
                                 {courses && courses.length > 0 ? (
@@ -115,12 +118,10 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
                                             }}
                                         ></i>
                                         <h5 style={{ color: "#6c757d" }}>
-                                            No Courses Found
+                                            {t('dashboard.noCoursesFound')}
                                         </h5>
                                         <p style={{ color: "#6c757d" }}>
-                                            You don't have any courses enrolled
-                                            yet. Please contact support if you
-                                            believe this is an error.
+                                            {t('dashboard.noCoursesDesc')}
                                         </p>
                                     </div>
                                 )}

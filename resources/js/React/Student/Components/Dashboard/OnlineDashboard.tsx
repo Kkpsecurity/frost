@@ -2,6 +2,7 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import { useClassroom } from "../../hooks/useClassroom";
 import { formatEasternDateTime } from "../../utils/timeUtils";
+import { t } from "@/i18n";
 
 interface OnlineDashboardProps {
     courseAuthId?: number | null;
@@ -37,9 +38,9 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
         <Container fluid className="py-4">
             <Row className="mb-4">
                 <Col>
-                    <h1>📚 {course?.title || "Course"}</h1>
+                    <h1>📚 {course?.title || t('dashboard.courseFallback')}</h1>
                     <p className="text-muted">
-                        {course?.description || "No description available"}
+                        {course?.description || t('dashboard.noDescription')}
                     </p>
                 </Col>
             </Row>
@@ -50,40 +51,40 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                     <Card className="bg-light">
                         <Card.Header>
                             <Card.Title className="mb-0">
-                                📅 Session Details
+                                📅 {t('dashboard.sessionDetails')}
                             </Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {courseDate ? (
                                 <>
                                     <p>
-                                        <strong>Start:</strong>{" "}
+                                        <strong>{t('dashboard.labelStart')}</strong>{" "}
                                         {formatEasternDateTime(
                                             courseDate.starts_at,
                                         )}
                                     </p>
                                     <p>
-                                        <strong>End:</strong>{" "}
+                                        <strong>{t('dashboard.labelEnd')}</strong>{" "}
                                         {formatEasternDateTime(
                                             courseDate.ends_at,
                                         )}
                                     </p>
                                     <p>
-                                        <strong>Mode:</strong>{" "}
+                                        <strong>{t('dashboard.labelMode')}</strong>{" "}
                                         <span className="badge bg-info">
                                             {courseDate.mode}
                                         </span>
                                     </p>
                                     <p>
-                                        <strong>Status:</strong>{" "}
+                                        <strong>{t('dashboard.labelStatus')}</strong>{" "}
                                         <span className="badge bg-success">
-                                            Active
+                                            {t('dashboard.statusActive')}
                                         </span>
                                     </p>
                                 </>
                             ) : (
                                 <p className="text-muted">
-                                    No session data available
+                                    {t('dashboard.noSessionData')}
                                 </p>
                             )}
                         </Card.Body>
@@ -95,32 +96,32 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                     <Card className="bg-light">
                         <Card.Header>
                             <Card.Title className="mb-0">
-                                👨‍🏫 Instructor
+                                👨‍🏫 {t('dashboard.instructorTitle')}
                             </Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {instructor ? (
                                 <>
                                     <p>
-                                        <strong>Name:</strong> {instructor.name}
+                                        <strong>{t('dashboard.labelName')}</strong> {instructor.name}
                                     </p>
                                     <p>
-                                        <strong>Email:</strong>{" "}
+                                        <strong>{t('dashboard.labelEmail')}</strong>{" "}
                                         {instructor.email}
                                     </p>
                                     <p>
-                                        <strong>Status:</strong>{" "}
+                                        <strong>{t('dashboard.labelStatus')}</strong>{" "}
                                         <span
                                             className={`badge ${instructor.online_status === "online" ? "bg-success" : "bg-secondary"}`}
                                         >
                                             {instructor.online_status ||
-                                                "offline"}
+                                                t('dashboard.statusOffline')}
                                         </span>
                                     </p>
                                 </>
                             ) : (
                                 <p className="text-muted">
-                                    No instructor data available
+                                    {t('dashboard.noInstructorData')}
                                 </p>
                             )}
                         </Card.Body>
@@ -134,7 +135,7 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                     <Card>
                         <Card.Header>
                             <Card.Title className="mb-0">
-                                📖 Lessons ({lessons.length})
+                                📖 {t('dashboard.lessonsTitle')} ({lessons.length})
                             </Card.Title>
                         </Card.Header>
                         <Card.Body>
@@ -147,22 +148,22 @@ const OnlineDashboard: React.FC<OnlineDashboardProps> = ({ courseAuthId }) => {
                                         >
                                             <strong>
                                                 {lesson.lesson_data?.title ||
-                                                    `Lesson ${idx + 1}`}
+                                                    t('dashboard.lessonNumber', { number: String(idx + 1) })}
                                             </strong>
                                             <br />
                                             <small className="text-muted">
-                                                Duration:{" "}
+                                                {t('dashboard.labelDuration')}{" "}
                                                 {lesson.lesson_data
                                                     ?.duration_minutes ||
                                                     0}{" "}
-                                                minutes
+                                                {t('dashboard.minutesSuffix')}
                                             </small>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
                                 <p className="text-muted">
-                                    No lessons available
+                                    {t('dashboard.noLessons')}
                                 </p>
                             )}
                         </Card.Body>

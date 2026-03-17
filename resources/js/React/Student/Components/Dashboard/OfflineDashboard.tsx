@@ -1,6 +1,7 @@
 import React from "react";
 import { Container, Row, Col, Card, Alert } from "react-bootstrap";
 import { useStudent } from "../../context/StudentContext";
+import { t } from "@/i18n";
 
 interface OfflineDashboardProps {
     courseAuthId?: number | null;
@@ -40,9 +41,9 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
             <Row className="mb-4">
                 <Col>
                     <Alert variant="info">
-                        <Alert.Heading>⏳ Waiting for Class to Start</Alert.Heading>
+                        <Alert.Heading>⏳ {t('dashboard.waitingTitle')}</Alert.Heading>
                         <p>
-                            No scheduled classroom session at this moment. Check back soon or explore the course materials below.
+                            {t('dashboard.waitingDesc')}
                         </p>
                     </Alert>
                 </Col>
@@ -51,9 +52,9 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
             {/* Course Information */}
             <Row className="mb-4">
                 <Col>
-                    <h1>📚 {(course as any)?.course_name || course?.title_long || course?.title || course?.name || "Course"}</h1>
+                    <h1>📚 {(course as any)?.course_name || course?.title_long || course?.title || course?.name || t('dashboard.courseFallback')}</h1>
                     <p className="lead text-muted">
-                        {course?.description || "No description available"}
+                        {course?.description || t('dashboard.noDescription')}
                     </p>
                 </Col>
             </Row>
@@ -63,21 +64,21 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
                 <Col md={6}>
                     <Card className="bg-light">
                         <Card.Header>
-                            <Card.Title className="mb-0">ℹ️ Course Info</Card.Title>
+                            <Card.Title className="mb-0">ℹ️ {t('dashboard.courseInfoTitle')}</Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {course ? (
                                 <>
                                     <p>
-                                        <strong>Course Name:</strong> {(course as any)?.course_name || course.title_long || course.title || course.name}
+                                        <strong>{t('dashboard.labelCourseName')}</strong> {(course as any)?.course_name || course.title_long || course.title || course.name}
                                     </p>
                                     <p className="mb-0">
-                                        <strong>Status:</strong>{" "}
-                                        <span className="badge bg-success">Enrolled</span>
+                                        <strong>{t('dashboard.labelStatus')}</strong>{" "}
+                                        <span className="badge bg-success">{t('dashboard.enrolled')}</span>
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-muted">No course data available</p>
+                                <p className="text-muted">{t('dashboard.noCourseData')}</p>
                             )}
                         </Card.Body>
                     </Card>
@@ -89,20 +90,20 @@ const OfflineDashboard: React.FC<OfflineDashboardProps> = ({ courseAuthId }) => 
                 <Col>
                     <Card className="bg-light">
                         <Card.Header>
-                            <Card.Title className="mb-0">👤 Student Info</Card.Title>
+                            <Card.Title className="mb-0">👤 {t('dashboard.studentInfoTitle')}</Card.Title>
                         </Card.Header>
                         <Card.Body>
                             {student?.student ? (
                                 <>
                                     <p>
-                                        <strong>Name:</strong> {student.student.name}
+                                        <strong>{t('dashboard.labelName')}</strong> {student.student.name}
                                     </p>
                                     <p className="mb-0">
-                                        <strong>Email:</strong> {student.student.email}
+                                        <strong>{t('dashboard.labelEmail')}</strong> {student.student.email}
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-muted">No student data available</p>
+                                <p className="text-muted">{t('dashboard.noStudentData')}</p>
                             )}
                         </Card.Body>
                     </Card>
