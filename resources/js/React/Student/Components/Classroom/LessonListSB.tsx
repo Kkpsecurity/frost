@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 interface LessonListSBProps {
     lessons: any[];
@@ -37,14 +38,14 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                 <div className="text-center py-4">
                     <div className="spinner-border text-light" role="status">
                         <span className="visually-hidden">
-                            Loading lessons...
+                            {t("lessonListSB.loadingLessons")}
                         </span>
                     </div>
                 </div>
             ) : lessons.length === 0 ? (
                 <div className="text-center py-4" style={{ color: "#95a5a6" }}>
                     <i className="fas fa-inbox fa-2x mb-2"></i>
-                    <p className="mb-0">No lessons available</p>
+                    <p className="mb-0">{t("lessonListSB.noLessons")}</p>
                 </div>
             ) : (
                 lessons.map((lesson) => {
@@ -134,7 +135,7 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                                 }}
                                             >
                                                 <i className="fas fa-check me-1"></i>
-                                                Completed
+                                                {t("lessonListSB.completed")}
                                             </small>
                                         )}
                                         {lesson.status === "incomplete" && (
@@ -146,7 +147,7 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                                 }}
                                             >
                                                 <i className="fas fa-spinner me-1"></i>
-                                                In Progress
+                                                {t("lessonListSB.inProgress")}
                                             </small>
                                         )}
                                         {isSelected && (
@@ -222,25 +223,25 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                             session?.lessonId !== lesson.id ? (
                                                 <>
                                                     <i className="fas fa-lock me-1"></i>
-                                                    Locked
+                                                    {t("lessonListSB.locked")}
                                                 </>
                                             ) : hasActiveSession &&
                                               session?.lessonId ===
                                                   lesson.id ? (
                                                 <>
                                                     <i className="fas fa-play-circle me-1"></i>
-                                                    Resume
+                                                    {t("lessonListSB.resume")}
                                                 </>
                                             ) : lesson.status === "completed" ||
                                               lesson.status === false ? (
                                                 <>
                                                     <i className="fas fa-eye me-1"></i>
-                                                    Review
+                                                    {t("lessonListSB.review")}
                                                 </>
                                             ) : (
                                                 <>
                                                     <i className="fas fa-play me-1"></i>
-                                                    Start Lesson
+                                                    {t("lessonListSB.startLesson")}
                                                 </>
                                             )}
                                         </button>
@@ -299,7 +300,7 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                                 }}
                                             >
                                                 <i className="fas fa-redo me-1"></i>
-                                                Review Lesson
+                                                {t("lessonListSB.reviewLesson")}
                                             </button>
                                         )}
                                 </div>

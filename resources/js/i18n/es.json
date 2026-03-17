@@ -283,6 +283,52 @@
     "noQuestions": "Aún no hay preguntas.",
     "instructorReply": "Respuesta del instructor"
   },
+  "sessionInfoPanel": {
+    "activeSession": "Sesión Activa",
+    "live": "En Vivo",
+    "sessionExpiringSoon": "¡La sesión está por expirar!",
+    "pauseTimeDepleted": "¡El tiempo de pausa casi se agotó!",
+    "timeRemaining": "Tiempo Restante",
+    "completeBeforeExpires": "Completa tu sesión antes de que expire",
+    "pauseTime": "Tiempo de Pausa",
+    "lowPauseTime": "Poco tiempo de pausa - úsalo con cuidado",
+    "progress": "Progreso",
+    "threshold80Met": "Umbral del 80% alcanzado - crédito de lección disponible",
+    "videoLength": "Duración del Video",
+    "pauseUsed": "Pausa Usada",
+    "endSessionEarly": "Terminar Sesión Antes",
+    "endSessionTitle": "Terminar sesión antes (el progreso se perderá)",
+    "tip": "Consejo:",
+    "tipComplete80": "Completa al menos el 80% para obtener crédito"
+  },
+  "lessonListSB": {
+    "loadingLessons": "Cargando lecciones...",
+    "noLessons": "No hay lecciones disponibles",
+    "completed": "Completado",
+    "inProgress": "En Progreso",
+    "locked": "Bloqueado",
+    "resume": "Reanudar",
+    "review": "Revisar",
+    "startLesson": "Iniciar Lección",
+    "reviewLesson": "Revisar Lección"
+  },
+  "studentLessonBar": {
+    "courseLessons": "Lecciones del Curso"
+  },
+  "lessonProgressBar": {
+    "selectLesson": "Selecciona una lección para rastrear el progreso",
+    "onBreak": "En Descanso",
+    "lessonProgress": "Progreso de la Lección",
+    "break": "DESCANSO",
+    "overtime": "Tiempo Extra",
+    "inProgress": "En Progreso",
+    "pending": "Pendiente",
+    "elapsed": "Transcurrido",
+    "duration": "Duración",
+    "remaining": "Restante",
+    "progress": "Progreso",
+    "waitingForInstructor": "Esperando que el instructor inicie esta lección"
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Algo salió mal. Por favor, inténtalo de nuevo.",

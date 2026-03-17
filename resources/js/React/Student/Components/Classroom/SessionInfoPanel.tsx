@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from "@/i18n";
 import { LessonSession } from '../../hooks/useLessonSession';
 
 interface SessionInfoPanelProps {
@@ -75,7 +76,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                 <div className="d-flex align-items-center">
                     <i className="fas fa-video me-2"></i>
                     <div className="flex-grow-1">
-                        <strong>Active Session</strong>
+                        <strong>{t("sessionInfoPanel.activeSession")}</strong>
                         <div className="small" style={{ opacity: 0.9 }}>
                             {session.lessonTitle}
                         </div>
@@ -83,7 +84,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     {session.isActive && (
                         <span className="badge bg-success">
                             <i className="fas fa-circle me-1" style={{ fontSize: '0.5rem' }}></i>
-                            Live
+                            {t("sessionInfoPanel.live")}
                         </span>
                     )}
                 </div>
@@ -95,8 +96,8 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     <div className={`alert ${timeCritical ? 'alert-danger' : 'alert-warning'} py-2 px-3 mb-3`}>
                         <i className="fas fa-exclamation-triangle me-2"></i>
                         <strong>
-                            {timeCritical && 'Session expiring soon! '}
-                            {pauseWarning && 'Pause time almost depleted!'}
+                            {timeCritical && `${t("sessionInfoPanel.sessionExpiringSoon")} `}
+                            {pauseWarning && t("sessionInfoPanel.pauseTimeDepleted")}
                         </strong>
                     </div>
                 )}
@@ -106,7 +107,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     <div className="d-flex justify-content-between align-items-center mb-2">
                         <span className="fw-bold text-dark">
                             <i className="fas fa-clock me-2 text-primary"></i>
-                            Time Remaining
+                            {t("sessionInfoPanel.timeRemaining")}
                         </span>
                         <span className={`fw-bold ${timeWarning ? 'text-danger' : 'text-primary'}`}>
                             {formatTime(timeRemaining)}
@@ -115,7 +116,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     {timeWarning && (
                         <div className="small text-muted mb-2">
                             <i className="fas fa-info-circle me-1"></i>
-                            Complete your session before time expires
+                            {t("sessionInfoPanel.completeBeforeExpires")}
                         </div>
                     )}
                     <div className="progress" style={{ height: '8px' }}>
@@ -138,7 +139,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     <div className="d-flex justify-content-between align-items-center mb-2">
                         <span className="fw-bold text-dark">
                             <i className="fas fa-pause-circle me-2 text-warning"></i>
-                            Pause Time
+                            {t("sessionInfoPanel.pauseTime")}
                         </span>
                         <span className={`fw-bold ${pauseWarning ? 'text-danger' : pauseLow ? 'text-warning' : 'text-success'}`}>
                             {pauseRemaining} / {session.totalPauseAllowed} min
@@ -160,7 +161,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     {pauseWarning && (
                         <div className="small text-danger mt-1">
                             <i className="fas fa-exclamation-circle me-1"></i>
-                            Low pause time - use sparingly
+                            {t("sessionInfoPanel.lowPauseTime")}
                         </div>
                     )}
                 </div>
@@ -170,7 +171,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     <div className="d-flex justify-content-between align-items-center mb-2">
                         <span className="fw-bold text-dark">
                             <i className="fas fa-chart-line me-2 text-success"></i>
-                            Progress
+                            {t("sessionInfoPanel.progress")}
                         </span>
                         <span className={`fw-bold ${session.completionPercentage >= 80 ? 'text-success' : 'text-primary'}`}>
                             {session.completionPercentage.toFixed(1)}%
@@ -192,7 +193,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     {session.completionPercentage >= 80 && (
                         <div className="small text-success mt-1">
                             <i className="fas fa-check-circle me-1"></i>
-                            80% threshold met - lesson credit available
+                            {t("sessionInfoPanel.threshold80Met")}
                         </div>
                     )}
                 </div>
@@ -201,7 +202,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                 <div className="row g-2 mb-3">
                     <div className="col-6">
                         <div className="bg-light rounded p-2 text-center">
-                            <div className="small text-muted">Video Length</div>
+                            <div className="small text-muted">{t("sessionInfoPanel.videoLength")}</div>
                             <div className="fw-bold">
                                 {formatTime(Math.ceil(session.videoDurationSeconds / 60))}
                             </div>
@@ -209,7 +210,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     </div>
                     <div className="col-6">
                         <div className="bg-light rounded p-2 text-center">
-                            <div className="small text-muted">Pause Used</div>
+                            <div className="small text-muted">{t("sessionInfoPanel.pauseUsed")}</div>
                             <div className="fw-bold">
                                 {session.pauseUsed} min
                             </div>
@@ -222,10 +223,10 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                     <button 
                         className="btn btn-sm btn-outline-danger w-100"
                         onClick={onEndSession}
-                        title="End session early (progress will be lost)"
+                        title={t("sessionInfoPanel.endSessionTitle")}
                     >
                         <i className="fas fa-stop me-2"></i>
-                        End Session Early
+                        {t("sessionInfoPanel.endSessionEarly")}
                     </button>
                 )}
 
@@ -233,7 +234,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                 <div className="mt-3 pt-3 border-top">
                     <div className="small text-muted">
                         <i className="fas fa-lightbulb me-2 text-warning"></i>
-                        <strong>Tip:</strong> Complete at least 80% to earn credit
+                        <strong>{t("sessionInfoPanel.tip")}</strong> {t("sessionInfoPanel.tipComplete80")}
                     </div>
                 </div>
             </div>

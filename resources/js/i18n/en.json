@@ -293,5 +293,51 @@
     "queueUnavailable": "Queue temporarily unavailable",
     "noQuestions": "No questions yet.",
     "instructorReply": "Instructor reply"
+  },
+  "sessionInfoPanel": {
+    "activeSession": "Active Session",
+    "live": "Live",
+    "sessionExpiringSoon": "Session expiring soon!",
+    "pauseTimeDepleted": "Pause time almost depleted!",
+    "timeRemaining": "Time Remaining",
+    "completeBeforeExpires": "Complete your session before time expires",
+    "pauseTime": "Pause Time",
+    "lowPauseTime": "Low pause time - use sparingly",
+    "progress": "Progress",
+    "threshold80Met": "80% threshold met - lesson credit available",
+    "videoLength": "Video Length",
+    "pauseUsed": "Pause Used",
+    "endSessionEarly": "End Session Early",
+    "endSessionTitle": "End session early (progress will be lost)",
+    "tip": "Tip:",
+    "tipComplete80": "Complete at least 80% to earn credit"
+  },
+  "lessonListSB": {
+    "loadingLessons": "Loading lessons...",
+    "noLessons": "No lessons available",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "locked": "Locked",
+    "resume": "Resume",
+    "review": "Review",
+    "startLesson": "Start Lesson",
+    "reviewLesson": "Review Lesson"
+  },
+  "studentLessonBar": {
+    "courseLessons": "Course Lessons"
+  },
+  "lessonProgressBar": {
+    "selectLesson": "Select a lesson to track progress",
+    "onBreak": "On Break",
+    "lessonProgress": "Lesson Progress",
+    "break": "BREAK",
+    "overtime": "Overtime",
+    "inProgress": "In Progress",
+    "pending": "Pending",
+    "elapsed": "Elapsed",
+    "duration": "Duration",
+    "remaining": "Remaining",
+    "progress": "Progress",
+    "waitingForInstructor": "Waiting for instructor to start this lesson"
   }
 }

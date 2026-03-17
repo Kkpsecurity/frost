@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 interface StudentLessonBarProps {
     lessons: {
@@ -20,7 +21,7 @@ const StudentLessonBar = ({ lessons }: StudentLessonBarProps) => {
         <div className="d-flex justify-content-between align-items-center mb-3">
             <h6 className="mb-0" style={{ color: "white", fontWeight: "600" }}>
                 <i className="fas fa-list me-2"></i>
-                Course Lessons
+                {t("studentLessonBar.courseLessons")}
             </h6>
             <span className="badge" style={{ backgroundColor: "#3498db" }}>
                 {lessons.filter((l) => l.is_completed).length} /{" "}

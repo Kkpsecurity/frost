@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { t } from "@/i18n";
 import { LessonType } from "../../types/classroom";
 
 interface LessonProgressBarProps {
@@ -68,7 +69,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                 >
                     <i className="fas fa-clock fa-2x mb-2"></i>
                     <p className="mb-0" style={{ fontSize: "0.875rem" }}>
-                        Select a lesson to track progress
+                        {t("lessonProgressBar.selectLesson")}
                     </p>
                 </div>
             </div>
@@ -110,7 +111,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                         <i
                             className={`fas ${isPaused ? "fa-pause-circle" : "fa-clock"} me-2`}
                         ></i>
-                        {isPaused ? "On Break" : "Lesson Progress"}
+                        {isPaused ? t("lessonProgressBar.onBreak") : t("lessonProgressBar.lessonProgress")}
                     </h6>
                     <span
                         className="badge"
@@ -126,12 +127,12 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                         }}
                     >
                         {isPaused
-                            ? "BREAK"
+                            ? t("lessonProgressBar.break")
                             : startTime
                               ? isOvertime
-                                  ? "Overtime"
-                                  : "In Progress"
-                              : "Pending"}
+                                  ? t("lessonProgressBar.overtime")
+                                  : t("lessonProgressBar.inProgress")
+                              : t("lessonProgressBar.pending")}
                     </span>
                 </div>
             </div>
@@ -166,7 +167,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                                 marginBottom: "0.25rem",
                             }}
                         >
-                            Elapsed
+                            {t("lessonProgressBar.elapsed")}
                         </div>
                         <div
                             style={{
@@ -187,7 +188,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                                 marginBottom: "0.25rem",
                             }}
                         >
-                            Duration
+                            {t("lessonProgressBar.duration")}
                         </div>
                         <div
                             style={{
@@ -208,7 +209,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                                 marginBottom: "0.25rem",
                             }}
                         >
-                            Remaining
+                            {t("lessonProgressBar.remaining")}
                         </div>
                         <div
                             style={{
@@ -230,7 +231,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                 <div>
                     <div className="d-flex justify-content-between align-items-center mb-1">
                         <small style={{ color: "#95a5a6", fontSize: "0.7rem" }}>
-                            Progress
+                            {t("lessonProgressBar.progress")}
                         </small>
                         <small
                             style={{
@@ -279,7 +280,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                         }}
                     >
                         <i className="fas fa-info-circle me-1"></i>
-                        Waiting for instructor to start this lesson
+                        {t("lessonProgressBar.waitingForInstructor")}
                     </div>
                 )}
             </div>
