@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
+import { t } from "@/i18n";
 
 /**
  * ChallengeSlider Component
@@ -243,7 +244,7 @@ const ChallengeSlider: React.FC<ChallengeSliderProps> = ({
             <SliderTrack progress={position} />
 
             <SliderText visible={!isDragging && !isCompleted && position < 30}>
-                Slide to confirm you are present →
+                {t("challenge.slidePrompt")}
             </SliderText>
 
             {isCompleted ? (

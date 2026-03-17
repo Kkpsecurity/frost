@@ -243,5 +243,26 @@
     "breaksRemaining": "{{count}} breaks remaining",
     "breakTime": "Break Time",
     "breakMessage": "Your instructor is taking a short break. The lesson will resume shortly. Stay on this page to continue when ready."
+  },
+  "challenge": {
+    "eolTitle": "END OF LESSON CHECK",
+    "finalTitle": "FINAL PARTICIPATION CHECK",
+    "regularTitle": "Participation Check",
+    "eolSubtitle": "The lesson has ended. Confirm you were present to receive credit for this lesson.",
+    "finalSubtitle": "This is your last chance to confirm you are actively participating in the lesson.",
+    "regularSubtitle": "Please confirm that you are present and following along with the lesson.",
+    "timeRemaining": "Time Remaining",
+    "submitting": "Submitting your response...",
+    "timeExpired": "Time expired - waiting for next poll...",
+    "slideInstruction": "Slide the button all the way to the right to confirm your presence.",
+    "eolWarning": "\u26a0\ufe0f Warning: If you do not complete this end-of-lesson check, the lesson will be marked as \"Did Not Complete\" and you may need to retake it.",
+    "finalWarning": "\u26a0\ufe0f Warning: Missing this challenge will mark the lesson as \"Did Not Complete\" and you may need to retake it.",
+    "slidePrompt": "Slide to confirm you are present \u2192",
+    "historyTitle": "Challenge History",
+    "noHistory": "No challenge history yet",
+    "badgeFinal": "Final",
+    "statusCompleted": "Completed",
+    "statusFailed": "Failed",
+    "statusExpired": "Expired"
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import { t } from "@/i18n";
 
 interface Challenge {
     id: number;
@@ -105,17 +106,17 @@ const ChallengeItem = styled.div<{
     }};
     border-left: 3px solid
         ${(props) => {
-            switch (props.$status) {
-                case "completed":
-                    return "#27ae60";
-                case "failed":
-                    return "#e74c3c";
-                case "expired":
-                    return "#f39c12";
-                default:
-                    return "#95a5a6";
-            }
-        }};
+        switch (props.$status) {
+            case "completed":
+                return "#27ae60";
+            case "failed":
+                return "#e74c3c";
+            case "expired":
+                return "#f39c12";
+            default:
+                return "#95a5a6";
+        }
+    }};
     padding: 0.75rem;
     margin-bottom: 0.75rem;
     border-radius: 0.25rem;
@@ -252,7 +253,7 @@ const ChallengeHistory: React.FC<ChallengeHistoryProps> = ({
                 <HeaderContent>
                     <HeaderTitle>
                         <i className="fas fa-history"></i>
-                        Challenge History
+                        {t("challenge.historyTitle")}
                         {completedCount + failedCount > 0 && (
                             <span
                                 style={{
@@ -280,7 +281,7 @@ const ChallengeHistory: React.FC<ChallengeHistoryProps> = ({
                     {challenges.length === 0 && (
                         <EmptyState>
                             <i className="fas fa-clipboard-list fa-2x mb-2"></i>
-                            <p className="mb-0">No challenge history yet</p>
+                            <p className="mb-0">{t("challenge.noHistory")}</p>
                         </EmptyState>
                     )}
 
@@ -311,7 +312,7 @@ const ChallengeHistory: React.FC<ChallengeHistoryProps> = ({
                                                                 color: "#e74c3c",
                                                             }}
                                                         >
-                                                            Final
+                                                            {t("challenge.badgeFinal")}
                                                         </SmallBadge>
                                                     )}
                                                     {challenge.is_eol && (
@@ -337,7 +338,11 @@ const ChallengeHistory: React.FC<ChallengeHistoryProps> = ({
                                                 {status === "expired" && (
                                                     <i className="fas fa-clock me-1"></i>
                                                 )}
-                                                {status}
+                                                {{
+                                                    completed: t("challenge.statusCompleted"),
+                                                    failed: t("challenge.statusFailed"),
+                                                    expired: t("challenge.statusExpired"),
+                                                }[status]}
                                             </StatusBadge>
                                         </ChallengeHeader>
 

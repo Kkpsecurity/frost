@@ -233,6 +233,27 @@
     "breakTime": "Tiempo de Descanso",
     "breakMessage": "Tu instructor está tomando un breve descanso. La lección se reanudará pronto. Permanece en esta página para continuar cuando esté listo."
   },
+  "challenge": {
+    "eolTitle": "VERIFICACIÓN DE FIN DE LECCIÓN",
+    "finalTitle": "VERIFICACIÓN FINAL DE PARTICIPACIÓN",
+    "regularTitle": "Verificación de Participación",
+    "eolSubtitle": "La lección ha terminado. Confirma que estuviste presente para recibir crédito por esta lección.",
+    "finalSubtitle": "Esta es tu última oportunidad de confirmar que estás participando activamente en la lección.",
+    "regularSubtitle": "Por favor confirma que estás presente y siguiendo la lección.",
+    "timeRemaining": "Tiempo Restante",
+    "submitting": "Enviando tu respuesta...",
+    "timeExpired": "Tiempo expirado - esperando el próximo sondeo...",
+    "slideInstruction": "Desliza el botón hasta la derecha para confirmar tu presencia.",
+    "eolWarning": "\u26a0\ufe0f Advertencia: Si no completas esta verificación de fin de lección, la lección será marcada como \"No Completada\" y puede que necesites repetirla.",
+    "finalWarning": "\u26a0\ufe0f Advertencia: Si no superas este desafío, la lección será marcada como \"No Completada\" y puede que necesites repetirla.",
+    "slidePrompt": "Desliza para confirmar que estás presente \u2192",
+    "historyTitle": "Historial de Desafíos",
+    "noHistory": "Aún no hay historial de desafíos",
+    "badgeFinal": "Final",
+    "statusCompleted": "Completado",
+    "statusFailed": "Fallido",
+    "statusExpired": "Expirado"
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Algo salió mal. Por favor, inténtalo de nuevo.",

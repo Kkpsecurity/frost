@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import styled from "styled-components";
 import ChallengeSlider from "./ChallengeSlider";
+import { t } from "@/i18n";
 
 /**
  * ChallengeModal Component
@@ -269,22 +270,22 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                     </Icon>
                     <Title isFinal={isFinal || isEol}>
                         {isEol
-                            ? "END OF LESSON CHECK"
+                            ? t("challenge.eolTitle")
                             : isFinal
-                                ? "FINAL PARTICIPATION CHECK"
-                                : "Participation Check"}
+                                ? t("challenge.finalTitle")
+                                : t("challenge.regularTitle")}
                     </Title>
                     <Subtitle>
                         {isEol
-                            ? "The lesson has ended. Confirm you were present to receive credit for this lesson."
+                            ? t("challenge.eolSubtitle")
                             : isFinal
-                                ? "This is your last chance to confirm you are actively participating in the lesson."
-                                : "Please confirm that you are present and following along with the lesson."}
+                                ? t("challenge.finalSubtitle")
+                                : t("challenge.regularSubtitle")}
                     </Subtitle>
                 </Header>
 
                 <TimerContainer>
-                    <TimerLabel>Time Remaining</TimerLabel>
+                    <TimerLabel>{t("challenge.timeRemaining")}</TimerLabel>
                     <TimerDisplay isUrgent={isUrgent}>
                         {formatTime(timeRemaining)}
                     </TimerDisplay>
@@ -300,18 +301,18 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
                 <InfoText isFinal={isFinal}>
                     {isSubmitting
-                        ? "Submitting your response..."
+                        ? t("challenge.submitting")
                         : timeRemaining === 0
-                            ? "Time expired - waiting for next poll..."
-                            : "Slide the button all the way to the right to confirm your presence."}
+                            ? t("challenge.timeExpired")
+                            : t("challenge.slideInstruction")}
                 </InfoText>
 
                 {(isFinal || isEol) && (
                     <WarningBox>
                         <WarningText>
                             {isEol
-                                ? "⚠️ Warning: If you do not complete this end-of-lesson check, the lesson will be marked as \"Did Not Complete\" and you may need to retake it."
-                                : "⚠️ Warning: Missing this challenge will mark the lesson as \"Did Not Complete\" and you may need to retake it."}
+                                ? t("challenge.eolWarning")
+                                : t("challenge.finalWarning")}
                         </WarningText>
                     </WarningBox>
                 )}
