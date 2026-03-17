@@ -329,6 +329,45 @@
     "progress": "Progreso",
     "waitingForInstructor": "Esperando que el instructor inicie esta lección"
   },
+  "secureVideoPlayer": {
+    "readyToStart": "Listo para comenzar",
+    "clickWhenReady": "Haz clic en reproducir cuando estés listo.",
+    "pressWhenReady": "Presiona Reproducir cuando estés listo.",
+    "simulationMode": "Modo de Simulación",
+    "lessonLabel": "Lección: {{title}}",
+    "testingSpeed": "Probando a {{speed}}x de velocidad",
+    "progress": "Progreso:",
+    "readyToComplete": "Listo para Completar",
+    "pauseLimit": "Límite de pausas: {{allowed}} (máx {{max}})",
+    "pausesRemaining": "Pausas restantes: {{count}}",
+    "rewindButton": "Retroceder {{seconds}}s",
+    "pause": "Pausar",
+    "play": "Reproducir",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "completeLesson": "Completar Lección",
+    "infoRewind": "Solo puedes retroceder al contenido ya visto. Avanzar está desactivado. Completa el {{threshold}}% para finalizar esta lección.",
+    "errorForwardSkip": "Solo puedes retroceder al contenido ya visto. No se permite avanzar."
+  },
+  "lessonViewer": {
+    "markComplete": "Marcar como Completado",
+    "completed": "Completado ✓",
+    "bookmark": "Marcador",
+    "takeNotes": "Tomar Notas",
+    "greatJob": "¡Excelente trabajo! Lección completada."
+  },
+  "lessonSideBar": {
+    "todaysLessons": "Lecciones de hoy",
+    "loadingLessons": "Cargando lecciones...",
+    "noLessons": "No hay lecciones disponibles",
+    "playing": "EN REPRODUCCIÓN",
+    "creditMinutes": "Minutos de Crédito:",
+    "locked": "Bloqueado",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "inProgress": "En Progreso",
+    "pending": "Pendiente"
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Algo salió mal. Por favor, inténtalo de nuevo.",

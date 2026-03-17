@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { t } from "@/i18n";
 
 interface LessonViewerProps {
     lessonTitle?: string;
@@ -35,21 +36,21 @@ const LessonViewer: React.FC<LessonViewerProps> = ({
                             onClick={markAsCompleted}
                             disabled={isCompleted}
                         >
-                            {isCompleted ? 'Completed ✓' : 'Mark as Complete'}
+                            {isCompleted ? t("lessonViewer.completed") : t("lessonViewer.markComplete")}
                         </button>
 
                         <button className="btn btn-outline-secondary ms-2">
-                            <i className="fas fa-bookmark"></i> Bookmark
+                            <i className="fas fa-bookmark"></i> {t("lessonViewer.bookmark")}
                         </button>
 
                         <button className="btn btn-outline-info ms-2">
-                            <i className="fas fa-notes-medical"></i> Take Notes
+                            <i className="fas fa-notes-medical"></i> {t("lessonViewer.takeNotes")}
                         </button>
                     </div>
 
                     {isCompleted && (
                         <div className="alert alert-success mt-3">
-                            <i className="fas fa-check-circle"></i> Great job! Lesson completed.
+                            <i className="fas fa-check-circle"></i> {t("lessonViewer.greatJob")}
                         </div>
                     )}
                 </div>

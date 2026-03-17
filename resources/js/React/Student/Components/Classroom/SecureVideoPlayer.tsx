@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { t } from "@/i18n";
 import PauseModal from "./PauseModal";
 
 interface SecureVideoPlayerProps {
@@ -432,7 +433,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
 
         // Show warning
         onError(
-            "You can only rewind to previously watched content. Forward skipping is not allowed.",
+            t("secureVideoPlayer.errorForwardSkip"),
         );
     };
 
@@ -614,7 +615,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                         marginBottom: "8px",
                                     }}
                                 >
-                                    Ready to start
+                                    {t("secureVideoPlayer.readyToStart")}
                                 </h3>
                                 <p
                                     style={{
@@ -622,7 +623,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                         marginBottom: 0,
                                     }}
                                 >
-                                    Click play when you’re ready.
+                                    {t("secureVideoPlayer.clickWhenReady")}
                                 </p>
                             </button>
                         ) : (
@@ -637,7 +638,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                         marginBottom: "10px",
                                     }}
                                 >
-                                    Simulation Mode
+                                    {t("secureVideoPlayer.simulationMode")}
                                 </h3>
                                 <p
                                     style={{
@@ -645,7 +646,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                         marginBottom: "5px",
                                     }}
                                 >
-                                    Lesson: {lesson.title}
+                                    {t("secureVideoPlayer.lessonLabel", { title: lesson.title })}
                                 </p>
                                 <p
                                     style={{
@@ -653,7 +654,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                         fontSize: "0.9rem",
                                     }}
                                 >
-                                    Testing at {simulationSpeed}x speed
+                                    {t("secureVideoPlayer.testingSpeed", { speed: simulationSpeed })}
                                 </p>
                                 <div
                                     style={{
@@ -807,7 +808,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                             marginBottom: "8px",
                                         }}
                                     >
-                                        Ready to start
+                                        {t("secureVideoPlayer.readyToStart")}
                                     </h3>
                                     <p
                                         style={{
@@ -815,7 +816,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                                             marginBottom: 0,
                                         }}
                                     >
-                                        Press Play when you're ready.
+                                        {t("secureVideoPlayer.pressWhenReady")}
                                     </p>
                                 </button>
                             </div>
@@ -874,11 +875,10 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                         {formatTime(currentTime)} / {formatTime(duration)}
                     </small>
                     <small style={{ color: "#95a5a6" }}>
-                        Progress: {Math.floor(furthestProgressPercentage)}%
+                        {t("secureVideoPlayer.progress")} {Math.floor(furthestProgressPercentage)}%
                         {furthestProgressPercentage >= completionThreshold && (
                             <span className="text-success ms-2">
-                                <i className="fas fa-check-circle"></i> Ready to
-                                Complete
+                                <i className="fas fa-check-circle"></i> {t("secureVideoPlayer.readyToComplete")}
                             </span>
                         )}
                     </small>
@@ -888,10 +888,10 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 <div className="d-flex justify-content-between mb-3">
                     <small style={{ color: "#95a5a6" }}>
                         <i className="fas fa-pause-circle me-2"></i>
-                        Pause limit: {pausesAllowed} (max {MAX_PAUSES})
+                        {t("secureVideoPlayer.pauseLimit", { allowed: pausesAllowed, max: MAX_PAUSES })}
                     </small>
                     <small style={{ color: "#95a5a6" }}>
-                        Pauses remaining: {pausesRemaining}
+                        {t("secureVideoPlayer.pausesRemaining", { count: pausesRemaining })}
                     </small>
                 </div>
 
@@ -903,7 +903,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                         disabled={currentTime === 0}
                     >
                         <i className="fas fa-backward me-2"></i>
-                        Rewind {rewindSeconds}s
+                        {t("secureVideoPlayer.rewindButton", { seconds: rewindSeconds })}
                     </button>
 
                     <button
@@ -913,7 +913,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                         <i
                             className={`fas ${playing ? "fa-pause" : "fa-play"} me-2`}
                         ></i>
-                        {playing ? "Pause" : "Play"}
+                        {playing ? t("secureVideoPlayer.pause") : t("secureVideoPlayer.play")}
                     </button>
 
                     {/* Volume Controls */}
@@ -921,7 +921,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                         <button
                             className="btn btn-sm btn-secondary"
                             onClick={() => setIsMuted(!isMuted)}
-                            title={isMuted ? "Unmute" : "Mute"}
+                            title={isMuted ? t("secureVideoPlayer.unmute") : t("secureVideoPlayer.mute")}
                         >
                             <i
                                 className={`fas ${isMuted ? "fa-volume-mute" : volume > 0.5 ? "fa-volume-up" : "fa-volume-down"}`}
@@ -958,7 +958,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                             onClick={handleCompletion}
                         >
                             <i className="fas fa-check me-2"></i>
-                            Complete Lesson
+                            {t("secureVideoPlayer.completeLesson")}
                         </button>
                     )}
                 </div>
@@ -967,10 +967,7 @@ const SecureVideoPlayer: React.FC<SecureVideoPlayerProps> = ({
                 <div className="mt-3">
                     <small style={{ color: "#95a5a6" }}>
                         <i className="fas fa-info-circle me-2"></i>
-                        You can only rewind to previously watched content.
-                        Forward skipping is disabled. Complete{" "}
-                        {Math.floor(completionThreshold)}% to finish this
-                        lesson.
+                        {t("secureVideoPlayer.infoRewind", { threshold: Math.floor(completionThreshold) })}
                     </small>
                 </div>
             </div>

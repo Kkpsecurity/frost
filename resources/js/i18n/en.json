@@ -339,5 +339,44 @@
     "remaining": "Remaining",
     "progress": "Progress",
     "waitingForInstructor": "Waiting for instructor to start this lesson"
+  },
+  "secureVideoPlayer": {
+    "readyToStart": "Ready to start",
+    "clickWhenReady": "Click play when you're ready.",
+    "pressWhenReady": "Press Play when you're ready.",
+    "simulationMode": "Simulation Mode",
+    "lessonLabel": "Lesson: {{title}}",
+    "testingSpeed": "Testing at {{speed}}x speed",
+    "progress": "Progress:",
+    "readyToComplete": "Ready to Complete",
+    "pauseLimit": "Pause limit: {{allowed}} (max {{max}})",
+    "pausesRemaining": "Pauses remaining: {{count}}",
+    "rewindButton": "Rewind {{seconds}}s",
+    "pause": "Pause",
+    "play": "Play",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "completeLesson": "Complete Lesson",
+    "infoRewind": "You can only rewind to previously watched content. Forward skipping is disabled. Complete {{threshold}}% to finish this lesson.",
+    "errorForwardSkip": "You can only rewind to previously watched content. Forward skipping is not allowed."
+  },
+  "lessonViewer": {
+    "markComplete": "Mark as Complete",
+    "completed": "Completed ✓",
+    "bookmark": "Bookmark",
+    "takeNotes": "Take Notes",
+    "greatJob": "Great job! Lesson completed."
+  },
+  "lessonSideBar": {
+    "todaysLessons": "Today's Lessons",
+    "loadingLessons": "Loading lessons...",
+    "noLessons": "No lessons available",
+    "playing": "PLAYING",
+    "creditMinutes": "Credit Minutes:",
+    "locked": "Locked",
+    "completed": "Completed",
+    "failed": "Failed",
+    "inProgress": "In Progress",
+    "pending": "Pending"
   }
 }

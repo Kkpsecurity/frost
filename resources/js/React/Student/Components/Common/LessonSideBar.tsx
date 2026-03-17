@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 interface LessonSideBarProps {
     lessons: any[];
@@ -19,7 +20,7 @@ interface LessonSideBarProps {
 const LessonSideBar: React.FC<LessonSideBarProps> = ({
     lessons,
     isLoadingLessons,
-    title = "Today's Lessons",
+    title = t("lessonSideBar.todaysLessons"),
     isLessonCompletedByStudent,
     isLessonFailedByStudent,
     isLessonInProgress,
@@ -71,7 +72,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                 role="status"
                             >
                                 <span className="visually-hidden">
-                                    Loading lessons...
+                                    {t("lessonSideBar.loadingLessons")}
                                 </span>
                             </div>
                         </div>
@@ -81,7 +82,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                             style={{ color: "#95a5a6" }}
                         >
                             <i className="fas fa-inbox fa-2x mb-2"></i>
-                            <p className="mb-0">No lessons available</p>
+                            <p className="mb-0">{t("lessonSideBar.noLessons")}</p>
                         </div>
                     ) : (
                         lessons.map((lesson, index) => {
@@ -154,7 +155,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                             }}
                                         >
                                             <i className="fas fa-play me-1"></i>
-                                            PLAYING
+                                            {t("lessonSideBar.playing")}
                                         </div>
                                     )}
                                     <div className="d-flex justify-content-between align-items-start mb-2">
@@ -187,7 +188,7 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                                 opacity: 0.9,
                                             }}
                                         >
-                                            Credit Minutes:{" "}
+                                            {t("lessonSideBar.creditMinutes")}{" "}
                                             <strong>
                                                 {lesson.duration_minutes}
                                             </strong>
@@ -206,16 +207,16 @@ const LessonSideBar: React.FC<LessonSideBarProps> = ({
                                                     style={{ color: "#95a5a6" }}
                                                 >
                                                     <i className="fas fa-lock me-1"></i>
-                                                    Locked
+                                                    {t("lessonSideBar.locked")}
                                                 </span>
                                             ) : isCompleted ? (
-                                                "Completed"
+                                                t("lessonSideBar.completed")
                                             ) : isFailed ? (
-                                                "Failed"
+                                                t("lessonSideBar.failed")
                                             ) : inProgress ? (
-                                                "In Progress"
+                                                t("lessonSideBar.inProgress")
                                             ) : (
-                                                "Pending"
+                                                t("lessonSideBar.pending")
                                             )}
                                         </small>
                                     </div>
