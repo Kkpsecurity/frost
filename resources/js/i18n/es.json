@@ -27,6 +27,25 @@
     "markAllRead": "Marcar todo como leído",
     "viewAll": "Ver todas las notificaciones"
   },
+  "titleBar": {
+    "exam": "Examen",
+    "backToDashboard": "Volver al Panel",
+    "dashboard": "Panel"
+  },
+  "errors": {
+    "somethingWentWrong": "Algo salió mal",
+    "studentPortalError": "Ocurrió un error en el Portal del Estudiante. Por favor, intenta recargar la página.",
+    "errorDetails": "Detalles del Error:",
+    "dashboardError": "Error en el Panel del Estudiante",
+    "dashboardErrorDesc": "Algo salió mal en el panel del estudiante. Por favor, recarga la página o contacta a soporte si el problema persiste.",
+    "technicalDetails": "Detalles Técnicos",
+    "reloadPage": "Recargar Página"
+  },
+  "nav": {
+    "home": "Inicio",
+    "videoLessons": "Lecciones en Video",
+    "documents": "Documentos"
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Algo salió mal. Por favor, inténtalo de nuevo.",

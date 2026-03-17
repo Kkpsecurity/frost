@@ -27,6 +27,25 @@
     "markAllRead": "Mark all read",
     "viewAll": "View All Notifications"
   },
+  "titleBar": {
+    "exam": "Exam",
+    "backToDashboard": "Back to Dashboard",
+    "dashboard": "Dashboard"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "studentPortalError": "An error occurred in the Student Portal. Please try refreshing the page.",
+    "errorDetails": "Error Details:",
+    "dashboardError": "Student Dashboard Error",
+    "dashboardErrorDesc": "Something went wrong with the student dashboard. Please refresh the page or contact support if the problem persists.",
+    "technicalDetails": "Technical Details",
+    "reloadPage": "Reload Page"
+  },
+  "nav": {
+    "home": "Home",
+    "videoLessons": "Video Lessons",
+    "documents": "Documents"
+  },
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong. Please try again.",

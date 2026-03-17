@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { Alert, Container } from "react-bootstrap";
+import { t } from "@/i18n";
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -48,15 +49,14 @@ class StudentErrorBoundary extends React.Component<
             return (
                 <Container className="my-5">
                     <Alert variant="danger">
-                        <Alert.Heading>⚠️ Something went wrong</Alert.Heading>
+                        <Alert.Heading>⚠️ {t('errors.somethingWentWrong')}</Alert.Heading>
                         <p>
-                            An error occurred in the Student Portal. Please try
-                            refreshing the page.
+                            {t('errors.studentPortalError')}
                         </p>
                         {process.env.NODE_ENV === "development" && (
                             <div className="mt-3 bg-light p-3 rounded">
                                 <p className="mb-2">
-                                    <strong>Error Details:</strong>
+                                    <strong>{t('errors.errorDetails')}</strong>
                                 </p>
                                 <pre className="mb-0">
                                     {this.state.error?.toString()}

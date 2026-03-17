@@ -1,5 +1,6 @@
 import React from "react";
 import { SchoolNavBarProps } from "../types/props/classroom.props";
+import { t } from "@/i18n";
 
 interface ExtendedSchoolNavBarProps extends SchoolNavBarProps {
     onTabChange?: (tab: "home" | "videos" | "documents") => void;
@@ -122,9 +123,8 @@ const SchoolNavBar: React.FC<ExtendedSchoolNavBarProps> = ({
                 role="tablist"
             >
                 <button
-                    className={`nav-link ${
-                        activeTab === "home" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "home" ? "active" : ""
+                        }`}
                     id="nav-home-tab"
                     type="button"
                     role="tab"
@@ -136,12 +136,11 @@ const SchoolNavBar: React.FC<ExtendedSchoolNavBarProps> = ({
                     }}
                 >
                     <i className="fas fa-home me-2"></i>
-                    Home
+                    {t('nav.home')}
                 </button>
                 <button
-                    className={`nav-link ${
-                        activeTab === "videos" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "videos" ? "active" : ""
+                        }`}
                     id="nav-videos-tab"
                     type="button"
                     role="tab"
@@ -153,12 +152,11 @@ const SchoolNavBar: React.FC<ExtendedSchoolNavBarProps> = ({
                     }}
                 >
                     <i className="fas fa-play-circle me-2"></i>
-                    Video Lessons
+                    {t('nav.videoLessons')}
                 </button>
                 <button
-                    className={`nav-link ${
-                        activeTab === "documents" ? "active" : ""
-                    }`}
+                    className={`nav-link ${activeTab === "documents" ? "active" : ""
+                        }`}
                     id="nav-documents-tab"
                     type="button"
                     role="tab"
@@ -170,7 +168,7 @@ const SchoolNavBar: React.FC<ExtendedSchoolNavBarProps> = ({
                     }}
                 >
                     <i className="fas fa-file-pdf me-2"></i>
-                    Documents
+                    {t('nav.documents')}
                 </button>
             </div>
         </nav>

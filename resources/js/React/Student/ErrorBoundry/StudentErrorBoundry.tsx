@@ -1,4 +1,5 @@
 import React, { Component, ReactNode } from 'react';
+import { t } from '@/i18n';
 
 interface Props {
     children: ReactNode;
@@ -37,14 +38,13 @@ class StudentErrorBoundary extends Component<Props, State> {
                             <div className="alert alert-danger">
                                 <h4>
                                     <i className="fas fa-exclamation-triangle mr-2"></i>
-                                    Student Dashboard Error
+                                    {t('errors.dashboardError')}
                                 </h4>
                                 <p>
-                                    Something went wrong with the student dashboard.
-                                    Please refresh the page or contact support if the problem persists.
+                                    {t('errors.dashboardErrorDesc')}
                                 </p>
                                 <details className="mt-3">
-                                    <summary>Technical Details</summary>
+                                    <summary>{t('errors.technicalDetails')}</summary>
                                     <pre className="mt-2 text-muted small">
                                         {this.state.error?.message}
                                         {'\n'}
@@ -56,7 +56,7 @@ class StudentErrorBoundary extends Component<Props, State> {
                                     onClick={() => window.location.reload()}
                                 >
                                     <i className="fas fa-refresh mr-1"></i>
-                                    Reload Page
+                                    {t('errors.reloadPage')}
                                 </button>
                             </div>
                         </div>

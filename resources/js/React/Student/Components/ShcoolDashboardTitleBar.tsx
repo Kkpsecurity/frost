@@ -1,6 +1,7 @@
 import React from "react";
 import { SchoolDashboardTitleBarProps } from "../types/props/classroom.props";
 import { useStudent } from "../context/StudentContext";
+import { t } from "@/i18n";
 
 const SchoolDashboardTitleBar = ({
     title,
@@ -170,8 +171,8 @@ const SchoolDashboardTitleBar = ({
                             type="button"
                             className="btn btn-light btn-sm d-flex align-items-center gap-2"
                             onClick={handleExamClick}
-                            title="Exam"
-                            aria-label="Exam"
+                            title={t('titleBar.exam')}
+                            aria-label={t('titleBar.exam')}
                             style={{
                                 backgroundColor: "rgba(255, 255, 255, 0.15)",
                                 color: "white",
@@ -184,7 +185,7 @@ const SchoolDashboardTitleBar = ({
                                 className="fas fa-clipboard-check"
                                 aria-hidden="true"
                             />
-                            <span>Exam</span>
+                            <span>{t('titleBar.exam')}</span>
                         </button>
                     )}
                     {devModeToggle}
@@ -192,8 +193,8 @@ const SchoolDashboardTitleBar = ({
                         type="button"
                         className="btn btn-light btn-sm d-flex align-items-center gap-2"
                         onClick={onBackToDashboard}
-                        title="Back to Dashboard"
-                        aria-label="Back to Dashboard"
+                        title={t('titleBar.backToDashboard')}
+                        aria-label={t('titleBar.backToDashboard')}
                         style={{
                             backgroundColor: "white",
                             color: "var(--frost-primary-color)",
@@ -206,7 +207,7 @@ const SchoolDashboardTitleBar = ({
                             className="fas fa-arrow-left mr-2"
                             aria-hidden="true"
                         />
-                        <span>Dashboard</span>
+                        <span>{t('titleBar.dashboard')}</span>
                     </button>
                 </div>
             </div>
