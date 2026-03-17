@@ -188,9 +188,9 @@ const MainOnline: React.FC<MainOnlineProps> = ({
     const renderVerificationBadge = (status: string) => {
         if (status === "missing") return null;
         const cfg: Record<string, { color: string; bg: string; icon: string; label: string }> = {
-            approved: { color: "#155724", bg: "#d4edda", icon: "fa-check-circle", label: "Verified" },
-            rejected: { color: "#721c24", bg: "#f8d7da", icon: "fa-times-circle", label: "Rejected" },
-            uploaded: { color: "#856404", bg: "#fff3cd", icon: "fa-clock", label: "Pending Review" },
+            approved: { color: "#155724", bg: "#d4edda", icon: "fa-check-circle", label: t("classroom.verified") },
+            rejected: { color: "#721c24", bg: "#f8d7da", icon: "fa-times-circle", label: t("classroom.rejected") },
+            uploaded: { color: "#856404", bg: "#fff3cd", icon: "fa-clock", label: t("classroom.pendingReview") },
         };
         const c = cfg[status] ?? cfg.uploaded;
         return (
@@ -265,8 +265,8 @@ const MainOnline: React.FC<MainOnlineProps> = ({
             <PauseOverlay pauseRemainingSeconds={pauseRemainingSeconds} />
             {/* Title Bar - Using reusable SchoolDashboardTitleBar component */}
             <SchoolDashboardTitleBar
-                title={courseNameDisplay ?? "Live Classroom"}
-                subtitle={`Instructor: ${instructorName}`}
+                title={courseNameDisplay ?? t("classroom.liveClassroom")}
+                subtitle={t("classroom.instructorSubtitle", { name: instructorName })}
                 icon={<i className="fas fa-video"></i>}
                 onBackToDashboard={onBackToDashboard}
                 onExamClick={onExamClick}
@@ -332,7 +332,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                             style={{ color: "white" }}
                                         >
                                             <i className="fas fa-desktop me-2"></i>
-                                            Screen Share / Presentation
+                                            {t("classroom.screenShareTitle")}
                                         </h6>
                                     </div>
                                     <div
@@ -376,9 +376,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                                     "0.5rem",
                                                             }}
                                                         >
-                                                            Wait for instructor
-                                                            to start screen
-                                                            share
+                                                            {t("classroom.waitForScreenShare")}
                                                         </p>
                                                         <small
                                                             style={{
@@ -386,9 +384,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                                 opacity: 0.8,
                                                             }}
                                                         >
-                                                            This panel will
-                                                            auto-load when
-                                                            ready.
+                                                            {t("classroom.screenShareAutoLoad")}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -448,7 +444,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                             style={{ color: "white" }}
                                         >
                                             <i className="fas fa-chalkboard-teacher me-2"></i>
-                                            Instructor
+                                            {t("classroom.instructorPanel")}
                                         </h6>
                                     </div>
                                     <div className="card-body">
@@ -490,7 +486,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                     }
                                                 >
                                                     {instructorEmail ||
-                                                        "No email"}
+                                                        t("classroom.noEmail")}
                                                 </div>
                                             </div>
                                         </div>
@@ -519,7 +515,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                             style={{ color: "white" }}
                                         >
                                             <i className="fas fa-id-badge me-2"></i>
-                                            ID Verification
+                                            {t("classroom.idVerification")}
                                         </h6>
                                     </div>
                                     <div className="card-body">
@@ -539,7 +535,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                         marginBottom: "0.35rem",
                                                     }}
                                                 >
-                                                    ID Card
+                                                    {t("classroom.idCard")}
                                                 </div>
                                                 {idCardUrl ? (
                                                     <img
@@ -572,7 +568,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                             fontSize: "0.8rem",
                                                         }}
                                                     >
-                                                        Missing
+                                                        {t("classroom.idMissing")}
                                                     </div>
                                                 )}
                                                 {renderVerificationBadge(idCardStatus)}
@@ -587,7 +583,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                         marginBottom: "0.35rem",
                                                     }}
                                                 >
-                                                    Headshot (Today)
+                                                    {t("classroom.headshotToday")}
                                                 </div>
                                                 {todayHeadshotUrl ? (
                                                     <img
@@ -620,7 +616,7 @@ const MainOnline: React.FC<MainOnlineProps> = ({
                                                             fontSize: "0.8rem",
                                                         }}
                                                     >
-                                                        Missing
+                                                        {t("classroom.idMissing")}
                                                     </div>
                                                 )}
                                                 {renderVerificationBadge(headshotStatus)}

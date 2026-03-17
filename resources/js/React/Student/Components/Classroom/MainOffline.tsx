@@ -8,6 +8,7 @@ import { useStudent } from "../../context/StudentContext";
 import TabDetails from "../OfflineTabSystem/TabDetails";
 import TabSelfStudy from "../OfflineTabSystem/TabSelfStudy";
 import TabDocumentation from "../OfflineTabSystem/TabDocumentation";
+import { t } from "@/i18n";
 
 const OFFLINE_ACTIVE_TAB_STORAGE_KEY = "offline_active_tab";
 const OFFLINE_SELF_STUDY_SESSION_STORAGE_KEY = "offline_self_study_session";
@@ -177,8 +178,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     return (
         <FrostDashboardWrapper>
             <SchoolDashboardTitleBar
-                title={courseTitle ?? "Self-Study"}
-                subtitle="Complete lessons at your own pace"
+                title={courseTitle ?? t("classroom.selfStudyFallbackTitle")}
+                subtitle={t("classroom.selfStudySubtitle")}
                 icon={<i className="fas fa-book-open"></i>}
                 onBackToDashboard={onBackToDashboard}
                 onExamClick={onExamClick}
@@ -195,7 +196,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                 <LessonSideBar
                                     lessons={lessons}
                                     isLoadingLessons={isLoadingLessons}
-                                    title="Course Lessons"
+                                    title={t("classroom.courseLessons")}
                                     isLessonCompletedByStudent={isLessonCompletedByStudent}
                                     isLessonFailedByStudent={isLessonFailedByStudent}
                                     isLessonInProgress={isLessonInProgress}
@@ -252,7 +253,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             }}
                                         >
                                             <i className="fas fa-info-circle me-2"></i>
-                                            Details
+                                            {t("classroom.tabDetails")}
                                         </button>
 
                                         <button
@@ -281,7 +282,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             }}
                                         >
                                             <i className="fas fa-graduation-cap me-2"></i>
-                                            Self Study
+                                            {t("classroom.tabSelfStudy")}
                                         </button>
 
                                         <button
@@ -310,7 +311,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             }}
                                         >
                                             <i className="fas fa-file-alt me-2"></i>
-                                            Documentation
+                                            {t("classroom.tabDocumentation")}
                                         </button>
                                     </div>
                                 </div>

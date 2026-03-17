@@ -7,6 +7,7 @@ import MainOnline from "./MainOnline";
 import OnboardingFlow from "./OnboardingFlow";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";
 import ExamRoom from "../Exam/ExamRoom";
+import { t } from "@/i18n";
 
 interface MainClassroomProps {
     courseAuthId: number;
@@ -577,7 +578,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                 {/* Title Bar */}
                 <SchoolDashboardTitleBar
                     title={courseName !== "Class" ? courseName : "Classroom"}
-                    subtitle={`Waiting for instructor | Student: ${student?.name || "N/A"}`}
+                    subtitle={t("classroom.waitingSubtitle", { name: student?.name || "N/A" })}
                     icon={<i className="fas fa-clock"></i>}
                     onBackToDashboard={onBackToDashboard}
                     onExamClick={handleExamClick}
@@ -625,7 +626,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                 fontWeight: "600",
                             }}
                         >
-                            Waiting for Class to Start
+                            {t("classroom.waitingForClass")}
                         </h3>
 
                         {/* Course Info */}
@@ -637,7 +638,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                     marginBottom: "0.5rem",
                                 }}
                             >
-                                Your class is scheduled:
+                                {t("classroom.classScheduled")}
                             </p>
                             <h4
                                 style={{
@@ -649,7 +650,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                 {courseName}
                             </h4>
                             <p style={{ color: "#ecf0f1", fontSize: "1.1rem" }}>
-                                {classDate} at {classTime}
+                                {t("classroom.classDateTime", { date: classDate, time: classTime })}
                             </p>
                         </div>
 
@@ -688,7 +689,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                             fontWeight: "600",
                                         }}
                                     >
-                                        Your instructor is preparing to begin
+                                        {t("classroom.instructorPreparing")}
                                     </h6>
                                     <p
                                         style={{
@@ -697,9 +698,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                             marginBottom: "0.5rem",
                                         }}
                                     >
-                                        Your class is scheduled and ready. The
-                                        instructor will start the session
-                                        shortly.
+                                        {t("classroom.classScheduledReady")}
                                     </p>
                                     <p
                                         style={{
@@ -709,8 +708,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                         }}
                                     >
                                         <i className="fas fa-sync-alt me-2"></i>
-                                        This page will automatically update when
-                                        your instructor begins the class.
+                                        {t("classroom.pageAutoUpdates")}
                                     </p>
                                 </div>
                             </div>
@@ -729,7 +727,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                     className="fas fa-tasks me-2"
                                     style={{ color: "#3498db" }}
                                 ></i>
-                                While you wait, please:
+                                {t("classroom.whileYouWait")}
                             </h6>
                             <div
                                 style={{
@@ -763,7 +761,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                             fontSize: "0.95rem",
                                         }}
                                     >
-                                        Test your audio and video equipment
+                                        {t("classroom.checkAudioVideo")}
                                     </span>
                                 </div>
                                 <div
@@ -791,7 +789,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                             fontSize: "0.95rem",
                                         }}
                                     >
-                                        Have your course materials ready
+                                        {t("classroom.haveMaterials")}
                                     </span>
                                 </div>
                                 <div
@@ -819,7 +817,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                             fontSize: "0.95rem",
                                         }}
                                     >
-                                        Find a quiet environment for class
+                                        {t("classroom.findQuietEnvironment")}
                                     </span>
                                 </div>
                                 <div
@@ -846,8 +844,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                                             fontSize: "0.95rem",
                                         }}
                                     >
-                                        Stay on this page - it updates
-                                        automatically
+                                        {t("classroom.stayOnPage")}
                                     </span>
                                 </div>
                             </div>
@@ -882,7 +879,7 @@ const MainClassroom: React.FC<MainClassroomProps> = ({
                             }}
                         >
                             <i className="fas fa-arrow-left me-2"></i>
-                            Back to Dashboard
+                            {t("classroom.backToDashboard")}
                         </button>
                     </div>
                 </div>
