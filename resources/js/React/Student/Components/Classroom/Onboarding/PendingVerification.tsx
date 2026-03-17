@@ -3,6 +3,7 @@ import { Card, Container, ToastContainer } from "react-bootstrap";
 import styled from "styled-components";
 import { ClassDataShape, StudentType } from "../../../../../../Config/types";
 import CaptureIDForValidation from "../../Video/CaptureIDForValidation";
+import { t } from "@/i18n";
 
 
 import {
@@ -33,7 +34,7 @@ const PendingVerification: React.FC<Props> = ({
         <CaptureContainer fluid>
             <StyledCard>
                 <CardHeader>
-                    <h3>Student ID Verification:</h3>
+                    <h3>{t('onboarding.idVerification')}</h3>
                     <span>
                         <b>
                             {student.fname} {student.lname}

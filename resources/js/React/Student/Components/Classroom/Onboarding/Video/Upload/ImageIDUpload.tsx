@@ -6,6 +6,7 @@ import Dropzone from "../../../../../../Shared/Components/FormFields/Dropzone";
 import { StyledCard, StyledImage, StyledDropArea } from "../../../../../../Styles";
 import usePhotoUploaded from "../../../../../../Hooks/Web/usePhotoUploaded";
 import { StudentType } from "@/React/Student/types/students.types";
+import { t } from "@/i18n";
 /**
  * ImageIDUpload Lets the user upload an image from the local file system
  * features:
@@ -78,18 +79,15 @@ const ImageIDUpload: FC<ImageIDUploadProps> = ({
                             <>
                                 {!isError && (
                                     <div className="alert alert-success">
-                                        Select Image:
+                                        {t('onboarding.selectImage')}
                                         <div className="mt-2">
-                                            If you're not satisfied with the
-                                            image, you can always retry the
-                                            upload. Otherwise, you can proceed to
-                                            save your changes.
+                                            {t('onboarding.retryOrProceed')}
                                         </div>
                                     </div>
                                 )}
 
                                 {isError && (
-                                    <div>Error uploading image</div>
+                                    <div>{t('onboarding.errorUploading')}</div>
                                 )}
 
                                 <StyledCard>
@@ -101,7 +99,7 @@ const ImageIDUpload: FC<ImageIDUploadProps> = ({
                                             onClick={handleFileReset}
                                             variant="danger"
                                         >
-                                            Reset
+                                            {t('onboarding.reset')}
                                         </Button>
                                         <button
                                             className="btn btn-sm btn-success float-end"
@@ -114,7 +112,7 @@ const ImageIDUpload: FC<ImageIDUploadProps> = ({
                                                 }
                                             }}
                                         >
-                                            {isLoading ? "Uploading..." : "Upload"}
+                                            {isLoading ? t('onboarding.uploading') : t('onboarding.upload')}
                                         </button>
                                     </Card.Footer>
                                 </StyledCard>

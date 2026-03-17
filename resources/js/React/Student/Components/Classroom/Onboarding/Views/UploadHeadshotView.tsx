@@ -1,6 +1,7 @@
 import { ClassDataShape } from "../../../../../../Config/types";
 import { PhotoTitle, StyledButton, StyledContainer } from "../../../../../Styles.ts";
 import CaptureDevices from "../Video/CaptureDevices";
+import { t } from "@/i18n";
 
 
 interface UploadHeadshotViewProps {
@@ -35,7 +36,7 @@ const UploadHeadshotView = ({
                     {/* Compact Header */}
                     <div className="text-center mb-3">
                         <PhotoTitle style={{ fontSize: "1.1rem", margin: "0 0 0.5rem" }}>
-                            Take a Photo of Your Headshot
+                            {t('onboarding.takeHeadshotTitle')}
                         </PhotoTitle>
                     </div>
 
@@ -77,11 +78,11 @@ const UploadHeadshotView = ({
                                 }}
                             >
                                 {showCaptureType === "webcam" ? (
-                                    "Position yourself in front of the webcam ensuring your face is clearly visible and well-lit."
+                                    t('onboarding.headshotWebcamHint')
                                 ) : showCaptureType === "upload" ? (
-                                    "Upload a clear, recent headshot from your device. Make sure the photo is well-lit."
+                                    t('onboarding.headshotUploadHint')
                                 ) : (
-                                    "Choose 'Take Photo' to use your webcam, or 'Upload Photo' to select a file from your device."
+                                    t('onboarding.headshotChooseHint')
                                 )}
                             </div>
                         </div>
@@ -93,10 +94,10 @@ const UploadHeadshotView = ({
                             onClick={() => setCurrentStep(2)}
                             style={{ padding: "0.5rem 1rem" }}
                         >
-                            ← Back to ID Card
+                            {t('onboarding.backToIdCard')}
                         </StyledButton>
                         <div style={{ color: '#95a5a6', alignSelf: 'center', fontSize: '0.9rem' }}>
-                            Uploading your headshot will continue automatically
+                            {t('onboarding.headshotAutoUpload')}
                         </div>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { t } from "@/i18n";
 import StudentAgreement from "./Onboarding/StudentAgreement";
 import ClassRules from "./Onboarding/ClassRules";
 import CaptureIDForValidation from "./Onboarding/Video/CaptureIDForValidation";
@@ -290,8 +291,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                 step === state.currentStep
                                     ? "#3498db"
                                     : step < state.currentStep
-                                      ? "#2ecc71"
-                                      : "#95a5a6",
+                                        ? "#2ecc71"
+                                        : "#95a5a6",
                             transition: "all 0.3s",
                         }}
                     />
@@ -337,13 +338,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                             className="fas fa-clipboard-check me-2"
                             style={{ color: "#3498db" }}
                         ></i>
-                        Classroom Onboarding
+                        {t('onboarding.title')}
                     </h4>
                     <p
                         className="mb-0"
                         style={{ color: "#95a5a6", fontSize: "0.875rem" }}
                     >
-                        Step {state.currentStep} of 4
+                        {t('onboarding.stepOf', { step: String(state.currentStep), total: '4' })}
                     </p>
                 </div>
 
@@ -385,18 +386,17 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                     marginBottom: "0.5rem",
                                 }}
                             >
-                                Validating Step 1
+                                {t('onboarding.validatingStep1')}
                             </h5>
                             <p style={{ color: "#95a5a6" }}>
-                                Agreement already on file. Moving to next
-                                step...
+                                {t('onboarding.agreementOnFile')}
                             </p>
                             <div
                                 className="spinner-border text-primary mt-2"
                                 role="status"
                             >
                                 <span className="visually-hidden">
-                                    Loading...
+                                    {t('common.loading')}
                                 </span>
                             </div>
                         </div>
@@ -462,7 +462,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                 className="text-center"
                                 style={{ color: "white", marginBottom: "1rem" }}
                             >
-                                Onboarding Complete!
+                                {t('onboarding.complete')}
                             </h5>
 
                             <p
@@ -472,7 +472,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                     marginBottom: "2rem",
                                 }}
                             >
-                                You're all set to enter the classroom.
+                                {t('onboarding.enterClassroomDesc')}
                             </p>
 
                             {/* Confirmation images */}
@@ -504,7 +504,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                             className="fas fa-id-card me-2"
                                             style={{ color: "#3498db" }}
                                         ></i>
-                                        ID Card
+                                        {t('onboarding.idCard')}
                                     </div>
                                     {idCardUrl ? (
                                         <img
@@ -546,7 +546,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                             className="fas fa-user-circle me-2"
                                             style={{ color: "#3498db" }}
                                         ></i>
-                                        Headshot (Today)
+                                        {t('onboarding.headshotToday')}
                                     </div>
                                     {todayHeadshotUrl ? (
                                         <img
@@ -563,7 +563,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         />
                                     ) : (
                                         <div style={{ color: "#95a5a6" }}>
-                                            No headshot image found for today.
+                                            {t('onboarding.noHeadshotToday')}
                                         </div>
                                     )}
                                 </div>
@@ -589,7 +589,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         }}
                                     ></i>
                                     <span style={{ color: "#ecf0f1" }}>
-                                        Terms Accepted
+                                        {t('onboarding.termsAccepted')}
                                     </span>
                                 </div>
 
@@ -612,7 +612,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         }}
                                     ></i>
                                     <span style={{ color: "#ecf0f1" }}>
-                                        Rules Acknowledged
+                                        {t('onboarding.rulesAcknowledged')}
                                     </span>
                                 </div>
 
@@ -634,7 +634,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                         }}
                                     ></i>
                                     <span style={{ color: "#ecf0f1" }}>
-                                        Identity Verified
+                                        {t('onboarding.identityVerified')}
                                     </span>
                                 </div>
                             </div>
@@ -651,12 +651,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                                 {state.loading ? (
                                     <>
                                         <i className="fas fa-spinner fa-spin me-2"></i>
-                                        Completing...
+                                        {t('onboarding.completing')}
                                     </>
                                 ) : (
                                     <>
                                         <i className="fas fa-door-open me-2"></i>
-                                        Enter Classroom
+                                        {t('onboarding.enterClassroom')}
                                     </>
                                 )}
                             </button>

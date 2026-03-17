@@ -16,6 +16,7 @@ import { set } from "lodash";
 import InstructionView from "../Views/InstructionView";
 import UploadHeadshotView from "../Views/UploadHeadshotView";
 import UploadIDcardView from "../Views/UploadIDcardView";
+import { t } from "@/i18n";
 
 /**
  * The Captured Type
@@ -106,13 +107,13 @@ const ValidationConfirmationView: React.FC<{
                                 borderRadius: "0.5rem"
                             }}
                         >
-                            <strong>⚠️ Missing Images</strong>
+                            <strong>⚠️ {t('onboarding.missingImages')}</strong>
                             <p className="mb-0 mt-1">
                                 {!idCardUrl && !headshotUrl
-                                    ? "Both ID card and headshot images are missing. Please upload them to continue."
+                                    ? t('onboarding.bothImagesMissing')
                                     : !idCardUrl
-                                        ? "ID card image is missing. Please upload it to continue."
-                                        : "Headshot image is missing. Please upload it to continue."}
+                                        ? t('onboarding.idCardMissingMsg')
+                                        : t('onboarding.headshotMissingMsg')}
                             </p>
                         </div>
                     )}
@@ -120,10 +121,10 @@ const ValidationConfirmationView: React.FC<{
                     {/* Compact Header */}
                     <div className="text-center mb-2">
                         <PhotoTitle style={{ fontSize: "1rem", margin: "0 0 0.25rem" }}>
-                            Review Your Validation Images
+                            {t('onboarding.reviewImages')}
                         </PhotoTitle>
                         <p style={{ color: "#95a5a6", fontSize: "0.85rem", margin: "0" }}>
-                            Please review both images below and confirm they are clear and valid.
+                            {t('onboarding.reviewImagesDesc')}
                         </p>
                     </div>
 
@@ -138,7 +139,7 @@ const ValidationConfirmationView: React.FC<{
                     >
                         {/* ID Card Section */}
                         <div className="flex-fill">
-                            <h6 style={{ color: "#3498db", margin: "0 0 0.5rem", fontSize: "0.9rem" }}>ID Card</h6>
+                            <h6 style={{ color: "#3498db", margin: "0 0 0.5rem", fontSize: "0.9rem" }}>{t('onboarding.idCard')}</h6>
                             <div className="d-flex justify-content-center">
                                 {idCardUrl ? (
                                     <img
@@ -165,10 +166,10 @@ const ValidationConfirmationView: React.FC<{
                                     >
                                         <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📷</div>
                                         <div style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.25rem" }}>
-                                            No ID card image
+                                            {t('onboarding.noIdCardImageShort')}
                                         </div>
                                         <div style={{ fontSize: "0.85rem", color: "#95a5a6" }}>
-                                            Click "Back to ID Card" to upload
+                                            {t('onboarding.clickBackToIdCard')}
                                         </div>
                                     </div>
                                 )}
@@ -177,7 +178,7 @@ const ValidationConfirmationView: React.FC<{
 
                         {/* Headshot Section */}
                         <div className="flex-fill">
-                            <h6 style={{ color: "#3498db", margin: "0 0 0.5rem", fontSize: "0.9rem" }}>Headshot</h6>
+                            <h6 style={{ color: "#3498db", margin: "0 0 0.5rem", fontSize: "0.9rem" }}>{t('onboarding.headshot')}</h6>
                             <div className="d-flex justify-content-center">
                                 {headshotUrl ? (
                                     <img
@@ -204,10 +205,10 @@ const ValidationConfirmationView: React.FC<{
                                     >
                                         <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🤳</div>
                                         <div style={{ fontSize: "0.9rem", fontWeight: 600, marginBottom: "0.25rem" }}>
-                                            No headshot image
+                                            {t('onboarding.noHeadshotImageShort')}
                                         </div>
                                         <div style={{ fontSize: "0.85rem", color: "#95a5a6" }}>
-                                            {!idCardUrl ? "Upload ID card first" : "Click button to go back and upload"}
+                                            {!idCardUrl ? t('onboarding.uploadIdCardFirst') : t('onboarding.clickBackToUpload')}
                                         </div>
                                     </div>
                                 )}
@@ -221,15 +222,15 @@ const ValidationConfirmationView: React.FC<{
                             onClick={() => setCurrentStep(idCardUrl ? 3 : 2)}
                             style={{ padding: "0.5rem 1rem" }}
                         >
-                            {idCardUrl ? "← Back to Headshot" : "← Back to ID Card"}
+                            {idCardUrl ? t('onboarding.backToHeadshot') : t('onboarding.backToIdCard')}
                         </StyledButton>
                         <StyledButton
                             onClick={handleConfirmValidation}
                             disabled={isSubmitting || !headshotUrl || !idCardUrl}
                             title={
                                 !headshotUrl || !idCardUrl
-                                    ? "Please upload both images before confirming"
-                                    : "Confirm and continue"
+                                    ? t('onboarding.uploadBothFirst')
+                                    : t('onboarding.confirmAndContinue')
                             }
                             style={{
                                 background: !headshotUrl || !idCardUrl ? "#6c757d" : "#2ecc71",
@@ -238,7 +239,7 @@ const ValidationConfirmationView: React.FC<{
                                 cursor: !headshotUrl || !idCardUrl ? "not-allowed" : "pointer"
                             }}
                         >
-                            {isSubmitting ? "Submitting..." : "Confirm Validation"}
+                            {isSubmitting ? t('onboarding.submitting') : t('onboarding.confirmValidation')}
                         </StyledButton>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import InstructionMessage from "./InstructionMessage";
+import { t } from "@/i18n";
 
 const InstructionContainer = styled.div`
     font-family: Arial, sans-serif;
@@ -69,39 +70,34 @@ const UploadInstructions: React.FC<UploadInstructionsProps> = ({
                 <InstructionMessage validations={validations} />
             )}
             <InstructionHeader>
-                Student Validation Instructions
+                {t('onboarding.validationInstructions')}
             </InstructionHeader>
-            <SubHeader>Step 1: Uploading Your Headshot</SubHeader>
+            <SubHeader>{t('onboarding.stepUploadHeadshot')}</SubHeader>
             <InstructionList>
                 <InstructionItem>
-                    Ensure good lighting to clearly show your face.
+                    {t('onboarding.headshotLighting')}
                 </InstructionItem>
                 <InstructionItem>
-                    Avoid any accessories that might cover your face such as
-                    sunglasses or hats.
+                    {t('onboarding.headshotNoAccessories')}
                 </InstructionItem>
                 <InstructionItem>
-                    Your face should be centered and occupy most of the photo.
+                    {t('onboarding.headshotCentered')}
                 </InstructionItem>
             </InstructionList>
-            <SubHeader>Step 2: Uploading Your ID Card</SubHeader>
+            <SubHeader>{t('onboarding.stepUploadIdCard')}</SubHeader>
             <InstructionList>
                 <InstructionItem>
-                    Place your ID card on a flat surface.
+                    {t('onboarding.idCardFlat')}
                 </InstructionItem>
                 <InstructionItem>
-                    Avoid any glares on the card. Make sure all details are
-                    readable.
+                    {t('onboarding.idCardNoGlare')}
                 </InstructionItem>
                 <InstructionItem>
-                    Ensure that the ID card's name matches the name registered
-                    for the course.
+                    {t('onboarding.idCardNameMatch')}
                 </InstructionItem>
             </InstructionList>
             <InstructionText>
-                <strong>Note:</strong> Uploading an ID card is a one-time
-                requirement, but the headshot will be required daily for the
-                5-day class duration.
+                <strong>Note:</strong> {t('onboarding.validationNote')}
             </InstructionText>
         </InstructionContainer>
     );

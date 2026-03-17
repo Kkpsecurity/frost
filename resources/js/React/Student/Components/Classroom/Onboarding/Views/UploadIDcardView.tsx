@@ -1,6 +1,7 @@
 import React from 'react'
 import { StyledContainer, PhotoTitle, StyledButton } from '../../../../../Styles.ts';
 import CaptureDevices from '../Video/CaptureDevices';
+import { t } from "@/i18n";
 
 
 const UploadIDcardView = ({
@@ -21,7 +22,7 @@ const UploadIDcardView = ({
                     {/* Compact Header */}
                     <div className="text-center mb-2">
                         <PhotoTitle style={{ fontSize: "1rem", margin: "0 0 0.25rem" }}>
-                            Take a Photo of Your ID Card
+                            {t('onboarding.takeIdCardTitle')}
                         </PhotoTitle>
                     </div>
 
@@ -63,11 +64,11 @@ const UploadIDcardView = ({
                                 }}
                             >
                                 {showCaptureType === "webcam" ? (
-                                    "Position your ID card in front of the webcam. Ensure it's clearly visible and well-lit."
+                                    t('onboarding.idCardWebcamHint')
                                 ) : showCaptureType === "upload" ? (
-                                    "Upload a clear photo of your ID card. Ensure the entire card is visible and details are legible."
+                                    t('onboarding.idCardUploadHint')
                                 ) : (
-                                    "Choose 'Take Photo' to use your webcam, or 'Upload Photo' to select a file from your device."
+                                    t('onboarding.idCardChooseHint')
                                 )}
                             </div>
                         </div>
@@ -79,10 +80,10 @@ const UploadIDcardView = ({
                             onClick={() => setCurrentStep(1)}
                             style={{ padding: "0.5rem 1rem" }}
                         >
-                            ← Back
+                            {t('onboarding.back')}
                         </StyledButton>
                         <div style={{ color: '#95a5a6', alignSelf: 'center', fontSize: '0.9rem' }}>
-                            Uploading your ID will continue automatically
+                            {t('onboarding.idCardAutoUpload')}
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ import TextInput from "../../../../Shared/Components/FormFields/TextInput.tsx";
 import Select from "../../../../Shared/Components/FormFields/Select.tsx";
 import PhoneInput from "../../../../Shared/Components/FormFields/PhoneInput.tsx";
 import DatePicker from "../../../../Shared/Components/FormFields/DatePicker.tsx";
+import { t } from "@/i18n";
 
 interface StudentInfoProps {
     student?: any;
@@ -44,7 +45,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
     });
 
     const suffixOptions = [
-        { text: "None", value: "" },
+        { text: t('onboarding.suffixNone'), value: "" },
         { text: "Jr", value: "Jr" },
         { text: "Sr", value: "Sr" },
         { text: "II", value: "II" },
@@ -67,7 +68,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                 <div className="col-md-6">
                     <TextInput
                         id="fname"
-                        title="First Name"
+                        title={t('onboarding.firstName')}
                         value={student?.fname || studentInfo?.fname || parsedFname || ""}
                         required={true}
                     />
@@ -77,7 +78,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                 <div className="col-md-6">
                     <TextInput
                         id="lname"
-                        title="Last Name"
+                        title={t('onboarding.lastName')}
                         value={student?.lname || studentInfo?.lname || parsedLname || ""}
                         required={true}
                     />
@@ -87,7 +88,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                 <div className="col-md-6">
                     <TextInput
                         id="initial"
-                        title="Middle Initial"
+                        title={t('onboarding.middleInitial')}
                         value={student?.initial || studentInfo?.initial || ""}
                         required={false}
                     />
@@ -97,7 +98,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                 <div className="col-md-6">
                     <Select
                         id="suffix"
-                        title="Suffix"
+                        title={t('onboarding.suffix')}
                         value={student?.suffix || studentInfo?.suffix || ""}
                         options={suffixOptions}
                         required={false}
@@ -108,7 +109,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                 <div className="col-md-6">
                     <PhoneInput
                         id="phone"
-                        title="Phone Number"
+                        title={t('onboarding.phoneNumber')}
                         value={student?.phone || studentInfo?.phone || ""}
                         required={true}
                         mask="999-999-9999"
@@ -119,7 +120,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                 <div className="col-md-6">
                     <DatePicker
                         id="dob"
-                        title="Date of Birth"
+                        title={t('onboarding.dateOfBirth')}
                         value={student?.dob || studentInfo?.dob || ""}
                         required={true}
                     />

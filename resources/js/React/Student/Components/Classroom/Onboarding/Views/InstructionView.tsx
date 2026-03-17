@@ -1,6 +1,7 @@
 import React from "react";
 import UploadInstructions from "../UploadInstructions";
 import { StyledButton } from "../../../../../Styles.ts";
+import { t } from "@/i18n";
 
 interface InstructionViewProps {
     validations: any;
@@ -21,7 +22,7 @@ const InstructionView: React.FC<InstructionViewProps> = ({
                             onClick={() => setCurrentStep(2)}
                             className="btn btn-primary btn-lg"
                         >
-                            Begin Verification <i className="fas fa-arrow-right ms-2"></i>
+                            {t('onboarding.beginVerification')} <i className="fas fa-arrow-right ms-2"></i>
                         </StyledButton>
                     </div>
                 </div>

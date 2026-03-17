@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { t } from "@/i18n";
 import { useForm, FormProvider } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -137,7 +138,7 @@ const StudentAgreement: React.FC<StudentAgreementProps> = ({
         } catch (err: any) {
             setError(
                 err.response?.data?.message ||
-                    "Failed to submit agreement. Please try again."
+                "Failed to submit agreement. Please try again."
             );
         } finally {
             setLoading(false);
@@ -153,13 +154,13 @@ const StudentAgreement: React.FC<StudentAgreementProps> = ({
                     style={{ fontSize: "4rem", color: "#2ecc71", marginBottom: "1.5rem" }}
                 ></i>
                 <h5 style={{ color: "white", marginBottom: "1rem" }}>
-                    Agreement Accepted!
+                    {t('onboarding.agreementAccepted')}
                 </h5>
                 <p style={{ color: "#95a5a6" }}>
-                    Preparing your classroom seat...
+                    {t('onboarding.preparingSeat')}
                 </p>
                 <div className="spinner-border text-primary mt-3" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">{t('common.loading')}</span>
                 </div>
             </div>
         );
@@ -175,83 +176,83 @@ const StudentAgreement: React.FC<StudentAgreementProps> = ({
                         padding: "1rem",
                         borderRadius: "0.5rem"
                     }}>
-                    <i
-                        className="fas fa-graduation-cap"
-                        style={{ fontSize: "2rem", color: "#3498db", marginBottom: "0.5rem" }}
-                    />
-                    <h5 style={{ color: "white", marginBottom: "0.25rem" }}>
-                        {course?.name || "Course Registration"}
-                    </h5>
-                    <p style={{ color: "#95a5a6", fontSize: "0.875rem", marginBottom: 0 }}>
-                        Please complete your information and accept the terms below
-                    </p>
-                </div>
+                        <i
+                            className="fas fa-graduation-cap"
+                            style={{ fontSize: "2rem", color: "#3498db", marginBottom: "0.5rem" }}
+                        />
+                        <h5 style={{ color: "white", marginBottom: "0.25rem" }}>
+                            {course?.name || t('onboarding.courseRegistration')}
+                        </h5>
+                        <p style={{ color: "#95a5a6", fontSize: "0.875rem", marginBottom: 0 }}>
+                            {t('onboarding.completeInfoBelow')}
+                        </p>
+                    </div>
 
-                {/* Student Info Component */}
-                <StudentInfo student={student} />
+                    {/* Student Info Component */}
+                    <StudentInfo student={student} />
 
-                {/* Terms Display */}
-                <StudentAgreementText />
+                    {/* Terms Display */}
+                    <StudentAgreementText />
 
-                {/* Error Alert */}
-                {error && (
+                    {/* Error Alert */}
+                    {error && (
+                        <div
+                            className="alert alert-danger"
+                            style={{
+                                backgroundColor: "rgba(231, 76, 60, 0.1)",
+                                border: "1px solid #e74c3c",
+                                color: "#e74c3c",
+                                marginTop: "1rem",
+                                marginBottom: "1rem",
+                            }}
+                        >
+                            <i className="fas fa-exclamation-triangle me-2"></i>
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Agreement Checkbox */}
                     <div
-                        className="alert alert-danger"
                         style={{
-                            backgroundColor: "rgba(231, 76, 60, 0.1)",
-                            border: "1px solid #e74c3c",
-                            color: "#e74c3c",
-                            marginTop: "1rem",
-                            marginBottom: "1rem",
+                            backgroundColor: "#34495e",
+                            padding: "1rem",
+                            borderRadius: "0.5rem",
+                            marginTop: "1.5rem",
+                            marginBottom: "1.5rem",
                         }}
                     >
-                        <i className="fas fa-exclamation-triangle me-2"></i>
-                        {error}
+                        <CheckBox
+                            id="agreement"
+                            title={t('onboarding.iAgreeTerms')}
+                            required={true}
+                        />
                     </div>
-                )}
 
-                {/* Agreement Checkbox */}
-                <div
-                    style={{
-                        backgroundColor: "#34495e",
-                        padding: "1rem",
-                        borderRadius: "0.5rem",
-                        marginTop: "1.5rem",
-                        marginBottom: "1.5rem",
-                    }}
-                >
-                    <CheckBox
-                        id="agreement"
-                        title="I have read and agree to the Student Terms and Conditions"
-                        required={true}
-                    />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                    type="submit"
-                    className="btn btn-primary w-100"
-                    disabled={loading}
-                    style={{
-                        fontSize: "1.1rem",
-                        padding: "0.75rem",
-                        fontWeight: "bold",
-                    }}
-                >
-                    {loading ? (
-                        <>
-                            <i className="fas fa-spinner fa-spin me-2"></i>
-                            Processing...
-                        </>
-                    ) : (
-                        <>
-                            <i className="fas fa-check me-2"></i>
-                            Accept & Continue
-                        </>
-                    )}
-                </button>
-            </form>
-        </FormProvider>
+                    {/* Submit Button */}
+                    <button
+                        type="submit"
+                        className="btn btn-primary w-100"
+                        disabled={loading}
+                        style={{
+                            fontSize: "1.1rem",
+                            padding: "0.75rem",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {loading ? (
+                            <>
+                                <i className="fas fa-spinner fa-spin me-2"></i>
+                                {t('onboarding.processing')}
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-check me-2"></i>
+                                {t('onboarding.acceptAndContinue')}
+                            </>
+                        )}
+                    </button>
+                </form>
+            </FormProvider>
         </div>
     );
 };

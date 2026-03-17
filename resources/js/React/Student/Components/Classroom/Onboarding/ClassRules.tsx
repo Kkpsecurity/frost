@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { t } from "@/i18n";
 
 interface ClassRulesProps {
     onAgree: () => void;
@@ -46,10 +47,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                     style={{ fontSize: "2.5rem", color: "#3498db", marginBottom: "0.5rem" }}
                 ></i>
                 <h5 style={{ color: "white", marginBottom: "0.25rem" }}>
-                    Classroom Procedures
+                    {t('onboarding.classroomProcedures')}
                 </h5>
                 <p style={{ color: "#95a5a6", fontSize: "0.875rem", marginBottom: 0 }}>
-                    Please review these important guidelines for today's session
+                    {t('onboarding.guidelinesSubtitle')}
                 </p>
             </div>
 
@@ -77,10 +78,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Check-In Procedure
+                                {t('onboarding.rule1Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.875rem" }}>
-                                You must check in within the first 10 minutes of class. If you arrive late and the instructor has started the lesson, you'll see a "Lesson in Progress" message.
+                                {t('onboarding.rule1Desc')}
                             </p>
                         </div>
                     </div>
@@ -108,10 +109,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Late Arrival
+                                {t('onboarding.rule2Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.875rem" }}>
-                                If you see the "Lesson in Progress" screen, you cannot join the current lesson block. You must wait until the next lesson starts to check in.
+                                {t('onboarding.rule2Desc')}
                             </p>
                         </div>
                     </div>
@@ -139,10 +140,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Lesson Progress Blocks
+                                {t('onboarding.rule3Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.875rem" }}>
-                                Once a lesson starts, students who haven't checked in are blocked from joining. This ensures all participants start together and prevents disruption.
+                                {t('onboarding.rule3Desc')}
                             </p>
                         </div>
                     </div>
@@ -170,10 +171,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Rejoining After Being Blocked
+                                {t('onboarding.rule4Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.875rem" }}>
-                                If you're blocked from a lesson, you can rejoin when the instructor starts the next lesson. Make sure to check in promptly to avoid missing multiple lessons.
+                                {t('onboarding.rule4Desc')}
                             </p>
                         </div>
                     </div>
@@ -201,10 +202,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Lesson Challenges
+                                {t('onboarding.rule5Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.875rem" }}>
-                                During lessons, you may receive random verification challenges (4-digit codes). You must enter the code displayed by your instructor to prove you're actively participating. This ensures you're paying attention and present in class.
+                                {t('onboarding.rule5Desc')}
                             </p>
                         </div>
                     </div>
@@ -232,10 +233,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Challenge Audio Alerts
+                                {t('onboarding.rule6Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: "0.5rem", fontSize: "0.875rem" }}>
-                                When a challenge is issued, you'll hear an audio alert (if your browser is in fullscreen mode). This helps ensure you don't miss any challenges.
+                                {t('onboarding.rule6Desc')}
                             </p>
                             <button
                                 type="button"
@@ -243,7 +244,7 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                                 onClick={playSound}
                             >
                                 <i className="fas fa-volume-up me-2"></i>
-                                Test Alert Sound
+                                {t('onboarding.testAlertSound')}
                             </button>
                         </div>
                     </div>
@@ -270,10 +271,10 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                         ></i>
                         <div>
                             <h6 style={{ color: "white", marginBottom: "0.5rem" }}>
-                                Challenge Failure Consequences
+                                {t('onboarding.rule7Title')}
                             </h6>
                             <p style={{ color: "#ecf0f1", marginBottom: 0, fontSize: "0.875rem" }}>
-                                If you fail 2 challenges during a lesson, that lesson will be marked as incomplete. Your instructor has discretion to excuse failures for valid reasons (technical issues, emergency, etc.). Make sure to stay engaged!
+                                {t('onboarding.rule7Desc')}
                             </p>
                         </div>
                     </div>
@@ -295,12 +296,12 @@ const ClassRules: React.FC<ClassRulesProps> = ({ onAgree, loading = false }) => 
                 {loading ? (
                     <>
                         <i className="fas fa-spinner fa-spin me-2"></i>
-                        Processing...
+                        {t('onboarding.processing')}
                     </>
                 ) : (
                     <>
                         <i className="fas fa-check me-2"></i>
-                        I Understand the Rules
+                        {t('onboarding.iUnderstandRules')}
                     </>
                 )}
             </button>

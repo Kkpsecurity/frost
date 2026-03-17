@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "react-bootstrap";
 import { toast } from "react-toastify";
+import { t } from "@/i18n";
 
 import ImageIDCapture from "./Webcam/ImageIDCapture";
 import ImageIDUpload from "./Upload/ImageIDUpload";
@@ -118,7 +119,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                     }
                 }}
             >
-                📸 Take Photo
+                📸 {t('onboarding.takePhoto')}
             </button>
         );
     };
@@ -183,7 +184,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                     }
                 }}
             >
-                📁 Upload Photo
+                📁 {t('onboarding.uploadPhoto')}
             </button>
         );
     };
@@ -272,7 +273,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                         color: '#1f2937',
                         lineHeight: '1.2'
                     }}>
-                        {photoType === "headshot" ? "Student Head Shot" : "Student ID Card"}
+                        {photoType === "headshot" ? t('onboarding.studentHeadshot') : t('onboarding.studentIdCard')}
                     </h3>
                     <p style={{
                         margin: '2px 0 0 0',
@@ -281,8 +282,8 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                         lineHeight: '1.3'
                     }}>
                         {photoType === "headshot"
-                            ? "Take or upload a clear photo of yourself"
-                            : "Capture or upload your government-issued ID"
+                            ? t('onboarding.headshotCaptureDesc')
+                            : t('onboarding.idCardCaptureDesc')
                         }
                     </p>
                 </div>
@@ -323,7 +324,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                                 justifyContent: 'center',
                             }}
                         >
-                            🔄 Retake
+                            🔄 {t('onboarding.retake')}
                         </button>
                     )}
                     <TakePhoto
@@ -358,8 +359,8 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                             retakeModeRef.current.idcard = false;
                             toast.success(
                                 photoType === "headshot"
-                                    ? "Headshot uploaded successfully"
-                                    : "ID card uploaded successfully"
+                                    ? t('onboarding.headshotUploaded')
+                                    : t('onboarding.idCardUploaded')
                             );
                             setShowCaptureType(null);
                             if (onUploaded) {
@@ -383,8 +384,8 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                             retakeModeRef.current.idcard = false;
                             toast.success(
                                 photoType === "headshot"
-                                    ? "Headshot uploaded successfully"
-                                    : "ID card uploaded successfully"
+                                    ? t('onboarding.headshotUploaded')
+                                    : t('onboarding.idCardUploaded')
                             );
                             setShowCaptureType(null);
                             if (onUploaded) {
