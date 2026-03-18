@@ -1,6 +1,5 @@
 import React from "react";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Button } from "react-bootstrap";
 import CanvasComponent from "./CanvasComponent";
 import VideoComponent from "./VideoComponent";
 import { Spinner } from "react-bootstrap";
@@ -51,8 +50,8 @@ const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
         );
     }
 
-    if (!student.id || !student.name) {
-        console.error('❌ ImageIDCapture: student missing required fields (id, name)', student);
+    if (!student.id || (!student.fname && !student.lname)) {
+        console.error('❌ ImageIDCapture: student missing required fields (id, fname/lname)', student);
         return (
             <div style={{ padding: '20px', color: 'orange', textAlign: 'center' }}>
                 <h3>Error: Incomplete student data</h3>
@@ -292,7 +291,7 @@ const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
     const handleSaveImage = useCallback(async () => {
         console.log('🔄 handleSaveImage called - uploading to server');
 
-        if (!student || !student.id || !student.name) {
+        if (!student || !student.id) {
             console.error('❌ Invalid student data for save operation', student);
             alert('Error: Student information not available. Please refresh and try again.');
             return;
@@ -311,7 +310,8 @@ const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
 
         try {
             // Generate filename for proper naming structure
-            const filename = `${student.name.replace(/[^a-zA-Z0-9]/g, '_')}_${student.id}_id_card_${Date.now()}.jpg`;
+            const studentName = `${student.fname ?? ''}_${student.lname ?? ''}`.trim() || 'student';
+            const filename = `${studentName.replace(/[^a-zA-Z0-9]/g, '_')}_${student.id}_id_card_${Date.now()}.jpg`;
             console.log('📁 Generated filename:', filename);
 
             if (!capturedImageData.blob) {
@@ -407,15 +407,15 @@ const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
         : 'Position your ID card in the frame and click "Capture" when ready.';
     const instructions: string[] = isHeadshot
         ? [
-              'Center your face within the green guide frame',
-              'Ensure good lighting and that your face is clearly visible',
-              'Click "Capture Manually" when you are ready',
-          ]
+            'Center your face within the green guide frame',
+            'Ensure good lighting and that your face is clearly visible',
+            'Click "Capture Manually" when you are ready',
+        ]
         : [
-              'Position your ID card within the green guide frame',
-              'Ensure good lighting and that all text is clearly visible',
-              'Click "Capture Manually" when your ID is properly positioned',
-          ];
+            'Position your ID card within the green guide frame',
+            'Ensure good lighting and that all text is clearly visible',
+            'Click "Capture Manually" when your ID is properly positioned',
+        ];
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -626,42 +626,7 @@ const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
                             )}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <Button
-                                onClick={captureImage}
-                                disabled={captured}
-                                style={{
-                                    background: captured ? '#9ca3af' : '#3b82f6',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    padding: '12px 24px',
-                                    fontWeight: '500',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    cursor: captured ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                📸 {captured ? 'Image Captured' : 'Capture Manually'}
-                            </Button>
 
-                            <Button
-                                onClick={handleWebcamReset}
-                                variant="outline-secondary"
-                                style={{
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '8px',
-                                    padding: '12px 24px',
-                                    fontWeight: '500',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}
-                            >
-                                🔄 Reset Camera
-                            </Button>
-                        </div>
                     </div>
                 )}
             </div>
