@@ -580,19 +580,25 @@ class StudentDashboardController extends Controller
                     'agreed_at' => $courseAuth->agreed_at?->toISOString(), // Add agreement timestamp for onboarding check
                     'status' => $status,
                     'completion_status' => $courseAuth->is_passed ? 'Passed' : ($courseAuth->completed_at ? 'Completed' : 'In Progress'),
-                    // Locked: not yet started + another enrollment for the same course is in-progress
-                    'is_locked' => !$courseAuth->agreed_at
-                        && !$courseAuth->completed_at
-                        && !$courseAuth->disabled_at
-                        && !$courseAuth->id_override
-                        && isset($inProgressCourseIds[$courseAuth->course_id]),
-                    'lock_reason' => (!$courseAuth->agreed_at
-                        && !$courseAuth->completed_at
-                        && !$courseAuth->disabled_at
-                        && !$courseAuth->id_override
-                        && isset($inProgressCourseIds[$courseAuth->course_id]))
-                        ? 'You must complete your active enrollment before starting this one.'
-                        : null,
+                    // Locked: g_class concurrent lock, renewal block, or same-course duplicate
+                    'is_locked' => $courseAuth->IsLocked()
+                        || !$courseAuth->IsRenewalEligible()
+                        || (!$courseAuth->agreed_at
+                            && !$courseAuth->completed_at
+                            && !$courseAuth->disabled_at
+                            && !$courseAuth->id_override
+                            && isset($inProgressCourseIds[$courseAuth->course_id])),
+                    'lock_reason' => $courseAuth->LockReason()
+                        ?? (!$courseAuth->IsRenewalEligible()
+                            ? ('Your license renewal period has not started yet. You can re-enroll from '
+                                . ($courseAuth->RenewalEligibleFrom()?->format('M j, Y') ?? 'a future date') . '.')
+                            : ((!$courseAuth->agreed_at
+                                && !$courseAuth->completed_at
+                                && !$courseAuth->disabled_at
+                                && !$courseAuth->id_override
+                                && isset($inProgressCourseIds[$courseAuth->course_id]))
+                                ? 'You must complete your active enrollment before starting this one.'
+                                : null)),
                 ];
             })->toArray();
 

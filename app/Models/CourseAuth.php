@@ -249,6 +249,64 @@ class CourseAuth extends Model
         return "You must complete {$courseName} before starting this course.";
     }
 
+    /**
+     * Returns true if the user is eligible to enroll in a new course of this course_type.
+     * Returns false if the renewal cycle has not expired since their last passed completion.
+     */
+    public function IsRenewalEligible(): bool
+    {
+        $course = $this->GetCourse();
+
+        if (! $course->renewal_cycle_months) {
+            return true;
+        }
+
+        $lastPassed = self::query()
+            ->where('user_id', $this->user_id)
+            ->whereHas('Course', fn($q) => $q->where('course_type', $course->course_type))
+            ->whereNotNull('completed_at')
+            ->where('is_passed', true)
+            ->orderByDesc('completed_at')
+            ->first();
+
+        if (! $lastPassed) {
+            return true;
+        }
+
+        $eligibleFrom = Carbon::parse($lastPassed->completed_at)->addMonths($course->renewal_cycle_months);
+
+        return Carbon::today()->gte($eligibleFrom);
+    }
+
+    /**
+     * Returns the earliest date the user can re-enroll in this course_type,
+     * or null if already eligible (or no renewal cycle applies).
+     */
+    public function RenewalEligibleFrom(): ?Carbon
+    {
+        $course = $this->GetCourse();
+
+        if (! $course->renewal_cycle_months) {
+            return null;
+        }
+
+        $lastPassed = self::query()
+            ->where('user_id', $this->user_id)
+            ->whereHas('Course', fn($q) => $q->where('course_type', $course->course_type))
+            ->whereNotNull('completed_at')
+            ->where('is_passed', true)
+            ->orderByDesc('completed_at')
+            ->first();
+
+        if (! $lastPassed) {
+            return null;
+        }
+
+        $eligibleFrom = Carbon::parse($lastPassed->completed_at)->addMonths($course->renewal_cycle_months);
+
+        return Carbon::today()->lt($eligibleFrom) ? $eligibleFrom : null;
+    }
+
     public function IsActive(): bool
     {
 
@@ -287,11 +345,24 @@ class CourseAuth extends Model
 
     public function MarkCompleted(bool $is_passed)
     {
+        $completedAt = Carbon::now();
 
-        $this->forceFill([
-            'completed_at'  => PgTk::now(),
-            'is_passed'     => $is_passed,
-        ])->update();
+        $fillData = [
+            'completed_at' => PgTk::now(),
+            'is_passed'    => $is_passed,
+        ];
+
+        // Auto-set expire_date when passed and course has a renewal cycle
+        if ($is_passed) {
+            $course = $this->GetCourse();
+            if ($course->renewal_cycle_months) {
+                $fillData['expire_date'] = $completedAt
+                    ->addMonths($course->renewal_cycle_months)
+                    ->toDateString();
+            }
+        }
+
+        $this->forceFill($fillData)->update();
 
         $this->refresh();
     }

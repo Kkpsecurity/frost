@@ -51,6 +51,22 @@ class EnrollmentController extends Controller
             }
         }
 
+        // Hard block: renewal cycle check — prevents re-enrollment before the cycle window opens
+        if ($Course->renewal_cycle_months) {
+            $renewStub = new CourseAuth([
+                'user_id'   => Auth::id(),
+                'course_id' => $Course->id,
+            ]);
+            $renewStub->id = 0;
+
+            if (! $renewStub->IsRenewalEligible()) {
+                $eligibleDate = $renewStub->RenewalEligibleFrom()?->format('M j, Y') ?? 'a future date';
+                $msg = "Your license renewal period has not started yet. You can re-enroll from {$eligibleDate}.";
+                Log::info('Enrollment blocked (renewal) for user ' . Auth::id() . ' course ' . $Course->id . ': ' . $eligibleDate);
+                return redirect()->route('courses.list')->with('error', $msg);
+            }
+        }
+
         // Soft warn only for non-g_class duplicate enrollments
         $existingEnrollment = Auth::user()->ActiveCourseAuths->firstWhere('course_id', $Course->id);
         if ($existingEnrollment && $Course->course_type !== 'g_class') {
