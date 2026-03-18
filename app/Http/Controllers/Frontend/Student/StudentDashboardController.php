@@ -2411,11 +2411,20 @@ class StudentDashboardController extends Controller
     {
         $validated = $request->validate([
             'course_date_id' => 'required|integer|exists:course_dates,id',
+            'course_auth_id' => 'nullable|integer|exists:course_auths,id',
         ]);
 
         $user = Auth::user();
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
-        $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
+
+        $courseAuthOverride = null;
+        if (!empty($validated['course_auth_id'])) {
+            $courseAuthOverride = CourseAuth::where('id', (int) $validated['course_auth_id'])
+                ->where('user_id', $user->id)
+                ->first();
+        }
+
+        $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user, $courseAuthOverride);
 
         $studentUnit->terms_accepted = true;
         $studentUnit->save();
@@ -2556,11 +2565,20 @@ class StudentDashboardController extends Controller
     {
         $validated = $request->validate([
             'course_date_id' => 'required|integer|exists:course_dates,id',
+            'course_auth_id' => 'nullable|integer|exists:course_auths,id',
         ]);
 
         $user = Auth::user();
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
-        $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
+
+        $courseAuthOverride = null;
+        if (!empty($validated['course_auth_id'])) {
+            $courseAuthOverride = CourseAuth::where('id', (int) $validated['course_auth_id'])
+                ->where('user_id', $user->id)
+                ->first();
+        }
+
+        $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user, $courseAuthOverride);
 
         $courseAgreed = false;
         if (!empty($studentUnit->course_auth_id)) {

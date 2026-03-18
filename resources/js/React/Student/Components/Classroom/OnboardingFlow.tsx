@@ -263,6 +263,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         try {
             await axios.post("/classroom/student/onboarding/complete", {
                 course_date_id: courseDateId,
+                course_auth_id: courseAuthId,
             });
 
             setState((prev) => ({ ...prev, loading: false }));
