@@ -308,6 +308,208 @@ class StudentsController extends Controller
     }
 
     /**
+     * Export a single student's full account history as a CSV for audit purposes
+     */
+    public function exportAccount($id)
+    {
+        $student = User::where('role_id', 5)
+            ->with(['courseAuths.course'])
+            ->findOrFail($id);
+
+        $orders = Order::where('user_id', $id)
+            ->with('course')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $name = $student->fname . '_' . $student->lname;
+        $filename = 'student_audit_' . $student->id . '_' . preg_replace('/[^a-zA-Z0-9_]/', '', $name) . '_' . Carbon::now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename={$filename}",
+        ];
+
+        $callback = function () use ($student, $orders) {
+            $file = fopen('php://output', 'w');
+
+            // --- Student Info ---
+            fputcsv($file, ['=== STUDENT ACCOUNT AUDIT EXPORT ===']);
+            fputcsv($file, ['Generated', Carbon::now()->format('Y-m-d H:i:s T')]);
+            fputcsv($file, []);
+            fputcsv($file, ['User ID', 'First Name', 'Last Name', 'Email', 'Status', 'Email Verified', 'Phone', 'DOB', 'Address', 'City', 'State', 'Zip', 'Registered Date']);
+            fputcsv($file, [
+                $student->id,
+                $student->fname,
+                $student->lname,
+                $student->email,
+                $student->is_active ? 'Active' : 'Inactive',
+                $student->email_verified_at ? $student->email_verified_at->format('Y-m-d') : 'Unverified',
+                $student->student_info['phone'] ?? '',
+                $student->student_info['dob'] ?? '',
+                trim(($student->student_info['address'] ?? '') . ' ' . ($student->student_info['address2'] ?? '')),
+                $student->student_info['city'] ?? '',
+                $student->student_info['state'] ?? '',
+                $student->student_info['zip'] ?? '',
+                $student->created_at->format('Y-m-d H:i:s'),
+            ]);
+
+            // --- Course Enrollments ---
+            fputcsv($file, []);
+            fputcsv($file, ['=== COURSE ENROLLMENTS ===']);
+            fputcsv($file, ['Auth ID', 'Course ID', 'Course Name', 'Course Type', 'Enrolled Date', 'Start Date', 'Completed Date', 'Passed', 'Expire Date', 'DOL Tracking #', 'ID Override', 'Disabled At', 'Disabled Reason']);
+            foreach ($student->courseAuths as $ca) {
+                fputcsv($file, [
+                    $ca->id,
+                    $ca->course_id,
+                    $ca->course->title ?? 'Unknown',
+                    $ca->course?->course_type ?? 'standard',
+                    $ca->created_at->format('Y-m-d H:i:s'),
+                    $ca->start_date ? $ca->start_date->format('Y-m-d') : '',
+                    $ca->completed_at ? $ca->completed_at->format('Y-m-d') : '',
+                    $ca->is_passed ? 'Yes' : ($ca->completed_at ? 'No (DNC)' : ''),
+                    $ca->expire_date ? Carbon::parse($ca->expire_date)->format('Y-m-d') : '',
+                    $ca->dol_tracking ?? '',
+                    $ca->id_override ? 'Yes' : 'No',
+                    $ca->disabled_at ? $ca->disabled_at->format('Y-m-d') : '',
+                    $ca->disabled_reason ?? '',
+                ]);
+            }
+
+            // --- Payment History ---
+            fputcsv($file, []);
+            fputcsv($file, ['=== PAYMENT HISTORY ===']);
+            fputcsv($file, ['Order ID', 'Course', 'Course Price', 'Total Paid', 'Status', 'Order Date', 'Completed Date', 'Refunded Date']);
+            foreach ($orders as $order) {
+                fputcsv($file, [
+                    $order->id,
+                    $order->course->title ?? 'Course #' . $order->course_id,
+                    $order->course_price,
+                    $order->total_price,
+                    $order->refunded_at ? 'Refunded' : ($order->completed_at ? 'Completed' : 'Pending'),
+                    $order->created_at->format('Y-m-d H:i:s'),
+                    $order->completed_at ? $order->completed_at->format('Y-m-d') : '',
+                    $order->refunded_at ? $order->refunded_at->format('Y-m-d') : '',
+                ]);
+            }
+
+            // --- Activity Log ---
+            $activity = collect();
+
+            $activity->push([
+                'date' => $student->created_at,
+                'type' => 'registration',
+                'event' => 'Account Created',
+                'detail' => 'Student registered on the platform',
+                'course' => '',
+            ]);
+
+            if ($student->email_verified_at) {
+                $activity->push([
+                    'date' => $student->email_verified_at,
+                    'type' => 'verification',
+                    'event' => 'Email Verified',
+                    'detail' => 'Student verified their email address',
+                    'course' => '',
+                ]);
+            }
+
+            foreach ($student->courseAuths as $ca) {
+                $courseName = $ca->course->title ?? 'Course #' . $ca->course_id;
+
+                $activity->push([
+                    'date' => $ca->created_at,
+                    'type' => 'enrollment',
+                    'event' => 'Enrolled',
+                    'detail' => 'Course enrollment created',
+                    'course' => $courseName,
+                ]);
+
+                if ($ca->agreed_at) {
+                    $activity->push([
+                        'date' => $ca->agreed_at,
+                        'type' => 'agreement',
+                        'event' => 'Terms Agreed',
+                        'detail' => 'Student accepted course terms',
+                        'course' => $courseName,
+                    ]);
+                }
+
+                if ($ca->start_date) {
+                    $activity->push([
+                        'date' => $ca->start_date->startOfDay(),
+                        'type' => 'start',
+                        'event' => 'Course Started',
+                        'detail' => 'Student entered classroom',
+                        'course' => $courseName,
+                    ]);
+                }
+
+                if ($ca->completed_at) {
+                    $activity->push([
+                        'date' => $ca->completed_at,
+                        'type' => 'completion',
+                        'event' => $ca->is_passed ? 'Passed' : 'DNC (Did Not Complete)',
+                        'detail' => $ca->is_passed
+                            ? 'Course completed and passed' . ($ca->dol_tracking ? '. DOL #: ' . $ca->dol_tracking : '')
+                            : 'Course marked DNC',
+                        'course' => $courseName,
+                    ]);
+                }
+
+                if ($ca->disabled_at) {
+                    $activity->push([
+                        'date' => $ca->disabled_at,
+                        'type' => 'disabled',
+                        'event' => 'Enrollment Disabled',
+                        'detail' => $ca->disabled_reason ?? 'No reason provided',
+                        'course' => $courseName,
+                    ]);
+                }
+            }
+
+            foreach ($orders as $order) {
+                if ($order->completed_at) {
+                    $activity->push([
+                        'date' => $order->completed_at,
+                        'type' => 'payment',
+                        'event' => 'Payment Completed',
+                        'detail' => 'Order #' . $order->id . ' — $' . number_format($order->total_price, 2),
+                        'course' => $order->course->title ?? 'Course #' . $order->course_id,
+                    ]);
+                }
+                if ($order->refunded_at) {
+                    $activity->push([
+                        'date' => $order->refunded_at,
+                        'type' => 'refund',
+                        'event' => 'Refund Processed',
+                        'detail' => 'Order #' . $order->id . ' — $' . number_format($order->total_price, 2),
+                        'course' => $order->course->title ?? 'Course #' . $order->course_id,
+                    ]);
+                }
+            }
+
+            $activity = $activity->sortBy('date')->values();
+
+            fputcsv($file, []);
+            fputcsv($file, ['=== ACCOUNT ACTIVITY LOG ===']);
+            fputcsv($file, ['Date/Time', 'Event Type', 'Event', 'Course', 'Detail']);
+            foreach ($activity as $row) {
+                fputcsv($file, [
+                    $row['date']->format('Y-m-d H:i:s'),
+                    $row['type'],
+                    $row['event'],
+                    $row['course'],
+                    $row['detail'],
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Export students to CSV
      */
     public function export(Request $request)

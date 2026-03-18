@@ -21,6 +21,7 @@ Route::middleware(['admin'])->group(function () {
         Route::get('/{id}', [StudentsController::class, 'show'])->name('show');
         Route::get('/{id}/edit', [StudentsController::class, 'edit'])->name('edit');
         Route::put('/{id}', [StudentsController::class, 'update'])->name('update');
+        Route::get('/{id}/export-account', [StudentsController::class, 'exportAccount'])->name('export-account');
         Route::get('/{id}/activity', [StudentsController::class, 'activity'])->name('activity');
     });
 });
