@@ -548,8 +548,15 @@ class StudentDashboardController extends Controller
                 ->with(['Course'])
                 ->get();
 
+            // Pre-compute which course_ids have an active (in-progress) enrollment.
+            // Used below to lock duplicate enrollments that haven't been started yet.
+            $inProgressCourseIds = $courseAuths
+                ->filter(fn($ca) => $ca->agreed_at && !$ca->completed_at && !$ca->disabled_at)
+                ->pluck('course_id')
+                ->flip(); // keyed by course_id for O(1) lookup
+
             // Map course auths to course list for dashboard
-            $courses = $courseAuths->map(function ($courseAuth) {
+            $courses = $courseAuths->map(function ($courseAuth) use ($inProgressCourseIds) {
                 // Student owns the CourseAuth ("pass"), not the class schedule.
                 // ClassroomCourseDate is intentionally conservative (only shows active/live class context).
                 $classroomCourseDate = $courseAuth->ClassroomCourseDate();
@@ -573,6 +580,19 @@ class StudentDashboardController extends Controller
                     'agreed_at' => $courseAuth->agreed_at?->toISOString(), // Add agreement timestamp for onboarding check
                     'status' => $status,
                     'completion_status' => $courseAuth->is_passed ? 'Passed' : ($courseAuth->completed_at ? 'Completed' : 'In Progress'),
+                    // Locked: not yet started + another enrollment for the same course is in-progress
+                    'is_locked' => !$courseAuth->agreed_at
+                        && !$courseAuth->completed_at
+                        && !$courseAuth->disabled_at
+                        && !$courseAuth->id_override
+                        && isset($inProgressCourseIds[$courseAuth->course_id]),
+                    'lock_reason' => (!$courseAuth->agreed_at
+                        && !$courseAuth->completed_at
+                        && !$courseAuth->disabled_at
+                        && !$courseAuth->id_override
+                        && isset($inProgressCourseIds[$courseAuth->course_id]))
+                        ? 'You must complete your active enrollment before starting this one.'
+                        : null,
                 ];
             })->toArray();
 
@@ -894,6 +914,36 @@ class StudentDashboardController extends Controller
                 Log::warning('Failed to load challenge history in student poll: ' . $e->getMessage());
             }
 
+            // ----------------------------------------------------------------
+            // LICENSE HISTORY — completed enrollments with status/expiry data
+            // ----------------------------------------------------------------
+            $licenseHistory = $courseAuths
+                ->filter(fn($ca) => $ca->completed_at !== null)
+                ->map(function ($ca) {
+                    /** @var \Carbon\Carbon|null $expiry */
+                    $expiry     = $ca->expire_date ? \Carbon\Carbon::parse($ca->expire_date) : null;
+                    $daysUntil  = $expiry ? (int) now()->diffInDays($expiry, false) : null;
+                    $renewFrom  = $expiry ? $expiry->copy()->subDays(180) : null;
+
+                    if ($expiry === null)         $renewalStatus = 'current';
+                    elseif ($daysUntil < 0)       $renewalStatus = 'expired';
+                    elseif ($daysUntil <= 90)     $renewalStatus = 'expiring_soon';
+                    elseif ($daysUntil <= 180)    $renewalStatus = 'renewal_open';
+                    else                          $renewalStatus = 'current';
+
+                    return [
+                        'course_auth_id'        => $ca->id,
+                        'course_name'           => $ca->Course?->title ?? $ca->Course?->title_long ?? 'N/A',
+                        'course_type'           => $ca->Course?->getCourseType() ?? null,
+                        'completed_at'          => $ca->completed_at?->toISOString(),
+                        'expire_date'           => $expiry?->toDateString(),
+                        'is_passed'             => (bool) $ca->is_passed,
+                        'renewal_status'        => $renewalStatus,
+                        'days_until_expiry'     => $daysUntil,
+                        'renewal_eligible_from' => $renewFrom?->toDateString(),
+                    ];
+                })->values()->toArray();
+
             // Return student data with all courses
             return response()->json([
                 'success' => true,
@@ -943,6 +993,7 @@ class StudentDashboardController extends Controller
                     'notifications' => [],
                     'assignments' => [],
                     'challenges' => $challenges,
+                    'license_history' => $licenseHistory,
                 ],
             ]);
         } catch (Exception $e) {

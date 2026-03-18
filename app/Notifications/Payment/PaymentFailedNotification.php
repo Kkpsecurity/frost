@@ -60,7 +60,7 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
             ->line('• Ensure sufficient funds are available')
             ->line('• Try a different payment method')
             ->line('• Contact your bank if the issue persists')
-            ->action('Retry Payment', route('enrollment.enroll', $this->order->course_id))
+            ->action('Retry Payment', route('courses.enroll', $this->order->course_id))
             ->line('If you continue to experience issues, please contact our support team.');
     }
 
@@ -82,7 +82,7 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
             'icon' => 'circle-xmark',
             'color' => 'danger',
             'priority' => 'critical',
-            'url' => route('enrollment.enroll', $this->order->course_id),
+            'url' => route('courses.enroll', $this->order->course_id),
         ];
     }
 }

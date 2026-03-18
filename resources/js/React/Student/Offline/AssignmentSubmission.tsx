@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { t } from "@/i18n";
 
 interface AssignmentSubmissionProps {
     assignmentTitle?: string;
@@ -34,14 +35,14 @@ const AssignmentSubmission: React.FC<AssignmentSubmissionProps> = ({
             <div className="card">
                 <div className="card-header">
                     <h6>{assignmentTitle}</h6>
-                    <small className="text-muted">Due: {dueDate}</small>
+                    <small className="text-muted">{t("assignment.dueLabel")}: {dueDate}</small>
                 </div>
                 <div className="card-body">
                     {!isSubmitted ? (
                         <>
                             <div className="mb-3">
                                 <label htmlFor="fileUpload" className="form-label">
-                                    Upload File (Max size: {maxFileSize})
+                                    {t("assignment.uploadFileLabel", { size: maxFileSize })}
                                 </label>
                                 <input
                                     type="file"
@@ -58,13 +59,13 @@ const AssignmentSubmission: React.FC<AssignmentSubmissionProps> = ({
 
                             <div className="mb-3">
                                 <label htmlFor="assignmentNotes" className="form-label">
-                                    Notes (Optional)
+                                    {t("assignment.notesLabel")}
                                 </label>
                                 <textarea
                                     className="form-control"
                                     id="assignmentNotes"
                                     rows={4}
-                                    placeholder="Add any notes or comments about your submission..."
+                                    placeholder={t("assignment.notesPlaceholder")}
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                 />
@@ -75,16 +76,15 @@ const AssignmentSubmission: React.FC<AssignmentSubmissionProps> = ({
                                 onClick={handleSubmit}
                                 disabled={!selectedFile && !notes.trim()}
                             >
-                                <i className="fas fa-paper-plane"></i> Submit Assignment
+                                <i className="fas fa-paper-plane"></i> {t("assignment.submitButton")}
                             </button>
                         </>
                     ) : (
                         <div className="alert alert-success">
                             <i className="fas fa-check-circle"></i>
-                            <strong> Assignment Submitted!</strong>
+                            <strong> {t("assignment.successTitle")}</strong>
                             <p className="mb-0 mt-2">
-                                Your assignment has been submitted successfully.
-                                You will receive feedback once it's reviewed.
+                                {t("assignment.successBody")}
                             </p>
                         </div>
                     )}

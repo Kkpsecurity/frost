@@ -390,6 +390,42 @@ return [
                 'channels' => ['database', 'mail', 'browser'],
                 'user_controllable' => false,
             ],
+            // ── License renewal reminders (completed/passed enrollments) ──
+            'license_renewal_180days' => [
+                'key' => 'progress.license_renewal_180days',
+                'name' => 'License Renewal Open (6 Months)',
+                'priority' => 'medium',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'license_renewal_90days' => [
+                'key' => 'progress.license_renewal_90days',
+                'name' => 'License Renewal Reminder (3 Months)',
+                'priority' => 'medium',
+                'channels' => ['database', 'mail'],
+                'user_controllable' => true,
+            ],
+            'license_renewal_30days' => [
+                'key' => 'progress.license_renewal_30days',
+                'name' => 'License Expiring in 30 Days',
+                'priority' => 'high',
+                'channels' => ['database', 'mail', 'browser'],
+                'user_controllable' => false,
+            ],
+            'license_renewal_15days' => [
+                'key' => 'progress.license_renewal_15days',
+                'name' => 'License Expiring in 15 Days',
+                'priority' => 'high',
+                'channels' => ['database', 'mail', 'browser'],
+                'user_controllable' => false,
+            ],
+            'license_expired' => [
+                'key' => 'progress.license_expired',
+                'name' => 'License Expired',
+                'priority' => 'high',
+                'channels' => ['database', 'mail', 'browser'],
+                'user_controllable' => false,
+            ],
         ],
 
         /*

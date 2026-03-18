@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 const cardStyle: React.CSSProperties = {
     backgroundColor: "#2c3e50",
@@ -31,7 +32,7 @@ const CourseDetailsCard: React.FC<CourseDetailsCardProps> = ({
                     className="fas fa-book me-2"
                     style={{ color: "#3498db" }}
                 ></i>
-                Course Details
+                {t("offlineTab.courseDetails")}
             </h6>
 
             <ul
@@ -42,38 +43,38 @@ const CourseDetailsCard: React.FC<CourseDetailsCardProps> = ({
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Course</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelCourse")}</span>
                     <span className="fw-semibold">{courseName}</span>
                 </li>
                 <li
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Mode</span>
-                    <span className="fw-semibold">Self‑Study (Offline)</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelMode")}</span>
+                    <span className="fw-semibold">{t("offlineTab.offlineMode")}</span>
                 </li>
                 <li
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Progress</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelProgress")}</span>
                     <span className="fw-semibold">
-                        {completedCount} / {lessonsTotal} lessons
+                        {t("offlineTab.progressValue", { completed: completedCount, total: lessonsTotal })}
                     </span>
                 </li>
                 <li
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Remaining</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelRemaining")}</span>
                     <span className="fw-semibold">
-                        {Math.max(0, lessonsTotal - completedCount)} lessons
+                        {t("offlineTab.lessonsCount", { count: Math.max(0, lessonsTotal - completedCount) })}
                     </span>
                 </li>
             </ul>
 
             <div className="mt-3" style={{ color: "#95a5a6" }}>
-                Choose any lesson from the left sidebar to continue.
+                {t("offlineTab.courseDetailsFooter")}
             </div>
         </div>
     </div>

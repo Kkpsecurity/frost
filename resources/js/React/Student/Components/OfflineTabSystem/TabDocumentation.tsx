@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 type DocumentsMap = Record<string, string>;
 
@@ -82,7 +83,7 @@ const TabDocumentation: React.FC<TabDocumentationProps> = ({
         <div className="documentation-tab">
             <h3 style={{ color: "white", marginBottom: "1.5rem" }}>
                 <i className="fas fa-folder-open me-2"></i>
-                Course Documentation
+                {t("offlineTab.courseDocumentation")}
             </h3>
 
             <div className="row g-3">
@@ -94,17 +95,16 @@ const TabDocumentation: React.FC<TabDocumentationProps> = ({
                                     className="fas fa-file-pdf me-2"
                                     style={{ color: "#e74c3c" }}
                                 ></i>
-                                PDFs & Handouts
+                                {t("offlineTab.pdfsHandouts")}
                             </h6>
 
                             <div className="mt-2" style={mutedText}>
-                                Files shown here come from the course’s public
-                                docs folder.
+                                {t("offlineTab.docsDescription")}
                             </div>
 
                             {isLoading && (
                                 <div className="mt-3" style={mutedText}>
-                                    Loading documents…
+                                    {t("offlineTab.loadingDocs")}
                                 </div>
                             )}
 
@@ -114,7 +114,7 @@ const TabDocumentation: React.FC<TabDocumentationProps> = ({
 
                             {!isLoading && !error && entries.length === 0 && (
                                 <div className="mt-3" style={mutedText}>
-                                    No documents found for this course yet.
+                                    {t("offlineTab.noDocsFound")}
                                 </div>
                             )}
 
@@ -167,7 +167,7 @@ const TabDocumentation: React.FC<TabDocumentationProps> = ({
                                                     rel="noreferrer"
                                                 >
                                                     <i className="fas fa-external-link-alt me-1"></i>
-                                                    Open
+                                                    {t("offlineTab.open")}
                                                 </a>
                                             </div>
                                         ))}
@@ -186,18 +186,12 @@ const TabDocumentation: React.FC<TabDocumentationProps> = ({
                                     className="fas fa-circle-info me-2"
                                     style={{ color: "#3498db" }}
                                 ></i>
-                                Tips
+                                {t("offlineTab.tips")}
                             </h6>
 
                             <ul className="mb-0" style={{ color: "#ecf0f1" }}>
-                                <li>
-                                    Open PDFs in a new tab and keep this page
-                                    open.
-                                </li>
-                                <li>
-                                    If you don’t see expected docs, the course
-                                    may not have a docs folder yet.
-                                </li>
+                                <li>{t("offlineTab.tip1")}</li>
+                                <li>{t("offlineTab.tip2")}</li>
                             </ul>
                         </div>
                     </div>

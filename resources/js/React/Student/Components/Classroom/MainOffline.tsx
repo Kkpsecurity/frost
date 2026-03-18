@@ -8,6 +8,7 @@ import { useStudent } from "../../context/StudentContext";
 import TabDetails from "../OfflineTabSystem/TabDetails";
 import TabSelfStudy from "../OfflineTabSystem/TabSelfStudy";
 import TabDocumentation from "../OfflineTabSystem/TabDocumentation";
+import TabLicenseHistory from "../OfflineTabSystem/TabLicenseHistory";
 import { t } from "@/i18n";
 
 const OFFLINE_ACTIVE_TAB_STORAGE_KEY = "offline_active_tab";
@@ -39,7 +40,7 @@ const MainOffline: React.FC<MainOfflineProps> = ({
     const [activeSelfStudySessionLessonId, setActiveSelfStudySessionLessonId] =
         useState<number | null>(null);
 
-    const [activeTab, setActiveTab] = useState<"details" | "self-study" | "documentation">(
+    const [activeTab, setActiveTab] = useState<"details" | "self-study" | "documentation" | "license-history">(
         "details",
     );
 
@@ -51,8 +52,8 @@ const MainOffline: React.FC<MainOfflineProps> = ({
 
         const isValidTab = (
             value: any,
-        ): value is "details" | "self-study" | "documentation" =>
-            value === "details" || value === "self-study" || value === "documentation";
+        ): value is "details" | "self-study" | "documentation" | "license-history" =>
+            value === "details" || value === "self-study" || value === "documentation" || value === "license-history";
 
         try {
             const storedTab = localStorage.getItem(OFFLINE_ACTIVE_TAB_STORAGE_KEY);
@@ -313,6 +314,34 @@ const MainOffline: React.FC<MainOfflineProps> = ({
                                             <i className="fas fa-file-alt me-2"></i>
                                             {t("classroom.tabDocumentation")}
                                         </button>
+
+                                        <button
+                                            className={`tab-button ${activeTab === "license-history" ? "active" : ""}`}
+                                            onClick={() => setActiveTab("license-history")}
+                                            style={{
+                                                backgroundColor:
+                                                    activeTab === "license-history"
+                                                        ? "#34495e"
+                                                        : "transparent",
+                                                color:
+                                                    activeTab === "license-history"
+                                                        ? "white"
+                                                        : "#95a5a6",
+                                                border: "none",
+                                                padding: "1rem 1.5rem",
+                                                cursor: "pointer",
+                                                fontWeight:
+                                                    activeTab === "license-history" ? "600" : "400",
+                                                borderBottom:
+                                                    activeTab === "license-history"
+                                                        ? "3px solid #3498db"
+                                                        : "none",
+                                                transition: "all 0.2s",
+                                            }}
+                                        >
+                                            <i className="fas fa-id-card me-2"></i>
+                                            {t("classroom.tabLicenseHistory")}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -343,6 +372,10 @@ const MainOffline: React.FC<MainOfflineProps> = ({
 
                                     {activeTab === "documentation" && (
                                         <TabDocumentation courseAuthId={courseAuthId} />
+                                    )}
+
+                                    {activeTab === "license-history" && (
+                                        <TabLicenseHistory courseAuthId={courseAuthId} />
                                     )}
                                 </div>
                             </div>

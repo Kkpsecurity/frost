@@ -19,12 +19,10 @@ class Payment extends Model
         'currency',
         'status',
         'gateway_response',
-        'processed_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'processed_at' => 'datetime',
         'gateway_response' => 'array',
     ];
 

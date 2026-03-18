@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 interface SelfStudyHelpModalProps {
     isOpen: boolean;
@@ -99,7 +100,7 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                         style={{ color: "white", margin: 0, fontWeight: 700 }}
                     >
                         <i className="fas fa-question-circle me-2" style={{ color: "#3498db" }}></i>
-                        Self Study — Help &amp; Rules
+                        {t("offlineTab.helpTitle")}
                     </h5>
                     <button
                         onClick={onClose}
@@ -112,7 +113,7 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                             lineHeight: 1,
                             padding: "0.25rem",
                         }}
-                        aria-label="Close help"
+                        aria-label={t("offlineTab.closeHelp")}
                     >
                         ×
                     </button>
@@ -125,13 +126,10 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                     <div style={sectionStyle}>
                         <div style={sectionTitleStyle}>
                             <i className="fas fa-graduation-cap"></i>
-                            What is Self Study Mode?
+                            {t("offlineTab.whatIsSelfStudy")}
                         </div>
                         <p style={bodyTextStyle}>
-                            Self Study Mode lets you watch lesson videos on your own schedule,
-                            outside of a live scheduled class. You work through each lesson
-                            independently. Once every lesson is completed, the Exam Room unlocks
-                            and you can take your final exam.
+                            {t("offlineTab.selfStudyDesc")}
                         </p>
                     </div>
 
@@ -141,20 +139,19 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                     <div style={sectionStyle}>
                         <div style={sectionTitleStyle}>
                             <i className="fas fa-hourglass-half" style={{ color: "#f39c12" }}></i>
-                            Video Quota
+                            {t("offlineTab.helpVideoQuotaTitle")}
                         </div>
                         <p style={{ ...bodyTextStyle, marginBottom: "0.5rem" }}>
-                            Each enrollment comes with a fixed amount of video watch time (shown as hours).
+                            {t("offlineTab.videoQuotaDesc")}
                         </p>
                         <ul style={listStyle}>
-                            <li><strong style={{ color: "#ecf0f1" }}>Total</strong> — your full hour budget for this course enrollment.</li>
-                            <li><strong style={{ color: "#ecf0f1" }}>Used</strong> — hours consumed by completed lesson sessions.</li>
-                            <li><strong style={{ color: "#ecf0f1" }}>Remaining</strong> — hours left to spend on lessons.</li>
-                            <li><strong style={{ color: "#ecf0f1" }}>Refunded</strong> — hours returned if you later completed the same lesson in a live class.</li>
+                            <li><strong style={{ color: "#ecf0f1" }}>{t("offlineTab.quotaTotal")}</strong> — {t("offlineTab.quotaTotalDesc")}</li>
+                            <li><strong style={{ color: "#ecf0f1" }}>{t("offlineTab.quotaUsed")}</strong> — {t("offlineTab.quotaUsedDesc")}</li>
+                            <li><strong style={{ color: "#ecf0f1" }}>{t("offlineTab.quotaRemaining")}</strong> — {t("offlineTab.quotaRemainingDesc")}</li>
+                            <li><strong style={{ color: "#ecf0f1" }}>{t("offlineTab.quotaRefunded")}</strong> — {t("offlineTab.quotaRefundedDesc")}</li>
                         </ul>
                         <p style={{ ...bodyTextStyle, marginTop: "0.75rem" }}>
-                            You cannot start a new session if your remaining quota is less than
-                            the time required for the selected lesson. Manage your time carefully.
+                            {t("offlineTab.quotaManage")}
                         </p>
                     </div>
 
@@ -164,19 +161,18 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                     <div style={sectionStyle}>
                         <div style={sectionTitleStyle}>
                             <i className="fas fa-film" style={{ color: "#3498db" }}></i>
-                            How Lesson Sessions Work
+                            {t("offlineTab.howSessionsWork")}
                         </div>
                         <ol style={{ ...listStyle, listStyleType: "decimal" }}>
-                            <li>Select a lesson from the left sidebar.</li>
-                            <li>Click <strong style={{ color: "#ecf0f1" }}>Start Session</strong> — this opens a timed session window and reserves your quota.</li>
-                            <li>Click <strong style={{ color: "#ecf0f1" }}>Open Player</strong>, then press Play when you're ready to watch.</li>
-                            <li>Watch the video to the required completion percentage.</li>
-                            <li>The session completes automatically, or click <strong style={{ color: "#ecf0f1" }}>Complete Session</strong> when done.</li>
+                            <li>{t("offlineTab.sessionStep1")}</li>
+                            <li>{t("offlineTab.sessionStep2")}</li>
+                            <li>{t("offlineTab.sessionStep3")}</li>
+                            <li>{t("offlineTab.sessionStep4")}</li>
+                            <li>{t("offlineTab.sessionStep5")}</li>
                         </ol>
                         <p style={{ ...bodyTextStyle, marginTop: "0.75rem" }}>
                             <i className="fas fa-info-circle me-1" style={{ color: "#3498db" }}></i>
-                            Your progress is saved automatically. If you refresh or leave the page,
-                            your active session is restored when you return — as long as it hasn't expired.
+                            {t("offlineTab.sessionProgressNote")}
                         </p>
                     </div>
 
@@ -186,15 +182,15 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                     <div style={sectionStyle}>
                         <div style={sectionTitleStyle}>
                             <i className="fas fa-coffee" style={{ color: "#e67e22" }}></i>
-                            Breaks &amp; Pause Time
+                            {t("offlineTab.breaksTitle")}
                         </div>
                         <p style={{ ...bodyTextStyle, marginBottom: "0.5rem" }}>
-                            Each session includes a break allowance based on the lesson's length.
+                            {t("offlineTab.breaksDesc")}
                         </p>
                         <ul style={listStyle}>
-                            <li>Shorter lessons receive one break; longer lessons receive multiple (e.g., Break 1 of 3).</li>
-                            <li>Each break has a time limit — a warning plays when your break is nearly over.</li>
-                            <li>Pause time is tracked against your budget. If you exceed your allowed pause time, your session window may expire.</li>
+                            <li>{t("offlineTab.breaksItem1")}</li>
+                            <li>{t("offlineTab.breaksItem2")}</li>
+                            <li>{t("offlineTab.breaksItem3")}</li>
                         </ul>
                     </div>
 
@@ -204,13 +200,13 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                     <div style={sectionStyle}>
                         <div style={sectionTitleStyle}>
                             <i className="fas fa-check-circle" style={{ color: "#2ecc71" }}></i>
-                            Completing a Lesson
+                            {t("offlineTab.completingTitle")}
                         </div>
                         <ul style={listStyle}>
-                            <li>A lesson is marked <strong style={{ color: "#2ecc71" }}>Complete</strong> when you watch the minimum required percentage of the video.</li>
-                            <li>Completed lessons show a <strong style={{ color: "#2ecc71" }}>✓</strong> checkmark in the left sidebar.</li>
-                            <li>Quota is deducted from your balance once a session is completed — not when it starts.</li>
-                            <li>If a session expires before you finish, it will be marked as incomplete and you will need to start a new session.</li>
+                            <li>{t("offlineTab.completingItem1")}</li>
+                            <li>{t("offlineTab.completingItem2")}</li>
+                            <li>{t("offlineTab.completingItem3")}</li>
+                            <li>{t("offlineTab.completingItem4")}</li>
                         </ul>
                     </div>
 
@@ -220,13 +216,13 @@ const SelfStudyHelpModal: React.FC<SelfStudyHelpModalProps> = ({
                     <div style={{ ...sectionStyle, marginBottom: 0 }}>
                         <div style={sectionTitleStyle}>
                             <i className="fas fa-file-alt" style={{ color: "#9b59b6" }}></i>
-                            Exam Eligibility
+                            {t("offlineTab.examEligibilityTitle")}
                         </div>
                         <ul style={listStyle}>
-                            <li>The Exam Room only unlocks after <strong style={{ color: "#ecf0f1" }}>all required lessons</strong> are completed.</li>
-                            <li>You can track your progress in the sidebar — all lessons must show the ✓ checkmark.</li>
-                            <li>Your instructor can grant early exam access if needed.</li>
-                            <li>If you complete lessons in a live class, they count toward your self-study requirements.</li>
+                            <li>{t("offlineTab.examEligItem1")}</li>
+                            <li>{t("offlineTab.examEligItem2")}</li>
+                            <li>{t("offlineTab.examEligItem3")}</li>
+                            <li>{t("offlineTab.examEligItem4")}</li>
                         </ul>
                     </div>
 

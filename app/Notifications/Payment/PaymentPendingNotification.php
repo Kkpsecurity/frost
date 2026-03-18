@@ -54,7 +54,7 @@ class PaymentPendingNotification extends Notification implements ShouldQueue
             ->line('**Course:** ' . ($this->order->Course->title ?? 'N/A'))
             ->line('**Payment Method:** ' . ucfirst($this->payment->payment_method))
             ->line('This process typically takes a few minutes. You will receive a confirmation email once the payment is complete.')
-            ->action('Check Order Status', route('student.orders.show', $this->order->id))
+            ->action('Check Order Status', route('order.completed', $this->order->id))
             ->line('Thank you for your patience!');
     }
 
@@ -75,7 +75,7 @@ class PaymentPendingNotification extends Notification implements ShouldQueue
             'icon' => 'clock',
             'color' => 'info',
             'priority' => 'medium',
-            'url' => route('student.orders.show', $this->order->id),
+            'url' => route('order.completed', $this->order->id),
         ];
     }
 }

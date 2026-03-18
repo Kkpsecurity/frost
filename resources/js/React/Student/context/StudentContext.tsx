@@ -19,6 +19,18 @@ export interface CourseAuthLessonPayload {
     lessons: LessonPayloadEntry[];
 }
 
+export interface LicenseHistoryItem {
+    course_auth_id: number;
+    course_name: string;
+    course_type: 'G' | 'D' | null;
+    completed_at: string | null;
+    expire_date: string | null;
+    is_passed: boolean;
+    renewal_status: 'expired' | 'expiring_soon' | 'renewal_open' | 'current';
+    days_until_expiry: number | null;
+    renewal_eligible_from: string | null;
+}
+
 export interface StudentExam {
     is_ready: boolean;
     next_attempt_at: string | null;
@@ -65,6 +77,7 @@ export interface StudentContextType {
     studentExamsByCourseAuth?: Record<number, StudentExam> | null;
     lessonsByCourseAuth?: Record<number, CourseAuthLessonPayload> | null;
     challenges?: any[];
+    licenseHistory?: LicenseHistoryItem[] | null;
     notifications: any[];
     assignments: any[];
     selectedCourseAuthId: number | null;

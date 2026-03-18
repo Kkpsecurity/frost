@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('account/payments')->name('account.payments.')->group(function () {
         Route::post('/add-stripe-method', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'addStripePaymentMethod'])->name('add-stripe');
         Route::get('/connect-paypal', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'connectPayPal'])->name('connect-paypal');
-        Route::post('/paypal-callback', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'paypalCallback'])->name('paypal-callback');
+        Route::match(['get', 'post'], '/paypal-callback', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'paypalCallback'])->name('paypal-callback');
         Route::post('/set-default', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'setDefaultPaymentMethod'])->name('set-default');
         Route::delete('/delete-method', [App\Http\Controllers\Frontend\Student\ProfileController::class, 'deletePaymentMethod'])->name('delete-method');
     });

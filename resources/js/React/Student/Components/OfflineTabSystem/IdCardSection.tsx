@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 import { Modal } from "react-bootstrap";
 import CaptureDevices from "../Classroom/Onboarding/Video/CaptureDevices";
 
@@ -54,7 +55,7 @@ const IdCardSection: React.FC<IdCardSectionProps> = ({
                         className="fas fa-id-badge me-2"
                         style={{ color: "#2ecc71" }}
                     ></i>
-                    ID Card
+                    {t("offlineTab.idCard")}
                 </h6>
 
                 <div className="mt-2" style={{ color: "#ecf0f1" }}>
@@ -65,7 +66,7 @@ const IdCardSection: React.FC<IdCardSectionProps> = ({
                             marginBottom: "0.35rem",
                         }}
                     >
-                        Current ID Card
+                        {t("offlineTab.currentIdCard")}
                     </div>
 
                     {idCardUrl ? (
@@ -105,7 +106,7 @@ const IdCardSection: React.FC<IdCardSectionProps> = ({
                                     textAlign: "right",
                                 }}
                             >
-                                Click to enlarge
+                                {t("offlineTab.clickToEnlarge")}
                             </div>
                         </button>
                     ) : (
@@ -121,17 +122,17 @@ const IdCardSection: React.FC<IdCardSectionProps> = ({
                                 fontSize: "0.9rem",
                             }}
                         >
-                            Missing
+                            {t("offlineTab.idMissing")}
                         </div>
                     )}
 
                     <div className="mt-2">
-                        <strong>Status:</strong> {idCardStatus}
+                        <strong>{t("offlineTab.statusLabel")}</strong> {idCardStatus}
                     </div>
                     <div className="mt-2" style={{ color: "#95a5a6" }}>
                         {shouldShowUploadPanel
-                            ? "Upload a clear photo of your ID card."
-                            : "Your ID card is on file."}
+                            ? t("offlineTab.uploadIdCardPrompt")
+                            : t("offlineTab.idCardOnFile")}
                     </div>
                 </div>
 
@@ -176,7 +177,7 @@ const IdCardSection: React.FC<IdCardSectionProps> = ({
                     size="lg"
                 >
                     <Modal.Header closeButton>
-                        <Modal.Title>ID Card Preview</Modal.Title>
+                        <Modal.Title>{t("offlineTab.idCardPreview")}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         {idCardUrl && (

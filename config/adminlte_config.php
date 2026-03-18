@@ -545,6 +545,11 @@ return [
             'url' => 'admin/reports',
             'icon' => 'fas fa-fw fa-chart-bar',
         ],
+        [
+            'text' => 'Payments',
+            'url' => 'admin/payments',
+            'icon' => 'fas fa-fw fa-credit-card',
+        ],
     ],
 
     /*

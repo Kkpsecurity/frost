@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Pagination\Paginator;
+use App\Notifications\Channels\BrowserChannel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,6 +47,10 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('mediaUrl', function ($expression) {
             return "<?php echo App\Helpers\MediaHelper::url($expression); ?>";
         });
+
+        // Register the 'browser' notification channel (web push stub).
+        // Silently drops the push until the full web push implementation is in place.
+        Notification::extend('browser', fn() => new BrowserChannel());
 
         Blade::directive('blogImage', function ($expression) {
             return "<?php echo App\Helpers\MediaHelper::blogImage($expression); ?>";

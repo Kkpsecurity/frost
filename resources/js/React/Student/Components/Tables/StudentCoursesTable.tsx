@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 import { CourseType } from "../../types/students.types";
 import { useStudent } from "../../context/StudentContext";
 
@@ -9,6 +10,8 @@ interface Course {
     start_date: string;
     status: string;
     completion_status?: string;
+    is_locked?: boolean;
+    lock_reason?: string;
 }
 
 const StudentCoursesTable = ({
@@ -53,7 +56,7 @@ const StudentCoursesTable = ({
                             border: "none",
                         }}
                     >
-                        Course Date
+                        {t("coursesTable.courseDate")}
                     </th>
                     <th
                         style={{
@@ -65,7 +68,7 @@ const StudentCoursesTable = ({
                             border: "none",
                         }}
                     >
-                        Course Name
+                        {t("coursesTable.courseName")}
                     </th>
                     <th
                         style={{
@@ -77,7 +80,7 @@ const StudentCoursesTable = ({
                             border: "none",
                         }}
                     >
-                        Status
+                        {t("coursesTable.status")}
                     </th>
                     <th
                         style={{
@@ -90,7 +93,7 @@ const StudentCoursesTable = ({
                             border: "none",
                         }}
                     >
-                        Actions
+                        {t("coursesTable.actions")}
                     </th>
                 </tr>
             </thead>
@@ -139,13 +142,12 @@ const StudentCoursesTable = ({
                             }}
                         >
                             <span
-                                className={`badge ${
-                                    course.status === "Completed"
-                                        ? "bg-success"
-                                        : course.status === "In Progress"
+                                className={`badge ${course.status === "Completed"
+                                    ? "bg-success"
+                                    : course.status === "In Progress"
                                         ? "bg-info"
                                         : "bg-warning text-dark"
-                                }`}
+                                    }`}
                                 style={{
                                     padding: "0.4rem 0.8rem",
                                     fontSize: "0.75rem",
@@ -164,19 +166,38 @@ const StudentCoursesTable = ({
                                 border: "none",
                             }}
                         >
-                            <button
-                                onClick={() => handleEnterClassroom(course.id)}
-                                className="btn btn-primary btn-sm"
-                                style={{
-                                    padding: "0.5rem 1.25rem",
-                                    fontSize: "0.75rem",
-                                    fontWeight: "600",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                <i className="fas fa-arrow-right me-2"></i>
-                                Enter Classroom
-                            </button>
+                            {course.is_locked ? (
+                                <button
+                                    disabled
+                                    className="btn btn-secondary btn-sm"
+                                    title={course.lock_reason || "Complete your active enrollment first"}
+                                    style={{
+                                        padding: "0.5rem 1.25rem",
+                                        fontSize: "0.75rem",
+                                        fontWeight: "600",
+                                        textTransform: "uppercase",
+                                        opacity: 0.6,
+                                        cursor: "not-allowed",
+                                    }}
+                                >
+                                    <i className="fas fa-lock me-2"></i>
+                                    {t("coursesTable.locked") || "Locked"}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => handleEnterClassroom(course.id)}
+                                    className="btn btn-primary btn-sm"
+                                    style={{
+                                        padding: "0.5rem 1.25rem",
+                                        fontSize: "0.75rem",
+                                        fontWeight: "600",
+                                        textTransform: "uppercase",
+                                    }}
+                                >
+                                    <i className="fas fa-arrow-right me-2"></i>
+                                    {t("coursesTable.enterClassroom")}
+                                </button>
+                            )}
                         </td>
                     </tr>
                 ))}

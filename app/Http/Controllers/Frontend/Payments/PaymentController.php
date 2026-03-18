@@ -59,12 +59,35 @@ class PaymentController extends Controller
             abort(403, 'Unauthorized access to payment');
         }
 
+        // --- Server-side card validation (backstop for client-side checks) ---
+
+        // Luhn (Mod-10) check
+        $cardDigits = preg_replace('/\D/', '', $request->input('card_number', ''));
+        if (!$this->luhnCheck($cardDigits)) {
+            return back()->withInput()->withErrors(['card_number' => 'Invalid card number.']);
+        }
+
+        // Expiry not in the past (MM/YY)
+        $expiry = $request->input('expiry_date', '');
+        if (
+            !preg_match('/^(\d{2})\/(\d{2})$/', $expiry, $m)
+            || (int) $m[1] < 1 || (int) $m[1] > 12
+            || new \DateTime('20' . $m[2] . '-' . $m[1] . '-01') <= new \DateTime('first day of this month midnight')
+        ) {
+            return back()->withInput()->withErrors(['expiry_date' => 'Card has expired or expiry date is invalid.']);
+        }
+
+        // CVV length
+        $cvv = preg_replace('/\D/', '', $request->input('cvv', ''));
+        if (strlen($cvv) < 3 || strlen($cvv) > 4) {
+            return back()->withInput()->withErrors(['cvv' => 'CVV must be 3 or 4 digits.']);
+        }
+
         Log::info('ProcessPayFlowPro (test handler) called', ['payment_id' => $payment->id]);
 
         $payment->update([
             'status'         => 'completed',
             'transaction_id' => 'TEST_' . time(),
-            'processed_at'   => now(),
         ]);
 
         $order = $payment->order;
@@ -180,7 +203,6 @@ class PaymentController extends Controller
                     'payment_intent' => $validated['payment_intent_id'],
                     'payment_method' => $validated['payment_method'] ?? null,
                 ],
-                'processed_at' => now(),
             ]);
 
             $order->SetCompleted();
@@ -248,7 +270,6 @@ class PaymentController extends Controller
         $payment->update([
             'status'         => 'completed',
             'transaction_id' => 'PAYPAL_' . time(),
-            'processed_at'   => now(),
         ]);
 
         $order = $payment->order;
@@ -295,7 +316,6 @@ class PaymentController extends Controller
                     'PPREF'   => $ppref,
                     'RESPMSG' => $respmsg,
                 ],
-                'processed_at' => now(),
             ]);
 
             $order->SetCompleted();
@@ -355,5 +375,27 @@ class PaymentController extends Controller
         $course = $order->course;
 
         return view('frontend.orders.completed', compact('content', 'order', 'course'));
+    }
+
+    /**
+     * Luhn (Mod-10) algorithm for card number validation.
+     */
+    private function luhnCheck(string $digits): bool
+    {
+        if (strlen($digits) < 13) {
+            return false;
+        }
+        $sum = 0;
+        $alt = false;
+        for ($i = strlen($digits) - 1; $i >= 0; $i--) {
+            $n = (int) $digits[$i];
+            if ($alt) {
+                $n *= 2;
+                if ($n > 9) $n -= 9;
+            }
+            $sum += $n;
+            $alt = !$alt;
+        }
+        return $sum % 10 === 0;
     }
 }

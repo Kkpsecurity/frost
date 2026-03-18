@@ -4,34 +4,9 @@
         <i class="fas fa-credit-card me-2"></i>{{ __('frontend.account.payments_billing') }}
     </h3>
 
-    {{-- Payment Services Status --}}
-    <div class="alert alert-info mb-4">
-        <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>{{ __('frontend.account.payment_services') }}</h6>
-        <div class="d-flex gap-4">
-            <div>
-                <i class="fab fa-stripe fa-lg me-2"></i>
-                <strong>Stripe:</strong>
-                @if ($stripeEnabled ?? false)
-                    <span class="badge bg-success">{{ __('frontend.account.active') }}</span>
-                @else
-                    <span class="badge bg-secondary">{{ __('frontend.account.not_configured') }}</span>
-                @endif
-            </div>
-            <div>
-                <i class="fab fa-paypal fa-lg me-2"></i>
-                <strong>PayPal:</strong>
-                @if ($paypalEnabled ?? false)
-                    <span class="badge bg-success">{{ __('frontend.account.active') }}</span>
-                @else
-                    <span class="badge bg-secondary">{{ __('frontend.account.not_configured') }}</span>
-                @endif
-            </div>
-        </div>
-    </div>
-
     {{-- Payment Summary --}}
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
@@ -41,7 +16,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
@@ -51,23 +26,13 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-dark border-secondary h-100">
                 <div class="card-body">
                     <h6 class="text-white-50 mb-2">
                         <i class="fas fa-wallet me-2"></i>{{ __('frontend.account.payment_methods') }}
                     </h6>
                     <h4 class="text-warning mb-0">{{ count($data['saved_methods'] ?? []) }}</h4>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-secondary h-100">
-                <div class="card-body">
-                    <h6 class="text-white-50 mb-2">
-                        <i class="fas fa-undo me-2"></i>{{ __('frontend.account.refunded') }}
-                    </h6>
-                    <h4 class="text-danger mb-0">{{ $data['order_stats']['total_refunded'] ?? '$0.00' }}</h4>
                 </div>
             </div>
         </div>
@@ -124,79 +89,6 @@
         @endif
     </div>
 
-    {{-- Saved Payment Methods --}}
-    <div class="mb-4 pb-4 border-bottom border-secondary">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="text-white mb-0">
-                <i class="fas fa-wallet me-2"></i>{{ __('frontend.account.saved_payment_methods') }}
-            </h5>
-            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                data-bs-target="#addPaymentMethodModal">
-                <i class="fas fa-plus me-1"></i>{{ __('frontend.account.add_payment_method') }}
-            </button>
-        </div>
-
-        @if (!empty($data['saved_methods']))
-            <div class="row g-3 mb-3">
-                @foreach ($data['saved_methods'] as $method)
-                    <div class="col-md-6">
-                        <div class="card bg-dark border-secondary">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        @if ($method['type'] === 'card')
-                                            <i
-                                                class="fab fa-cc-{{ strtolower($method['brand']) }} fa-2x text-primary mb-2"></i>
-                                            <p class="text-white mb-1">•••• •••• •••• {{ $method['last4'] }}</p>
-                                            <small class="text-white-50">{{ __('frontend.account.expires') }}
-                                                {{ $method['exp_month'] }}/{{ $method['exp_year'] }}</small>
-                                        @elseif($method['type'] === 'paypal')
-                                            <i class="fab fa-paypal fa-2x text-primary mb-2"></i>
-                                            <p class="text-white mb-1">{{ $method['email'] }}</p>
-                                        @endif
-                                        @if ($method['is_default'])
-                                            <span
-                                                class="badge bg-success mt-2">{{ __('frontend.account.default_badge') }}</span>
-                                        @endif
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        onclick="if(confirm('Remove this payment method?')) { /* TODO: Implement removal */ }">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <div class="alert alert-secondary">
-                <i class="fas fa-info-circle me-2"></i>
-                {{ __('frontend.account.no_saved_methods') }}
-                @if (!($stripeEnabled ?? false) && !($paypalEnabled ?? false))
-                    <strong>{{ __('frontend.account.note_label') }}</strong>
-                    {{ __('frontend.account.payment_services_not_configured') }}
-                @else
-                    {{ __('frontend.account.add_payment_hint') }}
-                @endif
-            </div>
-        @endif
-
-        {{-- Add Payment Method Buttons --}}
-        <div class="d-flex gap-2">
-            @if ($stripeEnabled)
-                <button class="btn btn-outline-primary">
-                    <i class="fas fa-credit-card me-2"></i>{{ __('frontend.account.add_credit_card') }}
-                </button>
-            @endif
-            @if ($paypalEnabled)
-                <button class="btn btn-outline-info">
-                    <i class="fab fa-paypal me-2"></i>{{ __('frontend.account.connect_paypal') }}
-                </button>
-            @endif
-        </div>
-    </div>
-
     {{-- Billing Address --}}
     @if (!empty($data['billing_address']))
         <div class="mb-4">
@@ -222,3 +114,150 @@
         </div>
     @endif
 </div>
+
+{{-- Add Payment Method Modal (Stripe Elements) --}}
+@if (($stripeEnabled ?? false) && !($paypalEnabled ?? false))
+    <div class="modal fade" id="addPaymentMethodModal" tabindex="-1" aria-labelledby="addPaymentMethodModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="addPaymentMethodModalLabel">
+                        <i class="fas fa-credit-card me-2"></i>Add Credit Card
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="stripe-card-errors" class="alert alert-danger d-none" role="alert"></div>
+                    <div class="mb-3">
+                        <label class="form-label text-white-50">Card Details</label>
+                        <div id="stripe-card-element" class="form-control bg-dark text-white border-secondary"
+                            style="padding: 12px;"></div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="setDefaultCard" value="1" checked>
+                        <label class="form-check-label text-white-50" for="setDefaultCard">
+                            Set as default payment method
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="stripe-submit-btn" class="btn btn-primary">
+                        <span id="stripe-btn-text"><i class="fas fa-lock me-2"></i>Save Card</span>
+                        <span id="stripe-btn-spinner" class="d-none">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Processing...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        (function() {
+            const publishableKey = {{ json_encode($stripePublishableKey ?? '') }};
+            if (!publishableKey) return;
+
+            const stripe = Stripe(publishableKey);
+            const elements = stripe.elements();
+            const cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        color: '#ffffff',
+                        '::placeholder': {
+                            color: '#6c757d'
+                        },
+                        iconColor: '#ffffff'
+                    },
+                    invalid: {
+                        color: '#dc3545'
+                    }
+                }
+            });
+
+            const modal = document.getElementById('addPaymentMethodModal');
+            let mounted = false;
+
+            modal.addEventListener('shown.bs.modal', function() {
+                if (!mounted) {
+                    cardElement.mount('#stripe-card-element');
+                    mounted = true;
+                }
+            });
+
+            cardElement.on('change', function(event) {
+                const errorEl = document.getElementById('stripe-card-errors');
+                if (event.error) {
+                    errorEl.textContent = event.error.message;
+                    errorEl.classList.remove('d-none');
+                } else {
+                    errorEl.classList.add('d-none');
+                }
+            });
+
+            document.getElementById('stripe-submit-btn').addEventListener('click', async function() {
+                const btnText = document.getElementById('stripe-btn-text');
+                const btnSpinner = document.getElementById('stripe-btn-spinner');
+                const errorEl = document.getElementById('stripe-card-errors');
+
+                btnText.classList.add('d-none');
+                btnSpinner.classList.remove('d-none');
+                this.disabled = true;
+
+                try {
+                    const {
+                        paymentMethod,
+                        error
+                    } = await stripe.createPaymentMethod({
+                        type: 'card',
+                        card: cardElement
+                    });
+
+                    if (error) {
+                        errorEl.textContent = error.message;
+                        errorEl.classList.remove('d-none');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('payment_method_id', paymentMethod.id);
+                    formData.append('set_default', document.getElementById('setDefaultCard').checked ? '1' :
+                        '0');
+                    formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.content ||
+                        '');
+
+                    const response = await fetch('{{ route('account.payments.add-stripe') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: formData
+                    });
+
+                    let result;
+                    try {
+                        result = await response.json();
+                    } catch (e) {
+                        result = {
+                            success: false,
+                            message: 'Request failed. Please refresh and try again.'
+                        };
+                    }
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        errorEl.textContent = result.message || 'Failed to save card.';
+                        errorEl.classList.remove('d-none');
+                    }
+                } finally {
+                    btnText.classList.remove('d-none');
+                    btnSpinner.classList.add('d-none');
+                    this.disabled = false;
+                }
+            });
+        })();
+    </script>
+@endif

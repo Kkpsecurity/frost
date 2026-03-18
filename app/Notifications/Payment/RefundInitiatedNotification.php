@@ -55,7 +55,7 @@ class RefundInitiatedNotification extends Notification implements ShouldQueue
 
         $mail->line('The refund will be processed within 5-10 business days and will appear on your original payment method.')
             ->line('You will receive another notification once the refund has been completed.')
-            ->action('View Order Details', route('student.orders.show', $this->order->id))
+            ->action('View Order Details', route('order.completed', $this->order->id))
             ->line('If you have any questions about this refund, please contact our support team.');
 
         return $mail;
@@ -78,7 +78,7 @@ class RefundInitiatedNotification extends Notification implements ShouldQueue
             'icon' => 'rotate-left',
             'color' => 'info',
             'priority' => 'high',
-            'url' => route('student.orders.show', $this->order->id),
+            'url' => route('order.completed', $this->order->id),
         ];
     }
 }

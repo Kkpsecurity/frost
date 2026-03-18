@@ -53,7 +53,7 @@ class RefundProcessedNotification extends Notification implements ShouldQueue
             ->line('**Course:** ' . ($this->order->Course->title ?? 'N/A'))
             ->line('**Refund Date:** ' . now()->format('M j, Y'))
             ->line('The funds should appear in your account within 5-10 business days, depending on your financial institution.')
-            ->action('View Order Details', route('student.orders.show', $this->order->id))
+            ->action('View Order Details', route('order.completed', $this->order->id))
             ->line('Thank you for your patience. If you have any questions, please contact our support team.');
     }
 
@@ -74,7 +74,7 @@ class RefundProcessedNotification extends Notification implements ShouldQueue
             'icon' => 'circle-check',
             'color' => 'success',
             'priority' => 'high',
-            'url' => route('student.orders.show', $this->order->id),
+            'url' => route('order.completed', $this->order->id),
         ];
     }
 }

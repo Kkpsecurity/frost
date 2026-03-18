@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
+import { t } from "@/i18n";
 
 interface SignaturePadProps {
     onSave: (dataUrl: string) => void;
@@ -170,7 +171,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
                     disabled={isEmpty}
                 >
                     <i className="fas fa-eraser me-1"></i>
-                    Clear
+                    {t("offlineTab.clear")}
                 </Button>
                 <Button
                     variant="success"
@@ -179,7 +180,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
                     disabled={isEmpty}
                 >
                     <i className="fas fa-save me-1"></i>
-                    Save Signature
+                    {t("offlineTab.saveSignature")}
                 </Button>
             </div>
         </div>

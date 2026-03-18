@@ -11,6 +11,8 @@ use App\Notifications\Payment\DefaultPaymentUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -36,9 +38,16 @@ class ProfileController extends Controller
 
         try {
             // Initialize Stripe with secret key from settings
-            $stripeSecretKey = setting('payments.stripe.test_secret_key'); // Get from admin settings
+            $stripeMode = setting('payments.stripe.mode') ?? 'test';
+            $stripeSecretKey = $stripeMode === 'live'
+                ? setting('payments.stripe.live_secret_key')
+                : setting('payments.stripe.test_secret_key');
+
             if (empty($stripeSecretKey)) {
-                return response()->json(['success' => false, 'message' => 'Stripe is not configured']);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Stripe is not configured for ' . $stripeMode . ' mode',
+                ]);
             }
 
             \Stripe\Stripe::setApiKey($stripeSecretKey);
@@ -47,7 +56,7 @@ class ProfileController extends Controller
             $paymentMethod = \Stripe\PaymentMethod::retrieve($request->payment_method_id);
 
             // Get current saved payment methods
-            $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+            $userPrefs = $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
             $savedMethods = isset($userPrefs['saved_payment_methods'])
                 ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
                 : [];
@@ -63,6 +72,7 @@ class ProfileController extends Controller
             $newMethod = [
                 'id' => 'stripe_' . $paymentMethod->id,
                 'stripe_id' => $paymentMethod->id,
+                'stripe_mode' => $stripeMode,
                 'type' => 'card',
                 'brand' => $paymentMethod->card->brand,
                 'last4' => $paymentMethod->card->last4,
@@ -76,8 +86,8 @@ class ProfileController extends Controller
 
             // Save to user preferences
             $user->UserPrefs()->updateOrCreate(
-                ['key' => 'saved_payment_methods'],
-                ['value' => json_encode($savedMethods)]
+                ['pref_name' => 'saved_payment_methods'],
+                ['pref_value' => json_encode($savedMethods)]
             );
 
             // Dispatch event to send notification
@@ -94,10 +104,179 @@ class ProfileController extends Controller
      */
     public function connectPayPal(Request $request)
     {
-        // TODO: Implement PayPal OAuth flow
-        // For now, redirect back with a message
+        $mode         = setting('payments.paypal.mode') ?? 'sandbox';
+        $clientId     = setting('payments.paypal.client_id');
+        $clientSecret = setting('payments.paypal.client_secret');
+
+        if (empty($clientId) || empty($clientSecret)) {
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal is not configured. Please contact support.');
+        }
+
+        $state = Str::random(32);
+        $request->session()->put('paypal_oauth_state', $state);
+
+        $connectBase = $mode === 'live'
+            ? 'https://www.paypal.com/connect'
+            : 'https://www.sandbox.paypal.com/connect';
+
+        $query = http_build_query([
+            'flowEntry'     => 'static',
+            'client_id'     => $clientId,
+            'response_type' => 'code',
+            'scope'         => 'openid email',
+            'redirect_uri'  => route('account.payments.paypal-callback'),
+            'state'         => $state,
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        return redirect()->away($connectBase . '?' . $query);
+    }
+
+    /**
+     * PayPal OAuth callback (stub)
+     *
+     * The route exists to complete the browser round-trip, but the full OAuth
+     * flow has not been implemented yet.
+     */
+    public function paypalCallback(Request $request)
+    {
+        $expectedState = $request->session()->pull('paypal_oauth_state');
+        $state = $request->input('state');
+
+        if (empty($expectedState) || empty($state) || !hash_equals($expectedState, $state)) {
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection failed (invalid session). Please try again.');
+        }
+
+        if ($request->filled('error')) {
+            $reason = $request->input('error_description') ?: $request->input('error');
+
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection was cancelled or failed: ' . $reason);
+        }
+
+        $code = $request->input('code');
+        if (empty($code)) {
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection failed (missing authorization code).');
+        }
+
+        $mode         = setting('payments.paypal.mode') ?? 'sandbox';
+        $clientId     = setting('payments.paypal.client_id');
+        $clientSecret = setting('payments.paypal.client_secret');
+
+        if (empty($clientId) || empty($clientSecret)) {
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal is not configured. Please contact support.');
+        }
+
+        $tokenUrl = $mode === 'live'
+            ? 'https://api-m.paypal.com/v1/oauth2/token'
+            : 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
+
+        $tokenResponse = Http::asForm()
+            ->withBasicAuth($clientId, $clientSecret)
+            ->timeout(10)
+            ->post($tokenUrl, [
+                'grant_type' => 'authorization_code',
+                'code'       => $code,
+            ]);
+
+        if (!$tokenResponse->successful()) {
+            \Log::warning('PayPal OAuth token exchange failed', [
+                'status' => $tokenResponse->status(),
+                'body'   => $tokenResponse->body(),
+            ]);
+
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection failed (token exchange).');
+        }
+
+        $accessToken = $tokenResponse->json('access_token');
+        if (empty($accessToken)) {
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection failed (missing access token).');
+        }
+
+        $userInfoUrl = $mode === 'live'
+            ? 'https://api-m.paypal.com/v1/identity/openidconnect/userinfo'
+            : 'https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo';
+
+        $userInfoResponse = Http::withToken($accessToken)
+            ->acceptJson()
+            ->timeout(10)
+            ->get($userInfoUrl, ['schema' => 'openid']);
+
+        if (!$userInfoResponse->successful()) {
+            \Log::warning('PayPal OAuth userinfo failed', [
+                'status' => $userInfoResponse->status(),
+                'body'   => $userInfoResponse->body(),
+            ]);
+
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection failed (profile lookup).');
+        }
+
+        $userInfo = $userInfoResponse->json() ?? [];
+        $paypalEmail = $userInfo['email'] ?? null;
+        $paypalUserId = $userInfo['user_id'] ?? ($userInfo['sub'] ?? null);
+
+        if (empty($paypalUserId) && empty($paypalEmail)) {
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'PayPal connection failed (missing PayPal account details).');
+        }
+
+        $user = Auth::user();
+
+        $userPrefs = $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
+        $savedMethods = isset($userPrefs['saved_payment_methods'])
+            ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
+            : [];
+
+        foreach ($savedMethods as &$method) {
+            $method['is_default'] = false;
+        }
+
+        $paypalMethodId = 'paypal_' . ($paypalUserId ?: sha1((string) $paypalEmail));
+
+        // Remove any existing record for this PayPal account id.
+        $savedMethods = array_values(array_filter($savedMethods, function ($method) use ($paypalUserId, $paypalMethodId) {
+            if (($method['type'] ?? null) !== 'paypal') {
+                return true;
+            }
+
+            if (($method['id'] ?? null) === $paypalMethodId) {
+                return false;
+            }
+
+            if (!empty($paypalUserId) && ($method['paypal_user_id'] ?? null) === $paypalUserId) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        $newMethod = [
+            'id'             => $paypalMethodId,
+            'type'           => 'paypal',
+            'email'          => $paypalEmail,
+            'paypal_user_id' => $paypalUserId,
+            'paypal_mode'    => $mode,
+            'is_default'     => true,
+            'created_at'     => now()->format('c'),
+        ];
+
+        $savedMethods[] = $newMethod;
+
+        $user->UserPrefs()->updateOrCreate(
+            ['pref_name' => 'saved_payment_methods'],
+            ['pref_value' => json_encode($savedMethods)]
+        );
+
+        event(new PaymentMethodAdded($user, $newMethod));
+
         return redirect()->route('account.index', ['section' => 'payments'])
-            ->with('error', 'PayPal integration is coming soon!');
+            ->with('success', 'PayPal account connected successfully.');
     }
 
     /**
@@ -113,7 +292,7 @@ class ProfileController extends Controller
 
         try {
             // Get current saved payment methods
-            $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+            $userPrefs = $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
             $savedMethods = isset($userPrefs['saved_payment_methods'])
                 ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
                 : [];
@@ -134,8 +313,8 @@ class ProfileController extends Controller
 
             // Save updated methods
             $user->UserPrefs()->updateOrCreate(
-                ['key' => 'saved_payment_methods'],
-                ['value' => json_encode($savedMethods)]
+                ['pref_name' => 'saved_payment_methods'],
+                ['pref_value' => json_encode($savedMethods)]
             );
 
             // Send notification about default payment method change
@@ -170,7 +349,7 @@ class ProfileController extends Controller
 
         try {
             // Get current saved payment methods
-            $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+            $userPrefs = $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
             $savedMethods = isset($userPrefs['saved_payment_methods'])
                 ? json_decode($userPrefs['saved_payment_methods'], true) ?? []
                 : [];
@@ -185,12 +364,20 @@ class ProfileController extends Controller
             }
 
             if (!$methodToDelete) {
-                return response()->json(['success' => false, 'message' => 'Payment method not found']);
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Payment method not found']);
+                }
+
+                return redirect()->route('account.index', ['section' => 'payments'])
+                    ->with('error', 'Payment method not found');
             }
 
             // If this was a Stripe payment method, detach it from Stripe
             if (isset($methodToDelete['stripe_id'])) {
-                $stripeSecretKey = setting('payments.stripe.test_secret_key');
+                $stripeMode = $methodToDelete['stripe_mode'] ?? (setting('payments.stripe.mode') ?? 'test');
+                $stripeSecretKey = $stripeMode === 'live'
+                    ? setting('payments.stripe.live_secret_key')
+                    : setting('payments.stripe.test_secret_key');
                 if (!empty($stripeSecretKey)) {
                     \Stripe\Stripe::setApiKey($stripeSecretKey);
                     try {
@@ -207,16 +394,26 @@ class ProfileController extends Controller
             $savedMethods = array_values($savedMethods);
 
             $user->UserPrefs()->updateOrCreate(
-                ['key' => 'saved_payment_methods'],
-                ['value' => json_encode($savedMethods)]
+                ['pref_name' => 'saved_payment_methods'],
+                ['pref_value' => json_encode($savedMethods)]
             );
 
             // Dispatch event to send notification
             event(new PaymentMethodRemoved($user, $methodToDelete));
 
-            return response()->json(['success' => true, 'message' => 'Payment method deleted successfully']);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => 'Payment method deleted successfully']);
+            }
+
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('success', 'Payment method deleted successfully');
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to delete payment method: ' . $e->getMessage()]);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Failed to delete payment method: ' . $e->getMessage()]);
+            }
+
+            return redirect()->route('account.index', ['section' => 'payments'])
+                ->with('error', 'Failed to delete payment method: ' . $e->getMessage());
         }
     }
 
@@ -247,7 +444,12 @@ class ProfileController extends Controller
 
         // Payment gateway configuration
         $stripeEnabled = !empty(setting('payments.stripe.test_secret_key')) || !empty(setting('payments.stripe.live_secret_key'));
-        $paypalEnabled = !empty(setting('payments.paypal.client_id'));
+        $paypalEnabled = !empty(setting('payments.paypal.client_id'))
+            && !empty(setting('payments.paypal.client_secret'));
+        $stripeMode = setting('payments.stripe.mode') ?? 'test';
+        $stripePublishableKey = $stripeMode === 'live'
+            ? setting('payments.stripe.live_publishable_key')
+            : setting('payments.stripe.test_publishable_key');
 
         return view('frontend.account.index', compact(
             'user',
@@ -258,7 +460,8 @@ class ProfileController extends Controller
             'ordersData',
             'paymentsData',
             'stripeEnabled',
-            'paypalEnabled'
+            'paypalEnabled',
+            'stripePublishableKey'
         ));
     }
 
@@ -441,7 +644,7 @@ class ProfileController extends Controller
 
         // TODO: Get actual saved payment methods from Stripe and PayPal
         // For now, we'll check if user has stored payment method preferences
-        $userPrefs = $user->UserPrefs->pluck('value', 'key')->toArray();
+        $userPrefs = $user->UserPrefs->pluck('pref_value', 'pref_name')->toArray();
 
         // Example saved payment methods (you'll replace this with real Stripe/PayPal data)
         if (isset($userPrefs['saved_payment_methods'])) {

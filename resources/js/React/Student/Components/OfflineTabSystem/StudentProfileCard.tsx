@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 const cardStyle: React.CSSProperties = {
     backgroundColor: "#2c3e50",
@@ -33,7 +34,7 @@ const StudentProfileCard: React.FC<StudentProfileCardProps> = ({
                     className="fas fa-user me-2"
                     style={{ color: "#9b59b6" }}
                 ></i>
-                Student Profile
+                {t("offlineTab.studentProfile")}
             </h6>
 
             <ul
@@ -44,30 +45,29 @@ const StudentProfileCard: React.FC<StudentProfileCardProps> = ({
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Name</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelName")}</span>
                     <span className="fw-semibold">{studentDisplayName}</span>
                 </li>
                 <li
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Email</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelEmail")}</span>
                     <span className="fw-semibold">{studentEmail}</span>
                 </li>
                 <li
                     className="list-group-item d-flex justify-content-between align-items-center"
                     style={liStyle}
                 >
-                    <span style={{ color: "#95a5a6" }}>Progress</span>
+                    <span style={{ color: "#95a5a6" }}>{t("offlineTab.labelProgress")}</span>
                     <span className="fw-semibold">
-                        {completedCount} / {lessonsTotal} lessons
+                        {t("offlineTab.progressValue", { completed: completedCount, total: lessonsTotal })}
                     </span>
                 </li>
             </ul>
 
             <div className="mt-3" style={{ color: "#95a5a6" }}>
-                Keep your ID and onboarding items up to date so you're ready
-                when class is live.
+                {t("offlineTab.profileFooter")}
             </div>
         </div>
     </div>

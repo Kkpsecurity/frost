@@ -11,20 +11,20 @@ interface SessionInfoPanelProps {
 
 /**
  * SessionInfoPanel Component
- * 
+ *
  * Displays active lesson session information including:
  * - Time remaining until expiration (countdown)
  * - Pause time remaining
  * - Completion progress
  * - Warning alerts when thresholds are crossed
- * 
+ *
  * Visual indicators:
  * - Green: Healthy (>50% remaining)
  * - Orange/Yellow: Warning (20-50% remaining)
  * - Red: Critical (<20% remaining)
- * 
+ *
  * @example
- * <SessionInfoPanel 
+ * <SessionInfoPanel
  *   session={currentSession}
  *   timeRemaining={45}
  *   pauseRemaining={15}
@@ -39,7 +39,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
 }) => {
     // Calculate percentages for visual indicators
     const pausePercentage = (pauseRemaining / session.totalPauseAllowed) * 100;
-    
+
     // Warning thresholds
     const timeWarning = timeRemaining <= 5;
     const timeCritical = timeRemaining <= 2;
@@ -120,10 +120,10 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                         </div>
                     )}
                     <div className="progress" style={{ height: '8px' }}>
-                        <div 
+                        <div
                             className={`progress-bar ${timeWarning ? 'bg-danger' : 'bg-primary'}`}
                             role="progressbar"
-                            style={{ 
+                            style={{
                                 width: `${Math.max(0, Math.min(100, (timeRemaining / 120) * 100))}%`,
                                 transition: 'width 0.3s ease'
                             }}
@@ -146,10 +146,10 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                         </span>
                     </div>
                     <div className="progress" style={{ height: '8px' }}>
-                        <div 
+                        <div
                             className={`progress-bar ${getPauseBarColor()}`}
                             role="progressbar"
-                            style={{ 
+                            style={{
                                 width: `${pausePercentage}%`,
                                 transition: 'width 0.3s ease'
                             }}
@@ -178,10 +178,10 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
                         </span>
                     </div>
                     <div className="progress" style={{ height: '8px' }}>
-                        <div 
+                        <div
                             className={`progress-bar ${getCompletionBarColor()}`}
                             role="progressbar"
-                            style={{ 
+                            style={{
                                 width: `${session.completionPercentage}%`,
                                 transition: 'width 0.3s ease'
                             }}
@@ -220,7 +220,7 @@ export const SessionInfoPanel: React.FC<SessionInfoPanelProps> = ({
 
                 {/* End Session Button (if callback provided) */}
                 {onEndSession && (
-                    <button 
+                    <button
                         className="btn btn-sm btn-outline-danger w-100"
                         onClick={onEndSession}
                         title={t("sessionInfoPanel.endSessionTitle")}

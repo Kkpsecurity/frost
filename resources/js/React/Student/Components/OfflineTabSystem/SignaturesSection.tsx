@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 import SignaturePad from "./SignaturePad";
 import apiClient from "../../../Config/axios";
 
@@ -74,7 +75,7 @@ const SignaturesSection: React.FC<SignaturesSectionProps> = ({
                         className="fas fa-pen-nib me-2"
                         style={{ color: "#f39c12" }}
                     ></i>
-                    Signatures
+                    {t("offlineTab.signatures")}
                 </h6>
 
                 <div className="mt-2">
@@ -86,7 +87,7 @@ const SignaturesSection: React.FC<SignaturesSectionProps> = ({
                                     marginBottom: "0.5rem",
                                 }}
                             >
-                                <strong>Saved Signature:</strong>
+                                <strong>{t("offlineTab.savedSignature")}</strong>
                             </div>
                             <div
                                 style={{
@@ -116,7 +117,7 @@ const SignaturesSection: React.FC<SignaturesSectionProps> = ({
                                     }}
                                 >
                                     <i className="fas fa-edit me-1"></i>
-                                    Create New Signature
+                                    {t("offlineTab.createNewSignature")}
                                 </button>
                             </div>
                         </div>
@@ -128,12 +129,12 @@ const SignaturesSection: React.FC<SignaturesSectionProps> = ({
                                     marginBottom: "0.75rem",
                                 }}
                             >
-                                Please sign below:
+                                {t("offlineTab.pleaseSignBelow")}
                             </div>
                             {isSaving ? (
                                 <div style={{ color: "#f39c12" }}>
                                     <i className="fas fa-spinner fa-spin me-2"></i>
-                                    Saving signature...
+                                    {t("offlineTab.savingSignature")}
                                 </div>
                             ) : (
                                 <SignaturePad
@@ -155,8 +156,7 @@ const SignaturesSection: React.FC<SignaturesSectionProps> = ({
 
                 <div className="mt-3" style={{ color: "#95a5a6" }}>
                     <i className="fas fa-info-circle me-1"></i>
-                    Your signature will be used for course completion
-                    certificates.
+                    {t("offlineTab.signatureFooter")}
                 </div>
             </div>
         </div>

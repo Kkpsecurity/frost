@@ -43,6 +43,15 @@ class RangeDateRequiredNotification extends Notification implements ShouldQueue
     }
 
     /**
+     * URL for the range date selection page.
+     * Falls back to classroom.dashboard until a dedicated route exists.
+     */
+    protected function rangeDateUrl(): string
+    {
+        return route('classroom.dashboard');
+    }
+
+    /**
      * Get the mail representation of the notification.
      */
     public function toMail(object $notifiable): MailMessage
@@ -56,7 +65,7 @@ class RangeDateRequiredNotification extends Notification implements ShouldQueue
             ->greeting('Hello, ' . ($notifiable->fname ?? $notifiable->name) . '.')
             ->line('Your enrollment in **' . $courseName . '** requires you to select a range date.')
             ->line('A range date must be chosen before you can attend your classroom session.')
-            ->action('Select Range Date', route('range_date.select'))
+            ->action('Go to My Classroom', $this->rangeDateUrl())
             ->line('Please complete this step as soon as possible to avoid delays on class day.');
     }
 
@@ -75,7 +84,7 @@ class RangeDateRequiredNotification extends Notification implements ShouldQueue
             'message'        => 'Please select a range date for ' . $courseName . ' to proceed.',
             'course_auth_id' => $this->courseAuth->id,
             'course_id'      => $this->courseAuth->course_id,
-            'url'            => route('range_date.select'),
+            'url'            => $this->rangeDateUrl(),
             'icon'           => 'calendar-alt',
             'priority'       => 'high',
         ];

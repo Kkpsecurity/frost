@@ -1,4 +1,5 @@
 ﻿import React from "react";
+import { t } from "@/i18n";
 import OfflineTabsQuickStats from "../OfflineTabsQuickStats";
 import { useStudent } from "../../context/StudentContext";
 import StudentProfileCard from "./StudentProfileCard";
@@ -90,11 +91,11 @@ const TabDetails: React.FC<TabDetailsProps> = ({ courseAuthId, lessons }) => {
                     className="fas fa-tachometer-alt me-2"
                     style={{ color: "#3498db" }}
                 ></i>
-                Learning Dashboard
+                {t("offlineTab.learningDashboard")}
             </h4>
 
             <p className="mb-4" style={mutedText}>
-                Course overview, progress stats, and what to do next.
+                {t("offlineTab.learningDashboardSubtitle")}
             </p>
 
             <OfflineTabsQuickStats lessons={lessons} />

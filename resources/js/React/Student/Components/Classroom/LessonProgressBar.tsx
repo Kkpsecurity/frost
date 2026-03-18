@@ -98,8 +98,8 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                     backgroundColor: isPaused
                         ? "#f39c12"
                         : startTime
-                          ? "#2c3e50"
-                          : "#3498db",
+                            ? "#2c3e50"
+                            : "#3498db",
                     borderBottom: "1px solid rgba(255,255,255,0.1)",
                 }}
             >
@@ -119,20 +119,20 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                             backgroundColor: isPaused
                                 ? "#f39c12" // orange for on break
                                 : startTime
-                                  ? isOvertime
-                                      ? "#e74c3c"
-                                      : "#2ecc71"
-                                  : "#6c757d", // gray for pending
+                                    ? isOvertime
+                                        ? "#e74c3c"
+                                        : "#2ecc71"
+                                    : "#6c757d", // gray for pending
                             fontSize: "0.75rem",
                         }}
                     >
                         {isPaused
                             ? t("lessonProgressBar.break")
                             : startTime
-                              ? isOvertime
-                                  ? t("lessonProgressBar.overtime")
-                                  : t("lessonProgressBar.inProgress")
-                              : t("lessonProgressBar.pending")}
+                                ? isOvertime
+                                    ? t("lessonProgressBar.overtime")
+                                    : t("lessonProgressBar.inProgress")
+                                : t("lessonProgressBar.pending")}
                     </span>
                 </div>
             </div>
@@ -221,7 +221,7 @@ const LessonProgressBar: React.FC<LessonProgressBarProps> = ({
                         >
                             {isOvertime
                                 ? "+" +
-                                  formatTime(elapsedSeconds - totalSeconds)
+                                formatTime(elapsedSeconds - totalSeconds)
                                 : formatTime(remainingSeconds)}
                         </div>
                     </div>

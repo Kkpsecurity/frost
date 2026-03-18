@@ -143,6 +143,16 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/course-expiry-reminders.log'));
+
+        // Send license renewal reminders for completed (passed) enrollments at:
+        // 180 days (6 months), 90 days (3 months), 30 days, 15 days, and on expiry.
+        // Deduplication handled inside LicenseRenewalReminderNotification::shouldSend().
+        $schedule->command('licenses:send-renewal-reminders')
+            ->dailyAt('08:05')
+            ->timezone('America/New_York')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/license-renewal-reminders.log'));
     }
 
     /**

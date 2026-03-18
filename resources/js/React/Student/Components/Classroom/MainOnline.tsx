@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { t } from "@/i18n";
 import FrostDashboardWrapper from "../../Styles/FrostDashboardWrapper.styled";
 import PauseOverlay from "../Common/PauseOverlay";
 import SchoolDashboardTitleBar from "../ShcoolDashboardTitleBar";

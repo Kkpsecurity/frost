@@ -110,9 +110,9 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                         >
                                             {lesson.description.length > 60
                                                 ? lesson.description.substring(
-                                                      0,
-                                                      60,
-                                                  ) + "..."
+                                                    0,
+                                                    60,
+                                                ) + "..."
                                                 : lesson.description}
                                         </small>
                                     )}
@@ -166,11 +166,10 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                     {/* Start/Resume/Locked Button - Only visible on Self Study tab */}
                                     {activeTab === "self-study" && (
                                         <button
-                                            className={`btn btn-sm mt-2 w-100 ${
-                                                lesson.status === "completed"
+                                            className={`btn btn-sm mt-2 w-100 ${lesson.status === "completed"
                                                     ? "btn-outline-success" // Completed - Review
                                                     : "btn-outline-info" // Available - Start
-                                            }`}
+                                                }`}
                                             style={{
                                                 padding: "0.375rem 0.75rem",
                                                 fontSize: "0.75rem",
@@ -178,13 +177,13 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                                 borderRadius: "0.25rem",
                                                 cursor:
                                                     areLessonsLocked &&
-                                                    session?.lessonId !==
+                                                        session?.lessonId !==
                                                         lesson.id
                                                         ? "not-allowed"
                                                         : "pointer",
                                                 opacity:
                                                     areLessonsLocked &&
-                                                    session?.lessonId !==
+                                                        session?.lessonId !==
                                                         lesson.id
                                                         ? 0.5
                                                         : 1,
@@ -220,20 +219,20 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                             }}
                                         >
                                             {areLessonsLocked &&
-                                            session?.lessonId !== lesson.id ? (
+                                                session?.lessonId !== lesson.id ? (
                                                 <>
                                                     <i className="fas fa-lock me-1"></i>
                                                     {t("lessonListSB.locked")}
                                                 </>
                                             ) : hasActiveSession &&
-                                              session?.lessonId ===
-                                                  lesson.id ? (
+                                                session?.lessonId ===
+                                                lesson.id ? (
                                                 <>
                                                     <i className="fas fa-play-circle me-1"></i>
                                                     {t("lessonListSB.resume")}
                                                 </>
                                             ) : lesson.status === "completed" ||
-                                              lesson.status === false ? (
+                                                lesson.status === false ? (
                                                 <>
                                                     <i className="fas fa-eye me-1"></i>
                                                     {t("lessonListSB.review")}
@@ -255,7 +254,7 @@ const LessonListSB: React.FC<LessonListSBProps> = ({
                                                 style={{
                                                     backgroundColor:
                                                         lesson.status ===
-                                                        "passed"
+                                                            "passed"
                                                             ? "#10b981"
                                                             : "#ef4444",
                                                     color: "white",

@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 import SecureVideoPlayer from "../Classroom/SecureVideoPlayer";
 import { useVideoQuota } from "../../hooks/useVideoQuota";
 import SelfStudyHelpModal from "./SelfStudyHelpModal";
@@ -224,7 +225,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
 
     const handleStartSession = async () => {
         if (!selectedLesson) {
-            setError("Select a lesson first.");
+            setError(t("offlineTab.selectLessonError"));
             return;
         }
 
@@ -449,7 +450,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
             >
                 <h3 style={{ color: "white", margin: 0 }}>
                     <i className="fas fa-play-circle me-2"></i>
-                    Self Study Mode
+                    {t("offlineTab.selfStudyModeTitle")}
                 </h3>
                 <button
                     onClick={() => setShowHelpModal(true)}
@@ -497,16 +498,16 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                     className="fas fa-hourglass-half me-2"
                                     style={{ color: "#f39c12" }}
                                 ></i>
-                                Video Quota
+                                {t("offlineTab.videoQuotaTitle")}
                             </h6>
 
                             {isLoadingQuota ? (
                                 <div className="mt-2" style={mutedText}>
-                                    Loading quota…
+                                    {t("offlineTab.loadingQuota")}
                                 </div>
                             ) : quotaError ? (
                                 <div className="mt-2" style={mutedText}>
-                                    Quota unavailable.
+                                    {t("offlineTab.quotaUnavailable")}
                                 </div>
                             ) : quota ? (
                                 <div
@@ -515,7 +516,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                 >
                                     <div className="d-flex flex-wrap gap-3">
                                         <div>
-                                            <div style={mutedText}>Total</div>
+                                            <div style={mutedText}>{t("offlineTab.quotaTotal")}</div>
                                             <div style={{ fontWeight: 600 }}>
                                                 {Number(
                                                     quota.total_hours,
@@ -524,7 +525,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                             </div>
                                         </div>
                                         <div>
-                                            <div style={mutedText}>Used</div>
+                                            <div style={mutedText}>{t("offlineTab.quotaUsed")}</div>
                                             <div style={{ fontWeight: 600 }}>
                                                 {Number(
                                                     quota.used_hours,
@@ -533,9 +534,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                             </div>
                                         </div>
                                         <div>
-                                            <div style={mutedText}>
-                                                Remaining
-                                            </div>
+                                            <div style={mutedText}>{t("offlineTab.quotaRemaining")}</div>
                                             <div style={{ fontWeight: 600 }}>
                                                 {Number(
                                                     quota.remaining_hours,
@@ -544,9 +543,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                             </div>
                                         </div>
                                         <div>
-                                            <div style={mutedText}>
-                                                Refunded
-                                            </div>
+                                            <div style={mutedText}>{t("offlineTab.quotaRefunded")}</div>
                                             <div style={{ fontWeight: 600 }}>
                                                 {Number(
                                                     quota.refunded_hours,
@@ -558,7 +555,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                 </div>
                             ) : (
                                 <div className="mt-2" style={mutedText}>
-                                    Quota unavailable.
+                                    {t("offlineTab.quotaUnavailable")}
                                 </div>
                             )}
                         </div>
@@ -573,13 +570,12 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                     className="fas fa-film me-2"
                                     style={{ color: "#3498db" }}
                                 ></i>
-                                Lesson Player
+                                {t("offlineTab.lessonPlayerTitle")}
                             </h6>
 
                             {!selectedLesson && (
                                 <div className="mt-2" style={mutedText}>
-                                    Select a lesson from the left sidebar to
-                                    start.
+                                    {t("offlineTab.selectLessonPrompt")}
                                 </div>
                             )}
 
@@ -595,18 +591,17 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                 {selectedLesson.title}
                                             </div>
                                             <div style={mutedText}>
-                                                Allotted Minutes:{" "}
-                                                {allottedMinutes}
+                                                {t("offlineTab.allottedMinutes", { n: allottedMinutes })}
                                                 {videoMinutes
-                                                    ? ` • Video: ${videoMinutes} min`
+                                                    ? ` • ${t("offlineTab.videoMinutes", { n: videoMinutes })}`
                                                     : ""}
                                                 {typeof selectedLesson.required_minutes ===
                                                     "number"
-                                                    ? ` • Required: ${requiredMinutes} min`
+                                                    ? ` • ${t("offlineTab.requiredMinutes", { n: requiredMinutes })}`
                                                     : ""}
                                                 {selectedLesson.is_completed
-                                                    ? " • Status: Completed"
-                                                    : " • Status: Pending"}
+                                                    ? ` • ${t("offlineTab.statusCompleted")}`
+                                                    : ` • ${t("offlineTab.statusPending")}`}
                                             </div>
                                             {isSessionForSelectedLesson &&
                                                 activeSession ? (
@@ -614,17 +609,12 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     className="mt-2"
                                                     style={mutedText}
                                                 >
-                                                    Progress:{" "}
-                                                    {Math.round(
-                                                        Number(
-                                                            activeSession.completionPercentage,
-                                                        ) || 0,
-                                                    )}
-                                                    %{" • "}Pause Remaining:{" "}
-                                                    {pauseRemainingMinutes} min
+                                                    {t("offlineTab.progressDisplay", { pct: Math.round(Number(activeSession.completionPercentage) || 0) })}
+                                                    {" • "}
+                                                    {t("offlineTab.pauseRemainingDisplay", { n: pauseRemainingMinutes })}
                                                     {typeof sessionTimeRemainingMinutes ===
                                                         "number"
-                                                        ? ` • Time Remaining: ${sessionTimeRemainingMinutes} min`
+                                                        ? ` • ${t("offlineTab.timeRemainingDisplay", { n: sessionTimeRemainingMinutes })}`
                                                         : ""}
                                                 </div>
                                             ) : null}
@@ -641,8 +631,8 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     onClick={handleStartSession}
                                                 >
                                                     {isStarting
-                                                        ? "Starting…"
-                                                        : "Start Session"}
+                                                        ? t("offlineTab.starting")
+                                                        : t("offlineTab.startSession")}
                                                 </button>
                                             ) : (
                                                 <button
@@ -653,8 +643,8 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                     }
                                                 >
                                                     {isCompleting
-                                                        ? "Completing…"
-                                                        : "Complete Session"}
+                                                        ? t("offlineTab.completing")
+                                                        : t("offlineTab.completeSession")}
                                                 </button>
                                             )}
                                         </div>
@@ -674,16 +664,13 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                             fontWeight: 600,
                                                         }}
                                                     >
-                                                        Open player (paused)
-                                                        when ready
+                                                        {t("offlineTab.openPlayerTitle")}
                                                     </div>
                                                     <div
                                                         className="mt-2"
                                                         style={mutedText}
                                                     >
-                                                        Player opens paused.
-                                                        Press Play when you’re
-                                                        ready.
+                                                        {t("offlineTab.openPlayerBody")}
                                                     </div>
                                                     <div className="mt-3">
                                                         <button
@@ -694,7 +681,7 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
                                                                 )
                                                             }
                                                         >
-                                                            Open Player
+                                                            {t("offlineTab.openPlayer")}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -772,16 +759,12 @@ const TabSelfStudy: React.FC<TabSelfStudyProps> = ({
 
                                     {!hasSufficientQuotaForSession && (
                                         <div className="mt-3 text-warning">
-                                            Not enough quota for this session.
+                                            {t("offlineTab.notEnoughQuota")}
                                             {typeof remainingMinutes ===
                                                 "number" ? (
                                                 <>
                                                     {" "}
-                                                    Required: {
-                                                        requiredMinutes
-                                                    }{" "}
-                                                    min • Remaining:{" "}
-                                                    {remainingMinutes} min
+                                                    {t("offlineTab.quotaRequiredRemaining", { required: requiredMinutes, remaining: remainingMinutes })}
                                                 </>
                                             ) : null}
                                         </div>

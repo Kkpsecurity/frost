@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import { t } from "@/i18n";
 import { Alert } from "react-bootstrap";
 import MainDashboard from "../Student/Components/Dashboard/MainDashboard";
 import PageLoader from "../Shared/Components/Widgets/PageLoader";
@@ -402,7 +403,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                 classroomPoll?.lessons?.find((l: any) => {
                     const lid = getLessonId(l);
                     return lid !== null && Number(lid) === Number(activeLesson.lesson_id);
-                })?.title || "Current Lesson";
+                })?.title || t("common.currentLesson");
 
             setPausedLessonTitle(lessonTitle);
 
@@ -530,6 +531,7 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
         studentUnit: studentPoll?.studentUnit || null,
         studentLessons: studentPoll?.studentLessons || [],
         challenges: studentPoll?.challenges || [],
+        licenseHistory: studentPoll?.license_history || null,
         notifications: studentPoll?.notifications || [],
         assignments: studentPoll?.assignments || [],
         selectedCourseAuthId,
@@ -600,9 +602,9 @@ const StudentDataLayer: React.FC<StudentDataLayerProps> = ({
                     <PageLoader />
                 ) : error && !studentPollRes ? (
                     <Alert variant="danger" className="m-4">
-                        <Alert.Heading>⚠️ Data Loading Error</Alert.Heading>
-                        <p>{error instanceof Error ? error.message : "Unable to load student data"}</p>
-                        <p className="mb-0">Please refresh the page or contact support.</p>
+                        <Alert.Heading>{t("dataLayer.loadingErrorTitle")}</Alert.Heading>
+                        <p>{error instanceof Error ? error.message : t("dataLayer.loadingErrorDesc")}</p>
+                        <p className="mb-0">{t("dataLayer.loadingErrorHelp")}</p>
                     </Alert>
                 ) : (
                     <MainDashboard courseAuthId={selectedCourseAuthId} />

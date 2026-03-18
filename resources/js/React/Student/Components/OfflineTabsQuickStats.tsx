@@ -1,4 +1,5 @@
 import React from "react";
+import { t } from "@/i18n";
 
 type OfflineLessonLike = {
     is_completed?: boolean;
@@ -50,7 +51,7 @@ const OfflineTabsQuickStats: React.FC<OfflineTabsQuickStatsProps> = ({
                                 fontSize: "0.875rem",
                             }}
                         >
-                            Lessons Complete
+                            {t("quickStats.lessonsComplete")}
                         </p>
                     </div>
                 </div>
@@ -98,7 +99,7 @@ const OfflineTabsQuickStats: React.FC<OfflineTabsQuickStatsProps> = ({
                                 fontSize: "0.875rem",
                             }}
                         >
-                            Progress
+                            {t("quickStats.progress")}
                         </p>
                     </div>
                 </div>
@@ -141,7 +142,7 @@ const OfflineTabsQuickStats: React.FC<OfflineTabsQuickStatsProps> = ({
                                 fontSize: "0.875rem",
                             }}
                         >
-                            Total Minutes
+                            {t("quickStats.totalMinutes")}
                         </p>
                     </div>
                 </div>
@@ -181,7 +182,7 @@ const OfflineTabsQuickStats: React.FC<OfflineTabsQuickStatsProps> = ({
                                 fontSize: "0.875rem",
                             }}
                         >
-                            Remaining
+                            {t("quickStats.remaining")}
                         </p>
                     </div>
                 </div>

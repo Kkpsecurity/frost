@@ -54,7 +54,7 @@ class PaymentSuccessNotification extends Notification implements ShouldQueue
             ->line('**Course:** ' . ($this->order->Course->title ?? 'N/A'))
             ->line('**Payment Method:** ' . ucfirst($this->payment->payment_method))
             ->line('**Transaction ID:** ' . $this->payment->transaction_id)
-            ->action('View Order Details', route('student.orders.show', $this->order->id))
+            ->action('View Order Details', route('order.completed', $this->order->id))
             ->line('Thank you for your purchase! You can now access your course materials.')
             ->line('If you have any questions, please contact our support team.');
     }
@@ -77,7 +77,7 @@ class PaymentSuccessNotification extends Notification implements ShouldQueue
             'icon' => 'circle-check',
             'color' => 'success',
             'priority' => 'high',
-            'url' => route('student.orders.show', $this->order->id),
+            'url' => route('order.completed', $this->order->id),
         ];
     }
 }
