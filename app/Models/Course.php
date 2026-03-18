@@ -47,6 +47,9 @@ class Course extends Model
         'id'                => 'integer',
         'is_active'         => 'boolean',
 
+        'course_type'           => 'string',   // 'g_class' | 'd_class' | 'standard'
+        'renewal_cycle_months'  => 'integer',  // null = no renewal required
+
         'exam_id'           => 'integer',
         'eq_spec_id'        => 'integer',
 

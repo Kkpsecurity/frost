@@ -198,6 +198,57 @@ class CourseAuth extends Model
     //
 
 
+    /**
+     * Returns true if this CourseAuth is locked because another g_class course
+     * for the same user is currently in progress. Admin id_override bypasses this.
+     */
+    public function IsLocked(): bool
+    {
+        if ($this->id_override) {
+            return false;
+        }
+
+        $course = $this->GetCourse();
+
+        if ($course->course_type !== 'g_class') {
+            return false;
+        }
+
+        // locked if another g_class course_auth for this user is in-progress
+        return self::query()
+            ->where('user_id', $this->user_id)
+            ->where('id', '!=', $this->id)
+            ->whereHas('Course', fn($q) => $q->where('course_type', 'g_class'))
+            ->whereNotNull('start_date')
+            ->whereNull('completed_at')
+            ->whereNull('disabled_at')
+            ->exists();
+    }
+
+    /**
+     * Returns a user-facing reason why the course is locked, or null if not locked.
+     */
+    public function LockReason(): ?string
+    {
+        if (! $this->IsLocked()) {
+            return null;
+        }
+
+        $blocking = self::query()
+            ->where('user_id', $this->user_id)
+            ->where('id', '!=', $this->id)
+            ->whereHas('Course', fn($q) => $q->where('course_type', 'g_class'))
+            ->whereNotNull('start_date')
+            ->whereNull('completed_at')
+            ->whereNull('disabled_at')
+            ->with('Course')
+            ->first();
+
+        $courseName = $blocking?->Course?->title ?? 'another course';
+
+        return "You must complete {$courseName} before starting this course.";
+    }
+
     public function IsActive(): bool
     {
 

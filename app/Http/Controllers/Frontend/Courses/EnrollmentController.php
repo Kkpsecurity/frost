@@ -25,19 +25,37 @@ class EnrollmentController extends Controller
         // Debug logging to track enrollment attempts
         Log::info('Enrollment attempt for course ' . $Course->id . ' by user ' . Auth::id());
 
-        // Check if user is already enrolled - warn but allow re-enrollment (for renewals/prepay)
-        $existingEnrollment = Auth::user()->ActiveCourseAuths->firstWhere('course_id', $Course->id);
-        if ($existingEnrollment) {
-            Log::info('User ' . Auth::id() . ' already has active enrollment for course ' . $Course->id . ' - allowing re-enrollment for renewal/prepay');
-            // Store warning to show after payment page loads
-            session()->flash('enrollment_warning', 'Note: You already have an active enrollment for this course. This purchase will extend or renew your access.');
-        }
-
         // Check if course is active
         if (!$Course->is_active) {
             Log::warning('Attempted enrollment in inactive course ' . $Course->id);
             return redirect()->route('courses.list')
                 ->with('error', 'This course is not currently available for enrollment.');
+        }
+
+        // Hard block: g_class concurrent lock check.
+        // Build a temporary CourseAuth stub so we can call IsLocked() / LockReason()
+        // without persisting anything.
+        if ($Course->course_type === 'g_class') {
+            $stub = new CourseAuth([
+                'user_id'     => Auth::id(),
+                'course_id'   => $Course->id,
+                'id_override' => false,
+            ]);
+            // id must be set to a non-existent value so the "!= this->id" query works
+            $stub->id = 0;
+
+            if ($stub->IsLocked()) {
+                $reason = $stub->LockReason() ?? 'You must complete your current course before enrolling in another.';
+                Log::info('Enrollment blocked (lock) for user ' . Auth::id() . ' course ' . $Course->id . ': ' . $reason);
+                return redirect()->route('courses.list')->with('error', $reason);
+            }
+        }
+
+        // Soft warn only for non-g_class duplicate enrollments
+        $existingEnrollment = Auth::user()->ActiveCourseAuths->firstWhere('course_id', $Course->id);
+        if ($existingEnrollment && $Course->course_type !== 'g_class') {
+            Log::info('User ' . Auth::id() . ' already has active enrollment for course ' . $Course->id . ' - allowing re-enrollment for renewal/prepay');
+            session()->flash('enrollment_warning', 'Note: You already have an active enrollment for this course. This purchase will extend or renew your access.');
         }
 
         try {
