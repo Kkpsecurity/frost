@@ -14,36 +14,6 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
     // Extract data from student_info JSON if available
     const studentInfo = student?.student_info || {};
 
-    // Parse name field if fname/lname not available
-    const parseName = (fullName: string) => {
-        if (!fullName) return { fname: "", lname: "" };
-        const parts = fullName.trim().split(" ");
-        if (parts.length === 1) return { fname: parts[0], lname: "" };
-        const fname = parts[0];
-        const lname = parts.slice(1).join(" ");
-        return { fname, lname };
-    };
-
-    const { fname: parsedFname, lname: parsedLname } = parseName(student?.name || "");
-
-    // Debug logs
-    console.log('=== StudentInfo Component ===');
-    console.log('Student prop:', student);
-    console.log('Student info extracted:', studentInfo);
-    console.log('Parsed name:', { parsedFname, parsedLname });
-    console.log('fname sources:', {
-        direct: student?.fname,
-        fromStudentInfo: studentInfo?.fname,
-        fromParsedName: parsedFname,
-        final: student?.fname || studentInfo?.fname || parsedFname || ""
-    });
-    console.log('lname sources:', {
-        direct: student?.lname,
-        fromStudentInfo: studentInfo?.lname,
-        fromParsedName: parsedLname,
-        final: student?.lname || studentInfo?.lname || parsedLname || ""
-    });
-
     const suffixOptions = [
         { text: t('onboarding.suffixNone'), value: "" },
         { text: "Jr", value: "Jr" },
@@ -69,7 +39,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                     <TextInput
                         id="fname"
                         title={t('onboarding.firstName')}
-                        value={student?.fname || studentInfo?.fname || parsedFname || ""}
+                        value={student?.fname || studentInfo?.fname || ""}
                         required={true}
                     />
                 </div>
@@ -79,7 +49,7 @@ const StudentInfo: React.FC<StudentInfoProps> = ({ student }) => {
                     <TextInput
                         id="lname"
                         title={t('onboarding.lastName')}
-                        value={student?.lname || studentInfo?.lname || parsedLname || ""}
+                        value={student?.lname || studentInfo?.lname || ""}
                         required={true}
                     />
                 </div>

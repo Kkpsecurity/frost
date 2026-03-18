@@ -66,40 +66,23 @@ const StudentAgreement: React.FC<StudentAgreementProps> = ({
     // Extract student_info if available
     const studentInfo = student?.student_info || {};
 
-    // Parse name field if fname/lname not available
-    const parseName = (fullName: string) => {
-        if (!fullName) return { fname: "", lname: "" };
-        const parts = fullName.trim().split(" ");
-        if (parts.length === 1) return { fname: parts[0], lname: "" };
-        const fname = parts[0];
-        const lname = parts.slice(1).join(" ");
-        return { fname, lname };
+    // Normalize a raw 10-digit phone number to xxx-xxx-xxxx format expected by Yup
+    const normalizePhone = (phone: string): string => {
+        const digits = (phone || '').replace(/\D/g, '');
+        if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+        return phone || '';
     };
 
-    const { fname: parsedFname, lname: parsedLname } = parseName(student?.name || "");
-
-    // Debug: log student data
-    console.log('=== StudentAgreement Component ===');
-    console.log('Student data:', student);
-    console.log('Student info:', studentInfo);
-    console.log('Parsed name:', { parsedFname, parsedLname });
-    console.log('Form defaultValues:', {
-        fname: student?.fname || studentInfo?.fname || parsedFname || "",
-        lname: student?.lname || studentInfo?.lname || parsedLname || "",
-        initial: student?.initial || studentInfo?.initial || "",
-        suffix: student?.suffix || studentInfo?.suffix || "",
-        phone: student?.phone || studentInfo?.phone || "",
-        dob: student?.dob || studentInfo?.dob || "",
-    });
+    const rawPhone = student?.phone || studentInfo?.phone || '';
 
     const methods = useForm<FormData>({
         resolver: yupResolver(schema),
         defaultValues: {
-            fname: student?.fname || studentInfo?.fname || parsedFname || "",
-            lname: student?.lname || studentInfo?.lname || parsedLname || "",
-            initial: student?.initial || studentInfo?.initial || "",
+            fname: student?.fname || studentInfo?.fname || "",
+            lname: student?.lname || studentInfo?.lname || "",
+            initial: student?.initial || studentInfo?.initial || studentInfo?.middle_initial || "",
             suffix: student?.suffix || studentInfo?.suffix || "",
-            phone: student?.phone || studentInfo?.phone || "",
+            phone: normalizePhone(rawPhone),
             dob: student?.dob || studentInfo?.dob || "",
             agreement: false,
         },

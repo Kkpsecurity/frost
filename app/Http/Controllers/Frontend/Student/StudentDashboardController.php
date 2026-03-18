@@ -2481,6 +2481,19 @@ class StudentDashboardController extends Controller
         $courseDate = CourseDate::with(['instUnit'])->findOrFail((int) $validated['course_date_id']);
         $studentUnit = $this->findOrCreateStudentUnitForCourseDate($courseDate, $user);
 
+        // Enforce step ordering: terms (agreed_at) must be accepted before rules
+        if (!empty($studentUnit->course_auth_id)) {
+            $courseAuth = CourseAuth::where('id', (int) $studentUnit->course_auth_id)
+                ->where('user_id', $user->id)
+                ->first();
+            if (!$courseAuth || $courseAuth->agreed_at === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You must accept the course terms and conditions before accepting the classroom rules.',
+                ], 422);
+            }
+        }
+
         // Track rules acceptance — idempotent via tracker (no duplicate per student_unit)
         $this->activityTracker->trackRulesAccepted(
             $user->id,
