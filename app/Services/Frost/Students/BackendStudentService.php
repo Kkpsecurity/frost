@@ -95,10 +95,32 @@ class BackendStudentService
             // exists for every student who has joined (or been pre-enrolled into)
             // this specific course_date_id.
             // ------------------------------------------------------------------
-            $studentUnits = \App\Models\StudentUnit::where('course_date_id', $courseDateId)
+            // Deduplicate: if a student has multiple CourseAuths/StudentUnits for the
+            // same course_date (edge case from orderByDesc fallback), keep only the
+            // most recent StudentUnit per user to avoid showing duplicates in the panel.
+            $allStudentUnits = \App\Models\StudentUnit::where('course_date_id', $courseDateId)
                 ->with(['CourseAuth.User'])
                 ->orderBy('created_at', 'asc')
                 ->get();
+
+            $studentUnits = $allStudentUnits->filter(function ($su) {
+                return $su->CourseAuth?->user_id !== null;
+            })->groupBy(function ($su) {
+                return (int) $su->CourseAuth->user_id;
+            })->map(function ($group) {
+                // Among duplicates for the same user, prefer the one with the most progress
+                // (onboarding data), falling back to the most recently created.
+                return $group->sortByDesc(function ($su) {
+                    $verifiedData = $su->getRawOriginal('verified');
+                    if (is_string($verifiedData)) {
+                        $verifiedData = json_decode($verifiedData, true) ?? [];
+                    }
+                    $score = 0;
+                    if (!empty($verifiedData['id_card_uploaded'])) $score++;
+                    if (!empty($verifiedData['headshot_uploaded'])) $score++;
+                    return $score;
+                })->first();
+            })->values();
 
             $now = Carbon::now();
 

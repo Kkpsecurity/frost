@@ -176,6 +176,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         try {
             await axios.post("/classroom/portal/student/rules", {
                 course_date_id: courseDateId,
+                course_auth_id: courseAuthId,
             });
 
             setState((prev) => ({
