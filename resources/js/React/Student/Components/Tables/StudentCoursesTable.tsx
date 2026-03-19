@@ -12,6 +12,7 @@ interface Course {
     completion_status?: string;
     is_locked?: boolean;
     lock_reason?: string;
+    is_active_today?: boolean;
 }
 
 const StudentCoursesTable = ({
@@ -142,11 +143,13 @@ const StudentCoursesTable = ({
                             }}
                         >
                             <span
-                                className={`badge ${course.status === "Completed"
+                                className={`badge ${course.is_active_today
                                     ? "bg-success"
-                                    : course.status === "In Progress"
-                                        ? "bg-info"
-                                        : "bg-warning text-dark"
+                                    : course.status === "Completed"
+                                        ? "bg-success"
+                                        : course.status === "In Progress"
+                                            ? "bg-info"
+                                            : "bg-warning text-dark"
                                     }`}
                                 style={{
                                     padding: "0.4rem 0.8rem",
@@ -186,7 +189,7 @@ const StudentCoursesTable = ({
                             ) : (
                                 <button
                                     onClick={() => handleEnterClassroom(course.id)}
-                                    className="btn btn-primary btn-sm"
+                                    className={course.is_active_today ? "btn btn-success btn-sm" : "btn btn-primary btn-sm"}
                                     style={{
                                         padding: "0.5rem 1.25rem",
                                         fontSize: "0.75rem",
@@ -195,7 +198,7 @@ const StudentCoursesTable = ({
                                     }}
                                 >
                                     <i className="fas fa-arrow-right me-2"></i>
-                                    {t("coursesTable.enterClassroom")}
+                                    {course.is_active_today ? "Re Enter" : t("coursesTable.enterClassroom")}
                                 </button>
                             )}
                         </td>

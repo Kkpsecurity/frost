@@ -490,6 +490,27 @@ class StudentDashboardController extends Controller
             return $studentUnit;
         }
 
+        // Enforce: one StudentUnit per student per day.
+        // Use today's check-in date (created_at) so this holds even if an enrollment
+        // points at an older CourseDate (legacy data).
+        $classDay = now()->format('Y-m-d');
+
+        $existingForDay = StudentUnit::query()
+            ->with(['CourseAuth.Course'])
+            ->whereHas('CourseAuth', fn($q) => $q->where('user_id', $user->id))
+            ->whereDate('created_at', $classDay)
+            ->orderBy('id')
+            ->first();
+
+        if ($existingForDay) {
+            $existingName =
+                $existingForDay->CourseAuth?->Course?->title
+                ?? $existingForDay->CourseAuth?->Course?->title_long
+                ?? 'another course';
+
+            abort(409, "You are already checked into {$existingName} for {$classDay}. You can only attend one class per day.");
+        }
+
         return StudentUnit::create([
             'course_auth_id' => $courseAuth->id,
             'course_unit_id' => $courseDate->course_unit_id,
@@ -548,6 +569,30 @@ class StudentDashboardController extends Controller
                 ->with(['Course'])
                 ->get();
 
+            // -----------------------------------------------------------------
+            // SINGLE-ACTIVE-COURSE RULE (dashboard)
+            //
+            // If the student has started an enrollment (agreed_at set) and it is
+            // not completed/disabled, lock any other NOT STARTED enrollments so
+            // they cannot take two courses at the same time.
+            // Admin id_override bypasses.
+            // -----------------------------------------------------------------
+            $blockingCourseAuth = $courseAuths
+                ->filter(
+                    fn($ca) =>
+                    $ca->agreed_at
+                        && !$ca->completed_at
+                        && !$ca->disabled_at
+                        && !$ca->id_override
+                )
+                ->sortBy(fn($ca) => $ca->agreed_at?->getTimestamp() ?? PHP_INT_MAX)
+                ->first();
+
+            $blockingCourseAuthId = $blockingCourseAuth ? (int) $blockingCourseAuth->id : null;
+            $blockingCourseName = $blockingCourseAuth?->Course?->title
+                ?? $blockingCourseAuth?->Course?->title_long
+                ?? 'your active course';
+
             // Pre-compute which course_ids have an active (in-progress) enrollment.
             // Used below to lock duplicate enrollments that haven't been started yet.
             $inProgressCourseIds = $courseAuths
@@ -555,20 +600,144 @@ class StudentDashboardController extends Controller
                 ->pluck('course_id')
                 ->flip(); // keyed by course_id for O(1) lookup
 
+            // -----------------------------------------------------------------
+            // SINGLE-CLASS-DAY RULE (one StudentUnit per student/day)
+            //
+            // Business rule: a student cannot attend two different classroom
+            // sessions on the same calendar day (no 2 student_unit rows for the day).
+            //
+            // UX enforcement: If the student already has a StudentUnit created
+            // today, lock "Enter Classroom" for any OTHER enrollment.
+            //
+            // Server-side enforcement lives in findOrCreateStudentUnitForCourseDate().
+            // -----------------------------------------------------------------
+            $todayCourseDatesByCourseId = collect();
+            $todayBlockingCourseAuthId = null;
+            $todayBlockingCourseName = null;
+
+            try {
+                $todayYmd = now()->format('Y-m-d');
+                $courseIdsForToday = $courseAuths->pluck('course_id')->filter()->unique();
+
+                if ($courseIdsForToday->isNotEmpty()) {
+                    $allTodayDates = CourseDate::with(['CourseUnit'])
+                        ->whereDate('starts_at', $todayYmd)
+                        ->whereHas('CourseUnit', function ($q) use ($courseIdsForToday) {
+                            $q->whereIn('course_id', $courseIdsForToday);
+                        })
+                        ->orderBy('starts_at', 'asc')
+                        ->get();
+
+                    // course_id -> first CourseDate for that course today
+                    $todayCourseDatesByCourseId = $allTodayDates
+                        ->groupBy(fn($cd) => (int) ($cd->CourseUnit?->course_id))
+                        ->map->first();
+                }
+
+                $todayStudentUnits = StudentUnit::query()
+                    ->with(['CourseAuth.Course', 'CourseDate.InstUnit'])
+                    ->whereHas('CourseAuth', fn($q) => $q->where('user_id', $user->id))
+                    ->whereDate('created_at', $todayYmd)
+                    ->orderByDesc('created_at')
+                    ->get();
+
+                if ($todayStudentUnits->isNotEmpty()) {
+                    $blockingUnit = $todayStudentUnits->first(function ($su) {
+                        $iu = $su->CourseDate?->InstUnit;
+                        return $iu && !$iu->completed_at;
+                    })
+                        ?? $todayStudentUnits->first(function ($su) {
+                            return !$su->CourseDate?->InstUnit;
+                        })
+                        ?? $todayStudentUnits->first();
+
+                    if ($blockingUnit) {
+                        $todayBlockingCourseAuthId = (int) $blockingUnit->course_auth_id;
+                        $todayBlockingCourseName =
+                            $blockingUnit->CourseAuth?->Course?->title
+                            ?? $blockingUnit->CourseAuth?->Course?->title_long
+                            ?? 'your current class';
+                    }
+
+                    if ($todayStudentUnits->count() > 1) {
+                        Log::warning('Student has multiple StudentUnit rows for the same day', [
+                            'user_id' => $user->id,
+                            'date' => $todayYmd,
+                            'student_unit_ids' => $todayStudentUnits->pluck('id')->toArray(),
+                            'course_auth_ids' => $todayStudentUnits->pluck('course_auth_id')->toArray(),
+                            'course_date_ids' => $todayStudentUnits->pluck('course_date_id')->toArray(),
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Non-fatal: server-side guard still prevents creating a second unit.
+                $todayCourseDatesByCourseId = collect();
+                $todayBlockingCourseAuthId = null;
+                $todayBlockingCourseName = null;
+            }
+
             // Map course auths to course list for dashboard
-            $courses = $courseAuths->map(function ($courseAuth) use ($inProgressCourseIds) {
+            $courses = $courseAuths->map(function ($courseAuth) use ($inProgressCourseIds, $blockingCourseAuthId, $blockingCourseName, $todayCourseDatesByCourseId, $todayBlockingCourseAuthId, $todayBlockingCourseName) {
                 // Student owns the CourseAuth ("pass"), not the class schedule.
                 // ClassroomCourseDate is intentionally conservative (only shows active/live class context).
                 $classroomCourseDate = $courseAuth->ClassroomCourseDate();
 
-                // Determine status based on completion, agreement (start), and classroom date
+                // Determine status based on completion and whether the student has started this enrollment.
                 if ($courseAuth->completed_at) {
                     $status = 'Completed';
-                } elseif ($courseAuth->agreed_at || $classroomCourseDate) {
+                } elseif ($courseAuth->agreed_at) {
                     $status = 'In Progress';
                 } else {
                     $status = 'Not Started';
                 }
+
+                // Duplicate same-course lock: if there is already an in-progress enrollment for this course_id,
+                // block additional enrollments that haven't been started yet.
+                $duplicateCourseLocked =
+                    !$courseAuth->agreed_at
+                    && !$courseAuth->completed_at
+                    && !$courseAuth->disabled_at
+                    && !$courseAuth->id_override
+                    && isset($inProgressCourseIds[$courseAuth->course_id]);
+
+                // Single-active-course lock: block starting any other course while one is in progress.
+                $singleActiveCourseLocked =
+                    $blockingCourseAuthId !== null
+                    && (int) $courseAuth->id !== (int) $blockingCourseAuthId
+                    && !$courseAuth->agreed_at
+                    && !$courseAuth->completed_at
+                    && !$courseAuth->disabled_at
+                    && !$courseAuth->id_override;
+
+                // Single-class-day lock: once the student has a StudentUnit for today,
+                // block entering any other class enrollment (prevents taking two classes in one day).
+                $singleClassDayLocked =
+                    $todayBlockingCourseAuthId !== null
+                    && (int) $courseAuth->id !== (int) $todayBlockingCourseAuthId
+                    && !$courseAuth->completed_at
+                    && !$courseAuth->disabled_at
+                    && !$courseAuth->id_override;
+
+                $isLocked =
+                    $courseAuth->IsLocked()
+                    || !$courseAuth->IsRenewalEligible()
+                    || $duplicateCourseLocked
+                    || $singleActiveCourseLocked
+                    || $singleClassDayLocked;
+
+                $lockReason = $courseAuth->LockReason()
+                    ?? ($singleClassDayLocked
+                        ? ('You are already checked into '
+                            . ($todayBlockingCourseName ?? 'your current class')
+                            . ' today. You can only attend one class per day.')
+                        : (!$courseAuth->IsRenewalEligible()
+                            ? ('Your license renewal period has not started yet. You can re-enroll from '
+                                . ($courseAuth->RenewalEligibleFrom()?->format('M j, Y') ?? 'a future date') . '.')
+                            : ($duplicateCourseLocked
+                                ? 'You must complete your active enrollment before starting this one.'
+                                : ($singleActiveCourseLocked
+                                    ? "You must complete {$blockingCourseName} before starting another course."
+                                    : null))));
 
                 return [
                     'id' => $courseAuth->id,
@@ -581,24 +750,11 @@ class StudentDashboardController extends Controller
                     'status' => $status,
                     'completion_status' => $courseAuth->is_passed ? 'Passed' : ($courseAuth->completed_at ? 'Completed' : 'In Progress'),
                     // Locked: g_class concurrent lock, renewal block, or same-course duplicate
-                    'is_locked' => $courseAuth->IsLocked()
-                        || !$courseAuth->IsRenewalEligible()
-                        || (!$courseAuth->agreed_at
-                            && !$courseAuth->completed_at
-                            && !$courseAuth->disabled_at
-                            && !$courseAuth->id_override
-                            && isset($inProgressCourseIds[$courseAuth->course_id])),
-                    'lock_reason' => $courseAuth->LockReason()
-                        ?? (!$courseAuth->IsRenewalEligible()
-                            ? ('Your license renewal period has not started yet. You can re-enroll from '
-                                . ($courseAuth->RenewalEligibleFrom()?->format('M j, Y') ?? 'a future date') . '.')
-                            : ((!$courseAuth->agreed_at
-                                && !$courseAuth->completed_at
-                                && !$courseAuth->disabled_at
-                                && !$courseAuth->id_override
-                                && isset($inProgressCourseIds[$courseAuth->course_id]))
-                                ? 'You must complete your active enrollment before starting this one.'
-                                : null)),
+                    'is_locked' => $isLocked,
+                    'lock_reason' => $lockReason,
+                    // Highlight: the course enrollment that currently has today's StudentUnit.
+                    'is_active_today' => $todayBlockingCourseAuthId !== null
+                        && (int) $courseAuth->id === (int) $todayBlockingCourseAuthId,
                 ];
             })->toArray();
 
@@ -801,7 +957,10 @@ class StudentDashboardController extends Controller
                 $today = now()->format('Y-m-d');
                 $courseIds = $courseAuths->pluck('course_id')->filter()->unique();
 
-                if ($courseIds->isNotEmpty()) {
+                // Reuse the earlier today-course-date lookup when available (avoids duplicating queries).
+                $courseDateByCourseId = isset($todayCourseDatesByCourseId) ? $todayCourseDatesByCourseId : collect();
+
+                if ($courseDateByCourseId->isEmpty() && $courseIds->isNotEmpty()) {
                     $allTodayDates = CourseDate::with(['CourseUnit'])
                         ->whereDate('starts_at', $today)
                         ->whereHas('CourseUnit', function ($q) use ($courseIds) {
@@ -814,13 +973,15 @@ class StudentDashboardController extends Controller
                     $courseDateByCourseId = $allTodayDates
                         ->groupBy(fn($cd) => (int) ($cd->CourseUnit?->course_id))
                         ->map->first();
+                }
 
+                if ($courseDateByCourseId->isNotEmpty()) {
                     foreach ($courseAuths as $ca) {
                         $cId = (int) $ca->course_id;
-                        if (!isset($courseDateByCourseId[$cId])) {
+                        $cd = $courseDateByCourseId->get($cId);
+                        if (!$cd) {
                             continue; // No class today for this enrollment
                         }
-                        $cd = $courseDateByCourseId[$cId];
 
                         try {
                             $iu = \App\Models\InstUnit::where('course_date_id', $cd->id)
@@ -3408,6 +3569,34 @@ class StudentDashboardController extends Controller
         $courseAuth = CourseAuth::where('id', (int) $validated['course_auth_id'])
             ->where('user_id', $user->id)
             ->firstOrFail();
+
+        // Enforce: cannot start a second course while another is already in progress.
+        // Only blocks the act of starting (setting agreed_at). Completed/disabled courses do not block.
+        if ($courseAuth->agreed_at === null && !$courseAuth->id_override) {
+            $blocking = CourseAuth::query()
+                ->where('user_id', $user->id)
+                ->where('id', '!=', (int) $courseAuth->id)
+                ->whereNotNull('agreed_at')
+                ->whereNull('completed_at')
+                ->whereNull('disabled_at')
+                ->where(function ($q) {
+                    $q->whereNull('id_override')->orWhere('id_override', 0);
+                })
+                ->with(['Course'])
+                ->orderBy('agreed_at', 'asc')
+                ->first();
+
+            if ($blocking) {
+                $blockingName = $blocking?->Course?->title
+                    ?? $blocking?->Course?->title_long
+                    ?? 'your active course';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => "You must complete {$blockingName} before starting another course.",
+                ], 409);
+            }
+        }
 
         DB::beginTransaction();
         try {

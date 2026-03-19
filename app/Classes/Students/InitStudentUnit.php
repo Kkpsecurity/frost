@@ -129,6 +129,23 @@ trait InitStudentUnit
 
         kkpdebug('ClassroomQueries_Dbg', "{$log_prefix} Creating new StudentUnit");
 
+        // Enforce: one StudentUnit per student per calendar day.
+        // Use today's check-in date (created_at) so this holds even if an enrollment
+        // points at an older CourseDate (legacy data).
+        $classDay = now()->format('Y-m-d');
+
+        $existingForDay = StudentUnit::query()
+            ->whereHas('CourseAuth', fn($q) => $q->where('user_id', (int) $CourseAuth->user_id))
+            ->whereDate('created_at', $classDay)
+            ->orderBy('id')
+            ->first();
+
+        if ($existingForDay) {
+            kkpdebug('ClassroomQueries_Dbg', "{$log_prefix} BLOCKED: already has StudentUnit for {$classDay} (SU {$existingForDay->id}, CA {$existingForDay->course_auth_id})");
+            RCache::Locker($locker_key, 0);
+            return null;
+        }
+
         $StudentUnit = StudentUnit::create([
 
             'course_auth_id' => $CourseAuth->id,

@@ -53,7 +53,7 @@
     </main>
 
     <!-- Scroll to Top Button -->
-    <button class="scrollUp" data-tooltip="Back to top">
+    <button class="scrollUp" data-tooltip="Back to top" style="margin-right: 60px">
         <i class="fa fa-arrow-up"></i>
     </button>
 
@@ -146,6 +146,20 @@
                 });
             });
         });
+    </script>
+
+    <script>
+        (function(d, w, c) {
+            w.ChatraID = 'vwXc7koSXftnpPvwG';
+            var s = d.createElement('script');
+            w[c] = w[c] || function() {
+                (w[c].q = w[c].q || []).push(arguments);
+            };
+            s.async = true;
+            s.src = 'https://call.chatra.io/chatra.js';
+            if (d.head) d.head.appendChild(s);
+        })
+        (document, window, 'Chatra');
     </script>
 </body>
 

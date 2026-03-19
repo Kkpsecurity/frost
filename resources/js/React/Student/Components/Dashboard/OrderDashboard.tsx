@@ -54,12 +54,12 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
         >
             <div className="container">
                 {/* Welcome Message */}
-                <div className="row mb-5">
+                <div className="row mb-2">
                     <div className="col-12">
                         <div
                             style={{
-                                background: "linear-gradient(135deg, #3498db 0%, #2980b9 100%)",
                                 color: "white",
+                                marginTop: "40px !important",
                                 padding: "3rem",
                                 borderRadius: "8px",
                                 boxShadow: "0 4px 15px rgba(0,0,0,0.2)",

@@ -226,9 +226,25 @@ class ClassroomDashboardService
      */
     public function findOrCreateSession(int $courseAuthId, int $courseDateId): \App\Models\StudentUnit
     {
-        $courseDate = \App\Models\CourseDate::find($courseDateId);
+        $courseDate = \App\Models\CourseDate::with(['CourseUnit', 'InstUnit'])->find($courseDateId);
         if (!$courseDate) {
             throw new Exception('CourseDate not found');
+        }
+
+        $courseAuth = \App\Models\CourseAuth::with(['Course'])->find($courseAuthId);
+        if (!$courseAuth) {
+            throw new Exception('CourseAuth not found');
+        }
+
+        // Security: prevent creating a session for another student.
+        if (auth()->check() && (int) auth()->id() !== (int) $courseAuth->user_id) {
+            throw new Exception('Course auth does not belong to this user');
+        }
+
+        // Integrity: course_auth must match the course_date's course_id.
+        $courseId = $courseDate->CourseUnit?->course_id;
+        if ($courseId && (int) $courseAuth->course_id !== (int) $courseId) {
+            throw new Exception('CourseAuth does not match CourseDate');
         }
 
         // Attendance sessions must be tied to an active InstUnit (instructor started class)
@@ -260,6 +276,27 @@ class ClassroomDashboardService
             ]);
 
             return $existingSession;
+        }
+
+        // Enforce: one StudentUnit per student per day.
+        // Use today's check-in date (created_at) so this holds even if an enrollment
+        // points at an older CourseDate (legacy data).
+        $classDay = now()->format('Y-m-d');
+
+        $existingForDay = \App\Models\StudentUnit::query()
+            ->with(['CourseAuth.Course'])
+            ->whereHas('CourseAuth', fn($q) => $q->where('user_id', (int) $courseAuth->user_id))
+            ->whereDate('created_at', $classDay)
+            ->orderBy('id')
+            ->first();
+
+        if ($existingForDay) {
+            $existingName =
+                $existingForDay->CourseAuth?->Course?->title
+                ?? $existingForDay->CourseAuth?->Course?->title_long
+                ?? 'another course';
+
+            throw new Exception("Student is already checked into {$existingName} for {$classDay}. Only one class per day is allowed.");
         }
 
         // Create new session
