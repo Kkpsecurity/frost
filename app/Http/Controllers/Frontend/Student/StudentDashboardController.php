@@ -1244,6 +1244,80 @@ class StudentDashboardController extends Controller
                 ->orderByDesc('id')
                 ->first();
 
+            // -----------------------------------------------------------------
+            // STUDENT ACTIVITY: WAITING ROOM ENTRY (student-owned)
+            // - Waiting room = class scheduled for today, but NO InstUnit yet.
+            // - Idempotent: once per user+course_date per day.
+            // - Mirror frontend "expired" guard (2 hours past start) to avoid
+            //   logging stale/cancelled classes.
+            // -----------------------------------------------------------------
+            try {
+                $verboseWaitingRoomTracking = $request->boolean('debug_waiting_room_tracking');
+
+                if ($user && $courseDate && !$instUnit) {
+                    $startsAt = $courseDate->starts_at;
+                    $isExpired = $startsAt && now()->diffInSeconds($startsAt, false) < - (2 * 60 * 60);
+
+                    if ($verboseWaitingRoomTracking) {
+                        Log::info('Waiting room tracking: evaluating', [
+                            'user_id' => (int) $user->id,
+                            'course_date_id' => (int) $courseDate->id,
+                            'course_id' => $courseId ? (int) $courseId : null,
+                            'has_inst_unit' => (bool) $instUnit,
+                            'starts_at' => $startsAt?->toIso8601String(),
+                            'is_expired' => (bool) $isExpired,
+                        ]);
+                    }
+
+                    if (!$isExpired && $courseId) {
+                        $waitingCourseAuthId = (int) ($user->CourseAuths()
+                            ->where('course_id', $courseId)
+                            ->orderByDesc('id')
+                            ->value('id') ?? 0);
+
+                        if ($verboseWaitingRoomTracking) {
+                            Log::info('Waiting room tracking: resolved course_auth', [
+                                'user_id' => (int) $user->id,
+                                'course_id' => (int) $courseId,
+                                'course_auth_id' => $waitingCourseAuthId,
+                            ]);
+                        }
+
+                        if ($waitingCourseAuthId > 0) {
+                            $this->activityTracker->trackWaitingRoomEntry(
+                                (int) $user->id,
+                                $waitingCourseAuthId,
+                                (int) $courseDate->id,
+                                [
+                                    'data' => [
+                                        'course_id' => (int) $courseId,
+                                        'scheduled_starts_at' => $startsAt?->toIso8601String(),
+                                    ],
+                                ]
+                            );
+                        } elseif ($verboseWaitingRoomTracking) {
+                            Log::warning('Waiting room tracking: no course_auth found for user/course', [
+                                'user_id' => (int) $user->id,
+                                'course_id' => (int) $courseId,
+                                'course_date_id' => (int) $courseDate->id,
+                            ]);
+                        }
+                    }
+                } elseif ($user && $courseDate && $verboseWaitingRoomTracking) {
+                    Log::info('Waiting room tracking: skipped (not in waiting room)', [
+                        'user_id' => (int) $user->id,
+                        'course_date_id' => (int) $courseDate->id,
+                        'has_inst_unit' => (bool) $instUnit,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Waiting room tracking failed (non-fatal)', [
+                    'user_id' => Auth::id(),
+                    'course_date_id' => $courseDate?->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             // Get lessons based on CourseUnit
             $lessons = [];
             if ($courseUnit) {

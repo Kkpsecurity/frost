@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Payments\PayPalConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,11 +27,13 @@ class AdminPaymentsController extends Controller
      */
     public function index(): View
     {
+        $payPalConfig = app(PayPalConfigService::class);
+
         return view('admin.payments.index', [
             'pageTitle'       => 'Payment Settings',
             'stripeConfigured' => !empty(setting('payments.stripe.test_secret_key'))
                 || !empty(setting('payments.stripe.live_secret_key')),
-            'paypalConfigured' => !empty(setting('payments.paypal.client_id')),
+            'paypalConfigured' => $payPalConfig->isConfigured(),
         ]);
     }
 
@@ -74,6 +77,9 @@ class AdminPaymentsController extends Controller
             Setting::set('payments.stripe.live_secret_key', $request->input('live_secret_key'));
         }
 
+        // Persist settings (auto_save is disabled in config/setting.php)
+        Setting::save();
+
         return redirect()->route('admin.payments.stripe')
             ->with('success', 'Stripe configuration saved.');
     }
@@ -83,11 +89,26 @@ class AdminPaymentsController extends Controller
      */
     public function paypal(): View
     {
+        $payPalConfig = app(PayPalConfigService::class);
+
+        $settingsClientId = trim((string) (setting('payments.paypal.client_id') ?? ''));
+        $settingsClientSecret = trim((string) (setting('payments.paypal.client_secret') ?? ''));
+
+        $envClientId = trim((string) config('services.paypal.client_id', ''));
+        $envClientSecret = trim((string) config('services.paypal.client_secret', ''));
+
         return view('admin.payments.paypal', [
             'pageTitle'       => 'PayPal Configuration',
-            'hasClientId'     => !empty(setting('payments.paypal.client_id')),
-            'hasClientSecret' => !empty(setting('payments.paypal.client_secret')),
-            'mode'            => setting('payments.paypal.mode') ?? 'sandbox',
+            'mode'            => $payPalConfig->mode(),
+
+            // Settings-store values (what is actually saved in the settings system)
+            'settingsClientId'     => $settingsClientId,
+            'hasSettingsClientId'  => $settingsClientId !== '',
+            'hasSettingsClientSecret' => $settingsClientSecret !== '',
+
+            // Whether env fallback is present (do not display secrets)
+            'hasEnvClientId'     => $envClientId !== '',
+            'hasEnvClientSecret' => $envClientSecret !== '',
         ]);
     }
 
@@ -97,19 +118,22 @@ class AdminPaymentsController extends Controller
     public function updatePayPal(Request $request): RedirectResponse
     {
         $request->validate([
-            'client_id'     => ['nullable', 'string', 'max:255'],
-            'client_secret' => ['nullable', 'string', 'max:255'],
+            'paypal_client_id'     => ['nullable', 'string', 'max:255'],
+            'paypal_client_secret' => ['nullable', 'string', 'max:255'],
             'mode'          => ['required', 'in:sandbox,live'],
         ]);
 
         Setting::set('payments.paypal.mode', $request->input('mode'));
 
-        if ($request->filled('client_id')) {
-            Setting::set('payments.paypal.client_id', $request->input('client_id'));
+        if ($request->filled('paypal_client_id')) {
+            Setting::set('payments.paypal.client_id', $request->input('paypal_client_id'));
         }
-        if ($request->filled('client_secret')) {
-            Setting::set('payments.paypal.client_secret', $request->input('client_secret'));
+        if ($request->filled('paypal_client_secret')) {
+            Setting::set('payments.paypal.client_secret', $request->input('paypal_client_secret'));
         }
+
+        // Persist settings (auto_save is disabled in config/setting.php)
+        Setting::save();
 
         return redirect()->route('admin.payments.paypal')
             ->with('success', 'PayPal configuration saved.');

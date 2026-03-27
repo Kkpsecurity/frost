@@ -132,6 +132,53 @@ class StudentActivityTracker
     }
 
     /**
+     * Track waiting room entry — idempotent: only one record per user+course_date per day.
+     *
+     * This logs when the student is present on the classroom page but the instructor
+     * has not started the class yet (no InstUnit).
+     */
+    public function trackWaitingRoomEntry(
+        int $userId,
+        int $courseAuthId,
+        int $courseDateId,
+        array $context = []
+    ): ?StudentActivity {
+        $existing = StudentActivity::where('user_id', $userId)
+            ->where('course_date_id', $courseDateId)
+            ->where('activity_type', StudentActivity::TYPE_WAITING_ROOM_ENTRY)
+            ->whereDate('created_at', today())
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $activity = $this->track(
+            $userId,
+            StudentActivity::CATEGORY_ENTRY,
+            StudentActivity::TYPE_WAITING_ROOM_ENTRY,
+            array_merge([
+                'course_auth_id' => $courseAuthId,
+                'course_date_id' => $courseDateId,
+                'description' => 'Student entered waiting room',
+                'started_at' => now(),
+            ], $context)
+        );
+
+        if ($activity) {
+            // One-time per day per course_date, so safe to log at info.
+            Log::info('Student waiting room entry tracked', [
+                'activity_id' => $activity->id,
+                'user_id' => $userId,
+                'course_auth_id' => $courseAuthId,
+                'course_date_id' => $courseDateId,
+            ]);
+        }
+
+        return $activity;
+    }
+
+    /**
      * Track agreement acceptance
      */
     public function trackAgreementAccepted(

@@ -4,10 +4,39 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use App\Models\User;
 
 class SupportController extends Controller
 {
+    private function toCarbon($value): ?Carbon
+    {
+        if ($value instanceof \Carbon\CarbonInterface) {
+            return Carbon::instance($value);
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value);
+        }
+
+        if (is_int($value) || (is_string($value) && is_numeric($value))) {
+            $timestamp = (int) $value;
+
+            // Heuristic: handle millisecond timestamps
+            if ($timestamp > 9_999_999_999) {
+                $timestamp = (int) floor($timestamp / 1000);
+            }
+
+            return $timestamp > 0 ? Carbon::createFromTimestamp($timestamp) : null;
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            return Carbon::parse($value);
+        }
+
+        return null;
+    }
+
     /**
      * Search for users (students, admins, etc.) based on support staff permissions
      */
@@ -191,25 +220,28 @@ class SupportController extends Controller
             $courseUnit = $studentUnit->CourseUnit;
 
             if ($courseDate && $courseUnit) {
+                $joinedAt = $this->toCarbon($studentUnit->created_at)?->timezone(config('app.timezone'));
+
                 // Class joined activity
                 $activities[] = [
                     'id' => 'unit_' . $studentUnit->id,
-                    'date' => \Carbon\Carbon::parse($studentUnit->created_at)->format('Y-m-d'),
+                    'date' => $joinedAt ? $joinedAt->format('Y-m-d') : null,
                     'type' => 'login',
                     'description' => 'Joined classroom session',
                     'details' => $courseUnit->title . ' - ' . \Carbon\Carbon::parse($courseDate->date)->format('M d, Y'),
-                    'timestamp' => \Carbon\Carbon::parse($studentUnit->created_at)->toIso8601String(),
+                    'timestamp' => $joinedAt ? $joinedAt->toIso8601String() : null,
                 ];
 
                 // Class completed activity
                 if ($studentUnit->completed_at) {
+                    $completedAt = $this->toCarbon($studentUnit->completed_at)?->timezone(config('app.timezone'));
                     $activities[] = [
                         'id' => 'unit_completed_' . $studentUnit->id,
-                        'date' => \Carbon\Carbon::parse($studentUnit->completed_at)->format('Y-m-d'),
+                        'date' => $completedAt?->format('Y-m-d'),
                         'type' => 'lesson_completed',
                         'description' => 'Completed classroom session',
                         'details' => $courseUnit->title,
-                        'timestamp' => \Carbon\Carbon::parse($studentUnit->completed_at)->toIso8601String(),
+                        'timestamp' => $completedAt?->toIso8601String(),
                     ];
                 }
             }
@@ -229,63 +261,73 @@ class SupportController extends Controller
             $lesson = $studentLesson->Lesson;
 
             if ($lesson) {
+                $lessonStartedAt = $this->toCarbon($studentLesson->created_at)?->timezone(config('app.timezone'));
+
                 // Lesson started
                 $activities[] = [
                     'id' => 'lesson_' . $studentLesson->id,
-                    'date' => \Carbon\Carbon::parse($studentLesson->created_at)->format('Y-m-d'),
+                    'date' => $lessonStartedAt ? $lessonStartedAt->format('Y-m-d') : null,
                     'type' => 'lesson_started',
                     'description' => 'Started lesson',
                     'details' => $lesson->title,
-                    'timestamp' => \Carbon\Carbon::parse($studentLesson->created_at)->toIso8601String(),
+                    'timestamp' => $lessonStartedAt ? $lessonStartedAt->toIso8601String() : null,
                 ];
 
                 // Lesson completed
                 if ($studentLesson->completed_at) {
+                    $lessonCompletedAt = $this->toCarbon($studentLesson->completed_at)?->timezone(config('app.timezone'));
                     $activities[] = [
                         'id' => 'lesson_completed_' . $studentLesson->id,
-                        'date' => \Carbon\Carbon::parse($studentLesson->completed_at)->format('Y-m-d'),
+                        'date' => $lessonCompletedAt?->format('Y-m-d'),
                         'type' => 'lesson_completed',
                         'description' => 'Completed lesson',
                         'details' => $lesson->title,
-                        'timestamp' => \Carbon\Carbon::parse($studentLesson->completed_at)->toIso8601String(),
+                        'timestamp' => $lessonCompletedAt?->toIso8601String(),
                     ];
                 }
             }
         }
 
         // Get detailed student activity tracking (onboarding, agreements, interactions)
-        // Get the student_unit_ids for this course auth
+        // IMPORTANT: Waiting room tracking can happen before a StudentUnit exists.
+        // Include activities for this enrollment via course_auth_id, and also include
+        // student_unit-linked activities for any units that do exist.
         $studentUnitIds = $studentUnits->pluck('id');
 
-        if ($studentUnitIds->isNotEmpty()) {
-            $studentActivities = \App\Models\StudentActivity::where('user_id', $studentId)
-                ->whereIn('student_unit_id', $studentUnitIds)
-                ->orderBy('created_at', 'desc')
-                ->limit(200)
-                ->get();
+        $studentActivities = \App\Models\StudentActivity::where('user_id', $studentId)
+            ->where(function ($q) use ($courseAuth, $studentUnitIds) {
+                $q->where('course_auth_id', $courseAuth->id);
 
-            foreach ($studentActivities as $activity) {
-                // Format the description based on activity type
-                $description = $activity->description ?: $this->formatActivityDescription($activity->activity_type);
-
-                // Include relevant activities (skip low-level tracking like tab visibility)
-                $includedCategories = [
-                    \App\Models\StudentActivity::CATEGORY_ENTRY,
-                    \App\Models\StudentActivity::CATEGORY_NAVIGATION,
-                    \App\Models\StudentActivity::CATEGORY_AGREEMENT,
-                    \App\Models\StudentActivity::CATEGORY_INTERACTION,
-                ];
-
-                if (in_array($activity->category, $includedCategories)) {
-                    $activities[] = [
-                        'id' => 'activity_' . $activity->id,
-                        'date' => \Carbon\Carbon::parse($activity->created_at)->format('Y-m-d'),
-                        'type' => $activity->activity_type,
-                        'description' => $description,
-                        'details' => $activity->data ? json_encode($activity->data) : null,
-                        'timestamp' => \Carbon\Carbon::parse($activity->created_at)->toIso8601String(),
-                    ];
+                if ($studentUnitIds->isNotEmpty()) {
+                    $q->orWhereIn('student_unit_id', $studentUnitIds);
                 }
+            })
+            ->orderBy('created_at', 'desc')
+            ->limit(200)
+            ->get();
+
+        foreach ($studentActivities as $activity) {
+            // Format the description based on activity type
+            $description = $activity->description ?: $this->formatActivityDescription($activity->activity_type);
+
+            // Include relevant activities (skip low-level tracking like tab visibility)
+            $includedCategories = [
+                \App\Models\StudentActivity::CATEGORY_ENTRY,
+                \App\Models\StudentActivity::CATEGORY_NAVIGATION,
+                \App\Models\StudentActivity::CATEGORY_AGREEMENT,
+                \App\Models\StudentActivity::CATEGORY_INTERACTION,
+            ];
+
+            if (in_array($activity->category, $includedCategories)) {
+                $activityAt = $this->toCarbon($activity->created_at)?->timezone(config('app.timezone'));
+                $activities[] = [
+                    'id' => 'activity_' . $activity->id,
+                    'date' => $activityAt ? $activityAt->format('Y-m-d') : null,
+                    'type' => $activity->activity_type,
+                    'description' => $description,
+                    'details' => $activity->data ? json_encode($activity->data) : null,
+                    'timestamp' => $activityAt ? $activityAt->toIso8601String() : null,
+                ];
             }
         }
 
@@ -921,6 +963,7 @@ class SupportController extends Controller
             'onboarding_completed' => 'Completed onboarding',
             \App\Models\StudentActivity::TYPE_RULES_ACCEPTED => 'Accepted classroom rules',
             \App\Models\StudentActivity::TYPE_AGREEMENT_ACCEPTED => 'Accepted agreement',
+            \App\Models\StudentActivity::TYPE_WAITING_ROOM_ENTRY => 'Entered waiting room',
             \App\Models\StudentActivity::TYPE_LESSON_STARTED => 'Started lesson',
             \App\Models\StudentActivity::TYPE_LESSON_COMPLETED => 'Completed lesson',
             \App\Models\StudentActivity::TYPE_LESSON_PAUSED => 'Paused lesson',

@@ -54,7 +54,7 @@ const OrderDashboard: React.FC<OrderDashboardProps> = ({
         >
             <div className="container">
                 {/* Welcome Message */}
-                <div className="row mb-2">
+                <div className="row">
                     <div className="col-12">
                         <div
                             style={{

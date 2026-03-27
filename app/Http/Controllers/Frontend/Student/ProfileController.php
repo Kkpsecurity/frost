@@ -8,6 +8,7 @@ use App\Events\Payment\PaymentMethodAdded;
 use App\Events\Profile\EmailChanged;
 use App\Events\Payment\PaymentMethodRemoved;
 use App\Notifications\Payment\DefaultPaymentUpdatedNotification;
+use App\Services\Payments\PayPalConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -104,9 +105,11 @@ class ProfileController extends Controller
      */
     public function connectPayPal(Request $request)
     {
-        $mode         = setting('payments.paypal.mode') ?? 'sandbox';
-        $clientId     = setting('payments.paypal.client_id');
-        $clientSecret = setting('payments.paypal.client_secret');
+        $payPalConfig = app(PayPalConfigService::class);
+
+        $mode         = $payPalConfig->mode();
+        $clientId     = $payPalConfig->clientId();
+        $clientSecret = $payPalConfig->clientSecret();
 
         if (empty($clientId) || empty($clientSecret)) {
             return redirect()->route('account.index', ['section' => 'payments'])
@@ -161,9 +164,11 @@ class ProfileController extends Controller
                 ->with('error', 'PayPal connection failed (missing authorization code).');
         }
 
-        $mode         = setting('payments.paypal.mode') ?? 'sandbox';
-        $clientId     = setting('payments.paypal.client_id');
-        $clientSecret = setting('payments.paypal.client_secret');
+        $payPalConfig = app(PayPalConfigService::class);
+
+        $mode         = $payPalConfig->mode();
+        $clientId     = $payPalConfig->clientId();
+        $clientSecret = $payPalConfig->clientSecret();
 
         if (empty($clientId) || empty($clientSecret)) {
             return redirect()->route('account.index', ['section' => 'payments'])
@@ -444,8 +449,7 @@ class ProfileController extends Controller
 
         // Payment gateway configuration
         $stripeEnabled = !empty(setting('payments.stripe.test_secret_key')) || !empty(setting('payments.stripe.live_secret_key'));
-        $paypalEnabled = !empty(setting('payments.paypal.client_id'))
-            && !empty(setting('payments.paypal.client_secret'));
+        $paypalEnabled = app(PayPalConfigService::class)->isConfigured();
         $stripeMode = setting('payments.stripe.mode') ?? 'test';
         $stripePublishableKey = $stripeMode === 'live'
             ? setting('payments.stripe.live_publishable_key')

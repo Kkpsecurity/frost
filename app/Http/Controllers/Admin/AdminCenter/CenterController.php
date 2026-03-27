@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\AdminCenter;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Admin;
+use App\Services\Payments\PayPalConfigService;
 use App\Traits\PageMetaDataTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -159,7 +160,7 @@ class CenterController extends Controller
     private function getPaymentStatus()
     {
         // Check if payment gateways are configured
-        $paypal = config('services.paypal.client_id');
+        $paypal = app(PayPalConfigService::class)->clientId();
         $stripe = config('services.stripe.key');
 
         if ($paypal && $stripe)

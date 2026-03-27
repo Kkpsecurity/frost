@@ -9,7 +9,7 @@
 @stop
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid paypal-config-page">
 
         @if (session('success'))
             <div class="alert alert-success alert-dismissible">
@@ -25,15 +25,15 @@
                     <div class="card-header">
                         <h3 class="card-title">PayPal API Credentials</h3>
                     </div>
-                    <form action="{{ route('admin.payments.update-paypal') }}" method="POST">
+                    <form action="{{ route('admin.payments.update-paypal') }}" method="POST" autocomplete="off">
                         @csrf
                         @method('PUT')
                         <div class="card-body">
 
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                PayPal payments are coming soon. You can configure credentials now and they will be
-                                activated when the PayPal integration is complete.
+                                If these fields are left blank, PayPal will use the environment configuration.
+                                Fill them in to override the env values.
                             </div>
 
                             <div class="form-group">
@@ -53,26 +53,49 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="client_id">Client ID</label>
-                                <input type="text" id="client_id" name="client_id" class="form-control"
-                                    placeholder="{{ $hasClientId ? '••••••••••••' : 'PayPal Client ID' }}">
-                                @if ($hasClientId)
+                                <label for="paypal_client_id">Client ID</label>
+                                <input type="text" id="paypal_client_id" name="paypal_client_id" class="form-control"
+                                    autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+                                    inputmode="text" data-lpignore="true" data-1p-ignore="true" readonly
+                                    onfocus="this.removeAttribute('readonly');"
+                                    value="{{ old('paypal_client_id', $settingsClientId ?? '') }}"
+                                    placeholder="{{ $hasSettingsClientId ?? false ? '••••••••••••' : 'PayPal Client ID' }}">
+                                @if ($hasSettingsClientId ?? false)
                                     <small class="form-text text-success">
-                                        <i class="fas fa-check-circle mr-1"></i> Client ID configured — leave blank to keep
-                                        existing.
+                                        <i class="fas fa-check-circle mr-1"></i> Using settings key
+                                        <code>payments.paypal.client_id</code>.
                                     </small>
+                                @elseif($hasEnvClientId ?? false)
+                                    <small class="form-text text-info">
+                                        <i class="fas fa-info-circle mr-1"></i> No settings override — using environment
+                                        configuration.
+                                    </small>
+                                @else
+                                    <small class="form-text text-muted">Settings key:
+                                        <code>payments.paypal.client_id</code></small>
                                 @endif
                             </div>
 
                             <div class="form-group">
-                                <label for="client_secret">Client Secret</label>
-                                <input type="password" id="client_secret" name="client_secret" class="form-control"
-                                    placeholder="{{ $hasClientSecret ? '••••••••••••' : 'PayPal Client Secret' }}">
-                                @if ($hasClientSecret)
+                                <label for="paypal_client_secret">Client Secret</label>
+                                <input type="password" id="paypal_client_secret" name="paypal_client_secret"
+                                    class="form-control" autocomplete="new-password" autocorrect="off" autocapitalize="none"
+                                    spellcheck="false" data-lpignore="true" data-1p-ignore="true" readonly
+                                    onfocus="this.removeAttribute('readonly');"
+                                    placeholder="{{ $hasSettingsClientSecret ?? false ? '••••••••••••' : 'PayPal Client Secret' }}">
+                                @if ($hasSettingsClientSecret ?? false)
                                     <small class="form-text text-success">
-                                        <i class="fas fa-check-circle mr-1"></i> Client Secret configured — leave blank to
-                                        keep existing.
+                                        <i class="fas fa-check-circle mr-1"></i> Using settings key
+                                        <code>payments.paypal.client_secret</code>.
                                     </small>
+                                @elseif($hasEnvClientSecret ?? false)
+                                    <small class="form-text text-info">
+                                        <i class="fas fa-info-circle mr-1"></i> No settings override — using environment
+                                        configuration.
+                                    </small>
+                                @else
+                                    <small class="form-text text-muted">Settings key:
+                                        <code>payments.paypal.client_secret</code></small>
                                 @endif
                             </div>
 
@@ -110,4 +133,19 @@
 
         </div>
     </div>
+@stop
+
+@section('css')
+    <style>
+        /* Fix low-contrast Chrome autofill styling on dark AdminLTE pages */
+        .paypal-config-page input.form-control:-webkit-autofill,
+        .paypal-config-page input.form-control:-webkit-autofill:hover,
+        .paypal-config-page input.form-control:-webkit-autofill:focus,
+        .paypal-config-page input.form-control:-webkit-autofill:active {
+            -webkit-text-fill-color: #fff;
+            caret-color: #fff;
+            box-shadow: 0 0 0 1000px #343a40 inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+    </style>
 @stop

@@ -237,6 +237,8 @@ const ActivityList: React.FC<ActivityListProps> = ({
                 return "fa-sign-in-alt text-success";
             case "logout":
                 return "fa-sign-out-alt text-muted";
+            case "waiting_room_entry":
+                return "fa-clock text-info";
             case "lesson_started":
                 return "fa-play-circle text-primary";
             case "lesson_completed":

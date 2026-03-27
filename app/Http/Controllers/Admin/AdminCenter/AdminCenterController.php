@@ -20,6 +20,7 @@ use App\Models\ExamQuestionSpec;
 use App\Models\Lesson;
 use App\Models\PaymentType;
 use App\Models\SiteConfig;
+use App\Services\Payments\PayPalConfigService;
 use App\Services\RCache;
 
 class AdminCenterController extends Controller
@@ -380,11 +381,13 @@ class AdminCenterController extends Controller
      */
     public function paymentGateway()
     {
+        $payPalConfig = app(PayPalConfigService::class);
+
         $settings = [
             'stripe_enabled' => config('services.stripe.enabled', false),
             'stripe_key' => config('services.stripe.key'),
             'paypal_enabled' => config('services.paypal.enabled', false),
-            'paypal_client_id' => config('services.paypal.client_id'),
+            'paypal_client_id' => $payPalConfig->clientId(),
         ];
 
         return view('admin.admin-center.payment-gateway', compact('settings'));

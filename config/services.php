@@ -36,4 +36,11 @@ return [
         'secret' => env('STRIPE_SECRET_KEY'),
     ],
 
+    'paypal' => [
+        'enabled' => (bool) env('PAYPAL_ENABLED', false),
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'mode' => env('PAYPAL_MODE', 'sandbox'),
+    ],
+
 ];

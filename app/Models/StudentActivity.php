@@ -54,6 +54,7 @@ class StudentActivity extends Model
     public const TYPE_SITE_EXIT = 'site_exit';
     public const TYPE_CLASSROOM_ENTRY = 'classroom_entry';
     public const TYPE_CLASSROOM_EXIT = 'classroom_exit';
+    public const TYPE_WAITING_ROOM_ENTRY = 'waiting_room_entry';
     public const TYPE_PAGE_VIEW = 'page_view';
     public const TYPE_BUTTON_CLICK = 'button_click';
     public const TYPE_AGREEMENT_ACCEPTED = 'agreement_accepted';
