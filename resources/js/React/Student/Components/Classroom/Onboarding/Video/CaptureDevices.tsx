@@ -20,7 +20,7 @@ interface CaptureDevicesProps {
     setShowCaptureType: React.Dispatch<React.SetStateAction<CaptureTypes>>;
     setCurrentStep: React.Dispatch<React.SetStateAction<number>>;
     currentStep: number;
-    onUploaded?: (photoType: 'idcard' | 'headshot') => void;
+    onUploaded?: (photoType: 'idcard' | 'headshot', uploadedUrl?: string) => void;
     debug?: boolean;
 }
 
@@ -354,7 +354,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                         photoType={photoType}
                         headshot={headshot}
                         idcard={idcard}
-                        onStepComplete={() => {
+                        onStepComplete={(previewUrl?: string) => {
                             retakeModeRef.current.headshot = false;
                             retakeModeRef.current.idcard = false;
                             toast.success(
@@ -364,7 +364,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                             );
                             setShowCaptureType(null);
                             if (onUploaded) {
-                                onUploaded(photoType === 'headshot' ? 'headshot' : 'idcard');
+                                onUploaded(photoType === 'headshot' ? 'headshot' : 'idcard', previewUrl);
                                 return;
                             }
                             if (photoType === "idcard") setCurrentStep(3);
@@ -379,7 +379,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                         photoType={photoType}
                         headshot={headshot}
                         idcard={idcard}
-                        onStepComplete={() => {
+                        onStepComplete={(uploadedUrl?: string) => {
                             retakeModeRef.current.headshot = false;
                             retakeModeRef.current.idcard = false;
                             toast.success(
@@ -389,7 +389,7 @@ const CaptureDevices: React.FC<CaptureDevicesProps> = ({
                             );
                             setShowCaptureType(null);
                             if (onUploaded) {
-                                onUploaded(photoType === 'headshot' ? 'headshot' : 'idcard');
+                                onUploaded(photoType === 'headshot' ? 'headshot' : 'idcard', uploadedUrl);
                                 return;
                             }
                             if (photoType === "idcard") setCurrentStep(3);

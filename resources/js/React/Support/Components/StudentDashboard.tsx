@@ -7,6 +7,7 @@ import AttendanceHistory from "./AttendanceHistory";
 import PhotoValidation from "./PhotoValidation";
 import StudentDetails from "./StudentDetails";
 import ExamResults from "./ExamResults";
+import StudentToolsPanel from "./StudentToolsPanel";
 
 interface User {
     id: number;
@@ -75,7 +76,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
             <div className="row">
                 <div className="col-md-3">
-                    <div className="card">
+                    <div className="card mb-3">
                         <div className="card-header">
                             <img
                                 src={student.avatar}
@@ -105,6 +106,29 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                             )}
                         </div>
                     </div>
+
+                    <div className="card">
+                        <div className="card-header py-2">
+                            <h6 className="mb-0">
+                                <i className="fas fa-tools mr-2 text-warning"></i>
+                                Student Tools
+                            </h6>
+                        </div>
+                        <div className="card-body p-2">
+                            {!selectedCourse ? (
+                                <p className="text-muted small mb-0">
+                                    <i className="fas fa-arrow-right mr-1"></i>
+                                    Select a course to manage enrollment tools.
+                                </p>
+                            ) : (
+                                <StudentToolsPanel
+                                    courses={(pollData?.courses || []).filter((c: any) => String(c.id) === String(selectedCourse))}
+                                    onRefresh={handleRefetchData}
+                                    toolPermissions={pollData?.toolPermissions || {}}
+                                />
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="col-md-9">
@@ -113,11 +137,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                             <ul className="nav nav-tabs card-header-tabs">
                                 <li className="nav-item">
                                     <button
-                                        className={`nav-link ${
-                                            activeTab === "activity"
-                                                ? "active"
-                                                : ""
-                                        } ${!selectedCourse ? "disabled" : ""}`}
+                                        className={`nav-link ${activeTab === "activity"
+                                            ? "active"
+                                            : ""
+                                            } ${!selectedCourse ? "disabled" : ""}`}
                                         onClick={() =>
                                             handleTabClick("activity")
                                         }
@@ -129,11 +152,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 </li>
                                 <li className="nav-item">
                                     <button
-                                        className={`nav-link ${
-                                            activeTab === "lessons"
-                                                ? "active"
-                                                : ""
-                                        } ${!selectedCourse ? "disabled" : ""}`}
+                                        className={`nav-link ${activeTab === "lessons"
+                                            ? "active"
+                                            : ""
+                                            } ${!selectedCourse ? "disabled" : ""}`}
                                         onClick={() =>
                                             handleTabClick("lessons")
                                         }
@@ -145,11 +167,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 </li>
                                 <li className="nav-item">
                                     <button
-                                        className={`nav-link ${
-                                            activeTab === "class-history"
-                                                ? "active"
-                                                : ""
-                                        } ${!selectedCourse ? "disabled" : ""}`}
+                                        className={`nav-link ${activeTab === "class-history"
+                                            ? "active"
+                                            : ""
+                                            } ${!selectedCourse ? "disabled" : ""}`}
                                         onClick={() =>
                                             handleTabClick("class-history")
                                         }
@@ -169,11 +190,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 </li>
                                 <li className="nav-item">
                                     <button
-                                        className={`nav-link ${
-                                            activeTab === "photos"
-                                                ? "active"
-                                                : ""
-                                        } ${!selectedCourse ? "disabled" : ""}`}
+                                        className={`nav-link ${activeTab === "photos"
+                                            ? "active"
+                                            : ""
+                                            } ${!selectedCourse ? "disabled" : ""}`}
                                         onClick={() => handleTabClick("photos")}
                                         disabled={!selectedCourse}
                                     >
@@ -183,9 +203,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 </li>
                                 <li className="nav-item">
                                     <button
-                                        className={`nav-link ${
-                                            activeTab === "exam" ? "active" : ""
-                                        } ${!selectedCourse ? "disabled" : ""}`}
+                                        className={`nav-link ${activeTab === "exam" ? "active" : ""
+                                            } ${!selectedCourse ? "disabled" : ""}`}
                                         onClick={() => handleTabClick("exam")}
                                         disabled={!selectedCourse}
                                     >
@@ -195,11 +214,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                 </li>
                                 <li className="nav-item">
                                     <button
-                                        className={`nav-link ${
-                                            activeTab === "details"
-                                                ? "active"
-                                                : ""
-                                        } ${!selectedCourse ? "disabled" : ""}`}
+                                        className={`nav-link ${activeTab === "details"
+                                            ? "active"
+                                            : ""
+                                            } ${!selectedCourse ? "disabled" : ""}`}
                                         onClick={() =>
                                             handleTabClick("details")
                                         }
@@ -260,6 +278,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                             history={
                                                 pollData?.classHistory || []
                                             }
+                                            onRefresh={handleRefetchData}
+                                            toolPermissions={pollData?.toolPermissions || {}}
                                         />
                                     )}
                                     {activeTab === "photos" && (
@@ -286,6 +306,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                                     )}
                                 </div>
                             )}
+
                         </div>
                     </div>
                 </div>

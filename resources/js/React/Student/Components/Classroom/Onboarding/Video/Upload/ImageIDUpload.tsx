@@ -20,7 +20,7 @@ interface ImageIDUploadProps {
     photoType: string;
     headshot: string | null;
     idcard: string | null;
-    onStepComplete?: () => void;
+    onStepComplete?: (uploadedUrl?: string) => void;
     debug: boolean;
 }
 
@@ -105,8 +105,12 @@ const ImageIDUpload: FC<ImageIDUploadProps> = ({
                                             className="btn btn-sm btn-success float-end"
                                             onClick={async () => {
                                                 try {
+                                                    // Capture blob URL before handleUploadImage clears selectedFile
+                                                    const previewUrl = selectedFile
+                                                        ? URL.createObjectURL(selectedFile)
+                                                        : undefined;
                                                     await handleUploadImage();
-                                                    onStepComplete?.();
+                                                    onStepComplete?.(previewUrl);
                                                 } catch (error) {
                                                     // Error state is handled inside the hook
                                                 }

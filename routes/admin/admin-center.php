@@ -30,6 +30,8 @@ Route::prefix('admin-center')->name('admin-center.')->middleware(['admin', 'admi
     Route::post('/instructors/{id}/toggle-status', [AdminCenterController::class, 'toggleInstructorStatus'])->name('instructors.toggle-status');
 
     Route::get('/role-permissions', [AdminCenterController::class, 'rolePermissions'])->name('role-permissions');
+    Route::get('/student-tool-permissions', [AdminCenterController::class, 'getStudentToolPermissions'])->name('student-tool-permissions');
+    Route::patch('/student-tool-permissions/{permissionId}', [AdminCenterController::class, 'updateStudentToolPermission'])->name('student-tool-permissions.update');
 
     // Payment Gateway
     Route::get('/payment-gateway', [AdminCenterController::class, 'paymentGateway'])->name('payment-gateway');

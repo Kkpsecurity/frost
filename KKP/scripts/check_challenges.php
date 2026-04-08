@@ -2,15 +2,16 @@
 
 /**
  * Challenge Monitor — quick DB dump for QA testing
- * Usage: php check_challenges.php [last_known_id]
+ * Usage: php scripts/qa/check_challenges.php [last_known_id]
  *
  * Shows last 10 challenges with duration (should be ~215s after Job S).
  * Pass an ID to only show rows newer than that ID.
  */
 
 define('LARAVEL_START', microtime(true));
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$root = dirname(__DIR__, 2);
+require $root . '/vendor/autoload.php';
+$app = require_once $root . '/bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 $sinceId = (int) ($argv[1] ?? 0);

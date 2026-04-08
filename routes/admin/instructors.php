@@ -189,6 +189,10 @@ Route::prefix('instructors')->name('instructors.')->middleware(['admin'])->group
         // Notifications data
         Route::get('/notifications/unread', [InstructorDashboardController::class, 'getUnreadNotifications'])
             ->name('notifications.unread');
+
+        // Student tools data (enrollment + day status for instructor classroom)
+        Route::get('/student-tools/{courseAuthId}', [InstructorDashboardController::class, 'getStudentToolsData'])
+            ->name('student-tools.data');
     });
 
     // =====================================================

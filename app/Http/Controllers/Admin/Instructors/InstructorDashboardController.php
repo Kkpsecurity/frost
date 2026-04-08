@@ -153,6 +153,32 @@ class InstructorDashboardController extends Controller
                 }
             }
 
+            $adminUser = auth('admin')->user();
+            $toolPermissions = [
+                'ban-course-auth' => false,
+                'day-ban'         => false,
+                'grant-lesson'    => false,
+                'reverse-dnc'     => false,
+            ];
+            if ($adminUser) {
+                try {
+                    $toolPermissions = [
+                        'ban-course-auth' => $adminUser->hasPermissionTo('student-tools.ban-course-auth'),
+                        'day-ban'         => $adminUser->hasPermissionTo('student-tools.day-ban'),
+                        'grant-lesson'    => $adminUser->hasPermissionTo('student-tools.grant-lesson'),
+                        'reverse-dnc'     => $adminUser->hasPermissionTo('student-tools.reverse-dnc'),
+                    ];
+                } catch (\Exception $e) {
+                    \Log::warning('student-tools permissions not found (run PermissionsSeeder): ' . $e->getMessage());
+                    $toolPermissions = [
+                        'ban-course-auth' => true,
+                        'day-ban'         => true,
+                        'grant-lesson'    => true,
+                        'reverse-dnc'     => true,
+                    ];
+                }
+            }
+
             return response()->json([
                 'instructor' => [
                     'id' => $user->id,
@@ -173,6 +199,7 @@ class InstructorDashboardController extends Controller
                 ]) : null,
                 'instLessons' => $instUnit?->instLessons ?? [],
                 'zoom' => $zoomData, // NEW: Zoom status in instructor poll
+                'toolPermissions' => $toolPermissions,
             ]);
         } catch (Exception $e) {
             Log::error('Instructor poll data error: ' . $e->getMessage());
@@ -251,6 +278,55 @@ class InstructorDashboardController extends Controller
                 'message' => 'Error loading zoom status',
             ];
         }
+    }
+
+    /**
+     * Get student tools data for instructor classroom (enrollment + day status)
+     */
+    public function getStudentToolsData(Request $request, int $courseAuthId)
+    {
+        $courseAuth = \App\Models\CourseAuth::with('course')->find($courseAuthId);
+        if (!$courseAuth) {
+            return response()->json(['error' => 'Enrollment not found'], 404);
+        }
+
+        $enrollment = [
+            'id'              => $courseAuth->id,
+            'course_id'       => $courseAuth->course_id,
+            'name'            => $courseAuth->course?->title ?? 'Unknown Course',
+            'status'          => $courseAuth->disabled_at ? 'banned' : 'active',
+            'start_date'      => $courseAuth->start_date?->format('Y-m-d'),
+            'expire_date'     => $courseAuth->expire_date?->format('Y-m-d'),
+            'is_passed'       => (bool) $courseAuth->is_passed,
+            'disabled_at'     => $courseAuth->disabled_at?->format('Y-m-d H:i:s'),
+            'disabled_reason' => $courseAuth->disabled_reason,
+        ];
+
+        $attendanceRecord = null;
+        $studentUnitId = $request->query('student_unit_id');
+        if ($studentUnitId) {
+            $studentUnit = \App\Models\StudentUnit::with('CourseDate')->find((int) $studentUnitId);
+            if ($studentUnit && $studentUnit->CourseDate) {
+                $startDate = \Carbon\Carbon::parse($studentUnit->CourseDate->starts_at);
+                $attendanceRecord = [
+                    'id'             => $studentUnit->id,
+                    'date'           => $startDate->format('Y-m-d'),
+                    'day_name'       => $startDate->format('l'),
+                    'formatted_date' => $startDate->format('M j, Y'),
+                    'time'           => $startDate->format('g:i A'),
+                    'status'         => $studentUnit->ejected_at ? 'ejected' : 'present',
+                    'course_date_id' => $studentUnit->course_date_id,
+                    'created_at'     => \Carbon\Carbon::parse($studentUnit->created_at)->format('Y-m-d H:i:s'),
+                    'ejected_at'     => $studentUnit->ejected_at?->format('Y-m-d H:i:s'),
+                    'ejected_for'    => $studentUnit->ejected_for,
+                ];
+            }
+        }
+
+        return response()->json([
+            'enrollment'       => $enrollment,
+            'attendanceRecord' => $attendanceRecord,
+        ]);
     }
 
     /**

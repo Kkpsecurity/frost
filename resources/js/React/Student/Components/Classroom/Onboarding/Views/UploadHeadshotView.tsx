@@ -13,7 +13,7 @@ interface UploadHeadshotViewProps {
     setCurrentStep: any;
     currentStep: any;
     isImageSet: any;
-    onUploaded?: () => void;
+    onUploaded?: (uploadedUrl?: string) => void;
     debug?: boolean;
 }
 
@@ -60,7 +60,7 @@ const UploadHeadshotView = ({
                                 setShowCaptureType={setShowCaptureType}
                                 setCurrentStep={setCurrentStep}
                                 currentStep={currentStep}
-                                onUploaded={() => onUploaded?.()}
+                                onUploaded={(uploadedUrl?: string) => onUploaded?.(uploadedUrl)}
                                 debug={debug}
                             />
                         </div>

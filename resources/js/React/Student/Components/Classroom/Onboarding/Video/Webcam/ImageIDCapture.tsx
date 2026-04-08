@@ -23,7 +23,7 @@ interface ImageIDCaptureProps {
     idcard: string | null;
     debug?: boolean;
     onImageSaved?: (imageData: { blob: Blob; dataUrl: string }) => void;
-    onStepComplete?: () => void;
+    onStepComplete?: (previewUrl?: string) => void;
 }
 
 const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
@@ -334,10 +334,11 @@ const ImageIDCapture: React.FC<ImageIDCaptureProps> = ({
             }
 
             // Trigger step completion after upload initiation
+            const previewDataUrl = capturedImageData?.dataUrl ?? undefined;
             setTimeout(() => {
                 if (onStepComplete) {
                     console.log('✅ Calling onStepComplete');
-                    onStepComplete();
+                    onStepComplete(previewDataUrl);
                 }
             }, 2000); // Slightly longer delay for upload processing
 

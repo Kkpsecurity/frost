@@ -260,10 +260,13 @@ const usePhotoUploaded = ({
                 formData.append("student_id", student.id.toString());
                 formData.append("file", convertedFile);
 
-                await uploadFile(formData);
+                const uploadResult = await uploadFile(formData);
+                const filePath: string | undefined = uploadResult?.data?.file_path;
+                const uploadedUrl: string | null = filePath ? '/storage/' + filePath : null;
 
                 setIsUploading(false);
                 setSelectedFile(null);
+                return uploadedUrl;
             }
         } catch (error) {
             console.error("❌ Upload error:", error);

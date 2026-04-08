@@ -1,6 +1,7 @@
 <?php
-require 'vendor/autoload.php';
-$app = require 'bootstrap/app.php';
+$root = dirname(__DIR__, 2);
+require $root . '/vendor/autoload.php';
+$app = require $root . '/bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────

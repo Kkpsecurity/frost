@@ -125,6 +125,33 @@ class SupportController extends Controller
                 'courses' => $courses
             ]);
 
+            $adminUser = auth('admin')->user();
+            $toolPermissions = [
+                'ban-course-auth' => false,
+                'day-ban'         => false,
+                'grant-lesson'    => false,
+                'reverse-dnc'     => false,
+            ];
+            if ($adminUser) {
+                try {
+                    $toolPermissions = [
+                        'ban-course-auth' => $adminUser->hasPermissionTo('student-tools.ban-course-auth'),
+                        'day-ban'         => $adminUser->hasPermissionTo('student-tools.day-ban'),
+                        'grant-lesson'    => $adminUser->hasPermissionTo('student-tools.grant-lesson'),
+                        'reverse-dnc'     => $adminUser->hasPermissionTo('student-tools.reverse-dnc'),
+                    ];
+                } catch (\Exception $e) {
+                    // Permissions not yet seeded — show all buttons until configured
+                    \Log::warning('student-tools permissions not found (run PermissionsSeeder): ' . $e->getMessage());
+                    $toolPermissions = [
+                        'ban-course-auth' => true,
+                        'day-ban'         => true,
+                        'grant-lesson'    => true,
+                        'reverse-dnc'     => true,
+                    ];
+                }
+            }
+
             $data = [
                 'student' => [
                     'id' => $student->id,
@@ -141,6 +168,7 @@ class SupportController extends Controller
                 'photos' => $courseId ? $this->getStudentPhotos($studentId, $courseId) : [],
                 'examResults' => $courseId ? $this->getExamResults($studentId, $courseId) : [],
                 'studentDetails' => $this->getStudentDetails($studentId, $courseId),
+                'toolPermissions' => $toolPermissions,
             ];
 
             return response()->json([
@@ -183,6 +211,8 @@ class SupportController extends Controller
                 'expire_date' => $courseAuth->expire_date ? \Carbon\Carbon::parse($courseAuth->expire_date)->format('Y-m-d') : null,
                 'is_passed' => $courseAuth->is_passed,
                 'created_at' => $courseAuth->created_at->format('Y-m-d H:i:s'),
+                'disabled_at' => $courseAuth->disabled_at ? $courseAuth->disabled_at->format('Y-m-d H:i:s') : null,
+                'disabled_reason' => $courseAuth->disabled_reason,
             ];
         })->toArray();
     }
@@ -578,9 +608,11 @@ class SupportController extends Controller
                 'day_name' => $startDate->format('l'), // Monday, Tuesday, etc.
                 'formatted_date' => $startDate->format('M j, Y'), // Jan 5, 2026
                 'time' => $startDate->format('g:i A'), // 9:00 AM
-                'status' => 'present', // StudentUnit exists = present
+                'status'       => $studentUnit->ejected_at ? 'ejected' : 'present',
                 'course_date_id' => $courseDate->id,
-                'created_at' => \Carbon\Carbon::parse($studentUnit->created_at)->format('Y-m-d H:i:s'),
+                'created_at'   => \Carbon\Carbon::parse($studentUnit->created_at)->format('Y-m-d H:i:s'),
+                'ejected_at'   => $studentUnit->ejected_at ? $studentUnit->ejected_at->format('Y-m-d H:i:s') : null,
+                'ejected_for'  => $studentUnit->ejected_for,
             ];
         }
 
@@ -951,6 +983,325 @@ class SupportController extends Controller
                 'success' => false,
                 'message' => 'Failed to update student details: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Toggle ban / reinstate a student's CourseAuth enrollment.
+     *
+     * POST /support/student-tools/toggle-ban/{courseAuthId}
+     * Body (ban only): { reason: string }
+     */
+    public function toggleBan(Request $request, int $courseAuthId)
+    {
+        try {
+            $courseAuth = \App\Models\CourseAuth::findOrFail($courseAuthId);
+
+            // Verify the enrollment belongs to a Student-role user.
+            $student = User::find($courseAuth->user_id);
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found.'], 404);
+            }
+
+            $isBanned = !is_null($courseAuth->disabled_at);
+
+            if ($isBanned) {
+                // Reinstate
+                $courseAuth->disabled_at     = null;
+                $courseAuth->disabled_reason = null;
+                $courseAuth->save();
+
+                \Log::info('Support: CourseAuth reinstated', [
+                    'course_auth_id' => $courseAuth->id,
+                    'student_id'     => $courseAuth->user_id,
+                    'admin_id'       => auth('admin')->id(),
+                ]);
+
+                $action = 'reinstated';
+            } else {
+                // Ban — reason required
+                $request->validate([
+                    'reason' => 'required|string|max:500',
+                ]);
+
+                $courseAuth->disabled_at     = now();
+                $courseAuth->disabled_reason = $request->input('reason');
+                $courseAuth->save();
+
+                \Log::info('Support: CourseAuth banned', [
+                    'course_auth_id' => $courseAuth->id,
+                    'student_id'     => $courseAuth->user_id,
+                    'reason'         => $courseAuth->disabled_reason,
+                    'admin_id'       => auth('admin')->id(),
+                ]);
+
+                $action = 'banned';
+            }
+
+            return response()->json([
+                'success'     => true,
+                'action'      => $action,
+                'course_auth' => [
+                    'id'              => $courseAuth->id,
+                    'disabled_at'     => $courseAuth->disabled_at ? $courseAuth->disabled_at->format('Y-m-d H:i:s') : null,
+                    'disabled_reason' => $courseAuth->disabled_reason,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Enrollment not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: toggleBan failed', ['course_auth_id' => $courseAuthId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Toggle day-ban / reinstate a student from a specific class day (StudentUnit).
+     *
+     * POST /support/student-tools/toggle-day-ban/{studentUnitId}
+     * Body (ban only): { reason: string }
+     */
+    public function toggleDayBan(Request $request, int $studentUnitId)
+    {
+        try {
+            $studentUnit = \App\Models\StudentUnit::findOrFail($studentUnitId);
+
+            // Verify the StudentUnit belongs to a Student-role user.
+            $courseAuth = \App\Models\CourseAuth::find($studentUnit->course_auth_id);
+            if (!$courseAuth) {
+                return response()->json(['success' => false, 'message' => 'CourseAuth not found.'], 404);
+            }
+
+            $student = User::find($courseAuth->user_id);
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found.'], 404);
+            }
+
+            $isEjected = !is_null($studentUnit->ejected_at);
+
+            if ($isEjected) {
+                // Reinstate
+                $studentUnit->ejected_at  = null;
+                $studentUnit->ejected_for = null;
+                $studentUnit->save();
+
+                \Log::info('Support: StudentUnit day reinstated', [
+                    'student_unit_id' => $studentUnit->id,
+                    'student_id'      => $courseAuth->user_id,
+                    'admin_id'        => auth('admin')->id(),
+                ]);
+
+                $action = 'day_reinstated';
+            } else {
+                // Eject — reason required
+                $request->validate([
+                    'reason' => 'required|string|max:500',
+                ]);
+
+                $studentUnit->ejected_at  = now();
+                $studentUnit->ejected_for = $request->input('reason');
+                $studentUnit->save();
+
+                \Log::info('Support: StudentUnit day banned', [
+                    'student_unit_id' => $studentUnit->id,
+                    'student_id'      => $courseAuth->user_id,
+                    'reason'          => $studentUnit->ejected_for,
+                    'admin_id'        => auth('admin')->id(),
+                ]);
+
+                $action = 'day_banned';
+            }
+
+            return response()->json([
+                'success'      => true,
+                'action'       => $action,
+                'student_unit' => [
+                    'id'          => $studentUnit->id,
+                    'ejected_at'  => $studentUnit->ejected_at ? $studentUnit->ejected_at->format('Y-m-d H:i:s') : null,
+                    'ejected_for' => $studentUnit->ejected_for,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Student day record not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: toggleDayBan failed', ['student_unit_id' => $studentUnitId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * List all InstLessons for a student's class day, with StudentLesson status per row.
+     *
+     * GET /support/student-tools/lessons-for-day/{studentUnitId}
+     */
+    public function getLessonsForDay(Request $request, int $studentUnitId)
+    {
+        try {
+            $studentUnit = \App\Models\StudentUnit::findOrFail($studentUnitId);
+
+            // Load all InstLessons for this class day's InstUnit
+            $instLessons = \App\Models\InstLesson::with('Lesson')
+                ->where('inst_unit_id', $studentUnit->inst_unit_id)
+                ->orderBy('created_at')
+                ->get();
+
+            // Index existing StudentLessons by inst_lesson_id for fast lookup
+            $existing = \App\Models\StudentLesson::where('student_unit_id', $studentUnitId)
+                ->get()
+                ->keyBy('inst_lesson_id');
+
+            $lessons = $instLessons->map(function ($instLesson) use ($existing) {
+                $studentLesson = $existing->get($instLesson->id);
+
+                $canReverseDnc = $studentLesson
+                    && !is_null($studentLesson->dnc_at)
+                    && is_null($studentLesson->completed_at);
+
+                return [
+                    'inst_lesson_id'    => $instLesson->id,
+                    'lesson_id'         => $instLesson->lesson_id,
+                    'lesson_title'      => $instLesson->Lesson?->title ?? 'Lesson ' . $instLesson->lesson_id,
+                    'started_at'        => $instLesson->created_at ? $instLesson->created_at->format('Y-m-d H:i:s') : null,
+                    'student_lesson_id' => $studentLesson?->id,
+                    'dnc_at'            => $studentLesson?->dnc_at?->format('Y-m-d H:i:s'),
+                    'completed_at'      => $studentLesson?->completed_at?->format('Y-m-d H:i:s'),
+                    'can_reverse_dnc'   => $canReverseDnc,
+                ];
+            });
+
+            return response()->json(['success' => true, 'lessons' => $lessons]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Student day record not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: getLessonsForDay failed', ['student_unit_id' => $studentUnitId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Manually grant a missing StudentLesson for a student's class day.
+     *
+     * POST /support/student-tools/grant-lesson/{studentUnitId}
+     * Body: { inst_lesson_id: int }
+     */
+    public function grantLesson(Request $request, int $studentUnitId)
+    {
+        try {
+            $request->validate(['inst_lesson_id' => 'required|integer']);
+
+            $studentUnit = \App\Models\StudentUnit::findOrFail($studentUnitId);
+
+            // Verify the StudentUnit belongs to a Student-role user.
+            $courseAuth = \App\Models\CourseAuth::find($studentUnit->course_auth_id);
+            if (!$courseAuth) {
+                return response()->json(['success' => false, 'message' => 'CourseAuth not found.'], 404);
+            }
+
+            $student = User::find($courseAuth->user_id);
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found.'], 404);
+            }
+
+            // Verify InstLesson belongs to this StudentUnit's InstUnit (prevents cross-day grants)
+            $instLesson = \App\Models\InstLesson::where('id', $request->inst_lesson_id)
+                ->where('inst_unit_id', $studentUnit->inst_unit_id)
+                ->first();
+
+            if (!$instLesson) {
+                return response()->json(['success' => false, 'message' => 'Lesson not found for this class day.'], 404);
+            }
+
+            // Idempotent guard — do not create a duplicate
+            $existing = \App\Models\StudentLesson::where('student_unit_id', $studentUnitId)
+                ->where('inst_lesson_id', $instLesson->id)
+                ->first();
+
+            if ($existing) {
+                return response()->json(['success' => false, 'message' => 'Student already has this lesson.'], 409);
+            }
+
+            $studentLesson = \App\Models\StudentLesson::create([
+                'lesson_id'       => $instLesson->lesson_id,
+                'student_unit_id' => $studentUnitId,
+                'inst_lesson_id'  => $instLesson->id,
+            ]);
+
+            \Log::info('Support: lesson manually granted', [
+                'student_unit_id' => $studentUnitId,
+                'inst_lesson_id'  => $instLesson->id,
+                'lesson_id'       => $instLesson->lesson_id,
+                'student_id'      => $courseAuth->user_id,
+                'admin_id'        => auth('admin')->id(),
+            ]);
+
+            return response()->json([
+                'success'        => true,
+                'student_lesson' => [
+                    'id'             => $studentLesson->id,
+                    'lesson_id'      => $studentLesson->lesson_id,
+                    'inst_lesson_id' => $studentLesson->inst_lesson_id,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Student day record not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: grantLesson failed', ['student_unit_id' => $studentUnitId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reverse a DNC on a StudentLesson, bypassing the InstLesson guard.
+     *
+     * POST /support/student-tools/reverse-lesson-dnc/{studentLessonId}
+     * Body (optional): { reason: string }
+     */
+    public function reverseLessonDnc(Request $request, int $studentLessonId)
+    {
+        try {
+            $studentLesson = \App\Models\StudentLesson::findOrFail($studentLessonId);
+
+            if (!is_null($studentLesson->completed_at)) {
+                return response()->json(['success' => false, 'message' => 'Lesson is already completed — nothing to reverse.'], 409);
+            }
+
+            if (is_null($studentLesson->dnc_at)) {
+                return response()->json(['success' => false, 'message' => 'Lesson is not in DNC state.'], 409);
+            }
+
+            // Clear DNC directly — do NOT call ClearDNC() trait (blocked by InstLesson->completed_at)
+            $studentLesson->update(['dnc_at' => null]);
+
+            // Null out failed_at on any associated Challenges
+            $studentLesson->Challenges()->whereNotNull('failed_at')->update(['failed_at' => null]);
+
+            \Log::info('Support: StudentLesson DNC reversed', [
+                'student_lesson_id' => $studentLesson->id,
+                'lesson_id'         => $studentLesson->lesson_id,
+                'student_unit_id'   => $studentLesson->student_unit_id,
+                'admin_id'          => auth('admin')->id(),
+                'reason'            => $request->input('reason'),
+            ]);
+
+            return response()->json([
+                'success'        => true,
+                'student_lesson' => [
+                    'id'         => $studentLesson->id,
+                    'dnc_at'     => null,
+                    'lesson_id'  => $studentLesson->lesson_id,
+                ],
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Student lesson not found.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Support: reverseLessonDnc failed', ['student_lesson_id' => $studentLessonId, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 

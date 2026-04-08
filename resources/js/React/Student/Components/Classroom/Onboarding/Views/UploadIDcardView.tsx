@@ -46,7 +46,7 @@ const UploadIDcardView = ({
                                 setShowCaptureType={setShowCaptureType}
                                 setCurrentStep={setCurrentStep}
                                 currentStep={currentStep}
-                                onUploaded={() => onUploaded?.()}
+                                onUploaded={(uploadedUrl?: string) => onUploaded?.(uploadedUrl)}
                                 debug={debug}
                             />
                         </div>

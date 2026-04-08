@@ -244,6 +244,21 @@ class StudentDashboardController extends Controller
         // A null entry correctly signals "not uploaded yet" to the onboarding UI.
         $headshotByDay[$todayKey] = $todayHeadshotUrl;
 
+        // Include a previous-day headshot under its own weekday key so the review screen
+        // can display it.  This does NOT affect onboarding gating — OnboardingFlow only
+        // checks today's key for identity_verified; the fallback key is used solely for
+        // display in ValidationConfirmationView (via its firstUrl fallback).
+        if (!$todayHeadshotUrl && $headshotUrl && $headshotUnit && $headshotUnit->id !== ($todayUnit?->id)) {
+            try {
+                $fallbackKey = strtolower((string) optional($headshotUnit->CourseDate)->starts_at->format('l'));
+            } catch (\Throwable $e) {
+                $fallbackKey = '';
+            }
+            if ($fallbackKey && $fallbackKey !== $todayKey) {
+                $headshotByDay[$fallbackKey] = $headshotUrl;
+            }
+        }
+
         // Calculate onboarding requirements.
         // identity_verified requires today's headshot — a previous-day photo does not count.
         $termsAccepted     = (bool) ($courseAuth->agreed_at !== null);

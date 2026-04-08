@@ -39,10 +39,12 @@ const FILE_DEFAULT = "no-image";
 // ValidationConfirmationView component for the final step
 const ValidationConfirmationView: React.FC<{
     validations: any;
+    localHeadshotUrl?: string | null;
+    localIdCardUrl?: string | null;
     student: StudentType;
     setCurrentStep: React.Dispatch<React.SetStateAction<number>>;
     onComplete?: () => void;
-}> = ({ validations, student, setCurrentStep, onComplete }) => {
+}> = ({ validations, localHeadshotUrl, localIdCardUrl, student, setCurrentStep, onComplete }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleConfirmValidation = async () => {
@@ -87,8 +89,8 @@ const ValidationConfirmationView: React.FC<{
         return imageData && !imageData.includes(FILE_DEFAULT) ? imageData : null;
     };
 
-    const headshotUrl = getImageUrl(validations?.headshot);
-    const idCardUrl = getImageUrl(validations?.idcard);
+    const headshotUrl = localHeadshotUrl || getImageUrl(validations?.headshot);
+    const idCardUrl = localIdCardUrl || getImageUrl(validations?.idcard);
 
     const hasMissingImages = !headshotUrl || !idCardUrl;
 
@@ -257,6 +259,8 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
 }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [validationMessage, setValidationMessage] = useState<string | null>(null);
+    const [localHeadshotUrl, setLocalHeadshotUrl] = useState<string | null>(null);
+    const [localIdCardUrl, setLocalIdCardUrl] = useState<string | null>(null);
 
     const [autoAdvanceTo, setAutoAdvanceTo] = useState<number | null>(null);
     const [countdown, setCountdown] = useState<number>(0);
@@ -475,7 +479,8 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         setShowCaptureType={setShowCaptureType}
                         setCurrentStep={setCurrentStep}
                         currentStep={currentStep}
-                        onUploaded={() => {
+                        onUploaded={(uploadedUrl?: string) => {
+                            if (uploadedUrl) setLocalIdCardUrl(uploadedUrl);
                             setValidationMessage('ID uploaded. Waiting validation…');
                             userNavigatedBackRef.current = false;
                             beginCountdown(3, 'idcard');
@@ -497,7 +502,8 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                         setCurrentStep={setCurrentStep}
                         currentStep={currentStep}
                         isImageSet={() => true}
-                        onUploaded={() => {
+                        onUploaded={(uploadedUrl?: string) => {
+                            if (uploadedUrl) setLocalHeadshotUrl(uploadedUrl);
                             setValidationMessage('Headshot uploaded. Waiting validation…');
                             userNavigatedBackRef.current = false;
                             beginCountdown(4, 'headshot');
@@ -509,6 +515,8 @@ const CaptureIDForValidation: React.FC<CIDFVTYPE> = ({
                 return (
                     <ValidationConfirmationView
                         validations={validations}
+                        localHeadshotUrl={localHeadshotUrl}
+                        localIdCardUrl={localIdCardUrl}
                         student={student}
                         setCurrentStep={goBack}
                         onComplete={onComplete}

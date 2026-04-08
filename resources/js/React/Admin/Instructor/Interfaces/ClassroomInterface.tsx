@@ -6,6 +6,7 @@ import StudentsPanel from "../Classroom/StudentsPanel";
 import InstructorLessonProgressBar from "../Components/InstructorLessonProgressBar";
 import FrostChatCard from "../Components/FrostChatCard";
 import StudentIdentityPanel from "../components/StudentIdentityPanel";
+import InstructorStudentToolsCard from "../components/InstructorStudentToolsCard";
 
 interface ClassroomInterfaceProps {
     instructorData?: any;
@@ -194,19 +195,17 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 
                 {/* CENTER - Teaching Area */}
                 <main
-                    className={`main-content ${
-                        isAssistant ? "assistant-no-left-sidebar" : ""
-                    }`}
+                    className={`main-content ${isAssistant ? "assistant-no-left-sidebar" : ""
+                        }`}
                 >
                     <div className="titlebar">
                         <div className="titlebar-left">
                             <div className="d-flex align-items-center gap-2">
                                 <i
-                                    className={`fas ${
-                                        isAssistant
+                                    className={`fas ${isAssistant
                                             ? "fa-hands-helping"
                                             : "fa-chalkboard-teacher"
-                                    } text-light mr-2`}
+                                        } text-light mr-2`}
                                 />
                                 <span className="text-light">
                                     {isAssistant
@@ -248,12 +247,26 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                         {selectedStudent && courseDateId && (
                             <div
                                 className="student-identity-container"
-                                style={{ padding: "0 20px 20px 20px" }}
+                                style={{ padding: "0 20px 12px 20px" }}
                             >
                                 <StudentIdentityPanel
                                     studentId={selectedStudent.id}
                                     courseDateId={courseDateId}
                                     onClose={() => setSelectedStudent(null)}
+                                />
+                            </div>
+                        )}
+
+                        {/* Student Tools Card - Ban, Eject, Lessons actions */}
+                        {selectedStudent && (
+                            <div
+                                className="student-tools-container"
+                                style={{ padding: "0 20px 20px 20px" }}
+                            >
+                                <InstructorStudentToolsCard
+                                    student={selectedStudent}
+                                    toolPermissions={instructorData?.toolPermissions ?? {}}
+                                    onRefresh={() => { }}
                                 />
                             </div>
                         )}
@@ -280,8 +293,8 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                                     id: instructor?.id || 0,
                                     name:
                                         instructor?.fname +
-                                            " " +
-                                            instructor?.lname || "Instructor",
+                                        " " +
+                                        instructor?.lname || "Instructor",
                                     email:
                                         instructor?.email ||
                                         "instructor@example.com",
@@ -299,9 +312,8 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
 
                 {/* RIGHT SIDEBAR - Students */}
                 <aside
-                    className={`sidebar sidebar-right ${
-                        rightCollapsed ? "collapsed" : ""
-                    }`}
+                    className={`sidebar sidebar-right ${rightCollapsed ? "collapsed" : ""
+                        }`}
                 >
                     <div className="sidebar-header">
                         <div className="sidebar-title">
@@ -319,11 +331,10 @@ const ClassroomInterface: React.FC<ClassroomInterfaceProps> = ({
                             title={rightCollapsed ? "Expand" : "Collapse"}
                         >
                             <i
-                                className={`fas ${
-                                    rightCollapsed
+                                className={`fas ${rightCollapsed
                                         ? "fa-chevron-left"
                                         : "fa-chevron-right"
-                                }`}
+                                    }`}
                             />
                         </button>
                     </div>

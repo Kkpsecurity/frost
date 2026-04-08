@@ -36,6 +36,12 @@ class PermissionsSeeder extends Seeder
             // Instructor-specific permissions
             'courses.view-assigned',
             'courses.manage-assigned',
+
+            // Student Tools permissions (Support SPA)
+            'student-tools.ban-course-auth',
+            'student-tools.day-ban',
+            'student-tools.grant-lesson',
+            'student-tools.reverse-dnc',
         ];
 
         // Create all permissions

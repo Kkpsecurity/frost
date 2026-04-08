@@ -22,6 +22,8 @@ use App\Models\PaymentType;
 use App\Models\SiteConfig;
 use App\Services\Payments\PayPalConfigService;
 use App\Services\RCache;
+use Spatie\Permission\Models\Permission as SpatiePermission;
+use Spatie\Permission\Models\Role as SpatieRole;
 
 class AdminCenterController extends Controller
 {
@@ -377,7 +379,90 @@ class AdminCenterController extends Controller
     }
 
     /**
-     * Payment Gateway Settings
+     * Student Tool Permissions — list with per-role granted flags
+     */
+    public function getStudentToolPermissions()
+    {
+        $relevantRoles = ['support', 'instructor'];
+
+        $permissions = SpatiePermission::where('name', 'like', 'student-tools.%')->get();
+
+        $labels = [
+            'student-tools.ban-course-auth' => 'Ban / Reinstate CourseAuth',
+            'student-tools.day-ban'         => 'Eject / Reinstate Class Day',
+            'student-tools.grant-lesson'    => 'Grant Missed Lesson',
+            'student-tools.reverse-dnc'     => 'Reverse Lesson DNC',
+        ];
+
+        $data = $permissions->map(function ($perm) use ($relevantRoles, $labels) {
+            $grantedRoles = $perm->roles->pluck('name')->toArray();
+            $roles = [];
+            foreach ($relevantRoles as $roleName) {
+                $roles[$roleName] = in_array($roleName, $grantedRoles);
+            }
+            return [
+                'id'    => $perm->id,
+                'name'  => $perm->name,
+                'label' => $labels[$perm->name] ?? $perm->name,
+                'roles' => $roles,
+            ];
+        });
+
+        return response()->json(['permissions' => $data]);
+    }
+
+    /**
+     * Student Tool Permissions — toggle a single role's access
+     */
+    public function updateStudentToolPermission(Request $request, int $permissionId)
+    {
+        $request->validate([
+            'role_name' => ['required', 'string', 'in:support,instructor'],
+            'granted'   => ['required', 'boolean'],
+        ]);
+
+        $permission = SpatiePermission::findOrFail($permissionId);
+
+        // Ensure this is a student-tools permission
+        if (!str_starts_with($permission->name, 'student-tools.')) {
+            return response()->json(['message' => 'Invalid permission.'], 422);
+        }
+
+        $spatieRole = SpatieRole::where('name', $request->role_name)->firstOrFail();
+
+        if ($request->boolean('granted')) {
+            $spatieRole->givePermissionTo($permission);
+        } else {
+            $spatieRole->revokePermissionTo($permission);
+        }
+
+        // Return updated row
+        $permission->load('roles');
+        $relevantRoles = ['support', 'instructor'];
+        $grantedRoles = $permission->roles->pluck('name')->toArray();
+        $roles = [];
+        foreach ($relevantRoles as $roleName) {
+            $roles[$roleName] = in_array($roleName, $grantedRoles);
+        }
+
+        $labels = [
+            'student-tools.ban-course-auth' => 'Ban / Reinstate CourseAuth',
+            'student-tools.day-ban'         => 'Eject / Reinstate Class Day',
+            'student-tools.grant-lesson'    => 'Grant Missed Lesson',
+            'student-tools.reverse-dnc'     => 'Reverse Lesson DNC',
+        ];
+
+        return response()->json([
+            'permission' => [
+                'id'    => $permission->id,
+                'name'  => $permission->name,
+                'label' => $labels[$permission->name] ?? $permission->name,
+                'roles' => $roles,
+            ],
+        ]);
+    }
+
+    /**
      */
     public function paymentGateway()
     {
